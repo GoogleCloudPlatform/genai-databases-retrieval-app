@@ -1,0 +1,16 @@
+# project configuration
+config.yml
+
+# vscode
+.vscode
+
+# direnv
+.envrc
+
+# pyenv
+.python-version
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+.mypy_cache/
+.pytest_cache/
