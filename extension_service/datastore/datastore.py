@@ -24,9 +24,11 @@ class AbstractConfig(ABC):
 
 C = TypeVar("C", bound=AbstractConfig)
 
+
 class classproperty:
     def __init__(self, func):
         self.fget = func
+
     def __get__(self, instance, owner):
         return self.fget(owner)
 
@@ -52,16 +54,14 @@ class Client(ABC, Generic[C]):
     async def export_data(self) -> Tuple[List[models.Toy], List[models.Embedding]]:
         pass
 
-    @classmethod
     @abstractmethod
     async def semantic_similarity_search(
-        cls, query_embedding: List[float], similarity_threshold: float, top_k: int
+        self, query_embedding: List[float], similarity_threshold: float, top_k: int
     ) -> List[Dict[str, Any]]:
         raise NotImplementedError("Subclass should implement this!")
 
-    @classmethod
     @abstractmethod
-    async def close(cls):
+    async def close(self):
         pass
 
 

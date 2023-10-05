@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import csv
 
-import asyncio
 import numpy as np
 
 from extension_service import datastore

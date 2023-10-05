@@ -14,12 +14,10 @@
 
 import requests
 import streamlit as st
-
+from langchain.agents import AgentType, initialize_agent
 from langchain.llms import VertexAI
 from langchain.memory import ConversationBufferMemory
-from langchain.agents import initialize_agent, AgentType
 from langchain.tools import Tool
-
 
 st.title("Database Extension Testing")
 

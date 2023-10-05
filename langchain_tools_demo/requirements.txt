@@ -1,2 +1,3 @@
 google-cloud-aiplatform==1.26.1
 langchain==0.0.277
+streamlit==1.27.2

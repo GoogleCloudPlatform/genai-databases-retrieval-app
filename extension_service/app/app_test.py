@@ -13,14 +13,13 @@
 # limitations under the License.
 
 import pytest
-
-from fastapi import params
 from fastapi.testclient import TestClient
+
+from extension_service.datastore.providers import postgres
 
 from . import init_app
 from .app import AppConfig
 from .helpers import get_env_var
-from extension_service.datastore.providers import postgres
 
 DB_USER = get_env_var("DB_USER", "name of a postgres user")
 DB_PASS = get_env_var("DB_PASS", "password for the postgres user")
@@ -32,9 +31,9 @@ def app():
     cfg = AppConfig(
         datastore=postgres.Config(
             kind="postgres",
-            user="my-user",
-            password=":%M+}OH7uL(9V{lX",
-            database="my_database",
+            user=DB_USER,
+            password=DB_PASS,
+            database=DB_NAME,
         )
     )
     app = init_app(cfg)
@@ -49,8 +48,7 @@ def test_hello_world(app):
         assert response.status_code == 200
         assert response.json() == {"message": "Hello World"}
 
-
-def test_semantic_similiarity_search(app):
+def test_semantic_similarity_search(app):
     with TestClient(app) as client:
         response = client.get(
             "/semantic_similarity_search",
