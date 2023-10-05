@@ -13,43 +13,49 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Tuple, TypeVar
+from typing import Any, Dict, Generic, List, Tuple, TypeVar
 
-import models
+import extension_service.models as models
 
 
 class AbstractConfig(ABC):
     kind: str
 
 
-class Client(ABC):
-    @classmethod
-    @property
+C = TypeVar("C", bound=AbstractConfig)
+
+class classproperty:
+    def __init__(self, func):
+        self.fget = func
+    def __get__(self, instance, owner):
+        return self.fget(owner)
+
+
+class Client(ABC, Generic[C]):
+    @classproperty
     @abstractmethod
     def kind(cls):
         pass
 
     @classmethod
     @abstractmethod
-    async def create(cls, config: AbstractConfig) -> "Client":
+    async def create(cls, config: C) -> "Client":
         pass
 
-    @classmethod
     @abstractmethod
     async def initialize_data(
-        cls, toys: List[models.Toy], embeddings: List[models.Embedding]
+        self, toys: List[models.Toy], embeddings: List[models.Embedding]
     ) -> None:
         pass
 
-    @classmethod
     @abstractmethod
-    async def export_data(cls) -> Tuple[List[models.Toy], List[models.Embedding]]:
+    async def export_data(self) -> Tuple[List[models.Toy], List[models.Embedding]]:
         pass
 
     @classmethod
     @abstractmethod
-    async def semantic_similiarity_search(
-        cls, query_embedding: List[float], similarity_theshold: float, top_k: int
+    async def semantic_similarity_search(
+        cls, query_embedding: List[float], similarity_threshold: float, top_k: int
     ) -> List[Dict[str, Any]]:
         raise NotImplementedError("Subclass should implement this!")
 
@@ -61,6 +67,7 @@ class Client(ABC):
 
 async def create(config: AbstractConfig) -> Client:
     for cls in Client.__subclasses__():
+        s = f"{config.kind} == {cls.kind}"
         if config.kind == cls.kind:
             return await cls.create(config)  # type: ignore
     raise TypeError(f"No clients of kind '{config.kind}'")

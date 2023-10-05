@@ -17,8 +17,8 @@ import csv
 import asyncio
 import numpy as np
 
-import datastore
-from server import parse_config
+from extension_service import datastore
+from extension_service.app import parse_config
 
 
 async def main():

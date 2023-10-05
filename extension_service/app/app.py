@@ -16,13 +16,13 @@ from contextlib import asynccontextmanager
 from ipaddress import IPv4Address, IPv6Address
 from typing import Union
 
+import yaml
 from fastapi import FastAPI
 from langchain.embeddings import VertexAIEmbeddings
 from pydantic import BaseModel
-import yaml
 
-import datastore
 from .routes import routes
+from extension_service import datastore
 
 
 class AppConfig(BaseModel):

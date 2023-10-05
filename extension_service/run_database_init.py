@@ -17,12 +17,11 @@ from typing import List
 
 import asyncio
 
-import datastore
-import models
-from server import parse_config
+from extension_service import datastore, models
+from extension_service.app import parse_config
 
 
-async def main():
+async def main() -> None:
     toys: List[models.Toy] = []
     with open("data/product_dataset.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")

@@ -14,16 +14,16 @@
 
 import asyncio
 from ipaddress import IPv4Address, IPv6Address
-from typing import Any, Dict, Literal, List, Tuple
+from typing import Any, Dict, List, Literal, Tuple
 
 import asyncpg
+
+from numpy import float32
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
-from numpy import float32
 
-import models
 from .. import datastore
-
+from extension_service import models
 
 POSTGRES_IDENTIFIER = "postgres"
 
@@ -37,11 +37,10 @@ class Config(BaseModel, datastore.AbstractConfig):
     database: str
 
 
-class Client(datastore.Client):
+class Client(datastore.Client[Config]):
     __pool: asyncpg.Pool
 
-    @classmethod
-    @property
+    @datastore.classproperty
     def kind(cls):
         return "postgres"
 
@@ -118,8 +117,8 @@ class Client(datastore.Client):
 
         return toys, embeddings
 
-    async def semantic_similiarity_search(
-        self, query_embedding: List[float32], similarity_theshold: float, top_k: int
+    async def semantic_similarity_search(
+        self, query_embedding: List[float32], similarity_threshold: float, top_k: int
     ) -> List[Dict[str, Any]]:
         results = await self.__pool.fetch(
             """
@@ -138,7 +137,7 @@ class Client(datastore.Client):
                 WHERE product_id IN (SELECT product_id FROM vector_matches)
             """,
             query_embedding,
-            similarity_theshold,
+            similarity_threshold,
             top_k,
             timeout=10,
         )
