@@ -1,3 +1,8 @@
-pytest==7.4.0
-pytest-asyncio==0.21.1
+asyncpg-stubs==0.28.0
+black==23.9.1
 httpx==0.24.1
+isort==5.12.0
+mypy==1.5.1
+pytest-asyncio==0.21.1
+pytest==7.4.0
+types-PyYAML==6.0.12.12

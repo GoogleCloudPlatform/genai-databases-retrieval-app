@@ -17,13 +17,12 @@ from ipaddress import IPv4Address, IPv6Address
 from typing import Any, Dict, List, Literal, Tuple
 
 import asyncpg
-
-from numpy import float32
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 
-from .. import datastore
 from extension_service import models
+
+from .. import datastore
 
 POSTGRES_IDENTIFIER = "postgres"
 
@@ -118,7 +117,7 @@ class Client(datastore.Client[Config]):
         return toys, embeddings
 
     async def semantic_similarity_search(
-        self, query_embedding: List[float32], similarity_threshold: float, top_k: int
+        self, query_embedding: List[float], similarity_threshold: float, top_k: int
     ) -> List[Dict[str, Any]]:
         results = await self.__pool.fetch(
             """
