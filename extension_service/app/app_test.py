@@ -48,6 +48,7 @@ def test_hello_world(app):
         assert response.status_code == 200
         assert response.json() == {"message": "Hello World"}
 
+
 def test_semantic_similarity_search(app):
     with TestClient(app) as client:
         response = client.get(
