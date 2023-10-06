@@ -82,8 +82,9 @@ class Client(datastore.Client):
             # If the table already exists, drop it to avoid conflicts
             await conn.execute(sqlalchemy.text("DROP TABLE IF EXISTS products CASCADE"))
             # Create a new table
-            await conn.execute(sqlalchemy.text(
-                """
+            await conn.execute(
+                sqlalchemy.text(
+                    """
                 CREATE TABLE products(
                   product_id VARCHAR(1024) PRIMARY KEY,
                   product_name TEXT,
@@ -91,7 +92,8 @@ class Client(datastore.Client):
                   list_price NUMERIC
                 )
                 """
-            ))
+                )
+            )
             # Insert all the data
             await conn.executemany(
                 """INSERT INTO products VALUES ($1, $2, $3, $4)""",
@@ -102,15 +104,19 @@ class Client(datastore.Client):
             )
 
             await conn.execute(sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector"))
-            await conn.execute(sqlalchemy.text("DROP TABLE IF EXISTS product_embeddings"))
-            await conn.execute(sqlalchemy.text(
-                """
+            await conn.execute(
+                sqlalchemy.text("DROP TABLE IF EXISTS product_embeddings")
+            )
+            await conn.execute(
+                sqlalchemy.text(
+                    """
                 CREATE TABLE product_embeddings(
                     product_id VARCHAR(1024) NOT NULL REFERENCES products(product_id),
                     content TEXT,
                     embedding vector(768))
                 """
-            ))
+                )
+            )
             # Insert all the data
             await conn.executemany(
                 """INSERT INTO product_embeddings VALUES ($1, $2, $3)""",
@@ -119,10 +125,14 @@ class Client(datastore.Client):
 
     async def export_data(self) -> Tuple[List[models.Toy], List[models.Embedding]]:
         toy_task = asyncio.create_task(
-            self.__pool.execute(sqlalchemy.text("""SELECT * FROM products""")).fetchall()
+            self.__pool.execute(
+                sqlalchemy.text("""SELECT * FROM products""")
+            ).fetchall()
         )
         emb_task = asyncio.create_task(
-            self.__pool.execute(sqlalchemy.text("""SELECT * FROM product_embeddings""")).fetchall()
+            self.__pool.execute(
+                sqlalchemy.text("""SELECT * FROM product_embeddings""")
+            ).fetchall()
         )
 
         toys = [models.Toy.model_validate(dict(t)) for t in await toy_task]
@@ -133,8 +143,9 @@ class Client(datastore.Client):
     async def semantic_similiarity_search(
         self, query_embedding: List[float32], similarity_threshold: float, top_k: int
     ) -> List[Dict[str, Any]]:
-        results = await self.__pool.execute(sqlalchemy.text(
-            """
+        results = await self.__pool.execute(
+            sqlalchemy.text(
+                """
                 WITH vector_matches AS (
                     SELECT product_id, 1 - (embedding <=> :query_embedding) AS similarity
                     FROM product_embeddings
@@ -148,13 +159,14 @@ class Client(datastore.Client):
                     description
                 FROM products
                 WHERE product_id IN (SELECT product_id FROM vector_matches)
-            """),
+            """
+            ),
             parameters={
                 "query_embedding": query_embedding,
                 "similarity_threshold": similarity_threshold,
-                "top_k": top_k
-            }
-            ).fetchall()
+                "top_k": top_k,
+            },
+        ).fetchall()
 
         results = [dict(r) for r in results]
         return results
