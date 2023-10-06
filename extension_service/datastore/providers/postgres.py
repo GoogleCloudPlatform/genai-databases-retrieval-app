@@ -21,6 +21,7 @@ from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 
 import models
+
 from .. import datastore
 
 POSTGRES_IDENTIFIER = "postgres"
