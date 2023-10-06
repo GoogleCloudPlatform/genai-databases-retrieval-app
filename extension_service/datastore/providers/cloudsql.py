@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import asyncio
-from ipaddress import IPv4Address, IPv6Address
 from typing import Any, Dict, Literal, List, Tuple
 
 import asyncpg
@@ -21,45 +20,56 @@ from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 from numpy import float32
 
+from google.cloud.sql.connector import Connector
+import sqlalchemy
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+
 import models
 from .. import datastore
 
 
-POSTGRES_IDENTIFIER = "postgres"
+POSTGRES_IDENTIFIER = "cloudsql-postgres"
 
 
 class Config(BaseModel, datastore.AbstractConfig):
-    kind: Literal["postgres"]
-    host: IPv4Address | IPv6Address = IPv4Address("127.0.0.1")
-    port: int = 5432
+    kind: Literal["cloudsql-postgres"]
+    project: str
+    region: str
+    instance: str
     user: str
     password: str
     database: str
 
 
 class Client(datastore.Client):
-    __pool: asyncpg.Pool
+    __pool: AsyncEngine
 
     @classmethod
     @property
     def kind(cls):
-        return "postgres"
+        return "cloudsql-postgres"
 
-    def __init__(self, pool: asyncpg.Pool):
+    def __init__(self, pool: AsyncEngine):
         self.__pool = pool
 
     @classmethod
     async def create(cls, config: Config) -> "Client":
-        async def init(conn):
-            await register_vector(conn)
+        async def getconn(config: Config) -> asyncpg.Connection:
+            loop = asyncio.get_running_loop()
+            async with Connector(loop=loop) as connector:
+                conn: asyncpg.Connection = await connector.connect_async(
+                    # Cloud SQL instance connection name
+                    f"{config['project']}:{config['region']}:{config['instance']}",
+                    "asyncpg",
+                    user=f"{config['user']}",
+                    password=f"{config['password']}",
+                    db=f"{config['database']}",
+                )
+                return conn
 
-        pool = await asyncpg.create_pool(
-            host=str(config.host),
-            user=config.user,
-            password=config.password,
-            database=config.database,
-            port=config.port,
-            init=init,
+        pool = create_async_engine(
+            "postgresql+asyncpg://",
+            async_creator=getconn(config),
         )
         if pool is None:
             raise TypeError("pool not instantiated")
@@ -68,20 +78,20 @@ class Client(datastore.Client):
     async def initialize_data(
         self, toys: List[models.Toy], embeddings: List[models.Embedding]
     ) -> None:
-        async with self.__pool.acquire() as conn:
+        async with self.__pool.connect() as conn:
             # If the table already exists, drop it to avoid conflicts
-            await conn.execute("DROP TABLE IF EXISTS products CASCADE")
+            await conn.execute(sqlalchemy.text("DROP TABLE IF EXISTS products CASCADE"))
             # Create a new table
-            await conn.execute(
+            await conn.execute(sqlalchemy.text(
                 """
                 CREATE TABLE products(
-                  product_id VARCHAR(1024) PRIMARY KEY, 
-                  product_name TEXT, 
-                  description TEXT, 
+                  product_id VARCHAR(1024) PRIMARY KEY,
+                  product_name TEXT,
+                  description TEXT,
                   list_price NUMERIC
                 )
                 """
-            )
+            ))
             # Insert all the data
             await conn.executemany(
                 """INSERT INTO products VALUES ($1, $2, $3, $4)""",
@@ -91,16 +101,16 @@ class Client(datastore.Client):
                 ],
             )
 
-            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
-            await conn.execute("DROP TABLE IF EXISTS product_embeddings")
-            await conn.execute(
+            await conn.execute(sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector"))
+            await conn.execute(sqlalchemy.text("DROP TABLE IF EXISTS product_embeddings"))
+            await conn.execute(sqlalchemy.text(
                 """
                 CREATE TABLE product_embeddings(
                     product_id VARCHAR(1024) NOT NULL REFERENCES products(product_id),
                     content TEXT,
                     embedding vector(768))
                 """
-            )
+            ))
             # Insert all the data
             await conn.executemany(
                 """INSERT INTO product_embeddings VALUES ($1, $2, $3)""",
@@ -108,9 +118,11 @@ class Client(datastore.Client):
             )
 
     async def export_data(self) -> Tuple[List[models.Toy], List[models.Embedding]]:
-        toy_task = asyncio.create_task(self.__pool.fetch("""SELECT * FROM products"""))
+        toy_task = asyncio.create_task(
+            self.__pool.execute(sqlalchemy.text("""SELECT * FROM products""")).fetchall()
+        )
         emb_task = asyncio.create_task(
-            self.__pool.fetch("""SELECT * FROM product_embeddings""")
+            self.__pool.execute(sqlalchemy.text("""SELECT * FROM product_embeddings""")).fetchall()
         )
 
         toys = [models.Toy.model_validate(dict(t)) for t in await toy_task]
@@ -119,32 +131,33 @@ class Client(datastore.Client):
         return toys, embeddings
 
     async def semantic_similiarity_search(
-        self, query_embedding: List[float32], similarity_theshold: float, top_k: int
+        self, query_embedding: List[float32], similarity_threshold: float, top_k: int
     ) -> List[Dict[str, Any]]:
-        results = await self.__pool.fetch(
+        results = await self.__pool.execute(sqlalchemy.text(
             """
                 WITH vector_matches AS (
-                    SELECT product_id, 1 - (embedding <=> $1) AS similarity
+                    SELECT product_id, 1 - (embedding <=> :query_embedding) AS similarity
                     FROM product_embeddings
-                    WHERE 1 - (embedding <=> $1) > $2
+                    WHERE 1 - (embedding <=> :query_embedding) > :similarity_threshold
                     ORDER BY similarity DESC
-                    LIMIT $3
+                    LIMIT :top_k
                 )
-                SELECT 
-                    product_name, 
-                    list_price, 
-                    description 
+                SELECT
+                    product_name,
+                    list_price,
+                    description
                 FROM products
                 WHERE product_id IN (SELECT product_id FROM vector_matches)
-            """,
-            query_embedding,
-            similarity_theshold,
-            top_k,
-            timeout=10,
-        )
+            """),
+            parameters={
+                "query_embedding": query_embedding,
+                "similarity_threshold": similarity_threshold,
+                "top_k": top_k
+            }
+            ).fetchall()
 
         results = [dict(r) for r in results]
         return results
 
     async def close(self):
-        await self.__pool.close()
+        await self.__pool.dispose()
