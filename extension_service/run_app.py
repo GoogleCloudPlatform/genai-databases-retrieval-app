@@ -17,7 +17,7 @@ import asyncio
 
 import uvicorn
 
-from extension_service.app import init_app, parse_config
+from app import init_app, parse_config
 
 
 async def main():

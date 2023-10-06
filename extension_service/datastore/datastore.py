@@ -15,7 +15,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Tuple, TypeVar
 
-import extension_service.models as models
+import models
 
 
 class AbstractConfig(ABC):

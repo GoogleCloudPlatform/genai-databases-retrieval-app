@@ -20,8 +20,7 @@ import asyncpg
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 
-from extension_service import models
-
+import models
 from .. import datastore
 
 POSTGRES_IDENTIFIER = "postgres"

@@ -16,7 +16,7 @@
 from fastapi import APIRouter, Request
 from langchain.embeddings.base import Embeddings
 
-from extension_service import datastore
+import datastore
 
 routes = APIRouter()
 
