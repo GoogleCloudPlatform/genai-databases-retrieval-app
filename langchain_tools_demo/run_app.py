@@ -20,11 +20,12 @@ from langchain.memory import ConversationBufferMemory
 from langchain.tools import Tool
 
 st.title("Database Extension Testing")
+BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 
 
 def find_similar_toys(desc: str) -> str:
     params = {"top_k": "5", "query": desc}
-    response = requests.get("http://127.0.0.1:8080/semantic_similiarity_search", params)
+    response = requests.get(f"{BASE_URL}/semantic_similarity_search", params)
 
     if response.status_code != 200:
         return f"Error trying to find similar toys: {response.text}"

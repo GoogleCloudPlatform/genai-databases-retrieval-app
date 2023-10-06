@@ -21,7 +21,7 @@ from fastapi import FastAPI
 from langchain.embeddings import VertexAIEmbeddings
 from pydantic import BaseModel
 
-from extension_service import datastore
+import datastore
 
 from .routes import routes
 

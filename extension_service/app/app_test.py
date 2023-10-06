@@ -15,7 +15,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from extension_service.datastore.providers import postgres
+from datastore.providers import postgres
 
 from . import init_app
 from .app import AppConfig
@@ -47,6 +47,7 @@ def test_hello_world(app):
         response = client.get("/")
         assert response.status_code == 200
         assert response.json() == {"message": "Hello World"}
+
 
 def test_semantic_similarity_search(app):
     with TestClient(app) as client:

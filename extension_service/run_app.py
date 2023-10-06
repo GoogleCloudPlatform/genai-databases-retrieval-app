@@ -17,11 +17,11 @@ import asyncio
 
 import uvicorn
 
-from extension_service.app import init_app, parse_config
+from app import init_app, parse_config
 
 
 async def main():
-    cfg = parse_config("config.yml")
+    cfg = parse_config("./config.yml")
     app = init_app(cfg)
     if app is None:
         raise TypeError("app not instantiated")
