@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import requests
 import streamlit as st
 from langchain.agents import AgentType, initialize_agent
