@@ -20,7 +20,7 @@ import asyncpg
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 
-from extension_service import models
+import models
 
 from .. import datastore
 
@@ -73,9 +73,9 @@ class Client(datastore.Client[Config]):
             await conn.execute(
                 """
                 CREATE TABLE products(
-                  product_id VARCHAR(1024) PRIMARY KEY, 
-                  product_name TEXT, 
-                  description TEXT, 
+                  product_id VARCHAR(1024) PRIMARY KEY,
+                  product_name TEXT,
+                  description TEXT,
                   list_price NUMERIC
                 )
                 """
@@ -128,10 +128,10 @@ class Client(datastore.Client[Config]):
                     ORDER BY similarity DESC
                     LIMIT $3
                 )
-                SELECT 
-                    product_name, 
-                    list_price, 
-                    description 
+                SELECT
+                    product_name,
+                    list_price,
+                    description
                 FROM products
                 WHERE product_id IN (SELECT product_id FROM vector_matches)
             """,

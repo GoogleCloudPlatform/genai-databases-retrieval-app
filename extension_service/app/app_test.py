@@ -15,7 +15,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from extension_service.datastore.providers import postgres
+from datastore.providers import postgres
 
 from . import init_app
 from .app import AppConfig

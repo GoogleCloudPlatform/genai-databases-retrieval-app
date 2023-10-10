@@ -16,18 +16,19 @@ import asyncio
 import csv
 from typing import List
 
-from extension_service import datastore, models
-from extension_service.app import parse_config
+import datastore
+import models
+from app import parse_config
 
 
 async def main() -> None:
     toys: List[models.Toy] = []
-    with open("data/product_dataset.csv", "r") as f:
+    with open("../data/product_dataset.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")
         toys = [models.Toy.model_validate(line) for line in reader]
 
     embeddings: List[models.Embedding] = []
-    with open("data/product_embeddings_dataset.csv", "r") as f:
+    with open("../data/product_embeddings_dataset.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")
         embeddings = [models.Embedding.model_validate(line) for line in reader]
 
