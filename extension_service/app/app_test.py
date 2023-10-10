@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fastapi import params
 import pytest
 from fastapi.testclient import TestClient
 
 from datastore.providers import postgres
+
 from . import init_app
 from .app import AppConfig
 from .helpers import get_env_var
@@ -31,9 +31,9 @@ def app():
     cfg = AppConfig(
         datastore=postgres.Config(
             kind="postgres",
-            user="my-user",
-            password=":%M+}OH7uL(9V{lX",
-            database="my_database",
+            user=DB_USER,
+            password=DB_PASS,
+            database=DB_NAME,
         )
     )
     app = init_app(cfg)
@@ -49,10 +49,10 @@ def test_hello_world(app):
         assert response.json() == {"message": "Hello World"}
 
 
-def test_semantic_similiarity_search(app):
+def test_semantic_similarity_search(app):
     with TestClient(app) as client:
         response = client.get(
-            "/semantic_similiarity_search",
+            "/semantic_similarity_search",
             params={
                 "query": "playing card games",
                 "top_k": 5,

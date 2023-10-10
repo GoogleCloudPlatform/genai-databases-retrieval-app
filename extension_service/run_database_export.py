@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import csv
 
-import asyncio
 import numpy as np
 
 import datastore
-from server import parse_config
+from app import parse_config
 
 
 async def main():

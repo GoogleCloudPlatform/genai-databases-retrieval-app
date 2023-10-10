@@ -12,4 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .app import parse_config, init_app
+from typing import Union
+
+from . import providers
+from .datastore import Client, create
+
+# Temporarily list both types twice until we have more kinds
+Config = Union[providers.postgres.Config, providers.postgres.Config]
+
+__ALL__ = [Client, Config, create, providers]

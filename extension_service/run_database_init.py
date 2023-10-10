@@ -12,24 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import csv
 from typing import List
 
-import asyncio
-
 import datastore
 import models
-from server import parse_config
+from app import parse_config
 
 
-async def main():
+async def main() -> None:
     toys: List[models.Toy] = []
-    with open("data/product_dataset.csv", "r") as f:
+    with open("../data/product_dataset.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")
         toys = [models.Toy.model_validate(line) for line in reader]
 
     embeddings: List[models.Embedding] = []
-    with open("data/product_embeddings_dataset.csv", "r") as f:
+    with open("../data/product_embeddings_dataset.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")
         embeddings = [models.Embedding.model_validate(line) for line in reader]
 

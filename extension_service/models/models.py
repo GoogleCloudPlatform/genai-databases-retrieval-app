@@ -35,7 +35,7 @@ class Embedding(BaseModel):
     embedding: List[float32]
 
     @field_validator("embedding", mode="before")
-    def validate(cls, v, info: FieldValidationInfo):
+    def validate(cls, v):
         if type(v) == str:
             v = ast.literal_eval(v)
             v = [float32(f) for f in v]

@@ -12,19 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 import asyncio
+
 import uvicorn
-from server import parse_config, init_app
+
+from app import init_app, parse_config
 
 
 async def main():
-    cfg = parse_config('config.yml')
+    cfg = parse_config("./config.yml")
     app = init_app(cfg)
     if app is None:
         raise TypeError("app not instantiated")
-    server = uvicorn.Server(uvicorn.Config(app, host=str(cfg.host), port=cfg.port, log_level="info"))
+    server = uvicorn.Server(
+        uvicorn.Config(app, host=str(cfg.host), port=cfg.port, log_level="info")
+    )
     await server.serve()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
-

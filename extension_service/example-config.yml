@@ -1,0 +1,10 @@
+host: 0.0.0.0
+# port: 8080
+datastore:
+  # Example for AlloyDB
+  kind: "postgres"
+  host: 127.0.0.1
+  # port: 5432
+  database: "my_database"
+  user: "my-user"
+  password: "my-password"
