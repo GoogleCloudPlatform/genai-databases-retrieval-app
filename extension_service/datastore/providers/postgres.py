@@ -109,7 +109,15 @@ class Client(datastore.Client[Config]):
             await conn.executemany(
                 """INSERT INTO amenities VALUES ($1, $2, $3, $4, $5, $6, $7)""",
                 [
-                    (a.amenity_id, a.amenity_name, a.description, a.location, a.terminal, a.amenity_type, a.hour)
+                    (
+                        a.amenity_id,
+                        a.amenity_name,
+                        a.description,
+                        a.location,
+                        a.terminal,
+                        a.amenity_type,
+                        a.hour,
+                    )
                     for a in amenities
                 ],
             )
@@ -120,7 +128,9 @@ class Client(datastore.Client[Config]):
         airport_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM airports""")
         )
-        amenity_task = asyncio.create_task(self.__pool.fetch("""SELECT * FROM amenities"""))
+        amenity_task = asyncio.create_task(
+            self.__pool.fetch("""SELECT * FROM amenities""")
+        )
 
         airports = [models.Airport.model_validate(dict(a)) for a in await airport_task]
         amenities = [models.Amenity.model_validate(dict(a)) for a in await amenity_task]

@@ -39,7 +39,15 @@ async def main():
             writer.writerow(a.model_dump())
 
     with open("../data/amenities_dataset.csv.new", "w") as f:
-        col_names = ["amenity_id", "amenity_name", "description", "location", "terminal", "amenity_type", "hour"]
+        col_names = [
+            "amenity_id",
+            "amenity_name",
+            "description",
+            "location",
+            "terminal",
+            "amenity_type",
+            "hour",
+        ]
         writer = csv.DictWriter(f, col_names, delimiter=",")
         writer.writeheader()
         for a in amenities:
