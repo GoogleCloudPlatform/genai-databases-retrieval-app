@@ -27,6 +27,11 @@ async def main() -> None:
         reader = csv.DictReader(f, delimiter=",")
         toys = [models.Toy.model_validate(line) for line in reader]
 
+    airports: List[models.Airport] = []
+    with open("../data/airports_dataset.csv", "r") as f:
+        reader = csv.DictReader(f, delimiter=",")
+        airports = [models.Airport.model_validate(line) for line in reader]
+
     embeddings: List[models.Embedding] = []
     with open("../data/product_embeddings_dataset.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")
@@ -34,7 +39,7 @@ async def main() -> None:
 
     cfg = parse_config("config.yml")
     ds = await datastore.create(cfg.datastore)
-    await ds.initialize_data(toys, embeddings)
+    await ds.initialize_data(toys, airports, embeddings)
     await ds.close()
 
 
