@@ -27,9 +27,14 @@ async def main() -> None:
         reader = csv.DictReader(f, delimiter=",")
         airports = [models.Airport.model_validate(line) for line in reader]
 
+    amenities: List[models.Amenity] = []
+    with open("../data/amenities_dataset.csv", "r") as f:
+        reader = csv.DictReader(f, delimiter=",")
+        amenities = [models.Amenity.model_validate(line) for line in reader]
+
     cfg = parse_config("config.yml")
     ds = await datastore.create(cfg.datastore)
-    await ds.initialize_data(airports)
+    await ds.initialize_data(airports, amenities)
     await ds.close()
 
 

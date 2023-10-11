@@ -48,13 +48,14 @@ class Client(ABC, Generic[C]):
     async def initialize_data(
         self,
         airports: List[models.Airport],
+        amenities: List[models.Amenity],
     ) -> None:
         pass
 
     @abstractmethod
     async def export_data(
         self,
-    ) -> List[models.Airport]:
+    ) -> Tuple[List[models.Airport], List[models.Amenity]]:
         pass
 
     @abstractmethod

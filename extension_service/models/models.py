@@ -21,3 +21,13 @@ class Airport(BaseModel):
     name: str
     city: str
     country: str
+
+
+class Amenity(BaseModel):
+    amenity_id: str
+    amenity_name: str
+    description: str
+    location: str
+    terminal: str
+    amenity_type: str
+    hour: str

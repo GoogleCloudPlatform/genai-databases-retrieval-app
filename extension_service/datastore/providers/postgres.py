@@ -66,6 +66,7 @@ class Client(datastore.Client[Config]):
     async def initialize_data(
         self,
         airports: List[models.Airport],
+        amenities: List[models.Amenity],
     ) -> None:
         async with self.__pool.acquire() as conn:
             # If the table already exists, drop it to avoid conflicts
@@ -88,16 +89,43 @@ class Client(datastore.Client[Config]):
                 [(a.id, a.iata, a.name, a.city, a.country) for a in airports],
             )
 
+            # If the table already exists, drop it to avoid conflicts
+            await conn.execute("DROP TABLE IF EXISTS amenities CASCADE")
+            # Create a new table
+            await conn.execute(
+                """
+                CREATE TABLE amenities(
+                  amenity_id VARCHAR(1024) PRIMARY KEY,
+                  amenity_name TEXT,
+                  description TEXT,
+                  location TEXT,
+                  terminal TEXT,
+                  amenity_type TEXT,
+                  hour TEXT
+                )
+                """
+            )
+            # Insert all the data
+            await conn.executemany(
+                """INSERT INTO amenities VALUES ($1, $2, $3, $4, $5, $6, $7)""",
+                [
+                    (a.amenity_id, a.amenity_name, a.description, a.location, a.terminal, a.amenity_type, a.hour)
+                    for a in amenities
+                ],
+            )
+
     async def export_data(
         self,
-    ) -> List[models.Airport]:
+    ) -> Tuple[List[models.Airport], List[models.Amenity]]:
         airport_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM airports""")
         )
+        amenity_task = asyncio.create_task(self.__pool.fetch("""SELECT * FROM amenities"""))
 
         airports = [models.Airport.model_validate(dict(a)) for a in await airport_task]
+        amenities = [models.Amenity.model_validate(dict(a)) for a in await amenity_task]
 
-        return airports
+        return airports, amenities
 
     async def close(self):
         await self.__pool.close()
