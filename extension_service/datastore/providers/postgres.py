@@ -64,7 +64,10 @@ class Client(datastore.Client[Config]):
         return cls(pool)
 
     async def initialize_data(
-        self, toys: List[models.Toy], airports: List[models.Airport], embeddings: List[models.Embedding]
+        self,
+        toys: List[models.Toy],
+        airports: List[models.Airport],
+        embeddings: List[models.Embedding],
     ) -> None:
         async with self.__pool.acquire() as conn:
             # If the table already exists, drop it to avoid conflicts
@@ -106,10 +109,7 @@ class Client(datastore.Client[Config]):
             # Insert all the data
             await conn.executemany(
                 """INSERT INTO products VALUES ($1, $2, $3, $4)""",
-                [
-                    (a.airport_id, a.iata, a.name, a.city, a.country)
-                    for a in airports
-                ],
+                [(a.airport_id, a.iata, a.name, a.city, a.country) for a in airports],
             )
 
             await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
@@ -128,9 +128,13 @@ class Client(datastore.Client[Config]):
                 [(e.product_id, e.content, e.embedding) for e in embeddings],
             )
 
-    async def export_data(self) -> Tuple[List[models.Toy], List[models.Airport], List[models.Embedding]]:
+    async def export_data(
+        self,
+    ) -> Tuple[List[models.Toy], List[models.Airport], List[models.Embedding]]:
         toy_task = asyncio.create_task(self.__pool.fetch("""SELECT * FROM products"""))
-        airport_task = asyncio.create_task(self.__pool.fetch("""SELECT * FROM airports"""))
+        airport_task = asyncio.create_task(
+            self.__pool.fetch("""SELECT * FROM airports""")
+        )
         emb_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM product_embeddings""")
         )
