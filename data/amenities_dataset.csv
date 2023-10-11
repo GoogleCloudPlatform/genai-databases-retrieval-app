@@ -1,0 +1,166 @@
+amenity_id,amenity_name,description,location,terminal,amenity_type,hour
+0,1300 on Fillmore,"Cocktail lounge and restaurant serving modern takes on Southern classics for breakfast, lunch and dinner.",Near Gate G13,,dining,Sunday- Saturday 7:00 am-11:00 pm
+1,24th & Mission Taco House,Fresh made-to-order Mexican entrees with beer & wine,Marketplace G (near entrance to G Gates),Ed Lee International Main Hall,dining,Sunday- Saturday 7:00 am-8:00 pm
+2,Amoura,"Mediterranean cuisine with breakfast, sandwiches, salads and flat bread pizza,","F Gates, Food Court near Gates F11 to F22",Terminal 3,dining,Sunday- Saturday 6:00 am-11:00 pm
+3,Amy's Drive Thru,"Sustainably focused café featuring organic veggie, vegan & gluten-free dishes including seasonal salads, burgers and beverages.","B Gates, near Gate B6",Harvey Milk Terminal 1,dining,Sunday- Saturday 5:00 am-11:00 pm
+4,Andalé Mexican Kitchen + Bar,"Fresh made-to-order entrees, beer and wine","D Gates, near Gate D16",Terminal 2,dining,Sunday- Saturday 4:00 am-11:30 pm
+5,Asian Box,Fresh organic Vietnamese street food with vegetarian and gluten-free dishes plus boba tea.,Near Gate G4,International Terminal G,dining,Sunday- Saturday 7:00 am-11:00 pm
+6,Bacon Bacon,"Hamburgers, fries and shakes.","F Gates, Food Court near Gates F11 to F20",Terminal 3,dining,Sunday- Saturday 5:30 am-10:00 pm
+7,Bistrot Bay Area,"Sandwiches, wraps, salads, snacks, baked items and specialty coffee",near Gate B21,Harvey Milk Terminal 1,dining,Sunday- Saturday 4:15 am-10:00 pm
+8,Black Point Cafe,"Gourmet coffee kiosk with baked goods, grab-and-go salads and sandwiches","Gates, near Gate A4",International Terminal A,dining,Sunday- Saturday 5:00 am-11:00 pm
+9,Boudin Bakery,"Fresh baked sourdough bread, sandwiches, salads, sourdough pizza and sweet treats.","Gates, near Gate A2",International Terminal A,dining,Sunday- Saturday 5:30 am-11:00 pm
+10,Bourbon Pub,Table service restaurant featuring pub fare including burgers and fries; fish and chips; and tacos; and a full bar,near Gate B7/B8,Harvey Milk Terminal 1,dining,Sunday 6:00 am-10:00 pm
+11,Bun Mee,"Vietnamese cuisine including pho noodle soup, fresh shrimp spring rolls and banh mi sandwiches.","F Gates, Food Court near Gates F11 to F22",Terminal 3,dining,Sunday- Saturday 6:00 am-10:00 pm
+12,Bun Mee,"Vietnamese cuisine including pho noodle soup, fresh shrimp spring rolls and banh mi sandwiches",near Gate B3,Harvey Milk Terminal 1,dining,Sunday- Saturday 6:00 am-10:00 pm
+13,Burger Joint,"Niman Ranch burgers, chicken burgers, veggie burgers and hot dogs","D Gates, near Gate D15",Terminal 2,dining,Sunday- Saturday 4:00 am-10:00 pm
+14,Burger King,"Burgers, chicken sandwiches, fries, onion rings, shakes and beer","E Gates, near Gate E2",Terminal 3,dining,Sunday- Saturday 4:30 am-10:30 pm
+15,Café X,"Fully automated, robotic coffee dispensing machine that offers a variety of hot and cold coffees, teas and lemonade drinks. Order ahead on the app or on-site using a mounted tablet.","F Gates, near Gate F3",Terminal 3,dining,Sunday- Saturday
+16,Café X,"Fully automated, robotic coffee dispensing machine that offers a variety of hot and cold coffees, teas and lemonade drinks. Order ahead on the app or on-site using a mounted tablet.","B Gates, near Gate B20",Harvey Milk Terminal 1,dining,Sunday- Saturday
+17,Cat Cora,"Full cocktail bar, wine, beer and a diverse small plate menu","D Gates, near Gate D9",Terminal 2,dining,Sunday- Saturday 7:00 am-10:00 pm
+18,Dogpatch Bakehouse & Caffè,"Espresso, salads, sandwiches, and pastries, beer and wine","E Gates, near Gate E6",Terminal 3,dining,Sunday- Saturday 5:00 am-11:00 pm
+19,Dogpatch Bakehouse & Caffè,"Espresso, salads, sandwiches, and pastries, beer and wine",near Gate C7,Terminal 2,dining,Sunday- Saturday 5:00 am-10:00 pm
+20,Dolores Park Cafe,"Grab-and-go sandwiches, salads, pastries, drip coffee and juices.",near Gate C5,Terminal 2,dining,Sunday- Saturday 4:30 am-8:30 pm
+21,Drake's Flyaway,,near Gate B20,Harvey Milk Terminal 1,dining,Sunday- Saturday 5:00 am-11:00 pm
+22,Farley’s Café & Lounge,,"F Gates, near Gate F22",Terminal 3,dining,Sunday- Saturday 4:30 am-11:30 pm
+23,Farmerbrown,"Chef focused southern comfort food featuring fresh local ingredients, including chicken and waffles and seasonal veggie jambalaya, along with a full bar cocktails.",near Gate C4,Terminal 2,dining,Sunday- Saturday 6:00 am-10:30 pm
+24,Fresh & Natural,"Catering truck offering American favorites for breakfast, lunch and dinner. Features daily specials and Asian and Italian cuisines.
+Advance phone orders are accepted.","Departures Level, Curbside, Near Door #1",Harvey Milk Terminal 1,dining,Sunday 6:30 am-6:30 pm
+25,Gott’s Roadside,"California cuisine, featuring fresh local seafood, salads, and mini-hot dogs for kids alongside a bar with local micro-brews","Gates, near Gate A13",International Terminal A,dining,Sunday- Saturday 7:00 am-10:30 pm
+26,GR Chocolate Boutique,"Chocolate store featuring small batch chocolates, artisan cookies, macarons, hot chocolate and coffee.",Near Gate B13,,dining,Sunday- Saturday 7:00 am-11:00 pm
+27,Green Beans Coffee,"A third wave coffee concept serving handcrafted coffee creations exclusively for travelers in airports across America. For over 25 years Green Beans Coffee has been roasted in the USA, and loved around with world.",near the entrance to G Gates,Ed Lee International Main Hall,dining,Sunday- Saturday 4:00 am-11:00 pm
+28,Green Beans Coffee,"A third wave coffee concept serving handcrafted coffee creations exclusively for travelers in airports across America. For over 25 years Green Beans Coffee has been roasted in the USA, and loved around with world.","F Gates, Food Court near Gates F11 to F22",Terminal 3,dining,Sunday- Saturday 5:00 am-10:30 pm
+29,Illy Caffè,"Specialty coffee, baked goods, paninis, salads and desserts",near Gate B9,Harvey Milk Terminal 1,dining,Sunday- Saturday 4:30 am-8:30 pm
+30,Joe & The Juice,"Coffee, espresso drinks, freshly pressed juices, smoothies and made-to-order sandwiches.","Gates, near Gate G13",International Terminal G,dining,Sunday- Saturday 7:00 am-9:00 pm
+31,Klein's Deli and Coffee Bar,"Sandwiches made-to-order, salads, espresso, beer and wine. Order ahead: 650.821.9175","F Gates, near Gate F14",Terminal 3,dining,Sunday- Saturday 5:30 am-11:00 pm
+32,Klein's Deli and Coffee Bar,"Sandwiches made-to-order, salads, espresso, beer and wine","E Gates, near Gate E7",Terminal 3,dining,Sunday- Saturday 5:00 am-10:00 pm
+33,Koi Palace Express,"Chinese cuisine including freshly made dim sum, noodle soups, roasted chicken and duck, and other rice and vegetable entrees.","F Gates, Food Court near Gates F11 to F22",Terminal 3,dining,Sunday- Saturday 7:00 am-10:00 pm
+34,Koi Palace Express,"Chinese cuisine including freshly made dim sum, noodle soups, roasted duck, and other rice and vegetable entrees.",Marketplace G (near entrance to G Gates),Ed Lee International Main Hall,dining,Sunday- Saturday 9:00 am-10:00 pm
+35,Ladle & Leaf Restaurant,"Soups, salads and sandwiches with seasonal ingredients and other tasty dishes including kid meals","F Gates, Food Court near Gates F11 to F22",Terminal 3,dining,Sunday- Saturday 6:00 am-11:00 pm
+36,Lark Creek Grill,"Table service restaurant with full bar, seafood, steak and breakfast","D Gates, near Gate D1",Terminal 2,dining,Sunday- Saturday 5:00 am-10:00 pm
+37,Little Skillet,"To-go soul food such as fried chicken, hot sandwiches, salads and breakfast items",,,dining,Sunday- Saturday 4:00 am-7:00 pm
+38,Mama Go’s Filipino Cuisine,"A variety of Filipino cuisine favorites with gluten-free and vegan-friendly offerings as well as boba drinks, beer, wine, and cocktails.",near Gate B18,Harvey Milk Terminal 1,dining,Sunday- Saturday 3:30 am-11:30 pm
+39,Manufactory Food Hall,,"Gates, near Gate A6",International Terminal A,dining,Sunday- Saturday 7:00 am-11:00 pm
+40,Marina's Café,"Coffee, pastries, breakfast items, sandwiches and salads.",Rental Car Center-Level 4,Rental Car Center,dining,Sunday- Saturday 8:00 am-8:00 pm
+41,Mission Bar & Grill,"Sandwiches, burgers, soups, salads and breakfast; full bar and table service","E Gates, near Gate E5",Terminal 3,dining,Sunday- Saturday 6:00 am-10:30 pm
+42,Mustards Bar & Grill,"A Napa Valley bistro that serves American food influenced by flavors of Asia, Europe, Africa and Latin America and beverages and cocktails. Signature dishes include Mongolian pork chops, grilled hanger steak, and barbeque ribs.",near Gate G3,International Terminal G,dining,Sunday- Saturday 7:00 am-11:00 pm
+43,Napa Farms Market,"Gourmet deli, bakery, coffee, desserts and retail sale of food products","D Gates, Retail Street",Terminal 2,dining,Sunday- Saturday 4:30 am-11:00 pm
+44,Napa Farms Market,"Gourmet deli, bakery, coffee, desserts and retail sale of food products","Gates, near Gate G3",International Terminal G,dining,Sunday- Saturday 5:30 am-1:00 am
+45,Off the Grid,Food trucks that provide a variety of cuisines.,"Departures Level, Curbside, Near Door #1",Harvey Milk Terminal 1,dining,Tuesday- Friday 11:00 am-2:00 pm
+46,Peet's Coffee,"Specialty coffee and tea, pastries, sandwiches and salads","D Gates, near Gate D7",Terminal 2,dining,Sunday- Saturday 4:30 am-10:00 pm
+47,Peet's Coffee,"Specialty coffee and tea, pastries, sandwiches and salads.","D Gates, near Gate D15",Terminal 2,dining,Sunday- Saturday 4:30 am-2:00 pm
+48,Peet's Coffee,"Specialty coffee and tea, pastries, sandwiches and salads","F Gates, near Gate F3",Terminal 3,dining,Sunday- Saturday 4:30 am-9:00 pm
+49,Peet's Coffee,"Specialty coffee and tea, pastries, sandwiches and salads.","E Gates, near Gate E3",Terminal 3,dining,Sunday- Saturday 4:30 am-10:00 pm
+50,Pick Up Stix,"Asian Fusion, featuring Bourbon Chicken, Broccoli Beef, Chow Mein, and egg rolls",Marketplace A (near entrance to A Gates),Ed Lee International Main Hall,dining,Sunday- Saturday 7:30 am-11:00 pm
+51,Pie Five Pizza Co.,Traditional custom made pizza that is ready in five minutes or less,"F Gates, Food Court near Gates F11 to F20",Terminal 3,dining,Sunday- Saturday 5:00 am-11:00 pm
+52,Potrero Grill,"American food featuring soups, salads, pizza, sandwiches, and hamburgers with beer and wine",Marketplace G (near entrance to G Gates),Ed Lee International Main Hall,dining,Sunday- Saturday 6:00 am-10:00 pm
+53,Pronto!,"Specialty local provisions, packaged and ready for departure–Pronto!","E Gates, near Gate E3",Terminal 3,dining,Sunday- Saturday 5:00 am-10:00 pm
+54,Proper Food,"Grab-and-go breakfast, sandwiches, salads and hot plates - all made fresh daily from sustainably-sourced ingredients.",Near Gate B8,Harvey Milk Terminal 1,dining,Sunday- Saturday 5:00 am-11:00 pm
+55,Proposition Chicken,"Chicken Sandwiches, salads, wings, and strips. Breakfast menu also available, along with an assortment of sides.","Terminal 3 F Gates, Food Court near Gates F11 to F22, Post-Security",Terminal 3,dining,Sunday- Saturday 6:00 am-10:30 pm
+56,Ritual Coffee,"Espresso drinks, batch-brewed coffee, cold-pressed juices, pastries, acai bowls, fresh salads, sandwiches and wraps.",Near the B Gates Security Checkpoint,,dining,Sunday- Saturday 4:00 am-8:00 pm
+57,Roasting Plant Coffee,,Marketplace A (near entrance to A Gates),Ed Lee International Main Hall,dining,Sunday- Saturday 6:00 am-11:00 pm
+58,San Francisco Giants Club House,Sports bar and restaurant featuring unique ball-park inspired menu.,"F Gates, near Gate F13",Terminal 3,dining,Sunday- Saturday 5:30 am-11:30 pm
+59,Sankaku,"Japanese cuisine including sushi, noodles, teriyaki and bento boxes; beer and sake","E Gates, near Gate E2",Terminal 3,dining,Sunday- Saturday 6:15 am-10:15 pm
+60,SF Uncork'd,"Modern wine bar serving quality wines, craft beers and small plates","F Gates, near Gate F16",Terminal 3,dining,Sunday- Saturday 7:00 am-11:00 pm
+61,Sidewalk Juice,"Cold press raw juices, smoothies, yogurt, fruit salads, acai fruit bowls and specialty coffee.","F Gates, Food Court near Gates F11 to F22",Terminal 3,dining,Sunday- Saturday 4:30 am-11:30 pm
+62,Starbird,"Crispy chicken sandwiches, chicken tenders and delicious salads.",near Gate B13,Harvey Milk Terminal 1,dining,Sunday- Saturday 4:00 am-11:30 pm
+63,Starbucks,"Beverages, coffee, pastries, desserts, sandwiches and salads",Arrivals Level,Terminal 3,dining,Sunday- Saturday 4:30 am-10:30 pm
+64,Starbucks,"Beverages, coffee, pastries, desserts, sandwiches and salads",Arrivals Lobby,Ed Lee International Main Hall,dining,Sunday- Saturday 7:15 am-8:30 pm
+65,Sweet Maple,,"D Gates, Retail Street",Terminal 2,dining,Sunday- Saturday 7:00 am-11:00 pm
+66,Tapas and Taps,"American style full bar serving small plates for breakfast, lunch and dinner.",Marketplace G (near entrance to G Gates),Ed Lee International Main Hall,dining,Sunday- Saturday 12:00 pm-8:00 pm
+67,The Little Chihuahua,A San Francisco based taqueria focusing on sustainability and wholesome Mexican food.,near Gate B3,Harvey Milk Terminal 1,dining,Sunday- Saturday 5:00 am-10:00 pm
+68,The Plant Café and Pinkberry,,"D Gates, near Gate D4",Terminal 2,dining,Sunday- Saturday 5:00 am-10:00 pm
+69,Tomokazu,"Japanese specialties including sushi, sashimi, nigiri, rice bowls, noodles and teriyaki","Gates, near Gate G7",International Terminal G,dining,Sunday- Saturday 8:00 am-11:00 pm
+70,Union Street Gastropub,"Serving breakfast, lunch and dinner; large selection of local beer and wine","E Gates, near Gate E3",Terminal 3,dining,Sunday- Saturday 7:00 am-11:00 pm
+71,Urban Tortilla,Made-to-order Mexican food,"E Gates, near Gate E9",Terminal 3,dining,Sunday- Saturday 6:00 am-10:00 pm
+72,Valencia Street Station,"Chef-focused, American comfort food and bar","Gates, near Gate A12",International Terminal A,dining,Sunday- Saturday 6:00 am-11:00 pm
+73,Vino Volo,"Wine bar with wine tasting, bottled wine and small food plates. Order ahead: 650.821.9292","D Gates, Retail Street",Terminal 2,dining,Sunday- Wednesday 9:00 am-9:00 pm
+74,Wakaba,"Japanese sushi and noodles, teriyaki and bento boxes. Beer and sake.","D Gates, near Gate D9",Terminal 2,dining,Sunday- Saturday 6:15 am-10:15 pm
+75,Wendy's,,Marketplace A (near entrance to A Gates),Ed Lee International Main Hall,dining,Sunday- Saturday 7:00 am-11:00 pm
+76,Yankee Pier,"Fresh seafood, clam chowder, lobster and crab; full bar and table service","F Gates, near Gate F4",Terminal 3,dining,Sunday- Saturday 5:30 am-11:00 pm
+77,49 Mile Market,"Magazines, books, souvenirs, sundries, snacks, beverages and grab-and-go food",near Gate C2,Terminal 2,shop,Sunday - Saturday 3:30 am-10:30 pm
+78,APM Monaco & Swarovski,Fashion and luxury jewelry--duty free,Near Gate A10,International Terminal A,shop,Sunday - Saturday 9:00 am-11:00 pm
+79,Brookstone,"Functional gadgets for health, home, office and travel",,Ed Lee International Main Hall,shop,Sunday - Saturday 6:30 am-10:30 pm
+80,Brookstone,"Functional gadgets for health, home, office and travel","D Gates, near Gate D1",Terminal 2,shop,Sunday - Saturday 6:00 am-10:00 pm
+81,Burberry,"Duty free luxury apparel, handbags, and men's and women's accessories","Gates, near Gate A1",International Terminal A,shop,Sunday - Saturday 9:00 am-11:00 pm
+82,Burberry,"Duty free luxury apparel, handbags, and men's and women's accessories","Gates, near Gate G2",International Terminal G,shop,Sunday - Saturday 7:00 am-11:00 pm
+83,Chalo,"San Francisco souvenirs including shirts, handbags and coffee mugs.","E Gates, near Gate E6",Terminal 3,shop,Sunday - Saturday 7:00 am-10:30 pm
+84,Coach,"Luxury handbags, accessories and clothing—duty free.",Between Gates A5 and A9,International Terminal A,shop,Sunday - Saturday 9:00 am-11:00 pm
+85,Compass Books,"Books, magazines and newspapers","D Gates, T2 Retail Street",Terminal 2,shop,Sunday - Saturday 6:00 am-10:00 pm
+86,Compass Books,"Books, magazines and gifts","E Gates, near Gate E1",Terminal 3,shop,Sunday - Saturday 6:00 am-10:00 pm
+87,DepARTures,"Gifts and souvenirs; books, newspapers and magazines; and snacks, beverages and grab-and-go food",near Gate B17,Harvey Milk Terminal 1,shop,Sunday - Saturday 4:30 am-11:30 pm
+88,DFS Duty Free,"Liquor, tobacco, cosmetics and fragrances--duty free","Gates, near Gate G4",International Terminal G,shop,Sunday - Saturday 7:00 am-11:00 pm
+89,DFS Duty Free,"Packaged food, liquor, tobacco and beauty items--duty free.",Between Gates A8 and A11,International Terminal A,shop,Sunday - Saturday 8:00 am-11:00 pm
+90,DFS Duty Free Galleria,"Liquor, tobacco, cosmetics, fragrances and designer boutiques–duty free","Gates, near Gate A3",International Terminal A,shop,Sunday - Saturday 8:30 am-11:00 pm
+91,DFS Duty Free Galleria,"Liquor, tobacco, cosmetics, fragrances and designer boutiques--duty free","Gates, near Gate G1",International Terminal G,shop,Sunday - Saturday 7:00 am-11:00 pm
+92,DFS Sunglasses and Watches,"Duty paid store selling fashion sunglasses and watches from brands such as Ray-Ban, Dior, Gucci, Tom Ford, Oakley, Maui Jim, Casio, Swatch and Fossil.",Between Gates A5 and A9,International Terminal A,shop,Sunday - Saturday 8:00 am-11:00 pm
+93,"DFS Watches, Jewelry & Accessories (WJA)","Luxury watches, jewelry and accessories--duty free","Gates, near Gate G1",International Terminal G,shop,Sunday - Saturday 7:00 am-11:00 pm
+94,"DFS Watches, Jewelry & Accessories (WJA)","Luxury watches, jewelry and accessories--duty free","Gates, near Gate A1",International Terminal A,shop,Sunday - Saturday 10:00 am-11:00 pm
+95,District Market,"Gifts and souvenirs; apparel, bags and accessories; books, newspapers and magazines; and healthy snacks and beverages","F Gates, at entrance to Gates F11 through F22",Terminal 3,shop,Sunday - Saturday 4:30 am-11:30 pm
+96,Fireworks,"Gift items, jewelry, paper items and accessories",Near the B Gates Security Checkpoint,Harvey Milk Terminal 1,shop,Sunday - Saturday 6:00 am-10:00 pm
+97,Freshen Up!,"Shower facilities, nap rooms, toiletries, ironing facilities and undergarments.",near the entrance to Gates G1 to G14,Ed Lee International Main Hall,shop,Sunday - Saturday All day open
+98,GR Chocolate Boutique,"Chocolate store featuring small batch chocolates, artisan cookies, macarons, hot chocolate and coffee.",Near Gate B13,Harvey Milk Terminal 1,shop,Sunday - Saturday 7:00 am-11:00 pm
+99,Gucci,"Handbags, eyewear and accessories--duty free",Near Gate A1,International Terminal A,shop,Sunday - Saturday 7:00 am-11:00 pm
+100,Gucci,"Luxury apparel, handbags and accessories-duty free","Gates, near Gate G2",International Terminal G,shop,Sunday - Saturday 7:00 am-11:00 pm
+101,Hermes,"Duty free fashion accessories, apparel and handbags","Gates, near Gate G1",International Terminal G,shop,Sunday - Saturday 7:00 am-11:00 pm
+102,Hermes,"Duty free fashion accessories, apparel and handbags","Gates, near Gate A2",International Terminal A,shop,Sunday - Saturday 9:00 am-11:00 pm
+103,Hudson News,"Magazines, newspapers, books, souvenirs and sundries",,Ed Lee International Main Hall,shop,Sunday - Saturday 6:30 am-10:30 pm
+104,Hudson News Kiosk,"Newspapers, magazines, books, souvenirs and sundries","F Gates, near Gate F2",Terminal 3,shop,Sunday - Saturday 4:00 am-10:30 pm
+105,Ingenuity,"Magazines, books, snacks, souvenirs and sundries","Gates, near Gate A12",International Terminal A,shop,Sunday - Saturday 6:00 am-11:00 pm
+106,InMotion,Technology products and accessories,"F Gates, near Gate F3",Terminal 3,shop,Sunday - Saturday 5:30 am-11:00 pm
+107,InMotion,Technology products and accessories,"E Gates, near Gate E4",Terminal 3,shop,Sunday - Saturday 6:00 am-11:00 pm
+108,InMotion,Technology products and accessories,"Gates, near Gate A6",International Terminal A,shop,Sunday - Saturday 6:00 am-11:00 pm
+109,iStore,Technology and mobile electronics and accessories.  iStore is an authorized Apple© reseller.,near Gate B3,Harvey Milk Terminal 1,shop,Sunday - Saturday 5:00 am-10:00 pm
+110,Jo Malone/Tom Ford,Cosmetics and fragrances; bath and beauty products,"E Gates, near Gate E3",Terminal 3,shop,Sunday - Saturday 5:30 am-9:30 pm
+111,Johnston & Murphy,"Men’s and women’s footwear, clothing and accessories.",near Gate B3,Harvey Milk Terminal 1,shop,Sunday - Saturday 6:00 am-10:00 pm
+112,Kiehl's,Skin and hair care products for men and women,"D Gates, T2 Retail Street",Terminal 2,shop,Sunday - Saturday 6:00 am-10:00 pm
+113,L'Occitane,"L'Occitane's brand of beauty, body, skin care and fragrance products.",near Gate B17,Harvey Milk Terminal 1,shop,Sunday - Saturday 6:00 am-9:00 pm
+114,M. Fredric,"Women's apparel, shoes and accessories","D Gates, T2 Retail Street",Terminal 2,shop,Sunday - Saturday 6:00 am-10:00 pm
+115,Mills Cargo,"Books, magazines, snacks, beverages, sundries and souvenirs",near Gate B3,Harvey Milk Terminal 1,shop,Sunday - Saturday 5:00 am-10:00 pm
+116,New Stand,"Convenience items, souvenirs and reading material","Gates, near Gate G6",International Terminal G,shop,Sunday - Saturday 6:00 am-11:30 pm
+117,New Stand,"Convenience items, souvenirs and reading material","Gates, near Gate A5",International Terminal A,shop,Sunday - Saturday 6:00 am-11:00 pm
+118,NYS Eyewear,Sunglasses and accessories for every lifestyle.,near Gate B16,Harvey Milk Terminal 1,shop,Sunday - Saturday 6:00 am-10:30 pm
+119,PACK-N-GO,"Travel accessories, luggage and clothing for the traveling public.","E Gates, Near Gate E6",Terminal 3,shop,Sunday - Saturday 6:30 am-11:00 pm
+120,Saint Laurent Boutique,Luxury handbags and accessories - Duty Free,"Gates, near Gate A1",International Terminal A,shop,Sunday - Saturday 9:00 am-11:00 pm
+121,San Francisco Chronicle News,"Books, magazines, snacks, beverages and souvenirs",Marketplace A (near entrance to A Gates),Ed Lee International Main Hall,shop,Sunday - Saturday 6:30 am-10:30 pm
+122,San Francisco Magazine News,"Books, magazines, snacks, beverages and souvenirs","F Gates, near Gate F5",Terminal 3,shop,Sunday - Saturday 5:30 am-10:00 pm
+123,San Francisco Travel News,"Newspapers, magazines, books, snacks, beverages and souvenirs","E Gates, near Gate E3",Terminal 3,shop,Sunday - Saturday 3:30 am-11:30 pm
+124,San Franpsycho,"San Franpsycho is a retail store selling apparel, accessories, and gift items with an ocean lifestyle.",Near Gate B9,Harvey Milk Terminal 1,shop,Sunday - Saturday 7:00 am-11:00 pm
+125,See's Candies,"Quality chocolates, candies and gifts","F Gates, at entrance to Gates F11 through F22",Terminal 3,shop,Sunday - Saturday 6:00 am-10:00 pm
+126,SF Uncork'd,"Wine bar selling wine, beer, small plates and wine related items","F Gates, near Gate F16",Terminal 3,shop,Sunday - Saturday 7:15 am-11:15 pm
+127,SFO News Express,"Books, magazines, newspapers, snacks and sundries","D Gates, near Gate D7",Terminal 2,shop,Sunday - Saturday 5:30 am-9:30 pm
+128,Silicon Valley News,"Magazines, books, snacks, souvenirs and sundries","F Gates, near Gate F13",Terminal 3,shop,Sunday - Saturday 6:00 am-11:30 pm
+129,Skyline News + Gifts,"Magazines, books, snacks, souvenirs and sundries","E Gates, near Gate E10",Terminal 3,shop,Sunday - Saturday 6:00 am-10:30 pm
+130,Skyline News + Gifts,"Magazines, books, snacks, souvenirs and sundries",near Gate B13,Harvey Milk Terminal 1,shop,Sunday - Saturday 5:00 am-10:30 pm
+131,SoundBalance,Technology products and accessories,", near Gate F5",Terminal 3,shop,Sunday - Saturday 6:00 am-8:00 pm
+132,Sunglass Hut,Designer sunglasses and accessories,"F Gates, near Gate F4",Terminal 3,shop,Sunday - Saturday 7:00 am-5:00 pm
+133,Sunglass Hut,Designer sunglasses and accessories,"E Gates, Near Gate E6",Terminal 3,shop,Sunday - Saturday 7:00 am-5:00 pm
+134,Sunglass Hut,Designer sunglasses and accessories,Retail Street,Terminal 2,shop,Sunday - Monday 7:00 am-3:00 pm
+135,Sunset News,"Books, magazines, newspapers, snacks, souvenirs and sundries","D Gates, near Gate D16",Terminal 2,shop,Sunday - Saturday 3:30 am-11:30 pm
+136,The Chocolate Market,"Candy store featuring Swiss chocolates, locally made truffles and assorted candies.","Gates, near Gate G4",International Terminal G,shop,Sunday - Saturday 8:00 am-11:00 pm
+137,The Chocolate Market,"Candy store featuring Swiss chocolates, locally made truffles and assorted candies.","D Gates, T2 Retail Street",Terminal 2,shop,Sunday - Saturday 7:00 am-11:00 pm
+138,The Chocolate Market,"Candy kiosk featuring Swiss, Belgian and locally made chocolates such as Canonica, Villars, Favarge, Neuhaus, Dandelion, Dick Taylor, Le Belge and XOX.",Near Gate E10,Terminal 3,shop,Sunday - Saturday 7:00 am-1:00 pm
+139,The Scoop,"Magazines, books, snacks, souvenirs, gifts and sundries",near Gate C5,Terminal 2,shop,Sunday - Saturday 4:15 am-11:00 pm
+140,TripTel,"Cell phone related products and accessories, pre-paid calling cards and SIM cards",Arrivals Lobby,Ed Lee International Main Hall,shop,Monday - Friday 8:30 am-9:30 pm
+141,Tumi,"Business and travel products including bags, wallets and tech accessories.","F Gates, at entrance to Gates F11 through F22",Terminal 3,shop,Sunday - Saturday 6:00 am-10:00 pm
+142,We are SFC,"Gifts, cards, accessories, apparel, and souvenirs from local Bay Area artists","Boarding Area D, T2 Retail Street",Terminal 2,shop,Sunday - Saturday 6:00 am-10:00 pm
+143,Zoom Travel Stores,Automated 24-hour convenience and travel product stores,"D Gates, near Gates D3 and D16",Terminal 2,shop,Sunday - Saturday
+144,Zoom Travel Stores,Automated 24-hour convenience and travel product stores,Arrivals Level,Terminal 2,shop,Sunday - Saturday All day open
+145,Zoom Travel Stores,Automated 24-hour convenience and travel product stores,"E Gates, near Gate E6",Terminal 3,shop,Sunday - Saturday
+146,Aviation Museum & Library,,,Ed Lee International Main Hall,things_to_do,Sunday - Saturday 10:00 am-4:30 pm
+147,Christian Science Reading Room,,,Terminal 2,things_to_do,Sunday - Saturday 8:00 am-4:00 pm
+148,Kids' Spot,,,Terminal 3,things_to_do,Sunday - Saturday
+149,Kids' Spot,,,Terminal 2,things_to_do,Sunday - Saturday
+150,Kids' Spot,,,Harvey Milk Terminal 1,things_to_do,Sunday - Saturday
+151,Kids' Spot,,,Terminal 3,things_to_do,Sunday - Monday
+152,Kids' Spot,,,Terminal 3,things_to_do,Sunday - Saturday
+153,Kids' Spot,,,Harvey Milk Terminal 1,things_to_do,Sunday - Saturday
+154,Outdoor Terrace,,,International Terminal G,things_to_do,Sunday - Saturday 7:00 am-11:30 pm
+155,SFO Museum Exhibits,,,Ed Lee International Main Hall,things_to_do,
+156,SFO Museum Exhibits,,,Terminal 2,things_to_do,
+157,SFO Museum Exhibits,,,Terminal 3,things_to_do,
+158,SFO Museum Exhibits,,,Harvey Milk Terminal 1,things_to_do,
+159,Shower Facilities & Nap Rooms,"Freshen Up! offers nap rooms, shower facilities, toiletries, ironing facilities and undergarments",,Ed Lee International Main Hall,things_to_do,
+160,SkyTerrace,,,Terminal 2,things_to_do,Sunday - Monday 10:00 am-6:00 pm
+161,Video Arts,,,Ed Lee International Main Hall,things_to_do,Sunday - Saturday 7:00 am-10:00 pm
+162,Yoga Room,,,Terminal 2,things_to_do,Sunday - Saturday 7:30 am-10:30 pm
+163,Yoga Room,,,Terminal 3,things_to_do,Sunday - Saturday 7:30 am-10:30 pm
