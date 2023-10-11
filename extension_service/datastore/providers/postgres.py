@@ -108,7 +108,7 @@ class Client(datastore.Client[Config]):
             )
             # Insert all the data
             await conn.executemany(
-                """INSERT INTO products VALUES ($1, $2, $3, $4)""",
+                """INSERT INTO airports VALUES ($1, $2, $3, $4, $5)""",
                 [(a.airport_id, a.iata, a.name, a.city, a.country) for a in airports],
             )
 

@@ -28,7 +28,7 @@ async def main() -> None:
         toys = [models.Toy.model_validate(line) for line in reader]
 
     airports: List[models.Airport] = []
-    with open("../data/airports_dataset.csv", "r") as f:
+    with open("../data/airport_dataset.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")
         airports = [models.Airport.model_validate(line) for line in reader]
 
