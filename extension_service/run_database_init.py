@@ -28,7 +28,7 @@ async def main() -> None:
         airports = [models.Airport.model_validate(line) for line in reader]
 
     amenities: List[models.Amenity] = []
-    with open("../data/amenities_dataset.csv", "r") as f:
+    with open("../data/amenity_dataset.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")
         amenities = [models.Amenity.model_validate(line) for line in reader]
 

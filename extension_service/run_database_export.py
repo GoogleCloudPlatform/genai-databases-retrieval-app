@@ -38,7 +38,7 @@ async def main():
         for a in airports:
             writer.writerow(a.model_dump())
 
-    with open("../data/amenities_dataset.csv.new", "w") as f:
+    with open("../data/amenity_dataset.csv.new", "w") as f:
         col_names = [
             "amenity_id",
             "amenity_name",
