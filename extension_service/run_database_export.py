@@ -56,7 +56,18 @@ async def main():
             writer.writerow(a.model_dump())
 
     with open("../data/flights_dataset.csv.new", "w") as f:
-        col_names = ['id', 'airline', 'flight_number', 'origin_airport', 'destination_airport', 'departure_time', 'arrival_time', 'departure_gate', 'arrival_gate', 'date']
+        col_names = [
+            "id",
+            "airline",
+            "flight_number",
+            "origin_airport",
+            "destination_airport",
+            "departure_time",
+            "arrival_time",
+            "departure_gate",
+            "arrival_gate",
+            "date",
+        ]
         writer = csv.DictWriter(f, col_names, delimiter=",")
         writer.writeheader()
         for t in flights:
