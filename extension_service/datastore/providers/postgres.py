@@ -71,9 +71,9 @@ class Client(datastore.Client[Config]):
         flights: List[models.Flight],
     ) -> None:
         async with self.__pool.acquire() as conn:
-			# If the table already exists, drop it to avoid conflicts
+            # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS flights CASCADE")
-			# Create a new table
+            # Create a new table
             await conn.execute(
                 """
                 CREATE TABLE flights(
@@ -89,12 +89,23 @@ class Client(datastore.Client[Config]):
                     date DATE
                 )
                 """
-			)
-             # Insert all the data
+            )
+            # Insert all the data
             await conn.executemany(
                 """INSERT INTO flights VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)""",
                 [
-                    (f.id, f.airline, f.flight_number, f.origin_airport, f.destination_airport, f.departure_time, f.arrival_time, f.departure_gate, f.arrival_gate, datetime.datetime.strptime(f.date, '%Y-%m-%d').date())
+                    (
+                        f.id,
+                        f.airline,
+                        f.flight_number,
+                        f.origin_airport,
+                        f.destination_airport,
+                        f.departure_time,
+                        f.arrival_time,
+                        f.departure_gate,
+                        f.arrival_gate,
+                        datetime.datetime.strptime(f.date, "%Y-%m-%d").date(),
+                    )
                     for f in flights
                 ],
             )

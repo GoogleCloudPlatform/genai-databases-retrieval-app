@@ -20,6 +20,7 @@ from typing import List
 from numpy import float32
 from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
 
+
 class Flight(BaseModel):
     id: str
     airline: str
