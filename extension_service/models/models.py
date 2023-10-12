@@ -17,7 +17,6 @@ import ast
 from numpy import float32
 from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
 
-
 class Airport(BaseModel):
     id: int
     iata: str
@@ -45,3 +44,15 @@ class Amenity(BaseModel):
             v = ast.literal_eval(v)
             v = [float32(f) for f in v]
         return v
+
+class Flight(BaseModel):
+    id: str
+    airline: str
+    flight_number: str
+    origin_airport: str
+    destination_airport: str
+    departure_time: str
+    arrival_time: str
+    departure_gate: str
+    arrival_gate: str
+    date: str
