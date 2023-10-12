@@ -1,0 +1,71 @@
+2023-10-12 12:55:50.763 EDT [29543] LOG:  starting PostgreSQL 14.9 (Homebrew) on aarch64-apple-darwin22.4.0, compiled by Apple clang version 14.0.3 (clang-1403.0.22.14.1), 64-bit
+2023-10-12 12:55:50.770 EDT [29543] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2023-10-12 12:55:50.770 EDT [29543] LOG:  listening on IPv6 address "::1", port 5432
+2023-10-12 12:55:50.771 EDT [29543] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2023-10-12 12:55:50.776 EDT [29545] LOG:  database system was shut down at 2023-10-12 12:55:45 EDT
+2023-10-12 12:55:50.778 EDT [29543] LOG:  database system is ready to accept connections
+2023-10-12 13:09:24.035 EDT [31774] FATAL:  role "postgres" does not exist
+2023-10-12 13:09:46.971 EDT [31840] FATAL:  database "duwenxin" does not exist
+2023-10-12 13:12:11.064 EDT [32134] ERROR:  extension "vector" has no installation script nor update path for version "0.4.1"
+2023-10-12 13:12:11.064 EDT [32134] STATEMENT:  CREATE EXTENSION IF NOT EXISTS vector SCHEMA public VERSION '0.4.1';
+2023-10-12 13:12:20.057 EDT [32161] ERROR:  extension "vector" has no installation script nor update path for version "0.4.1"
+2023-10-12 13:12:20.057 EDT [32161] STATEMENT:  CREATE EXTENSION IF NOT EXISTS vector SCHEMA public VERSION '0.4.1';
+2023-10-12 13:12:51.390 EDT [32226] ERROR:  extension "vector" has no installation script nor update path for version "0.4.1"
+2023-10-12 13:12:51.390 EDT [32226] STATEMENT:  CREATE EXTENSION IF NOT EXISTS vector SCHEMA public VERSION '0.4.1';
+2023-10-12 13:13:42.943 EDT [32341] ERROR:  syntax error at or near "airline" at character 67
+2023-10-12 13:13:42.943 EDT [32341] STATEMENT:  
+									CREATE TABLE flights(
+										id VARCHAR(1024)
+										airline: str
+										flight_number: str
+										origin_airport: str
+										destination_airport: str
+										departure_time: str
+										arrival_time: str
+										departure_gate: str
+										arrival_gate: str
+										date: str
+									)
+									
+2023-10-12 13:26:45.522 EDT [34208] ERROR:  syntax error at or near "airline" at character 67
+2023-10-12 13:26:45.522 EDT [34208] STATEMENT:  
+									CREATE TABLE flights(
+										id VARCHAR(1024)
+										airline: str
+										flight_number: str
+										origin_airport: str
+										destination_airport: str
+										departure_time: str
+										arrival_time: str
+										departure_gate: str
+										arrival_gate: str
+										date: str
+									)
+									
+2023-10-12 13:29:31.076 EDT [34547] ERROR:  syntax error at or near "DESCRIBE" at character 1
+2023-10-12 13:29:31.076 EDT [34547] STATEMENT:  DESCRIBE flights;;
+2023-10-12 13:29:34.408 EDT [34570] ERROR:  syntax error at or near "DESCRIBE" at character 1
+2023-10-12 13:29:34.408 EDT [34570] STATEMENT:  DESCRIBE flights;
+2023-10-12 13:57:07.637 EDT [39482] ERROR:  relation "flights" already exists
+2023-10-12 13:57:07.637 EDT [39482] STATEMENT:  
+									CREATE TABLE flights(
+										id VARCHAR(1024) PRIMARY KEY,
+										airline VARCHAR(256),
+										flight_number VARCHAR(256),
+										origin_airport VARCHAR(256),
+										destination_airport VARCHAR(256),
+										departure_time TIME,
+										arrival_time TIME,
+										departure_gate VARCHAR(256),
+										arrival_gate VARCHAR(256),
+										date DATE
+									)
+									
+2023-10-12 15:46:37.196 EDT [56664] ERROR:  relation "products" does not exist at character 13
+2023-10-12 15:46:37.196 EDT [56664] STATEMENT:  INSERT INTO products VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+2023-10-12 16:09:16.822 EDT [60369] FATAL:  role "“duwenxin”" does not exist
+2023-10-12 16:09:16.972 EDT [60372] FATAL:  role "“duwenxin”" does not exist
+2023-10-12 16:10:04.620 EDT [60554] FATAL:  database "Postgres" does not exist
+2023-10-12 16:10:04.737 EDT [60555] FATAL:  database "Postgres" does not exist
+2023-10-16 17:32:17.436 EDT [35581] FATAL:  lock file "postmaster.pid" already exists
+2023-10-16 17:32:17.436 EDT [35581] HINT:  Is another postmaster (PID 8868) running in data directory "/Users/duwenxin/postgres"?
