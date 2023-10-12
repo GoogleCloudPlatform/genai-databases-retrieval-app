@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import asyncio
+import datetime
 from ipaddress import IPv4Address, IPv6Address
 from typing import Any, Dict, List, Literal
 
@@ -69,6 +70,36 @@ class Client(datastore.Client[Config]):
         amenities: list[models.Amenity],
         flights: List[models.Flight],
     ) -> None:
+        async with self.__pool.acquire() as conn:
+			# If the table already exists, drop it to avoid conflicts
+            await conn.execute("DROP TABLE IF EXISTS flights CASCADE")
+			# Create a new table
+            await conn.execute(
+                """
+                CREATE TABLE flights(
+                    id VARCHAR(1024) PRIMARY KEY,
+                    airline VARCHAR(256),
+                    flight_number VARCHAR(256),
+                    origin_airport VARCHAR(256),
+                    destination_airport VARCHAR(256),
+                    departure_time VARCHAR(256),
+                    arrival_time VARCHAR(256),
+                    departure_gate VARCHAR(256),
+                    arrival_gate VARCHAR(256),
+                    date DATE
+                )
+                """
+			)
+             # Insert all the data
+            await conn.executemany(
+                """INSERT INTO flights VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)""",
+                [
+                    (f.id, f.airline, f.flight_number, f.origin_airport, f.destination_airport, f.departure_time, f.arrival_time, f.departure_gate, f.arrival_gate, datetime.datetime.strptime(f.date, '%Y-%m-%d').date())
+                    for f in flights
+                ],
+            )
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+
         async with self.__pool.acquire() as conn:
             # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS flights CASCADE")
