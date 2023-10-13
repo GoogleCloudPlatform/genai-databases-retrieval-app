@@ -98,7 +98,7 @@ class Client(datastore.Client[Config]):
             await conn.execute(
                 """
                 CREATE TABLE airports(
-                  airport_id VARCHAR(1024) PRIMARY KEY,
+                  airport_id INT PRIMARY KEY,
                   iata TEXT,
                   name TEXT,
                   city TEXT,

@@ -28,7 +28,7 @@ class Toy(BaseModel):
 
 
 class Airport(BaseModel):
-    airport_id: str
+    airport_id: int
     iata: str
     name: str
     city: str
