@@ -98,7 +98,7 @@ class Client(datastore.Client[Config]):
             await conn.execute(
                 """
                 CREATE TABLE airports(
-                  airport_id INT PRIMARY KEY,
+                  id INT PRIMARY KEY,
                   iata TEXT,
                   name TEXT,
                   city TEXT,
@@ -109,7 +109,7 @@ class Client(datastore.Client[Config]):
             # Insert all the data
             await conn.executemany(
                 """INSERT INTO airports VALUES ($1, $2, $3, $4, $5)""",
-                [(a.airport_id, a.iata, a.name, a.city, a.country) for a in airports],
+                [(a.id, a.iata, a.name, a.city, a.country) for a in airports],
             )
 
             await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")

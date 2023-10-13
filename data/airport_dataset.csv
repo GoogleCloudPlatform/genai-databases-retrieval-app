@@ -1,4 +1,4 @@
-airport_id,iata,name,city,country
+id,iata,name,city,country
 0,GKA,Goroka Airport,Goroka,Papua New Guinea
 1,MAG,Madang Airport,Madang,Papua New Guinea
 2,HGU,Mount Hagen Kagamuga Airport,Mount Hagen,Papua New Guinea

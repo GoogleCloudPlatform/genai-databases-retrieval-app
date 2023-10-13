@@ -39,7 +39,7 @@ async def main():
             writer.writerow(t.model_dump())
 
     with open("../data/airport_dataset.csv.new", "w") as f:
-        col_names = ["airport_id", "iata", "name", "city", "country"]
+        col_names = ["id", "iata", "name", "city", "country"]
         writer = csv.DictWriter(f, col_names, delimiter=",")
         writer.writeheader()
         for a in airports:
