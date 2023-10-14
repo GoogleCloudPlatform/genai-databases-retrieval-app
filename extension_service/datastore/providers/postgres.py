@@ -95,12 +95,12 @@ class Client(datastore.Client[Config]):
             await conn.execute(
                 """
                 CREATE TABLE amenities(
-                  amenity_id VARCHAR(1024) PRIMARY KEY,
-                  amenity_name TEXT,
+                  id INT PRIMARY KEY,
+                  name TEXT,
                   description TEXT,
                   location TEXT,
                   terminal TEXT,
-                  amenity_type TEXT,
+                  category TEXT,
                   hour TEXT
                 )
                 """
@@ -110,12 +110,12 @@ class Client(datastore.Client[Config]):
                 """INSERT INTO amenities VALUES ($1, $2, $3, $4, $5, $6, $7)""",
                 [
                     (
-                        a.amenity_id,
-                        a.amenity_name,
+                        a.id,
+                        a.name,
                         a.description,
                         a.location,
                         a.terminal,
-                        a.amenity_type,
+                        a.category,
                         a.hour,
                     )
                     for a in amenities

@@ -40,12 +40,12 @@ async def main():
 
     with open("../data/amenity_dataset.csv.new", "w") as f:
         col_names = [
-            "amenity_id",
-            "amenity_name",
+            "id",
+            "name",
             "description",
             "location",
             "terminal",
-            "amenity_type",
+            "category",
             "hour",
         ]
         writer = csv.DictWriter(f, col_names, delimiter=",")

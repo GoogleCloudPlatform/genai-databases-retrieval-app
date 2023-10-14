@@ -24,10 +24,10 @@ class Airport(BaseModel):
 
 
 class Amenity(BaseModel):
-    amenity_id: str
-    amenity_name: str
+    id: int
+    name: str
     description: str
     location: str
     terminal: str
-    amenity_type: str
+    category: str
     hour: str

@@ -1,4 +1,4 @@
-amenity_id,amenity_name,description,location,terminal,amenity_type,hour
+id,name,description,location,terminal,category,hour
 0,1300 on Fillmore,"Cocktail lounge and restaurant serving modern takes on Southern classics for breakfast, lunch and dinner.",Near Gate G13,,dining,Sunday- Saturday 7:00 am-11:00 pm
 1,24th & Mission Taco House,Fresh made-to-order Mexican entrees with beer & wine,Marketplace G (near entrance to G Gates),Ed Lee International Main Hall,dining,Sunday- Saturday 7:00 am-8:00 pm
 2,Amoura,"Mediterranean cuisine with breakfast, sandwiches, salads and flat bread pizza,","F Gates, Food Court near Gates F11 to F22",Terminal 3,dining,Sunday- Saturday 6:00 am-11:00 pm
