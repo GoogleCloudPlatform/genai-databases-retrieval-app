@@ -47,6 +47,7 @@ async def main():
             "terminal",
             "category",
             "hour",
+            "embedding",
         ]
         writer = csv.DictWriter(f, col_names, delimiter=",")
         writer.writeheader()

@@ -24,6 +24,8 @@ class Airport(BaseModel):
 
 
 class Amenity(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     id: int
     name: str
     description: str

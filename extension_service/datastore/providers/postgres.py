@@ -101,13 +101,14 @@ class Client(datastore.Client[Config]):
                   location TEXT,
                   terminal TEXT,
                   category TEXT,
-                  hour TEXT
+                  hour TEXT,
+                  embedding vector(768)
                 )
                 """
             )
             # Insert all the data
             await conn.executemany(
-                """INSERT INTO amenities VALUES ($1, $2, $3, $4, $5, $6, $7)""",
+                """INSERT INTO amenities VALUES ($1, $2, $3, $4, $5, $6, $7, $8)""",
                 [
                     (
                         a.id,
@@ -117,6 +118,7 @@ class Client(datastore.Client[Config]):
                         a.terminal,
                         a.category,
                         a.hour,
+                        a.embedding
                     )
                     for a in amenities
                 ],
