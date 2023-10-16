@@ -13,9 +13,11 @@
 # limitations under the License.
 
 import ast
-
 from numpy import float32
 from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
+import datetime
+from decimal import Decimal
+from typing import List
 
 class Airport(BaseModel):
     id: int
@@ -46,13 +48,12 @@ class Amenity(BaseModel):
         return v
 
 class Flight(BaseModel):
-    id: str
+    id: int
     airline: str
     flight_number: str
     origin_airport: str
     destination_airport: str
-    departure_time: str
-    arrival_time: str
+    departure_time: datetime.time
+    arrival_time: datetime.time
     departure_gate: str
     arrival_gate: str
-    date: str

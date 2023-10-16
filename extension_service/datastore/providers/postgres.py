@@ -77,15 +77,15 @@ class Client(datastore.Client[Config]):
             await conn.execute(
                 """
                 CREATE TABLE flights(
-                    id VARCHAR(1024) PRIMARY KEY,
-                    airline VARCHAR(256),
-                    flight_number VARCHAR(256),
-                    origin_airport VARCHAR(256),
-                    destination_airport VARCHAR(256),
-                    departure_time VARCHAR(256),
-                    arrival_time VARCHAR(256),
-                    departure_gate VARCHAR(256),
-                    arrival_gate VARCHAR(256),
+                    id INTEGER PRIMARY KEY,
+                    airline TEXT,
+                    flight_number TEXT,
+                    origin_airport TEXT,
+                    destination_airport TEXT,
+                    departure_time TIME,
+                    arrival_time TIME,
+                    departure_gate TEXT,
+                    arrival_gate TEXT,
                     date DATE
                 )
                 """
@@ -104,7 +104,7 @@ class Client(datastore.Client[Config]):
                         f.arrival_time,
                         f.departure_gate,
                         f.arrival_gate,
-                        datetime.datetime.strptime(f.date, "%Y-%m-%d").date(),
+                        f.date,
                     )
                     for f in flights
                 ],
