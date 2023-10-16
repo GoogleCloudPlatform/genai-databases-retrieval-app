@@ -27,6 +27,14 @@ class Toy(BaseModel):
     list_price: Decimal
 
 
+class Airport(BaseModel):
+    id: int
+    iata: str
+    name: str
+    city: str
+    country: str
+
+
 class Embedding(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

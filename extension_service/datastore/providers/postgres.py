@@ -64,7 +64,10 @@ class Client(datastore.Client[Config]):
         return cls(pool)
 
     async def initialize_data(
-        self, toys: List[models.Toy], embeddings: List[models.Embedding]
+        self,
+        toys: List[models.Toy],
+        airports: List[models.Airport],
+        embeddings: List[models.Embedding],
     ) -> None:
         async with self.__pool.acquire() as conn:
             # If the table already exists, drop it to avoid conflicts
@@ -89,6 +92,26 @@ class Client(datastore.Client[Config]):
                 ],
             )
 
+            # If the table already exists, drop it to avoid conflicts
+            await conn.execute("DROP TABLE IF EXISTS airports CASCADE")
+            # Create a new table
+            await conn.execute(
+                """
+                CREATE TABLE airports(
+                  id INT PRIMARY KEY,
+                  iata TEXT,
+                  name TEXT,
+                  city TEXT,
+                  country TEXT
+                )
+                """
+            )
+            # Insert all the data
+            await conn.executemany(
+                """INSERT INTO airports VALUES ($1, $2, $3, $4, $5)""",
+                [(a.id, a.iata, a.name, a.city, a.country) for a in airports],
+            )
+
             await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
             await conn.execute("DROP TABLE IF EXISTS product_embeddings")
             await conn.execute(
@@ -105,16 +128,22 @@ class Client(datastore.Client[Config]):
                 [(e.product_id, e.content, e.embedding) for e in embeddings],
             )
 
-    async def export_data(self) -> Tuple[List[models.Toy], List[models.Embedding]]:
+    async def export_data(
+        self,
+    ) -> Tuple[List[models.Toy], List[models.Airport], List[models.Embedding]]:
         toy_task = asyncio.create_task(self.__pool.fetch("""SELECT * FROM products"""))
+        airport_task = asyncio.create_task(
+            self.__pool.fetch("""SELECT * FROM airports""")
+        )
         emb_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM product_embeddings""")
         )
 
         toys = [models.Toy.model_validate(dict(t)) for t in await toy_task]
+        airports = [models.Airport.model_validate(dict(a)) for a in await airport_task]
         embeddings = [models.Embedding.model_validate(dict(v)) for v in await emb_task]
 
-        return toys, embeddings
+        return toys, airports, embeddings
 
     async def semantic_similarity_search(
         self, query_embedding: List[float], similarity_threshold: float, top_k: int

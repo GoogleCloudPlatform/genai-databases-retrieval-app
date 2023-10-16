@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .models import Embedding, Toy
+from .models import Airport, Embedding, Toy
