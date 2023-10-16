@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest
+
 from .mocks import create_postgres_provider
 
 
@@ -20,5 +21,7 @@ from .mocks import create_postgres_provider
 async def test_get_airport():
     mockCl = await create_postgres_provider()
     res = await mockCl.get_airport(1)
-    expected_res = [{'iata': 'FOO', 'name': 'Foo Bar', 'city': 'baz', 'country': 'bundy'}]
+    expected_res = [
+        {"iata": "FOO", "name": "Foo Bar", "city": "baz", "country": "bundy"}
+    ]
     assert res == expected_res
