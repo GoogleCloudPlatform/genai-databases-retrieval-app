@@ -118,7 +118,7 @@ class Client(datastore.Client[Config]):
                         a.terminal,
                         a.category,
                         a.hour,
-                        a.embedding
+                        a.embedding,
                     )
                     for a in amenities
                 ],
