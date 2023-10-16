@@ -25,8 +25,8 @@ class Flight(BaseModel):
     id: int
     airline: str
     flight_number: str
-    origin_airport: str
-    destination_airport: str
+    departure_airport: str
+    arrival_airport: str
     departure_time: datetime.time
     arrival_time: datetime.time
     departure_gate: str

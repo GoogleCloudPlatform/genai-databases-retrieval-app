@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import asyncio
-import datetime
 from ipaddress import IPv4Address, IPv6Address
 from typing import Any, Dict, List, Literal
 
@@ -80,8 +79,8 @@ class Client(datastore.Client[Config]):
                     id INTEGER PRIMARY KEY,
                     airline TEXT,
                     flight_number TEXT,
-                    origin_airport TEXT,
-                    destination_airport TEXT,
+                    departure_airport TEXT,
+                    arrival_airport TEXT,
                     departure_time TIME,
                     arrival_time TIME,
                     departure_gate TEXT,
@@ -98,8 +97,8 @@ class Client(datastore.Client[Config]):
                         f.id,
                         f.airline,
                         f.flight_number,
-                        f.origin_airport,
-                        f.destination_airport,
+                        f.departure_airport,
+                        f.arrival_airport,
                         f.departure_time,
                         f.arrival_time,
                         f.departure_gate,
@@ -260,6 +259,39 @@ class Client(datastore.Client[Config]):
 
         results = [dict(r) for r in results]
         return results
+    
+    async def get_flights(self, flight_id: int) -> List[Dict[str, Any]]:
+        results = await self.__pool.fetch(
+            """
+                SELECT * FROM flights
+                WHERE id = $1
+            """,
+            flight_id,
+            timeout=10
+        )
+        results = [dict(r) for r in results]
+        return results
+        
+    async def search_flights_by_airport(self, departure_airport, arrival_airport) -> List[Dict[str, Any]]:
+        # Check if either parameter is null.
+        if departure_airport is '':
+            departure_airport = '%'
+        if arrival_airport is '':
+            arrival_airport = '%'
+
+        results = await self.__pool.fetch(
+            """
+                SELECT * FROM flights
+                WHERE departure_airport LIKE $1
+                AND arrival_airport LIKE $2
+            """,
+            departure_airport,
+            arrival_airport,
+            timeout=10
+        )
+        results = [dict(r) for r in results]
+        return results
+    
 
     async def close(self):
         await self.__pool.close()
