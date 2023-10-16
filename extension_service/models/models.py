@@ -33,3 +33,12 @@ class Amenity(BaseModel):
     terminal: str
     category: str
     hour: str
+    content: str
+    embedding: List[float32]
+
+    @field_validator("embedding", mode="before")
+    def validate(cls, v):
+        if type(v) == str:
+            v = ast.literal_eval(v)
+            v = [float32(f) for f in v]
+        return v
