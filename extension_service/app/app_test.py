@@ -63,6 +63,20 @@ def test_get_amenity(app):
     assert output[0]
 
 
+def test_get_airport(app):
+    with TestClient(app) as client:
+        response = client.get(
+            "/airport",
+            params = {
+                "id":1,
+            },
+        )
+    assert response.status_code == 200
+    output = response.json()
+    assert len(output) == 1
+    assert output[0]
+
+
 def test_amenities_search(app):
     with TestClient(app) as client:
         response = client.get(
