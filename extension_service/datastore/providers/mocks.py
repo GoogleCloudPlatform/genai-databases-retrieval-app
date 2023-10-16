@@ -23,6 +23,11 @@ Mock record class since there is no option to create asyncpg Record objects
 from Python code.
 """
 class MockRecord(OrderedDict):
+    """
+    Mock record class since there is no option to create asyncpg Record objects
+    from Python code.
+    """
+
     def __getitem__(self, key_or_index):
         if isinstance(key_or_index, int):
             return list(self.values())[key_or_index]
@@ -30,7 +35,7 @@ class MockRecord(OrderedDict):
         return super().__getitem__(key_or_index)
 
 
-class MockAsyncpgPool:
+class MockAsyncpgPool(asyncpg.Pool):
     async def fetch(self, query, *args) -> List[MockRecord]:
         mockRecord = MockRecord([
             ('iata', 'FOO'),
@@ -40,7 +45,7 @@ class MockAsyncpgPool:
         ])
         return [mockRecord] 
 
-async def create_postgres_provider() -> "Client":
+async def create_postgres_provider() -> postgres.Client:
     mockPool = MockAsyncpgPool
     mockCl = postgres.Client(mockPool)
     return mockCl
