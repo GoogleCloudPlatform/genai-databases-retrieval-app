@@ -49,10 +49,10 @@ def test_hello_world(app):
         assert response.json() == {"message": "Hello World"}
 
 
-def test_get_amenity(app):
+def test_get_airport(app):
     with TestClient(app) as client:
         response = client.get(
-            "/amenities",
+            "/airports",
             params={
                 "id": 1,
             },
@@ -63,10 +63,10 @@ def test_get_amenity(app):
     assert output[0]
 
 
-def test_get_airport(app):
+def test_get_amenity(app):
     with TestClient(app) as client:
         response = client.get(
-            "/airports",
+            "/amenities",
             params={
                 "id": 1,
             },
