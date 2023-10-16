@@ -12,16 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncpg
 from collections import OrderedDict
 from typing import List
-from . import postgres
 
+import asyncpg
+
+from . import postgres
 
 """
 Mock record class since there is no option to create asyncpg Record objects
 from Python code.
 """
+
+
 class MockRecord(OrderedDict):
     def __getitem__(self, key_or_index):
         if isinstance(key_or_index, int):
@@ -32,13 +35,16 @@ class MockRecord(OrderedDict):
 
 class MockAsyncpgPool:
     async def fetch(self, query, *args) -> List[MockRecord]:
-        mockRecord = MockRecord([
-            ('iata', 'FOO'),
-            ('name', 'Foo Bar'),
-            ('city', 'baz'),
-            ('country', 'bundy'),
-        ])
-        return [mockRecord] 
+        mockRecord = MockRecord(
+            [
+                ("iata", "FOO"),
+                ("name", "Foo Bar"),
+                ("city", "baz"),
+                ("country", "bundy"),
+            ]
+        )
+        return [mockRecord]
+
 
 async def create_postgres_provider() -> "Client":
     mockPool = MockAsyncpgPool
