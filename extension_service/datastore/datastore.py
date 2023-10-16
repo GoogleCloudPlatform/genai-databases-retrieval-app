@@ -74,6 +74,10 @@ class Client(ABC, Generic[C]):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
+    async def get_airport(self, id: str) -> list[Dict[str, Any]]:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
     async def close(self):
         pass
 
