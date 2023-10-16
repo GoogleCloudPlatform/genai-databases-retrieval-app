@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import mocks, postgres
+import pytest
+from .mocks import create_postgres_provider
 
-__ALL__ = [mocks, postgres]
+
+@pytest.mark.asyncio
+async def test_get_airport():
+    mockCl = await create_postgres_provider()
+    res = await mockCl.get_airport(1)
+    expected_res = [{'iata': 'FOO', 'name': 'Foo Bar', 'city': 'baz', 'country': 'bundy'}]
+    assert res == expected_res
