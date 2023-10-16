@@ -22,16 +22,16 @@ from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
 
 
 class Flight(BaseModel):
-    id: str
+    id: int
     airline: str
     flight_number: str
     origin_airport: str
     destination_airport: str
-    departure_time: str
-    arrival_time: str
+    departure_time: datetime.time
+    arrival_time: datetime.time
     departure_gate: str
     arrival_gate: str
-    date: str
+    date: datetime.date
 
 class Airport(BaseModel):
     id: int
