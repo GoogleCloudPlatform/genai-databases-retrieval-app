@@ -244,7 +244,7 @@ class Client(datastore.Client[Config]):
         airports = [models.Airport.model_validate(dict(r)) for r in results]
         return airports
 
-    async def get_airport(self, id: str) -> List[Dict[str, Any]]:
+    async def get_airport(self, id: int) -> List[Dict[str, Any]]:
         results = await self.__pool.fetch(
             """
               SELECT iata, name, city, country FROM airports WHERE id=$1
