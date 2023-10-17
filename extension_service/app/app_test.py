@@ -47,3 +47,17 @@ def test_hello_world(app):
         response = client.get("/")
         assert response.status_code == 200
         assert response.json() == {"message": "Hello World"}
+
+
+def test_get_amenity(app):
+    with TestClient(app) as client:
+        response = client.get(
+            "/amenities",
+            params={
+                "id": 1,
+            },
+        )
+    assert response.status_code == 200
+    output = response.json()
+    assert len(output) == 1
+    assert output[0]

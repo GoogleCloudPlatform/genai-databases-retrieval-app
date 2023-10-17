@@ -141,5 +141,17 @@ class Client(datastore.Client[Config]):
 
         return airports, amenities
 
+    async def get_amenity(self, id: int) -> List[Dict[str, Any]]:
+        results = await self.__pool.fetch(
+            """
+                SELECT name, description, location, terminal, category, hour
+                FROM amenities WHERE id=$1
+            """,
+            id,
+        )
+
+        results = [dict(r) for r in results]
+        return results
+
     async def close(self):
         await self.__pool.close()

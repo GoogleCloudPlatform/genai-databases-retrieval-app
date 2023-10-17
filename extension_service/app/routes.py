@@ -21,3 +21,10 @@ routes = APIRouter()
 @routes.get("/")
 async def root():
     return {"message": "Hello World"}
+
+
+@routes.get("/amenities")
+async def get_amenity(id: int, request: Request):
+    ds: datastore.Client = request.app.state.datastore
+    results = await ds.get_amenity(id)
+    return results

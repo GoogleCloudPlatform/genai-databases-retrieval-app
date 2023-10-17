@@ -59,6 +59,10 @@ class Client(ABC, Generic[C]):
         pass
 
     @abstractmethod
+    async def get_amenity(self, id: int) -> List[Dict[str, Any]]:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
     async def close(self):
         pass
 
