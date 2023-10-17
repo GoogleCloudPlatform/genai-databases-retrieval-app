@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from collections import OrderedDict
-from typing import List
+from typing import List, cast
 
 import asyncpg
 
@@ -35,7 +35,7 @@ class MockRecord(OrderedDict):
 
 
 class MockAsyncpgPool(asyncpg.Pool):
-    async def fetch(self, query, *args) -> List[MockRecord]:
+    async def fetch(self, query, *args):
         mockRecord = MockRecord(
             [
                 ("iata", "FOO"),
@@ -48,6 +48,6 @@ class MockAsyncpgPool(asyncpg.Pool):
 
 
 async def create_postgres_provider() -> postgres.Client:
-    mockPool = MockAsyncpgPool
+    mockPool = cast(asyncpg.Pool, MockAsyncpgPool)
     mockCl = postgres.Client(mockPool)
     return mockCl
