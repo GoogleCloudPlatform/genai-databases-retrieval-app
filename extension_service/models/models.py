@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pydantic import BaseModel
+import ast
+from typing import List
+
+from numpy import float32
+from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
 
 
 class Airport(BaseModel):

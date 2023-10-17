@@ -14,7 +14,7 @@
 
 import asyncio
 from ipaddress import IPv4Address, IPv6Address
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Tuple
 
 import asyncpg
 from pgvector.asyncpg import register_vector
