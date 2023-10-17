@@ -12,14 +12,55 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import OrderedDict
+from typing import List, cast
+
+import asyncpg
 import pytest
 
-from .mocks import create_postgres_provider
+from . import postgres
+
+
+class MockRecord(OrderedDict):
+    """
+    Mock record class since there is no option to create asyncpg Record objects
+    from Python code.
+    """
+
+    def __getitem__(self, key_or_index):
+        if isinstance(key_or_index, int):
+            return list(self.values())[key_or_index]
+
+        return super().__getitem__(key_or_index)
+
+
+class MockAsyncpgPool(asyncpg.Pool):
+    def __init__(self, mockRecord: List[MockRecord]):
+        self.mockRecord = mockRecord
+
+    async def fetch(self, query, *args):
+        return self.mockRecord
+
+
+async def create_postgres_provider(mockRecord: List[MockRecord]) -> postgres.Client:
+    mockPool = cast(asyncpg.Pool, MockAsyncpgPool(mockRecord))
+    mockCl = postgres.Client(mockPool)
+    return mockCl
 
 
 @pytest.mark.asyncio
 async def test_get_airport():
-    mockCl = await create_postgres_provider()
+    mockRecord = [
+        MockRecord(
+            [
+                ("iata", "FOO"),
+                ("name", "Foo Bar"),
+                ("city", "baz"),
+                ("country", "bundy"),
+            ]
+        )
+    ]
+    mockCl = await create_postgres_provider(mockRecord)
     res = await mockCl.get_airport(1)
     expected_res = [
         {"iata": "FOO", "name": "Foo Bar", "city": "baz", "country": "bundy"}
