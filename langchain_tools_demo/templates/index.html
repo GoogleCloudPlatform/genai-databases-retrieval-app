@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Database Query Extension</title>
+    <link rel="shortcut icon" type="image/jpg" href="/static/favicon.png"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/index.css">
+
+</head>
+
+<body>
+    <div class="container">
+        <div class="chat-header">
+            <h1>Database Query Extension</h1>
+        </div>
+        <div class="chat-wrapper">
+            <div class="chat-content">
+                {# Add Chat history #}
+                {% if messages %}
+                    {% for message in messages %}
+                    <span class="chat-bubble {{ message["role"] }}">{{ message["content"] | safe }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="chat-bar">
+                <input type="text" class="ip-msg" placeholder="type here...">
+                <span class="btn-group">
+                    <span class="material-symbols-outlined">
+                        send
+                    </span>
+                </span>
+            </div>
+        </div>
+    </div>
+</body>
+<script
+  src="https://code.jquery.com/jquery-3.7.1.slim.min.js"
+  integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8="
+  crossorigin="anonymous"></script>
+<script src="/static/index.js"></script>
+
+</html>

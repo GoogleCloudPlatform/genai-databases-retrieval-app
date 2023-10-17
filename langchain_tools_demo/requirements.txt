@@ -1,3 +1,10 @@
-google-cloud-aiplatform==1.34.0
+# Flask==2.1.0
+google-cloud-aiplatform==1.35.0
+# gunicorn==20.1.0
 langchain==0.0.310
-streamlit==1.27.2
+markdown==3.5
+# Werkzeug==2.3.7
+fastapi==0.101.1
+uvicorn[standard]==0.23.2
+jinja2
+itsdangerous==2.1.2
