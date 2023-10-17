@@ -13,10 +13,7 @@
 # limitations under the License.
 
 
-from fastapi import APIRouter, Request
-from langchain.embeddings.base import Embeddings
-
-import datastore
+from fastapi import APIRouter
 
 routes = APIRouter()
 
@@ -24,14 +21,3 @@ routes = APIRouter()
 @routes.get("/")
 async def root():
     return {"message": "Hello World"}
-
-
-@routes.get("/semantic_similarity_search")
-async def semantic_similarity_search(query: str, top_k: int, request: Request):
-    ds: datastore.Client = request.app.state.datastore
-
-    embed_service: Embeddings = request.app.state.embed_service
-    query_embedding = embed_service.embed_query(query)
-
-    results = await ds.semantic_similarity_search(query_embedding, 0.7, top_k)
-    return results

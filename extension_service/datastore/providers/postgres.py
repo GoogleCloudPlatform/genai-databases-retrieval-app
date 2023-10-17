@@ -14,7 +14,7 @@
 
 import asyncio
 from ipaddress import IPv4Address, IPv6Address
-from typing import Any, Dict, List, Literal, Tuple
+from typing import Any, Dict, List, Literal
 
 import asyncpg
 from pgvector.asyncpg import register_vector
@@ -65,33 +65,9 @@ class Client(datastore.Client[Config]):
 
     async def initialize_data(
         self,
-        toys: List[models.Toy],
         airports: List[models.Airport],
-        embeddings: List[models.Embedding],
     ) -> None:
         async with self.__pool.acquire() as conn:
-            # If the table already exists, drop it to avoid conflicts
-            await conn.execute("DROP TABLE IF EXISTS products CASCADE")
-            # Create a new table
-            await conn.execute(
-                """
-                CREATE TABLE products(
-                  product_id VARCHAR(1024) PRIMARY KEY,
-                  product_name TEXT,
-                  description TEXT,
-                  list_price NUMERIC
-                )
-                """
-            )
-            # Insert all the data
-            await conn.executemany(
-                """INSERT INTO products VALUES ($1, $2, $3, $4)""",
-                [
-                    (t.product_id, t.product_name, t.description, t.list_price)
-                    for t in toys
-                ],
-            )
-
             # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS airports CASCADE")
             # Create a new table
@@ -112,66 +88,16 @@ class Client(datastore.Client[Config]):
                 [(a.id, a.iata, a.name, a.city, a.country) for a in airports],
             )
 
-            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
-            await conn.execute("DROP TABLE IF EXISTS product_embeddings")
-            await conn.execute(
-                """
-                CREATE TABLE product_embeddings(
-                    product_id VARCHAR(1024) NOT NULL REFERENCES products(product_id),
-                    content TEXT,
-                    embedding vector(768))
-                """
-            )
-            # Insert all the data
-            await conn.executemany(
-                """INSERT INTO product_embeddings VALUES ($1, $2, $3)""",
-                [(e.product_id, e.content, e.embedding) for e in embeddings],
-            )
-
     async def export_data(
         self,
-    ) -> Tuple[List[models.Toy], List[models.Airport], List[models.Embedding]]:
-        toy_task = asyncio.create_task(self.__pool.fetch("""SELECT * FROM products"""))
+    ) -> List[models.Airport]:
         airport_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM airports""")
         )
-        emb_task = asyncio.create_task(
-            self.__pool.fetch("""SELECT * FROM product_embeddings""")
-        )
 
-        toys = [models.Toy.model_validate(dict(t)) for t in await toy_task]
         airports = [models.Airport.model_validate(dict(a)) for a in await airport_task]
-        embeddings = [models.Embedding.model_validate(dict(v)) for v in await emb_task]
 
-        return toys, airports, embeddings
-
-    async def semantic_similarity_search(
-        self, query_embedding: List[float], similarity_threshold: float, top_k: int
-    ) -> List[Dict[str, Any]]:
-        results = await self.__pool.fetch(
-            """
-                WITH vector_matches AS (
-                    SELECT product_id, 1 - (embedding <=> $1) AS similarity
-                    FROM product_embeddings
-                    WHERE 1 - (embedding <=> $1) > $2
-                    ORDER BY similarity DESC
-                    LIMIT $3
-                )
-                SELECT
-                    product_name,
-                    list_price,
-                    description
-                FROM products
-                WHERE product_id IN (SELECT product_id FROM vector_matches)
-            """,
-            query_embedding,
-            similarity_threshold,
-            top_k,
-            timeout=10,
-        )
-
-        results = [dict(r) for r in results]
-        return results
+        return airports
 
     async def close(self):
         await self.__pool.close()

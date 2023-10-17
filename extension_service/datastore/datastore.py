@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Tuple, TypeVar
+from typing import Any, Dict, Generic, List, TypeVar
 
 import models
 
@@ -47,23 +47,15 @@ class Client(ABC, Generic[C]):
     @abstractmethod
     async def initialize_data(
         self,
-        toys: List[models.Toy],
         airports: List[models.Airport],
-        embeddings: List[models.Embedding],
     ) -> None:
         pass
 
     @abstractmethod
     async def export_data(
         self,
-    ) -> Tuple[List[models.Toy], List[models.Airport], List[models.Embedding]]:
+    ) -> List[models.Airport]:
         pass
-
-    @abstractmethod
-    async def semantic_similarity_search(
-        self, query_embedding: List[float], similarity_threshold: float, top_k: int
-    ) -> List[Dict[str, Any]]:
-        raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
     async def close(self):

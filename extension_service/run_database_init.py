@@ -22,24 +22,14 @@ from app import parse_config
 
 
 async def main() -> None:
-    toys: List[models.Toy] = []
-    with open("../data/product_dataset.csv", "r") as f:
-        reader = csv.DictReader(f, delimiter=",")
-        toys = [models.Toy.model_validate(line) for line in reader]
-
     airports: List[models.Airport] = []
     with open("../data/airport_dataset.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")
         airports = [models.Airport.model_validate(line) for line in reader]
 
-    embeddings: List[models.Embedding] = []
-    with open("../data/product_embeddings_dataset.csv", "r") as f:
-        reader = csv.DictReader(f, delimiter=",")
-        embeddings = [models.Embedding.model_validate(line) for line in reader]
-
     cfg = parse_config("config.yml")
     ds = await datastore.create(cfg.datastore)
-    await ds.initialize_data(toys, airports, embeddings)
+    await ds.initialize_data(airports)
     await ds.close()
 
 

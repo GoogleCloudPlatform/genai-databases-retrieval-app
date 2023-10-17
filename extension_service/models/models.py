@@ -12,19 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ast
-from decimal import Decimal
-from typing import List
-
-from numpy import float32
-from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
-
-
-class Toy(BaseModel):
-    product_id: str
-    product_name: str
-    description: str
-    list_price: Decimal
+from pydantic import BaseModel
 
 
 class Airport(BaseModel):
@@ -33,18 +21,3 @@ class Airport(BaseModel):
     name: str
     city: str
     country: str
-
-
-class Embedding(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    product_id: str
-    content: str
-    embedding: List[float32]
-
-    @field_validator("embedding", mode="before")
-    def validate(cls, v):
-        if type(v) == str:
-            v = ast.literal_eval(v)
-            v = [float32(f) for f in v]
-        return v
