@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import mocks, postgres
+from . import postgres
 
-__ALL__ = [mocks, postgres]
+__ALL__ = [postgres]
