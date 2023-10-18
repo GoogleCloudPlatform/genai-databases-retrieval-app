@@ -32,7 +32,7 @@ async def main():
     await ds.close()
 
     with open("../data/airport_dataset.csv.new", "w") as f:
-        col_names = ["id", "iata", "name", "city", "country"]
+        col_names = ["id", "iata", "name", "city", "country", "content", "embedding"]
         writer = csv.DictWriter(f, col_names, delimiter=",")
         writer.writeheader()
         for a in airports:

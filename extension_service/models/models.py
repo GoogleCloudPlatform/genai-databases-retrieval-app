@@ -22,11 +22,22 @@ from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
 
 
 class Airport(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     id: int
     iata: str
     name: str
     city: str
     country: str
+    content: str
+    embedding: list[float32]
+
+    @field_validator("embedding", mode="before")
+    def validate(cls, v):
+        if type(v) == str:
+            v = ast.literal_eval(v)
+            v = [float32(f) for f in v]
+        return v
 
 
 class Amenity(BaseModel):
