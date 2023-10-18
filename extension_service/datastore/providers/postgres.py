@@ -286,5 +286,28 @@ class Client(datastore.Client[Config]):
         results = [dict(r) for r in results]
         return results
 
+    async def airports_search(
+        self, query_embedding: List[float], similarity_threshold: float, top_k: int
+    ) -> List[Dict[str, Any]]:
+        results = await self.__pool.fetch(
+            """
+                SELECT iata, name, city, country
+                FROM (
+                    SELECT iata, name, city, country, 1 - (embedding <=> $1) AS similarity
+                    FROM airports
+                    WHERE 1 - (embedding <=> $1) > $2
+                    ORDER BY similarity DESC
+                    LIMIT $3
+                ) AS sorted_airports
+            """,
+            query_embedding,
+            similarity_threshold,
+            top_k,
+            timeout=10,
+        )
+
+        results = [dict(r) for r in results]
+        return results
+
     async def close(self):
         await self.__pool.close()

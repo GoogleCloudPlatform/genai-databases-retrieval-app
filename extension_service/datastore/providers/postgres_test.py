@@ -116,3 +116,23 @@ async def test_airports_semantic_lookup():
         )
     ]
     assert res == expected_res
+
+
+@pytest.mark.asyncio
+async def test_airport_search():
+    mockRecord = [
+        MockRecord(
+            [
+                ("iata", "FOO"),
+                ("name", "Foo Bar"),
+                ("city", "baz"),
+                ("country", "bundy"),
+            ]
+        )
+    ]
+    mockCl = await create_postgres_provider(mockRecord)
+    res = await mockCl.airports_search(1, 0.7, 1)
+    expected_res = [
+        {"iata": "FOO", "name": "Foo Bar", "city": "baz", "country": "bundy"}
+    ]
+    assert res == expected_res
