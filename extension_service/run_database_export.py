@@ -66,7 +66,6 @@ async def main():
             "arrival_time",
             "departure_gate",
             "arrival_gate",
-            "date",
         ]
         writer = csv.DictWriter(f, col_names, delimiter=",")
         writer.writeheader()

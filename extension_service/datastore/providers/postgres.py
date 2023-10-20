@@ -80,19 +80,18 @@ class Client(datastore.Client[Config]):
                     id INTEGER PRIMARY KEY,
                     airline TEXT,
                     flight_number TEXT,
-                    origin_airport TEXT,
-                    destination_airport TEXT,
-                    departure_time TIME,
-                    arrival_time TIME,
+                    departure_airport TEXT,
+                    arrival_airport TEXT,
+                    departure_time TIMESTAMP,
+                    arrival_time TIMESTAMP,
                     departure_gate TEXT,
                     arrival_gate TEXT,
-                    date DATE
                 )
                 """
             )
             # Insert all the data
             await conn.executemany(
-                """INSERT INTO flights VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)""",
+                """INSERT INTO flights VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)""",
                 [
                     (
                         f.id,
@@ -104,7 +103,6 @@ class Client(datastore.Client[Config]):
                         f.arrival_time,
                         f.departure_gate,
                         f.arrival_gate,
-                        f.date,
                     )
                     for f in flights
                 ],
