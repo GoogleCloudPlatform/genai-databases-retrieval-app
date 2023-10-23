@@ -264,50 +264,5 @@ class Client(datastore.Client[Config]):
         results = [dict(r) for r in results]
         return results
 
-    async def get_airport(self, id: int) -> list[models.Airport]:
-        results = await self.__pool.fetch(
-            """
-              SELECT id, iata, name, city, country FROM airports WHERE id=$1
-            """,
-            id,
-        )
-
-        airports = [models.Airport.model_validate(dict(r)) for r in results]
-        return airports
-
-    async def get_airport(self, id: int) -> List[Dict[str, Any]]:
-        results = await self.__pool.fetch(
-            """
-              SELECT iata, name, city, country FROM airports WHERE id=$1
-            """,
-            id,
-        )
-
-        results = [dict(r) for r in results]
-        return results
-
-    async def airports_semantic_lookup(
-        self, query_embedding: List[float], similarity_threshold: float, top_k: int
-    ) -> List[models.Airport]:
-        results = await self.__pool.fetch(
-            """
-                SELECT iata, name, city, country
-                FROM (
-                    SELECT iata, name, city, country, 1 - (embedding <=> $1) AS similarity
-                    FROM airports
-                    WHERE 1 - (embedding <=> $1) > $2
-                    ORDER BY similarity DESC
-                    LIMIT $3
-                ) AS sorted_airports
-            """,
-            query_embedding,
-            similarity_threshold,
-            top_k,
-            timeout=10,
-        )
-
-        airports = [models.Airport.model_validate(dict(r)) for r in results]
-        return airports
-
     async def close(self):
         await self.__pool.close()
