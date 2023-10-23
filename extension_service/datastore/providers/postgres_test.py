@@ -13,18 +13,19 @@
 # limitations under the License.
 
 from collections import OrderedDict
-from typing import cast
+from typing import Dict, cast
 
 import asyncpg
 import pytest
+
+import models
 
 from . import postgres
 
 
 class MockRecord(OrderedDict):
     """
-    Mock record class since there is no option to create asyncpg Record objects
-    from Python code.
+    MockRecord allows us to initialize asyncpg Record objects directly.
     """
 
     def __getitem__(self, key_or_index):
@@ -35,15 +36,15 @@ class MockRecord(OrderedDict):
 
 
 class MockAsyncpgPool(asyncpg.Pool):
-    def __init__(self, mockRecord: list[MockRecord]):
-        self.mockRecord = mockRecord
+    def __init__(self, mocks: Dict[str, MockRecord]):
+        self.mocks = mocks
 
     async def fetch(self, query, *args):
-        return self.mockRecord
+        return self.mocks.get(query.strip())
 
 
-async def create_postgres_provider(mockRecord: list[MockRecord]) -> postgres.Client:
-    mockPool = cast(asyncpg.Pool, MockAsyncpgPool(mockRecord))
+async def mock_postgres_provider(mocks: Dict[str, MockRecord]) -> postgres.Client:
+    mockPool = cast(asyncpg.Pool, MockAsyncpgPool(mocks))
     mockCl = postgres.Client(mockPool)
     return mockCl
 
@@ -53,6 +54,7 @@ async def test_get_airport():
     mockRecord = [
         MockRecord(
             [
+                ("id", 1),
                 ("iata", "FOO"),
                 ("name", "Foo Bar"),
                 ("city", "baz"),
@@ -60,9 +62,20 @@ async def test_get_airport():
             ]
         )
     ]
-    mockCl = await create_postgres_provider(mockRecord)
+    mocks = {
+        "SELECT id, iata, name, city, country FROM airports WHERE id=$1": mockRecord
+    }
+    mockCl = await mock_postgres_provider(mocks)
     res = await mockCl.get_airport(1)
     expected_res = [
-        {"iata": "FOO", "name": "Foo Bar", "city": "baz", "country": "bundy"}
+        models.Airport.model_validate(
+            {
+                "id": 1,
+                "iata": "FOO",
+                "name": "Foo Bar",
+                "city": "baz",
+                "country": "bundy",
+            }
+        )
     ]
     assert res == expected_res

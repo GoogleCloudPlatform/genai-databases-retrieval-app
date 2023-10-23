@@ -66,7 +66,7 @@ def test_get_amenity(app):
 def test_get_airport(app):
     with TestClient(app) as client:
         response = client.get(
-            "/airport",
+            "/airports",
             params={
                 "id": 1,
             },
