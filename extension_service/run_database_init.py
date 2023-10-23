@@ -33,11 +33,7 @@ async def main() -> None:
 
     cfg = parse_config("config.yml")
     ds = await datastore.create(cfg.datastore)
-<<<<<<< HEAD
     await ds.initialize_data(airports, flights)
-=======
-    await ds.initialize_data(toys, embeddings, airports, flights, )
->>>>>>> 29a3384 (Merged with main)
     await ds.close()
 
 

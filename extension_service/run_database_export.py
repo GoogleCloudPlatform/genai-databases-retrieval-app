@@ -27,27 +27,10 @@ async def main():
     cfg = parse_config("config.yml")
     ds = await datastore.create(cfg.datastore)
 
-    airports, amenities = await ds.export_data()
+    airports, amenities, flights = await ds.export_data()
 
     await ds.close()
 
-<<<<<<< HEAD
-=======
-    with open("../data/product_dataset.csv.new", "w") as f:
-        col_names = ["product_id", "product_name", "description", "list_price"]
-        writer = csv.DictWriter(f, col_names, delimiter=",")
-        writer.writeheader()
-        for t in toys:
-            writer.writerow(t.model_dump())
-
-    with open("../data/product_embeddings_dataset.csv.new", "w") as f:
-        col_names = ["product_id", "content", "embedding"]
-        writer = csv.DictWriter(f, col_names, delimiter=",")
-        writer.writeheader()
-        for e in embeddings:
-            writer.writerow(e.model_dump())
-
->>>>>>> 29a3384 (Merged with main)
     with open("../data/airport_dataset.csv.new", "w") as f:
         col_names = ["id", "iata", "name", "city", "country"]
         writer = csv.DictWriter(f, col_names, delimiter=",")

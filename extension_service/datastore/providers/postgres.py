@@ -176,12 +176,15 @@ class Client(datastore.Client[Config]):
         amenity_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM amenities""")
         )
+        flights_task = asyncio.create_task(
+            self.__pool.fetch("""SELECT * FROM flights""")
+        )
 
         airports = [models.Airport.model_validate(dict(a)) for a in await airport_task]
         amenities = [models.Amenity.model_validate(dict(a)) for a in await amenity_task]
-
-
-        return airports, flights
+        flights = [models.Flight.model_validate(dict(f)) for f in await flights_task]
+        return airports, amenities, flights
+        
 
     async def get_amenity(self, id: int) -> list[Dict[str, Any]]:
         results = await self.__pool.fetch(
