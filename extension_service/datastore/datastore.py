@@ -59,13 +59,13 @@ class Client(ABC, Generic[C]):
         pass
 
     @abstractmethod
-    async def get_amenity(self, id: int) -> List[Dict[str, Any]]:
+    async def get_amenity(self, id: int) -> list[Dict[str, Any]]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
     async def amenities_search(
-        self, query_embedding: List[float], similarity_threshold: float, top_k: int
-    ) -> List[Dict[str, Any]]:
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> list[Dict[str, Any]]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod

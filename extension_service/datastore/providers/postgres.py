@@ -141,7 +141,7 @@ class Client(datastore.Client[Config]):
 
         return airports, amenities
 
-    async def get_amenity(self, id: int) -> List[Dict[str, Any]]:
+    async def get_amenity(self, id: int) -> list[Dict[str, Any]]:
         results = await self.__pool.fetch(
             """
                 SELECT name, description, location, terminal, category, hour
@@ -154,8 +154,8 @@ class Client(datastore.Client[Config]):
         return results
 
     async def amenities_search(
-        self, query_embedding: List[float], similarity_threshold: float, top_k: int
-    ) -> List[Dict[str, Any]]:
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> list[Dict[str, Any]]:
         results = await self.__pool.fetch(
             """
                 SELECT name, description, location, terminal, category, hour

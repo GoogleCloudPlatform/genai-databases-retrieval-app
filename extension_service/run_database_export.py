@@ -55,5 +55,6 @@ async def main():
         for a in amenities:
             writer.writerow(a.model_dump())
 
+
 if __name__ == "__main__":
     asyncio.run(main())
