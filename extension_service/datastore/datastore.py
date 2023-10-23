@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Tuple, TypeVar
+from typing import Any, Dict, Generic, TypeVar
 
 import models
 
@@ -47,15 +47,15 @@ class Client(ABC, Generic[C]):
     @abstractmethod
     async def initialize_data(
         self,
-        airports: List[models.Airport],
-        amenities: List[models.Amenity],
+        airports: list[models.Airport],
+        amenities: list[models.Amenity],
     ) -> None:
         pass
 
     @abstractmethod
     async def export_data(
         self,
-    ) -> Tuple[List[models.Airport], List[models.Amenity]]:
+    ) -> tuple[list[models.Airport], list[models.Amenity]]:
         pass
 
     @abstractmethod

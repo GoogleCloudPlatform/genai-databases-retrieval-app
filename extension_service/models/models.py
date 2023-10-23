@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import ast
-from typing import List
 
 from numpy import float32
 from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
@@ -38,7 +37,7 @@ class Amenity(BaseModel):
     category: str
     hour: str
     content: str
-    embedding: List[float32]
+    embedding: list[float32]
 
     @field_validator("embedding", mode="before")
     def validate(cls, v):

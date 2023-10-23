@@ -14,7 +14,7 @@
 
 import asyncio
 from ipaddress import IPv4Address, IPv6Address
-from typing import Any, Dict, List, Literal, Tuple
+from typing import Any, Dict, Literal
 
 import asyncpg
 from pgvector.asyncpg import register_vector
@@ -65,8 +65,8 @@ class Client(datastore.Client[Config]):
 
     async def initialize_data(
         self,
-        airports: List[models.Airport],
-        amenities: List[models.Amenity],
+        airports: list[models.Airport],
+        amenities: list[models.Amenity],
     ) -> None:
         async with self.__pool.acquire() as conn:
             # If the table already exists, drop it to avoid conflicts
@@ -128,7 +128,7 @@ class Client(datastore.Client[Config]):
 
     async def export_data(
         self,
-    ) -> Tuple[List[models.Airport], List[models.Amenity]]:
+    ) -> tuple[list[models.Airport], list[models.Amenity]]:
         airport_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM airports""")
         )

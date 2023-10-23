@@ -14,7 +14,6 @@
 
 import asyncio
 import csv
-from typing import List
 
 import datastore
 import models
@@ -22,12 +21,12 @@ from app import parse_config
 
 
 async def main() -> None:
-    airports: List[models.Airport] = []
+    airports: list[models.Airport] = []
     with open("../data/airport_dataset.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")
         airports = [models.Airport.model_validate(line) for line in reader]
 
-    amenities: List[models.Amenity] = []
+    amenities: list[models.Amenity] = []
     with open("../data/amenity_dataset.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")
         amenities = [models.Amenity.model_validate(line) for line in reader]
