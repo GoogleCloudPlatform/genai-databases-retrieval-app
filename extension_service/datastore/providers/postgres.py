@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import asyncio
 from ipaddress import IPv4Address, IPv6Address
-from typing import Any, Dict, List, Literal, Tuple
+from typing import Any, Dict, List, Literal
 
-import datastore
-from models import *
+import asyncpg
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
+
+import models
+
+from .. import datastore
 
 POSTGRES_IDENTIFIER = "postgres"
 
