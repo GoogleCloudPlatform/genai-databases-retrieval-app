@@ -264,16 +264,16 @@ class Client(datastore.Client[Config]):
         results = [dict(r) for r in results]
         return results
 
-    async def get_airport(self, id: int) -> list[Dict[str, Any]]:
+    async def get_airport(self, id: int) -> list[models.Airport]:
         results = await self.__pool.fetch(
             """
-              SELECT iata, name, city, country FROM airports WHERE id=$1
+              SELECT id, iata, name, city, country FROM airports WHERE id=$1
             """,
             id,
         )
 
-        results = [dict(r) for r in results]
-        return results
+        airports = [models.Airport.model_validate(dict(r)) for r in results]
+        return airports
 
     async def close(self):
         await self.__pool.close()
