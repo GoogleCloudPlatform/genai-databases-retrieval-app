@@ -27,7 +27,7 @@ async def main():
     cfg = parse_config("config.yml")
     ds = await datastore.create(cfg.datastore)
 
-    airports = await ds.export_data()
+    airports, amenities = await ds.export_data()
 
     await ds.close()
 
@@ -36,6 +36,23 @@ async def main():
         writer = csv.DictWriter(f, col_names, delimiter=",")
         writer.writeheader()
         for a in airports:
+            writer.writerow(a.model_dump())
+
+    with open("../data/amenity_dataset.csv.new", "w") as f:
+        col_names = [
+            "id",
+            "name",
+            "description",
+            "location",
+            "terminal",
+            "category",
+            "hour",
+            "content",
+            "embedding",
+        ]
+        writer = csv.DictWriter(f, col_names, delimiter=",")
+        writer.writeheader()
+        for a in amenities:
             writer.writerow(a.model_dump())
 
 

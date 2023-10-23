@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pydantic import BaseModel
+import ast
+
+from numpy import float32
+from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
 
 
 class Airport(BaseModel):
@@ -21,3 +24,24 @@ class Airport(BaseModel):
     name: str
     city: str
     country: str
+
+
+class Amenity(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    id: int
+    name: str
+    description: str
+    location: str
+    terminal: str
+    category: str
+    hour: str
+    content: str
+    embedding: list[float32]
+
+    @field_validator("embedding", mode="before")
+    def validate(cls, v):
+        if type(v) == str:
+            v = ast.literal_eval(v)
+            v = [float32(f) for f in v]
+        return v

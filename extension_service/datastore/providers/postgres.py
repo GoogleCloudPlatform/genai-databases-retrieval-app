@@ -14,7 +14,7 @@
 
 import asyncio
 from ipaddress import IPv4Address, IPv6Address
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, Literal
 
 import asyncpg
 from pgvector.asyncpg import register_vector
@@ -65,7 +65,8 @@ class Client(datastore.Client[Config]):
 
     async def initialize_data(
         self,
-        airports: List[models.Airport],
+        airports: list[models.Airport],
+        amenities: list[models.Amenity],
     ) -> None:
         async with self.__pool.acquire() as conn:
             # If the table already exists, drop it to avoid conflicts
@@ -88,16 +89,57 @@ class Client(datastore.Client[Config]):
                 [(a.id, a.iata, a.name, a.city, a.country) for a in airports],
             )
 
+            # If the table already exists, drop it to avoid conflicts
+            await conn.execute("DROP TABLE IF EXISTS amenities CASCADE")
+            # Create a new table
+            await conn.execute(
+                """
+                CREATE TABLE amenities(
+                  id INT PRIMARY KEY,
+                  name TEXT,
+                  description TEXT,
+                  location TEXT,
+                  terminal TEXT,
+                  category TEXT,
+                  hour TEXT,
+                  content TEXT,
+                  embedding vector(768)
+                )
+                """
+            )
+            # Insert all the data
+            await conn.executemany(
+                """INSERT INTO amenities VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)""",
+                [
+                    (
+                        a.id,
+                        a.name,
+                        a.description,
+                        a.location,
+                        a.terminal,
+                        a.category,
+                        a.hour,
+                        a.content,
+                        a.embedding,
+                    )
+                    for a in amenities
+                ],
+            )
+
     async def export_data(
         self,
-    ) -> List[models.Airport]:
+    ) -> tuple[list[models.Airport], list[models.Amenity]]:
         airport_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM airports""")
         )
+        amenity_task = asyncio.create_task(
+            self.__pool.fetch("""SELECT * FROM amenities""")
+        )
 
         airports = [models.Airport.model_validate(dict(a)) for a in await airport_task]
+        amenities = [models.Amenity.model_validate(dict(a)) for a in await amenity_task]
 
-        return airports
+        return airports, amenities
 
     async def close(self):
         await self.__pool.close()
