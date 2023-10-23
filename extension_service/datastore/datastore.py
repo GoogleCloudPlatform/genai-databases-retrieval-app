@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Tuple, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
 import models
 
@@ -60,6 +60,10 @@ class Client(ABC, Generic[C]):
         pass
 
     @abstractmethod
+    async def get_airport(self, id: int) -> Optional[models.Airport]:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
     async def get_amenity(self, id: int) -> list[Dict[str, Any]]:
         raise NotImplementedError("Subclass should implement this!")
 
@@ -67,10 +71,6 @@ class Client(ABC, Generic[C]):
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[Dict[str, Any]]:
-        raise NotImplementedError("Subclass should implement this!")
-
-    @abstractmethod
-    async def get_airport(self, id: int) -> list[models.Airport]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod

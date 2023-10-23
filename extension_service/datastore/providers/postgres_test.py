@@ -68,14 +68,12 @@ async def test_get_airport():
     mockCl = await mock_postgres_provider(mocks)
     res = await mockCl.get_airport(1)
     expected_res = [
-        models.Airport.model_validate(
-            {
-                "id": 1,
-                "iata": "FOO",
-                "name": "Foo Bar",
-                "city": "baz",
-                "country": "bundy",
-            }
+        models.Airport(
+            id=1,
+            iata="FOO",
+            name="Foo Bar",
+            city="baz",
+            country="bundy",
         )
     ]
     assert res == expected_res
