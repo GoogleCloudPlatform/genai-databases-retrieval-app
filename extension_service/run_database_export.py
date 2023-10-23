@@ -31,6 +31,23 @@ async def main():
 
     await ds.close()
 
+<<<<<<< HEAD
+=======
+    with open("../data/product_dataset.csv.new", "w") as f:
+        col_names = ["product_id", "product_name", "description", "list_price"]
+        writer = csv.DictWriter(f, col_names, delimiter=",")
+        writer.writeheader()
+        for t in toys:
+            writer.writerow(t.model_dump())
+
+    with open("../data/product_embeddings_dataset.csv.new", "w") as f:
+        col_names = ["product_id", "content", "embedding"]
+        writer = csv.DictWriter(f, col_names, delimiter=",")
+        writer.writeheader()
+        for e in embeddings:
+            writer.writerow(e.model_dump())
+
+>>>>>>> 29a3384 (Merged with main)
     with open("../data/airport_dataset.csv.new", "w") as f:
         col_names = ["id", "iata", "name", "city", "country"]
         writer = csv.DictWriter(f, col_names, delimiter=",")
@@ -60,8 +77,8 @@ async def main():
             "id",
             "airline",
             "flight_number",
-            "origin_airport",
-            "destination_airport",
+            "departure_airport",
+            "arrival_airport",
             "departure_time",
             "arrival_time",
             "departure_gate",

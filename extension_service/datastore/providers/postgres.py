@@ -77,15 +77,15 @@ class Client(datastore.Client[Config]):
             await conn.execute(
                 """
                 CREATE TABLE flights(
-                    id INTEGER PRIMARY KEY,
-                    airline TEXT,
-                    flight_number TEXT,
-                    departure_airport TEXT,
-                    arrival_airport TEXT,
-                    departure_time TIMESTAMP,
-                    arrival_time TIMESTAMP,
-                    departure_gate TEXT,
-                    arrival_gate TEXT,
+                  id INTEGER PRIMARY KEY,
+                  airline TEXT,
+                  flight_number TEXT,
+                  departure_airport TEXT,
+                  arrival_airport TEXT,
+                  departure_time TIMESTAMP,
+                  arrival_time TIMESTAMP,
+                  departure_gate TEXT,
+                  arrival_gate TEXT
                 )
                 """
             )
@@ -97,8 +97,8 @@ class Client(datastore.Client[Config]):
                         f.id,
                         f.airline,
                         f.flight_number,
-                        f.origin_airport,
-                        f.destination_airport,
+                        f.departure_airport,
+                        f.arrival_airport,
                         f.departure_time,
                         f.arrival_time,
                         f.departure_gate,
@@ -169,7 +169,7 @@ class Client(datastore.Client[Config]):
 
     async def export_data(
         self,
-    ) -> tuple[list[models.Airport], list[models.Amenity]]:
+    ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
         airport_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM airports""")
         )
@@ -180,7 +180,8 @@ class Client(datastore.Client[Config]):
         airports = [models.Airport.model_validate(dict(a)) for a in await airport_task]
         amenities = [models.Amenity.model_validate(dict(a)) for a in await amenity_task]
 
-        return airports, amenities
+
+        return airports, flights
 
     async def get_amenity(self, id: int) -> list[Dict[str, Any]]:
         results = await self.__pool.fetch(
