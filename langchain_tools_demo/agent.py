@@ -18,7 +18,7 @@ from typing import Optional
 import google.auth.transport.requests
 import google.oauth2.id_token
 
-# import requests
+import requests
 from langchain.agents import AgentType, initialize_agent
 
 # from langchain.agents.mrkl.base import ZeroShotAgent
@@ -124,61 +124,62 @@ def list_flights(departure_airport: str, arrival_airport: str, date: str):
 
 
 def get_amenity(id: int):
-    # response = requests.get(
-    #     f"{BASE_URL}/amenities/{id}",
-    #     headers={"Authorization": f"Bearer {get_id_token()}"},
-    # )
+    response = requests.get(
+        f"{BASE_URL}/amenities",
+        params={"id": id},
+        headers={"Authorization": f"Bearer {get_id_token()}"},
+    )
 
-    # if response.status_code != 200:
-    #     return f"Error trying to find flight: {response.text}"
+    if response.status_code != 200:
+        return f"Error trying to find flight: {response.text}"
 
-    # return response.json()
-    return {
-        "id": id,
-        "name": "Hudson Bay",
-        "description": "Get your airport snalcs",
-        "location": "Near Gate A13",
-        "terminal": "Terminal 3",
-        "category": "shop",
-        "hours": "Sunday-Saturday 7:00 am-11:00 pm",
-        "content": "This amenity is a <category>. <description>",
-    }
+    return response.json()
+    # return {
+    #     "id": id,
+    #     "name": "Hudson Bay",
+    #     "description": "Get your airport snalcs",
+    #     "location": "Near Gate A13",
+    #     "terminal": "Terminal 3",
+    #     "category": "shop",
+    #     "hours": "Sunday-Saturday 7:00 am-11:00 pm",
+    #     "content": "This amenity is a <category>. <description>",
+    # }
 
 
 def search_amenities(query: str):
-    # params = {"top_k": "5", "query": desc}
+    params = {"top_k": "5", "query": query}
 
-    # response = requests.get(
-    #     f"{BASE_URL}/amenities/search",
-    #     params,
-    #     headers={"Authorization": f"Bearer {get_id_token()}"},
-    # )
-    # if response.status_code != 200:
-    #     return f"Error trying to find flight: {response.text}"
+    response = requests.get(
+        f"{BASE_URL}/amenities/search",
+        params,
+        headers={"Authorization": f"Bearer {get_id_token()}"},
+    )
+    if response.status_code != 200:
+        return f"Error trying to find flight: {response.text}"
 
-    # return response.json()
-    return [
-        {
-            "id": 1,
-            "name": "Hudson Bay",
-            "description": "Get your airport snacks",
-            "location": "Near Gate A13",
-            "terminal": "Terminal 3",
-            "category": "shop",
-            "hours": "Sunday-Saturday 7:00 am-11:00 pm",
-            "content": "This amenity is a <category>. <description>",
-        },
-        {
-            "id": 2,
-            "name": "Beechers",
-            "description": "Get your airport snacks",
-            "location": "Near Gate B3",
-            "terminal": "Terminal 3",
-            "category": "restaurant",
-            "hours": "Sunday-Saturday 7:00 am-11:00 pm",
-            "content": "This amenity is a <category>. <description>",
-        },
-    ]
+    return response.json()
+    # return [
+    #     {
+    #         "id": 1,
+    #         "name": "Hudson Bay",
+    #         "description": "Get your airport snacks",
+    #         "location": "Near Gate A13",
+    #         "terminal": "Terminal 3",
+    #         "category": "shop",
+    #         "hours": "Sunday-Saturday 7:00 am-11:00 pm",
+    #         "content": "This amenity is a <category>. <description>",
+    #     },
+    #     {
+    #         "id": 2,
+    #         "name": "Beechers",
+    #         "description": "Get your airport snacks",
+    #         "location": "Near Gate B3",
+    #         "terminal": "Terminal 3",
+    #         "category": "restaurant",
+    #         "hours": "Sunday-Saturday 7:00 am-11:00 pm",
+    #         "content": "This amenity is a <category>. <description>",
+    #     },
+    # ]
 
 
 def get_airport(id: int):
@@ -271,7 +272,7 @@ tools = [
     Tool.from_function(
         name="search_amenities",
         func=search_amenities,
-        description="Use this tool to find recommended airport amenities. Returns several amenities that are related to the query. Only recommend amenities that are returned by this query.",
+        description="Use this tool to recommended airport amenities at SFO. Returns several amenities that are related to the query. Only recommend amenities that are returned by this query.",
         args_schema=QueryInput,
     ),
     Tool.from_function(

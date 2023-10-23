@@ -90,6 +90,11 @@ div.chat-content>span {
     padding: 50px;
 }
 
+.chat-bubble p {
+    margin: 0;
+    padding: 0;
+}
+
 div.chat-wrapper div.chat-content span.assistant {
     position: relative;
     width: 70%;

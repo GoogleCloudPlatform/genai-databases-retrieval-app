@@ -23,6 +23,7 @@ from fastapi.templating import Jinja2Templates
 from langchain.agents.agent import AgentExecutor
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
+from markdown import markdown
 
 from agent import init_agent
 
@@ -45,7 +46,7 @@ class Prompt(BaseModel):
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     """Render the default template."""
-    # request.session.clear()  # Clear chat history, if needed
+    request.session.clear()  # Clear chat history, if needed
     if "uuid" not in request.session:
         request.session["uuid"] = str(uuid.uuid4())
         request.session["messages"] = BASE_HISTORY
@@ -77,7 +78,7 @@ def chat_handler(prompt: Prompt, request: Request):
             {"role": "assistant", "content": response["output"]}
         ]
         # Return assistant response
-        return response["output"]
+        return markdown(response["output"])
     except Exception as err:
         print(err)
         raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
