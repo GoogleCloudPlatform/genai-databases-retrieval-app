@@ -107,12 +107,14 @@ async def test_airports_semantic_lookup():
     mockCl = await mock_postgres_provider(mocks)
     res = await mockCl.airports_semantic_lookup(1, 0.7, 1)
     expected_res = [
-        models.Airport(
-            id=1,
-            iata="FOO",
-            name="Foo Bar",
-            city="baz",
-            country="bundy",
+        models.Airport.model_validate(
+            {
+                "id": 1,
+                "iata": "FOO",
+                "name": "Foo Bar",
+                "city": "baz",
+                "country": "bundy",
+            }
         )
     ]
     assert res == expected_res
