@@ -187,7 +187,7 @@ class Client(datastore.Client[Config]):
     async def get_amenity(self, id: int) -> list[Dict[str, Any]]:
         results = await self.__pool.fetch(
             """
-                SELECT name, description, location, terminal, category, hour
+                SELECT id, name, description, location, terminal, category, hour
                 FROM amenities WHERE id=$1
             """,
             id,
@@ -201,9 +201,9 @@ class Client(datastore.Client[Config]):
     ) -> list[Dict[str, Any]]:
         results = await self.__pool.fetch(
             """
-                SELECT name, description, location, terminal, category, hour
+                SELECT id, name, description, location, terminal, category, hour
                 FROM (
-                    SELECT name, description, location, terminal, category, hour, 1 - (embedding <=> $1) AS similarity
+                    SELECT id, name, description, location, terminal, category, hour, 1 - (embedding <=> $1) AS similarity
                     FROM amenities
                     WHERE 1 - (embedding <=> $1) > $2
                     ORDER BY similarity DESC
@@ -215,7 +215,6 @@ class Client(datastore.Client[Config]):
             top_k,
             timeout=10,
         )
-
         results = [dict(r) for r in results]
         return results
 

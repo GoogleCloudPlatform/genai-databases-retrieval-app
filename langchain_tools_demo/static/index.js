@@ -14,8 +14,19 @@
  * limitations under the License.
  */
 
-// Submit chat message
+// Submit chat message via click
 $('.btn-group span').click(async (e) => {
+    await submitMessage();
+});
+
+// Submit chat message via enter
+$(document).on("keypress",async (e) => {
+    if (e.which == 13) {
+        await submitMessage();
+    }
+});
+
+async function submitMessage() {
     let msg = $('.chat-bar input').val();
     // Add message to UI
     log("user", msg)
@@ -29,7 +40,7 @@ $('.btn-group span').click(async (e) => {
     } catch (err) {
         window.alert(`Error when submitting question: ${err}`);
     }
-});
+}
 
 // Send request to backend
 async function askQuestion(prompt) {
@@ -53,5 +64,5 @@ async function askQuestion(prompt) {
 function log(name, msg) {
     let message = `<span class="chat-bubble ${name}">${msg}</span>`;
     $('.chat-content').append(message);
-    window.scrollTo(0, document.body.scrollHeight);
+    $('.chat-content').scrollTop($('.chat-content').prop("scrollHeight"));
 }
