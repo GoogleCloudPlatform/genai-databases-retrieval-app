@@ -68,13 +68,11 @@ class Client(ABC, Generic[C]):
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[Dict[str, Any]]:
         raise NotImplementedError("Subclass should implement this!")
-    
+
     @abstractmethod
-    async def get_flights(
-        self, flight_id: int
-    ) -> List[Dict[str, Any]]:
+    async def get_flights(self, flight_id: int) -> List[Dict[str, Any]]:
         raise NotImplementedError("Subclass should implement this!")
-    
+
     @abstractmethod
     async def search_flights_by_airport(
         self, departure_airport: str, arrival_airport: str

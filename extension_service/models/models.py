@@ -33,6 +33,7 @@ class Flight(BaseModel):
     arrival_gate: str
     date: datetime.date
 
+
 class Airport(BaseModel):
     id: int
     iata: str
