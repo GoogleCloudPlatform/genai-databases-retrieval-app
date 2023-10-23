@@ -238,7 +238,7 @@ class Client(datastore.Client[Config]):
 
         results = [models.Amenity.model_validate(dict(r)) for r in results]
         return results
-    
+
     async def get_flights(self, flight_id: int) -> List[Dict[str, Any]]:
         results = await self.__pool.fetch(
             """
