@@ -260,9 +260,9 @@ class Client(datastore.Client[Config]):
         results = [dict(r) for r in results]
         return results
 
-    async def airports_search(
+    async def airports_semantic_lookup(
         self, query_embedding: List[float], similarity_threshold: float, top_k: int
-    ) -> List[Dict[str, Any]]:
+    ) -> List[models.Airport]:
         results = await self.__pool.fetch(
             """
                 SELECT iata, name, city, country
@@ -280,8 +280,8 @@ class Client(datastore.Client[Config]):
             timeout=10,
         )
 
-        results = [dict(r) for r in results]
-        return results
+        airports = [models.Airport.model_validate(dict(r)) for r in results]
+        return airports
 
     async def close(self):
         await self.__pool.close()

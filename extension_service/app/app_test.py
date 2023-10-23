@@ -66,7 +66,7 @@ def test_get_airport(app):
 def test_airports_search(app):
     with TestClient(app) as client:
         response = client.get(
-            "/airport/semantic_lookup",
+            "/airports/semantic_lookup",
             params={
                 "query": "What is the airport in san francisco.",
                 "top_k": 5,

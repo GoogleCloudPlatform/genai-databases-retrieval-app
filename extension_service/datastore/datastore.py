@@ -78,9 +78,9 @@ class Client(ABC, Generic[C]):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
-    async def airports_search(
+    async def airports_semantic_lookup(
         self, query_embedding: List[float], similarity_threshold: float, top_k: int
-    ) -> List[Dict[str, Any]]:
+    ) -> list[models.Airport]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
