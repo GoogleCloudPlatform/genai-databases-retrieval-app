@@ -20,6 +20,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from langchain.agents.agent import AgentExecutor
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -31,12 +32,13 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(SessionMiddleware, secret_key="SECRET_KEY")
 templates = Jinja2Templates(directory="templates")
 
-agents = {}
+agents: dict[str, AgentExecutor] = {}
 BASE_HISTORY = [{"role": "assistant", "content": "How can I help you?"}]
 
 
 class Prompt(BaseModel):
     """Chat handler request object"""
+
     prompt: str
 
 
@@ -82,5 +84,5 @@ def chat_handler(prompt: Prompt, request: Request):
 
 
 if __name__ == "__main__":
-    PORT = int(os.getenv("PORT")) if os.getenv("PORT") else 8080
+    PORT = int(os.getenv("PORT", default=8080))
     uvicorn.run(app, host="0.0.0.0", port=PORT)

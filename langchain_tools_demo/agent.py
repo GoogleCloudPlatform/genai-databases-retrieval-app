@@ -63,7 +63,7 @@ def get_id_token():
 
 def get_flight(id: int):
     # response = requests.get(
-    #     f"{BASE_URL}/flight/{id}",
+    #     f"{BASE_URL}/flights/{id}",
     #     headers={"Authorization": f"Bearer {get_id_token()}"},
     # )
 
@@ -89,7 +89,7 @@ def list_flights(departure_airport: str, arrival_airport: str, date: str):
     # params = {"top_k": "5", "query": desc}
 
     # response = requests.get(
-    #     f"{BASE_URL}/flight/search",
+    #     f"{BASE_URL}/flights/search",
     #     params,
     #     headers={"Authorization": f"Bearer {get_id_token()}"},
     # )
@@ -183,7 +183,7 @@ def search_amenities(query: str):
 
 def get_airport(id: int):
     # response = requests.get(
-    #     f"{BASE_URL}/airport/{id}",
+    #     f"{BASE_URL}/airports/{id}",
     #     headers={"Authorization": f"Bearer {get_id_token()}"},
     # )
 
@@ -205,7 +205,7 @@ def search_airports(query: str):
     # params = {"top_k": "5", "query": desc}
 
     # response = requests.get(
-    #     f"{BASE_URL}/airport/semantic_lookup",
+    #     f"{BASE_URL}/airports/semantic_lookup",
     #     params,
     #     headers={"Authorization": f"Bearer {get_id_token()}"},
     # )
@@ -246,10 +246,7 @@ class ListFlights(BaseModel):
         description="Departure airport 3-letter code"
     )
     arrival_airport: Optional[str] = Field(description="Arrival airport 3-letter code")
-    date: str = Field(
-        description="Date of flight departure",
-        default="today"
-    )
+    date: str = Field(description="Date of flight departure", default="today")
 
 
 tools = [
