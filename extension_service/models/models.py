@@ -13,11 +13,12 @@
 # limitations under the License.
 
 import ast
-from numpy import float32
-from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
 import datetime
 from decimal import Decimal
 from typing import List
+
+from numpy import float32
+from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
 
 
 class Airport(BaseModel):
