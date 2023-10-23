@@ -48,6 +48,7 @@ class Amenity(BaseModel):
             v = [float32(f) for f in v]
         return v
 
+
 class Flight(BaseModel):
     id: int
     airline: str

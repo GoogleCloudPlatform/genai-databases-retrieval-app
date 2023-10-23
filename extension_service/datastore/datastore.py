@@ -49,7 +49,7 @@ class Client(ABC, Generic[C]):
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
-        flights: List[models.Flight]
+        flights: List[models.Flight],
     ) -> None:
         pass
 
