@@ -14,7 +14,7 @@
 
 import asyncio
 from ipaddress import IPv4Address, IPv6Address
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 
 import asyncpg
 from pgvector.asyncpg import register_vector
@@ -67,7 +67,47 @@ class Client(datastore.Client[Config]):
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
+        flights: List[models.Flight],
     ) -> None:
+        async with self.__pool.acquire() as conn:
+            # If the table already exists, drop it to avoid conflicts
+            await conn.execute("DROP TABLE IF EXISTS flights CASCADE")
+            # Create a new table
+            await conn.execute(
+                """
+                CREATE TABLE flights(
+                  id INTEGER PRIMARY KEY,
+                  airline TEXT,
+                  flight_number TEXT,
+                  departure_airport TEXT,
+                  arrival_airport TEXT,
+                  departure_time TIMESTAMP,
+                  arrival_time TIMESTAMP,
+                  departure_gate TEXT,
+                  arrival_gate TEXT
+                )
+                """
+            )
+            # Insert all the data
+            await conn.executemany(
+                """INSERT INTO flights VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)""",
+                [
+                    (
+                        f.id,
+                        f.airline,
+                        f.flight_number,
+                        f.departure_airport,
+                        f.arrival_airport,
+                        f.departure_time,
+                        f.arrival_time,
+                        f.departure_gate,
+                        f.arrival_gate,
+                    )
+                    for f in flights
+                ],
+            )
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+
         async with self.__pool.acquire() as conn:
             # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS airports CASCADE")
@@ -128,18 +168,21 @@ class Client(datastore.Client[Config]):
 
     async def export_data(
         self,
-    ) -> tuple[list[models.Airport], list[models.Amenity]]:
+    ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
         airport_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM airports""")
         )
         amenity_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM amenities""")
         )
+        flights_task = asyncio.create_task(
+            self.__pool.fetch("""SELECT * FROM flights""")
+        )
 
         airports = [models.Airport.model_validate(dict(a)) for a in await airport_task]
         amenities = [models.Amenity.model_validate(dict(a)) for a in await amenity_task]
-
-        return airports, amenities
+        flights = [models.Flight.model_validate(dict(f)) for f in await flights_task]
+        return airports, amenities, flights
 
     async def get_amenity(self, id: int) -> list[Dict[str, Any]]:
         results = await self.__pool.fetch(
