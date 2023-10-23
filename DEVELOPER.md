@@ -2,7 +2,12 @@
 
 ## Pre-reqs
 
-
+* Google Cloud Project
+* Enabled APIs:
+    * Cloud Run
+    * Vertex AI
+    * Cloud SQL
+* Cloud SQL PostgreSQL instance or AlloyDB cluster
 
 ## Local Development
 ### Setup
@@ -16,6 +21,8 @@ If you are developing or otherwise running tests, install the test requirements 
 ```bash
 pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/requirements-test.txt
 ```
+
+ <!-- TODO: Add database setup -->
 
 ### Running the server
 
@@ -35,12 +42,6 @@ pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/r
 
 1. Start the Cloud SQL Proxy
 
-1. [Optional] Prepare the database:
-
-    ```bash
-    python run_database_init.py
-    ```
-
 1. To run the app using uvicorn, execute the following:
 
     ```bash
@@ -48,6 +49,8 @@ pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/r
     ```
 
 ## Running the frontend
+
+1. Set up Application Default Credentials
 
 1. Change into the demo directory:
 
@@ -61,12 +64,25 @@ pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/r
     export PORT=9090
     ```
 
+1. [Optional] Set `BASE_URL` environment variable:
 
-1. To run the app using Gunicorn, execute the following:
+    ```bash
+    export BASE_URL=<EXTENSION_SERVICE_URL>
+    ```
+
+1. [Optional] Set `DEBUG` environment variable:
+
+    ```bash
+    export DEBUG=True
+    ```
+
+1. To run the app using uvicorn, execute the following:
 
     ```bash
     python main.py
     ```
+
+    Note: for hot reloading of the app use: `uvicorn main:app --host 0.0.0.0 --port 9090 --reload`
 
 1. View app at `http://localhost:9090/`
 
@@ -100,12 +116,18 @@ pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/r
     gcloud iam service-accounts create extension-identity
     ```
 
-1. Grant permissions to access Cloud SQL:
+1. Grant permissions to access Cloud SQL and/or AlloyDB:
 
     ```bash
     gcloud projects add-iam-policy-binding $PROJECT_ID \
         --member serviceAccount:extension-identity@$PROJECT_ID.iam.gserviceaccount.com \
         --role roles/cloudsql.client
+    ```
+
+    ```bash
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+        --member serviceAccount:extension-identity@$PROJECT_ID.iam.gserviceaccount.com \
+        --role roles/alloydb.client
     ```
 
 1. Change into the service directory:
@@ -117,12 +139,11 @@ pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/r
 1. Deploy backend service to Cloud Run:
 
     ```bash
-    gcloud alpha run deploy extension-service \
+    gcloud run deploy extension-service \
         --source . \
         --no-allow-unauthenticated \
-        --container container2 --image=gcr.io/cloud-sql-connectors/cloud-sql-proxy --args POSTGRESQL_INSTANCE_NAME
-        --service-account extension-identity
-        --add-cloudsql-instances PROJECT_ID:REGION:CLOUD_SQL_INSTANCE_NAME \
+        --service-account extension-identity \
+        --add-cloudsql-instances <PROJECT_ID:REGION:CLOUD_SQL_INSTANCE_NAME> \
     ```
 
 1. Retrieve extension URL:
@@ -137,16 +158,16 @@ pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/r
     gcloud iam service-accounts create demo-identity
     ```
 
-1. Grant the service account access to invoke the backend service and VertexAI:
+1. Grant the service account access to invoke the backend service and VertexAI API:
 
     ```bash
     gcloud run services add-iam-policy-binding extension-service \
-        --member='serviceAccount:demo-identity' \
-        --role='roles/run.invoker'
-
-
+        --member serviceAccount:demo-identity@$PROJECT_ID.iam.gserviceaccount.com \
+        --role roles/run.invoker
+    ```
+    ```bash
     gcloud projects add-iam-policy-binding $PROJECT_ID \
-        --member serviceAccount:demo@$PROJECT_ID.iam.gserviceaccount.com \
+        --member serviceAccount:demo-identity@$PROJECT_ID.iam.gserviceaccount.com \
         --role roles/aiplatform.user
     ```
 
@@ -162,6 +183,6 @@ pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/r
     gcloud run deploy demo-service \
         --source . \
         --allow-unauthenticated \
-        --set-env-vars=BASE_URL=$EXTENSION_URL
+        --set-env-vars=BASE_URL=$EXTENSION_URL \
         --service-account demo-identity
     ```

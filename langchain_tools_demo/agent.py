@@ -1,14 +1,32 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
-from langchain.agents import AgentType, initialize_agent
-from langchain.llms import VertexAI
-from langchain.memory import ConversationBufferMemory
-from langchain.tools import Tool, StructuredTool
+from typing import Optional
+
 import google.auth.transport.requests
 import google.oauth2.id_token
+
+# import requests
+from langchain.agents import AgentType, initialize_agent
+
+# from langchain.agents.mrkl.base import ZeroShotAgent
+# from langchain.llms import VertexAI
+from langchain.chat_models.vertexai import ChatVertexAI
+from langchain.memory import ConversationBufferMemory
+from langchain.tools import StructuredTool, Tool
 from pydantic.v1 import BaseModel, Field
-from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
-import requests
 
 DEBUG = bool(os.getenv("DEBUG", default=False))
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
@@ -17,24 +35,10 @@ BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 def init_agent(history):
     """Load an agent executor with tools and LLM"""
     print("Initializing agent..")
-    llm = VertexAI(max_output_tokens=512, verbose=DEBUG)
-
-    # Add Chat history
-    # chat_history = ChatMessageHistory()
-    # for message in history:
-    #     if message["role"] == "assistant":
-    #         chat_history.add_ai_message(message["content"])
-    #     else:
-    #         chat_history.add_user_message(message["content"])
+    llm = ChatVertexAI(max_output_tokens=512, verbose=DEBUG)
     memory = ConversationBufferMemory(
         memory_key="chat_history",
-        # return_messages=True,
-        # ai_prefix="assistant",
-        # chat_history=chat_history,
     )
-    # memory.chat_memory.add_ai_message("whats up?")
-    # memory.save_context(history)
-    # memory.load_memory_variables({})
     agent = initialize_agent(
         tools,
         llm,
@@ -48,19 +52,6 @@ def init_agent(history):
     # new_prompt = ZeroShotAgent.create_prompt(tools=tools, prefix=prefix, suffix=suffix)
     # agent.agent.llm_chain.prompt = new_prompt
     return agent
-
-    # results = (
-    #     [
-    #         """Here are is list of toys related to the query in JSON format. Only
-    #         use this list in making recommendations to the customer."""
-    #     ]
-    #     + [f"{r}" for r in response.json()]
-    # )
-    # if len(results) <= 1:
-    #     return """There are no toys matching that query. Please try again or
-    #             let the user know there are no results."""
-    # output = "\n".join(results)
-    # return output
 
 
 def get_id_token():
@@ -85,7 +76,7 @@ def get_flight(id: int):
         "id": id,
         "departure_time": "11am",
         "departure_airport": "SFO",
-        "depatrue_gate": "A13",
+        "depature_gate": "A13",
         "arrival_gate": "N2",
         "arrival_time": "1pm",
         "arrival_airport": "SEA",
@@ -243,22 +234,27 @@ def search_airports(query: str):
 
 
 class IdInput(BaseModel):
-    id: int = Field()
+    id: int = Field(description="Unique identifier")
 
 
 class QueryInput(BaseModel):
-    query: str = Field()  # TODO: add top k?
+    query: str = Field(description="Search query")
 
 
 class ListFlights(BaseModel):
-    departure_airport: str = Field()
-    arrival_airport: str = Field()
-    date: str = Field()  # TODO: check this field type
+    departure_airport: Optional[str] = Field(
+        description="Departure airport 3-letter code"
+    )
+    arrival_airport: Optional[str] = Field(description="Arrival airport 3-letter code")
+    date: str = Field(
+        description="Date of flight departure",
+        default="today"
+    )
 
 
 tools = [
     Tool.from_function(
-        name="get_flight",  # Name must be unique
+        name="get_flight",  # Name must be unique for tool set
         func=get_flight,
         description="Use this tool to get info for a specific flight. Takes an id and returns info on the flight.",
         args_schema=IdInput,
