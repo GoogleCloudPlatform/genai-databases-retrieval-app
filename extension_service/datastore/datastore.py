@@ -74,13 +74,13 @@ class Client(ABC, Generic[C]):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
-    async def get_flight(self, flight_id: int) -> List[Dict[str, Any]]:
+    async def get_flight(self, flight_id: int) -> Optional[list[models.Flight]]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
     async def search_flights_by_airport(
         self, departure_airport: str, arrival_airport: str
-    ) -> List[Dict[str, Any]]:
+    ) -> Optional[list[models.Flight]]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
