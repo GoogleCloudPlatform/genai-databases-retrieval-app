@@ -14,7 +14,7 @@
 
 import asyncio
 from ipaddress import IPv4Address, IPv6Address
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional
 
 import asyncpg
 from pgvector.asyncpg import register_vector
@@ -183,6 +183,20 @@ class Client(datastore.Client[Config]):
         amenities = [models.Amenity.model_validate(dict(a)) for a in await amenity_task]
         flights = [models.Flight.model_validate(dict(f)) for f in await flights_task]
         return airports, amenities, flights
+
+    async def get_airport(self, id: int) -> Optional[models.Airport]:
+        result = await self.__pool.fetchrow(
+            """
+              SELECT id, iata, name, city, country FROM airports WHERE id=$1
+            """,
+            id,
+        )
+
+        if result is None:
+            return None
+
+        result = models.Airport.model_validate(dict(result))
+        return result
 
     async def get_amenity(self, id: int) -> list[Dict[str, Any]]:
         results = await self.__pool.fetch(

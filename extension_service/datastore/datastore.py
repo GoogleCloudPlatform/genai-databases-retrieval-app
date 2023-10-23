@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Tuple, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
 import models
 
@@ -58,6 +58,10 @@ class Client(ABC, Generic[C]):
         self,
     ) -> tuple[list[models.Airport], list[models.Amenity], List[models.Flight]]:
         pass
+
+    @abstractmethod
+    async def get_airport(self, id: int) -> Optional[models.Airport]:
+        raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
     async def get_amenity(self, id: int) -> list[Dict[str, Any]]:
