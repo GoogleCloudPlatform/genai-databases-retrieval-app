@@ -49,3 +49,19 @@ async def amenities_search(query: str, top_k: int, request: Request):
 
     results = await ds.amenities_search(query_embedding, 0.7, top_k)
     return results
+
+
+@routes.get("/flights")
+async def get_flights(flight_id: int, request: Request):
+    ds: datastore.Client = request.app.state.datastore
+    results = await ds.get_flights(flight_id)
+    return results
+
+
+@routes.get("/flights/search")
+async def search_flights_by_airport(
+    departure_airport: str, arrival_airport: str, request: Request
+):
+    ds: datastore.Client = request.app.state.datastore
+    results = await ds.search_flights_by_airport(departure_airport, arrival_airport)
+    return results

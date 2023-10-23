@@ -238,6 +238,40 @@ class Client(datastore.Client[Config]):
 
         results = [models.Amenity.model_validate(dict(r)) for r in results]
         return results
+    
+    async def get_flights(self, flight_id: int) -> List[Dict[str, Any]]:
+        results = await self.__pool.fetch(
+            """
+                SELECT * FROM flights
+                WHERE id = $1
+            """,
+            flight_id,
+            timeout=10,
+        )
+        results = [dict(r) for r in results]
+        return results
+
+    async def search_flights_by_airport(
+        self, departure_airport, arrival_airport
+    ) -> List[Dict[str, Any]]:
+        # Check if either parameter is null.
+        if departure_airport is "":
+            departure_airport = "%"
+        if arrival_airport is "":
+            arrival_airport = "%"
+
+        results = await self.__pool.fetch(
+            """
+                SELECT * FROM flights
+                WHERE departure_airport LIKE $1
+                AND arrival_airport LIKE $2
+            """,
+            departure_airport,
+            arrival_airport,
+            timeout=10,
+        )
+        results = [dict(r) for r in results]
+        return results
 
     async def close(self):
         await self.__pool.close()

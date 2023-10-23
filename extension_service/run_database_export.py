@@ -69,8 +69,8 @@ async def main():
         ]
         writer = csv.DictWriter(f, col_names, delimiter=",")
         writer.writeheader()
-        for t in flights:
-            writer.writerow(t.model_dump())
+        for f in flights:
+            writer.writerow(f.model_dump())
 
 
 if __name__ == "__main__":
