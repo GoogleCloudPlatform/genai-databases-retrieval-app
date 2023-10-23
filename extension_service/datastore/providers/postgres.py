@@ -141,5 +141,40 @@ class Client(datastore.Client[Config]):
 
         return airports, amenities
 
+    async def get_amenity(self, id: int) -> list[Dict[str, Any]]:
+        results = await self.__pool.fetch(
+            """
+                SELECT name, description, location, terminal, category, hour
+                FROM amenities WHERE id=$1
+            """,
+            id,
+        )
+
+        results = [dict(r) for r in results]
+        return results
+
+    async def amenities_search(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> list[Dict[str, Any]]:
+        results = await self.__pool.fetch(
+            """
+                SELECT name, description, location, terminal, category, hour
+                FROM (
+                    SELECT name, description, location, terminal, category, hour, 1 - (embedding <=> $1) AS similarity
+                    FROM amenities
+                    WHERE 1 - (embedding <=> $1) > $2
+                    ORDER BY similarity DESC
+                    LIMIT $3
+                ) AS sorted_amenities
+            """,
+            query_embedding,
+            similarity_threshold,
+            top_k,
+            timeout=10,
+        )
+
+        results = [dict(r) for r in results]
+        return results
+
     async def close(self):
         await self.__pool.close()

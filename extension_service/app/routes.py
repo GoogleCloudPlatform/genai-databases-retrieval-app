@@ -13,7 +13,10 @@
 # limitations under the License.
 
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
+from langchain.embeddings.base import Embeddings
+
+import datastore
 
 routes = APIRouter()
 
@@ -21,3 +24,21 @@ routes = APIRouter()
 @routes.get("/")
 async def root():
     return {"message": "Hello World"}
+
+
+@routes.get("/amenities")
+async def get_amenity(id: int, request: Request):
+    ds: datastore.Client = request.app.state.datastore
+    results = await ds.get_amenity(id)
+    return results
+
+
+@routes.get("/amenities/search")
+async def amenities_search(query: str, top_k: int, request: Request):
+    ds: datastore.Client = request.app.state.datastore
+
+    embed_service: Embeddings = request.app.state.embed_service
+    query_embedding = embed_service.embed_query(query)
+
+    results = await ds.amenities_search(query_embedding, 0.7, top_k)
+    return results
