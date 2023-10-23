@@ -39,8 +39,13 @@ class MockAsyncpgPool(asyncpg.Pool):
     def __init__(self, mocks: Dict[str, MockRecord]):
         self.mocks = mocks
 
-    async def fetch(self, query, *args):
-        return self.mocks.get(query.strip())
+    async def fetch(self, query, *args, timeout=None):
+        query = " ".join(q.strip() for q in query.splitlines()).strip()
+        return self.mocks.get(query)
+
+    async def fetchrow(self, query, *args, timeout=None):
+        query = " ".join(q.strip() for q in query.splitlines()).strip()
+        return self.mocks.get(query)
 
 
 async def mock_postgres_provider(mocks: Dict[str, MockRecord]) -> postgres.Client:
@@ -51,6 +56,31 @@ async def mock_postgres_provider(mocks: Dict[str, MockRecord]) -> postgres.Clien
 
 @pytest.mark.asyncio
 async def test_get_airport():
+    mockRecord = MockRecord(
+        [
+            ("id", 1),
+            ("iata", "FOO"),
+            ("name", "Foo Bar"),
+            ("city", "baz"),
+            ("country", "bundy"),
+        ]
+    )
+    query = "SELECT id, iata, name, city, country FROM airports WHERE id=$1"
+    mocks = {query: mockRecord}
+    mockCl = await mock_postgres_provider(mocks)
+    res = await mockCl.get_airport(1)
+    expected_res = models.Airport(
+        id=1,
+        iata="FOO",
+        name="Foo Bar",
+        city="baz",
+        country="bundy",
+    )
+    assert res == expected_res
+
+
+@pytest.mark.asyncio
+async def test_airports_semantic_lookup():
     mockRecord = [
         MockRecord(
             [
@@ -62,11 +92,20 @@ async def test_get_airport():
             ]
         )
     ]
-    mocks = {
-        "SELECT id, iata, name, city, country FROM airports WHERE id=$1": mockRecord
-    }
+    query = """
+                 SELECT id, iata, name, city, country
+                 FROM (
+                     SELECT id, iata, name, city, country, 1 - (embedding <=> $1) AS similarity
+                     FROM airports
+                     WHERE 1 - (embedding <=> $1) > $2
+                     ORDER BY similarity DESC
+                     LIMIT $3
+                 ) AS sorted_airports
+             """
+    query = " ".join(q.strip() for q in query.splitlines()).strip()
+    mocks = {query: mockRecord}
     mockCl = await mock_postgres_provider(mocks)
-    res = await mockCl.get_airport(1)
+    res = await mockCl.airports_semantic_lookup(1, 0.7, 1)
     expected_res = [
         models.Airport(
             id=1,
@@ -75,25 +114,5 @@ async def test_get_airport():
             city="baz",
             country="bundy",
         )
-    ]
-    assert res == expected_res
-
-
-@pytest.mark.asyncio
-async def test_airport_search():
-    mockRecord = [
-        MockRecord(
-            [
-                ("iata", "FOO"),
-                ("name", "Foo Bar"),
-                ("city", "baz"),
-                ("country", "bundy"),
-            ]
-        )
-    ]
-    mockCl = await create_postgres_provider(mockRecord)
-    res = await mockCl.airports_search(1, 0.7, 1)
-    expected_res = [
-        {"iata": "FOO", "name": "Foo Bar", "city": "baz", "country": "bundy"}
     ]
     assert res == expected_res

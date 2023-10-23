@@ -40,7 +40,7 @@ async def airports_semantic_lookup(query: str, top_k: int, request: Request):
     embed_service: Embeddings = request.app.state.embed_service
     query_embedding = embed_service.embed_query(query)
 
-    results = await ds.airports_semantic_lookup(query_embedding, 0.9, top_k)
+    results = await ds.airports_semantic_lookup(query_embedding, 0.7, top_k)
     return results
 
 

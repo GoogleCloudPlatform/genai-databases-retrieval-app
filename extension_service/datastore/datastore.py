@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
+from typing import Any, Dict, Generic, Optional, TypeVar
 
 import models
 
@@ -49,18 +49,24 @@ class Client(ABC, Generic[C]):
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
-        flights: List[models.Flight],
+        flights: list[models.Flight],
     ) -> None:
         pass
 
     @abstractmethod
     async def export_data(
         self,
-    ) -> tuple[list[models.Airport], list[models.Amenity], List[models.Flight]]:
+    ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
         pass
 
     @abstractmethod
     async def get_airport(self, id: int) -> Optional[models.Airport]:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
+    async def airports_semantic_lookup(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> Optional[list[models.Airport]]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
@@ -71,16 +77,6 @@ class Client(ABC, Generic[C]):
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[Dict[str, Any]]:
-        raise NotImplementedError("Subclass should implement this!")
-
-    @abstractmethod
-    async def get_airport(self, id: int) -> list[models.Airport]:
-        raise NotImplementedError("Subclass should implement this!")
-
-    @abstractmethod
-    async def airports_semantic_lookup(
-        self, query_embedding: List[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Airport]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod

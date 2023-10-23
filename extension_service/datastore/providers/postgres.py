@@ -14,7 +14,7 @@
 
 import asyncio
 from ipaddress import IPv4Address, IPv6Address
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, Literal, Optional
 
 import asyncpg
 from pgvector.asyncpg import register_vector
@@ -67,7 +67,7 @@ class Client(datastore.Client[Config]):
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
-        flights: List[models.Flight],
+        flights: list[models.Flight],
     ) -> None:
         async with self.__pool.acquire() as conn:
             # If the table already exists, drop it to avoid conflicts
@@ -120,8 +120,8 @@ class Client(datastore.Client[Config]):
                   name TEXT,
                   city TEXT,
                   country TEXT,
-                  content TEXT,
-                  embedding vector(768)
+                  content TEXT NOT NULL,
+                  embedding vector(768) NOT NULL
                 )
                 """
             )
@@ -147,8 +147,8 @@ class Client(datastore.Client[Config]):
                   terminal TEXT,
                   category TEXT,
                   hour TEXT,
-                  content TEXT,
-                  embedding vector(768)
+                  content TEXT NOT NULL,
+                  embedding vector(768) NOT NULL
                 )
                 """
             )
@@ -203,6 +203,32 @@ class Client(datastore.Client[Config]):
         result = models.Airport.model_validate(dict(result))
         return result
 
+    async def airports_semantic_lookup(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> Optional[list[models.Airport]]:
+        results = await self.__pool.fetch(
+            """
+                SELECT id, iata, name, city, country
+                FROM (
+                    SELECT id, iata, name, city, country, 1 - (embedding <=> $1) AS similarity
+                    FROM airports
+                    WHERE 1 - (embedding <=> $1) > $2
+                    ORDER BY similarity DESC
+                    LIMIT $3
+                ) AS sorted_airports
+            """,
+            query_embedding,
+            similarity_threshold,
+            top_k,
+            timeout=10,
+        )
+
+        if results is []:
+            return None
+
+        results = [models.Airport.model_validate(dict(r)) for r in results]
+        return results
+
     async def get_amenity(self, id: int) -> list[Dict[str, Any]]:
         results = await self.__pool.fetch(
             """
@@ -237,51 +263,6 @@ class Client(datastore.Client[Config]):
 
         results = [dict(r) for r in results]
         return results
-
-    async def get_airport(self, id: int) -> list[models.Airport]:
-        results = await self.__pool.fetch(
-            """
-              SELECT id, iata, name, city, country FROM airports WHERE id=$1
-            """,
-            id,
-        )
-
-        airports = [models.Airport.model_validate(dict(r)) for r in results]
-        return airports
-
-    async def get_airport(self, id: int) -> List[Dict[str, Any]]:
-        results = await self.__pool.fetch(
-            """
-              SELECT iata, name, city, country FROM airports WHERE id=$1
-            """,
-            id,
-        )
-
-        results = [dict(r) for r in results]
-        return results
-
-    async def airports_semantic_lookup(
-        self, query_embedding: List[float], similarity_threshold: float, top_k: int
-    ) -> List[models.Airport]:
-        results = await self.__pool.fetch(
-            """
-                SELECT iata, name, city, country
-                FROM (
-                    SELECT iata, name, city, country, 1 - (embedding <=> $1) AS similarity
-                    FROM airports
-                    WHERE 1 - (embedding <=> $1) > $2
-                    ORDER BY similarity DESC
-                    LIMIT $3
-                ) AS sorted_airports
-            """,
-            query_embedding,
-            similarity_threshold,
-            top_k,
-            timeout=10,
-        )
-
-        airports = [models.Airport.model_validate(dict(r)) for r in results]
-        return airports
 
     async def close(self):
         await self.__pool.close()

@@ -15,7 +15,7 @@
 import ast
 import datetime
 from decimal import Decimal
-from typing import List
+from typing import Optional
 
 from numpy import float32
 from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
@@ -29,8 +29,8 @@ class Airport(BaseModel):
     name: str
     city: str
     country: str
-    content: str
-    embedding: list[float32]
+    content: Optional[str] = None
+    embedding: Optional[list[float32]] = None
 
     @field_validator("embedding", mode="before")
     def validate(cls, v):

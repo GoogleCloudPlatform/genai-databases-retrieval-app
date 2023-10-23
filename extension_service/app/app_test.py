@@ -63,7 +63,7 @@ def test_get_airport(app):
     assert output[0]
 
 
-def test_airports_search(app):
+def test_airports_semantic_lookup(app):
     with TestClient(app) as client:
         response = client.get(
             "/airports/semantic_lookup",
