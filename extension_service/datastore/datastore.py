@@ -17,6 +17,7 @@ from typing import Any, Dict, Generic, List, Tuple, TypeVar
 
 import models
 
+
 class AbstractConfig(ABC):
     kind: str
 

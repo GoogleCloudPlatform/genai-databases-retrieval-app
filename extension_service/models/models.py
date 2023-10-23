@@ -19,6 +19,7 @@ import datetime
 from decimal import Decimal
 from typing import List
 
+
 class Airport(BaseModel):
     id: int
     iata: str
