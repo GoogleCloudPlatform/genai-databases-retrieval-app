@@ -13,9 +13,8 @@
 # limitations under the License.
 
 import pytest
-from fastapi.testclient import TestClient
-
 from datastore.providers import postgres
+from fastapi.testclient import TestClient
 
 from . import init_app
 from .app import AppConfig
@@ -90,6 +89,7 @@ def test_airports_semantic_lookup(app):
     output = response.json()
     assert len(output) == 5
     assert output[0]
+
 
 def test_get_amenity(app):
     with TestClient(app) as client:
