@@ -13,8 +13,9 @@
 # limitations under the License.
 
 import pytest
-from datastore.providers import postgres
 from fastapi.testclient import TestClient
+
+from datastore.providers import postgres
 
 from . import init_app
 from .app import AppConfig
