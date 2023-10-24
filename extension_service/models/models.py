@@ -50,8 +50,8 @@ class Amenity(BaseModel):
     terminal: str
     category: str
     hour: str
-    content: str
-    embedding: list[float32]
+    content: Optional[str] = None
+    embedding: Optional[list[float32]] = None
 
     @field_validator("embedding", mode="before")
     def validate(cls, v):

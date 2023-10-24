@@ -118,3 +118,40 @@ async def test_airports_semantic_lookup():
         )
     ]
     assert res == expected_res
+
+
+@pytest.mark.asyncio
+async def test_get_amenity():
+    mockRecord = [
+        MockRecord(
+            [
+                ("id", 1),
+                ("name", "FOO"),
+                ("description", "Foo Bar"),
+                ("location", "baz"),
+                ("terminal", "bundy"),
+                ("category", "baz bundy"),
+                ("hour", "foo bar buz bundy"),
+            ]
+        )
+    ]
+    query = """
+              SELECT id, name, description, location, terminal, category, hour
+              FROM amenities WHERE id=$1
+            """
+    query = " ".join(q.strip() for q in query.splitlines()).strip()
+    mocks = {
+        query: mockRecord
+    }
+    mockCl = await mock_postgres_provider(mocks)
+    res = await mockCl.get_airport(1)
+    expected_res = models.Amenity(
+            id=1,
+            name="FOO",
+            description="Foo Bar",
+            location="baz",
+            terminal="bundy",
+            category="baz bundy",
+            hour="foo bar buz bundy",
+        )
+    assert res == expected_res
