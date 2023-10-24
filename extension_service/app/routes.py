@@ -26,6 +26,24 @@ async def root():
     return {"message": "Hello World"}
 
 
+@routes.get("/airports")
+async def get_airport(id: int, request: Request):
+    ds: datastore.Client = request.app.state.datastore
+    results = await ds.get_airport(id)
+    return results
+
+
+@routes.get("/airports/semantic_lookup")
+async def airports_semantic_lookup(query: str, top_k: int, request: Request):
+    ds: datastore.Client = request.app.state.datastore
+
+    embed_service: Embeddings = request.app.state.embed_service
+    query_embedding = embed_service.embed_query(query)
+
+    results = await ds.airports_semantic_lookup(query_embedding, 0.7, top_k)
+    return results
+
+
 @routes.get("/amenities")
 async def get_amenity(id: int, request: Request):
     ds: datastore.Client = request.app.state.datastore
