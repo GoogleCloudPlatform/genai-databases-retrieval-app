@@ -29,4 +29,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . ./
 
 # Run the web service on container startup.
-CMD python run_app.py
+CMD ["python", "run_app.py"]
