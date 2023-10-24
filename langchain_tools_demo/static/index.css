@@ -49,7 +49,7 @@ body {
 }
 
 .chat-content {
-    height: 650px;
+    height: 600px;
     overflow: scroll;
 }
 
