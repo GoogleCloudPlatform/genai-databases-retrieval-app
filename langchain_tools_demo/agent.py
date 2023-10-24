@@ -174,8 +174,8 @@ tools = [
     Tool.from_function(
         name="get_amenity",
         func=get_amenity,
-        description="Use this tool to get info for a specific airport amenity. Takes an id and returns info on the amenity. Use the id from the search_amenities tool.",
-        # args_schema=IdInput,
+        description="Use this tool to get info for a specific airport amenity. Takes an id and returns info on the amenity. Always use the id from the search_amenities tool.",
+        args_schema=IdInput,
     ),
     Tool.from_function(
         name="search_amenities",
@@ -183,16 +183,16 @@ tools = [
         description="Use this tool to recommended airport amenities at SFO. Returns several amenities that are related to the query. Only recommend amenities that are returned by this query.",
         args_schema=QueryInput,
     ),
-    # Tool.from_function(
-    #     name="get_airport",
-    #     func=get_airport,
-    #     description="Use this tool to get info for a specific airport. Takes an id and returns info on the airport.",
-    #     args_schema=IdInput,
-    # ),
-    # Tool.from_function(
-    #     name="search_airports",
-    #     func=search_airports,
-    #     description="Use this tool to search for airports.",
-    #     args_schema=QueryInput,
-    # ),
+    Tool.from_function(
+        name="get_airport",
+        func=get_airport,
+        description="Use this tool to get info for a specific airport. Takes an id and returns info on the airport. Always use the id from the search_airports tool.",
+        args_schema=IdInput,
+    ),
+    Tool.from_function(
+        name="search_airports",
+        func=search_airports,
+        description="Use this tool to search for airports. Returns several airports that are related to the query. Only recommend airports that are returned by this query.",
+        args_schema=QueryInput,
+    ),
 ]
