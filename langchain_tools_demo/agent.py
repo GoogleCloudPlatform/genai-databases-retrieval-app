@@ -19,9 +19,7 @@ import google.auth.transport.requests
 import google.oauth2.id_token
 import requests
 from langchain.agents import AgentType, initialize_agent
-
-# from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.chat_models.vertexai import ChatVertexAI
+from langchain.llms.vertexai import VertexAI
 from langchain.memory import ConversationBufferMemory
 from langchain.tools import StructuredTool, Tool
 from pydantic.v1 import BaseModel, Field
@@ -33,20 +31,21 @@ BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 def init_agent(history):
     """Load an agent executor with tools and LLM"""
     print("Initializing agent..")
-    llm = ChatVertexAI(max_output_tokens=512, verbose=DEBUG)
+    llm = VertexAI(max_output_tokens=512, verbose=DEBUG)
     memory = ConversationBufferMemory(
         memory_key="chat_history",
     )
     agent = initialize_agent(
         tools,
         llm,
-        agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+        agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
         verbose=DEBUG,
         memory=memory,
         handle_parsing_errors=True,
         max_iterations=3,
     )
     agent.agent.llm_chain.verbose = DEBUG
+
     return agent
 
 
