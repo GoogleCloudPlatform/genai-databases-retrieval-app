@@ -17,6 +17,7 @@ from fastapi import APIRouter, Request
 from langchain.embeddings.base import Embeddings
 
 import datastore
+from typing import Optional
 
 routes = APIRouter()
 
@@ -52,16 +53,18 @@ async def amenities_search(query: str, top_k: int, request: Request):
 
 
 @routes.get("/flights")
-async def get_flights(flight_id: int, request: Request):
+async def get_flight(flight_id: int, request: Request):
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.get_flights(flight_id)
-    return results
+    flights = await ds.get_flight(flight_id)
+    return flights
 
 
 @routes.get("/flights/search")
 async def search_flights_by_airport(
-    departure_airport: str, arrival_airport: str, request: Request
+    request: Request,
+    departure_airport: Optional[str] = None,
+    arrival_airport: Optional[str] = None,
 ):
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.search_flights_by_airport(departure_airport, arrival_airport)
-    return results
+    flights = await ds.search_flights_by_airport(departure_airport, arrival_airport)
+    return flights

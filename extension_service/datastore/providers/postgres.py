@@ -17,10 +17,9 @@ from ipaddress import IPv4Address, IPv6Address
 from typing import Any, Dict, Literal, Optional
 
 import asyncpg
+import models
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
-
-import models
 
 from .. import datastore
 
@@ -239,7 +238,7 @@ class Client(datastore.Client[Config]):
         results = [models.Amenity.model_validate(dict(r)) for r in results]
         return results
 
-    async def get_flights(self, flight_id: int) -> List[Dict[str, Any]]:
+    async def get_flight(self, flight_id: int) -> Optional[list[models.Flight]]:
         results = await self.__pool.fetch(
             """
                 SELECT * FROM flights
@@ -248,16 +247,16 @@ class Client(datastore.Client[Config]):
             flight_id,
             timeout=10,
         )
-        results = [dict(r) for r in results]
-        return results
+        flights = [models.Flight.model_validate(dict(r)) for r in results]
+        return flights
 
     async def search_flights_by_airport(
-        self, departure_airport, arrival_airport
-    ) -> List[Dict[str, Any]]:
+        self, departure_airport: str, arrival_airport: str
+    )-> Optional[list[models.Flight]]:
         # Check if either parameter is null.
-        if departure_airport is "":
+        if departure_airport is None:
             departure_airport = "%"
-        if arrival_airport is "":
+        if arrival_airport is None:
             arrival_airport = "%"
 
         results = await self.__pool.fetch(
@@ -270,8 +269,8 @@ class Client(datastore.Client[Config]):
             arrival_airport,
             timeout=10,
         )
-        results = [dict(r) for r in results]
-        return results
+        flights = [models.Flight.model_validate(dict(r)) for r in results]
+        return flights
 
     async def close(self):
         await self.__pool.close()
