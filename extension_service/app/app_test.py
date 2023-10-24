@@ -49,10 +49,10 @@ def test_hello_world(app):
         assert response.json() == {"message": "Hello World"}
 
 
-def test_get_amenity(app):
+def test_get_airport(app):
     with TestClient(app) as client:
         response = client.get(
-            "/amenities",
+            "/airports",
             params={
                 "id": 1,
             },
@@ -63,10 +63,25 @@ def test_get_amenity(app):
     assert output[0]
 
 
-def test_get_airport(app):
+def test_airports_semantic_lookup(app):
     with TestClient(app) as client:
         response = client.get(
-            "/airports",
+            "/airports/semantic_lookup",
+            params={
+                "query": "What is the airport in san francisco.",
+                "top_k": 5,
+            },
+        )
+    assert response.status_code == 200
+    output = response.json()
+    assert len(output) == 5
+    assert output[0]
+
+
+def test_get_amenity(app):
+    with TestClient(app) as client:
+        response = client.get(
+            "/amenities",
             params={
                 "id": 1,
             },
