@@ -238,7 +238,7 @@ class Client(datastore.Client[Config]):
             id,
         )
 
-        if result is Nonw:
+        if result is None:
             return None
 
         result = models.Amenity.model_validate(dict(result))
