@@ -44,6 +44,7 @@ def init_agent(history):
         verbose=DEBUG,
         memory=memory,
         handle_parsing_errors=True,
+        max_iterations=3,
     )
     agent.agent.llm_chain.verbose = DEBUG
     return agent
