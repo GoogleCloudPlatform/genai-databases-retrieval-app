@@ -251,7 +251,7 @@ class Client(datastore.Client[Config]):
         flights = [models.Flight.model_validate(dict(r)) for r in results]
         return flights
 
-    async def search_flights_by_airport(
+    async def search_flights(
         self,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,

@@ -61,11 +61,11 @@ async def get_flight(flight_id: int, request: Request):
 
 
 @routes.get("/flights/search")
-async def search_flights_by_airport(
+async def search_flights(
     request: Request,
     departure_airport: Optional[str] = None,
     arrival_airport: Optional[str] = None,
 ):
     ds: datastore.Client = request.app.state.datastore
-    flights = await ds.search_flights_by_airport(departure_airport, arrival_airport)
+    flights = await ds.search_flights(departure_airport, arrival_airport)
     return flights
