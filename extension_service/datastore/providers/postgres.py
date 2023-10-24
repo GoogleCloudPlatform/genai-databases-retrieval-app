@@ -119,19 +119,14 @@ class Client(datastore.Client[Config]):
                   iata TEXT,
                   name TEXT,
                   city TEXT,
-                  country TEXT,
-                  content TEXT NOT NULL,
-                  embedding vector(768) NOT NULL
+                  country TEXT
                 )
                 """
             )
             # Insert all the data
             await conn.executemany(
-                """INSERT INTO airports VALUES ($1, $2, $3, $4, $5, $6, $7)""",
-                [
-                    (a.id, a.iata, a.name, a.city, a.country, a.content, a.embedding)
-                    for a in airports
-                ],
+                """INSERT INTO airports VALUES ($1, $2, $3, $4, $5)""",
+                [(a.id, a.iata, a.name, a.city, a.country) for a in airports],
             )
 
             # If the table already exists, drop it to avoid conflicts
@@ -202,32 +197,6 @@ class Client(datastore.Client[Config]):
 
         result = models.Airport.model_validate(dict(result))
         return result
-
-    async def airports_semantic_lookup(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> Optional[list[models.Airport]]:
-        results = await self.__pool.fetch(
-            """
-                SELECT id, iata, name, city, country
-                FROM (
-                    SELECT id, iata, name, city, country, 1 - (embedding <=> $1) AS similarity
-                    FROM airports
-                    WHERE 1 - (embedding <=> $1) > $2
-                    ORDER BY similarity DESC
-                    LIMIT $3
-                ) AS sorted_airports
-            """,
-            query_embedding,
-            similarity_threshold,
-            top_k,
-            timeout=10,
-        )
-
-        if results is []:
-            return None
-
-        results = [models.Airport.model_validate(dict(r)) for r in results]
-        return results
 
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         result = await self.__pool.fetchrow(
