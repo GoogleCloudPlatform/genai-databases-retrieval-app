@@ -252,7 +252,7 @@ class Client(datastore.Client[Config]):
 
     async def search_flights_by_airport(
         self, departure_airport: str, arrival_airport: str
-    )-> Optional[list[models.Flight]]:
+    ) -> Optional[list[models.Flight]]:
         # Check if either parameter is null.
         if departure_airport is None:
             departure_airport = "%"
