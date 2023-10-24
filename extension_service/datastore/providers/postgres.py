@@ -17,10 +17,9 @@ from ipaddress import IPv4Address, IPv6Address
 from typing import Any, Dict, Literal, Optional
 
 import asyncpg
+import models
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
-
-import models
 
 from .. import datastore
 
@@ -70,6 +69,7 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
     ) -> None:
         async with self.__pool.acquire() as conn:
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
             # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS flights CASCADE")
             # Create a new table
@@ -106,7 +106,6 @@ class Client(datastore.Client[Config]):
                     for f in flights
                 ],
             )
-            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
 
         async with self.__pool.acquire() as conn:
             # If the table already exists, drop it to avoid conflicts

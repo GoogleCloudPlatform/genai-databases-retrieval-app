@@ -79,7 +79,9 @@ class Client(ABC, Generic[C]):
 
     @abstractmethod
     async def search_flights_by_airport(
-        self, departure_airport: str, arrival_airport: str
+        self,
+        departure_airport: Optional[str] = None,
+        arrival_airport: Optional[str] = None,
     ) -> Optional[list[models.Flight]]:
         raise NotImplementedError("Subclass should implement this!")
 

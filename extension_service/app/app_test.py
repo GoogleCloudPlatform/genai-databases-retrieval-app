@@ -91,7 +91,6 @@ def test_airports_semantic_lookup(app):
     assert len(output) == 5
     assert output[0]
 
-
 def test_get_amenity(app):
     with TestClient(app) as client:
         response = client.get(
