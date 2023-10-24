@@ -21,9 +21,9 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from langchain.agents.agent import AgentExecutor
+from markdown import markdown
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
-from markdown import markdown
 
 from agent import init_agent
 

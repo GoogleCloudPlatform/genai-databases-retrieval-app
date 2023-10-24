@@ -4,4 +4,5 @@ itsdangerous==2.1.2
 jinja2==3.1.2
 langchain==0.0.320
 markdown==3.5
+types-Markdown==3.5.0.0
 uvicorn[standard]==0.23.2

@@ -17,7 +17,6 @@ from typing import Optional
 
 import google.auth.transport.requests
 import google.oauth2.id_token
-
 import requests
 from langchain.agents import AgentType, initialize_agent
 
