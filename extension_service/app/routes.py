@@ -13,11 +13,12 @@
 # limitations under the License.
 
 
+from typing import Optional
+
 from fastapi import APIRouter, Request
 from langchain.embeddings.base import Embeddings
 
 import datastore
-from typing import Optional
 
 routes = APIRouter()
 
