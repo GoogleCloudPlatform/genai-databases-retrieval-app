@@ -229,26 +229,29 @@ class Client(datastore.Client[Config]):
         results = [models.Airport.model_validate(dict(r)) for r in results]
         return results
 
-    async def get_amenity(self, id: int) -> list[Dict[str, Any]]:
-        results = await self.__pool.fetch(
+    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
+        result = await self.__pool.fetchrow(
             """
-                SELECT name, description, location, terminal, category, hour
+                SELECT id, name, description, location, terminal, category, hour
                 FROM amenities WHERE id=$1
             """,
             id,
         )
 
-        results = [dict(r) for r in results]
-        return results
+        if result is None:
+            return None
+
+        result = models.Amenity.model_validate(dict(result))
+        return result
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[Dict[str, Any]]:
+    ) -> Optional[list[models.Amenity]]:
         results = await self.__pool.fetch(
             """
-                SELECT name, description, location, terminal, category, hour
+                SELECT id, name, description, location, terminal, category, hour
                 FROM (
-                    SELECT name, description, location, terminal, category, hour, 1 - (embedding <=> $1) AS similarity
+                    SELECT id, name, description, location, terminal, category, hour, 1 - (embedding <=> $1) AS similarity
                     FROM amenities
                     WHERE 1 - (embedding <=> $1) > $2
                     ORDER BY similarity DESC
@@ -261,7 +264,10 @@ class Client(datastore.Client[Config]):
             timeout=10,
         )
 
-        results = [dict(r) for r in results]
+        if results is []:
+            return None
+
+        results = [models.Amenity.model_validate(dict(r)) for r in results]
         return results
 
     async def close(self):

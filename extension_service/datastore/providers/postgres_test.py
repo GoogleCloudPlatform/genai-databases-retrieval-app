@@ -116,3 +116,79 @@ async def test_airports_semantic_lookup():
         )
     ]
     assert res == expected_res
+
+
+@pytest.mark.asyncio
+async def test_get_amenity():
+    mockRecord = MockRecord(
+        [
+            ("id", 1),
+            ("name", "FOO"),
+            ("description", "Foo Bar"),
+            ("location", "baz"),
+            ("terminal", "bundy"),
+            ("category", "baz bundy"),
+            ("hour", "foo bar buz bundy"),
+        ]
+    )
+    query = """
+              SELECT id, name, description, location, terminal, category, hour
+              FROM amenities WHERE id=$1
+            """
+    query = " ".join(q.strip() for q in query.splitlines()).strip()
+    mocks = {query: mockRecord}
+    mockCl = await mock_postgres_provider(mocks)
+    res = await mockCl.get_amenity(1)
+    expected_res = models.Amenity(
+        id=1,
+        name="FOO",
+        description="Foo Bar",
+        location="baz",
+        terminal="bundy",
+        category="baz bundy",
+        hour="foo bar buz bundy",
+    )
+    assert res == expected_res
+
+
+@pytest.mark.asyncio
+async def test_amenities_search():
+    mockRecord = [
+        MockRecord(
+            [
+                ("id", 1),
+                ("name", "FOO"),
+                ("description", "Foo Bar"),
+                ("location", "baz"),
+                ("terminal", "bundy"),
+                ("category", "baz bundy"),
+                ("hour", "foo bar buz bundy"),
+            ]
+        )
+    ]
+    query = """
+                  SELECT id, name, description, location, terminal, category, hour
+                  FROM (
+                      SELECT id, name, description, location, terminal, category, hour, 1 - (embedding <=> $1) AS similarity
+                      FROM amenities
+                      WHERE 1 - (embedding <=> $1) > $2
+                      ORDER BY similarity DESC
+                     LIMIT $3
+                 ) AS sorted_amenities
+            """
+    query = " ".join(q.strip() for q in query.splitlines()).strip()
+    mocks = {query: mockRecord}
+    mockCl = await mock_postgres_provider(mocks)
+    res = await mockCl.amenities_search(1, 0.7, 1)
+    expected_res = [
+        models.Amenity(
+            id=1,
+            name="FOO",
+            description="Foo Bar",
+            location="baz",
+            terminal="bundy",
+            category="baz bundy",
+            hour="foo bar buz bundy",
+        )
+    ]
+    assert res == expected_res
