@@ -70,6 +70,7 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
     ) -> None:
         async with self.__pool.acquire() as conn:
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
             # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS flights CASCADE")
             # Create a new table
@@ -106,7 +107,6 @@ class Client(datastore.Client[Config]):
                     for f in flights
                 ],
             )
-            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
 
         async with self.__pool.acquire() as conn:
             # If the table already exists, drop it to avoid conflicts
@@ -119,19 +119,14 @@ class Client(datastore.Client[Config]):
                   iata TEXT,
                   name TEXT,
                   city TEXT,
-                  country TEXT,
-                  content TEXT NOT NULL,
-                  embedding vector(768) NOT NULL
+                  country TEXT
                 )
                 """
             )
             # Insert all the data
             await conn.executemany(
-                """INSERT INTO airports VALUES ($1, $2, $3, $4, $5, $6, $7)""",
-                [
-                    (a.id, a.iata, a.name, a.city, a.country, a.content, a.embedding)
-                    for a in airports
-                ],
+                """INSERT INTO airports VALUES ($1, $2, $3, $4, $5)""",
+                [(a.id, a.iata, a.name, a.city, a.country) for a in airports],
             )
 
             # If the table already exists, drop it to avoid conflicts
@@ -203,32 +198,6 @@ class Client(datastore.Client[Config]):
         result = models.Airport.model_validate(dict(result))
         return result
 
-    async def airports_semantic_lookup(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> Optional[list[models.Airport]]:
-        results = await self.__pool.fetch(
-            """
-                SELECT id, iata, name, city, country
-                FROM (
-                    SELECT id, iata, name, city, country, 1 - (embedding <=> $1) AS similarity
-                    FROM airports
-                    WHERE 1 - (embedding <=> $1) > $2
-                    ORDER BY similarity DESC
-                    LIMIT $3
-                ) AS sorted_airports
-            """,
-            query_embedding,
-            similarity_threshold,
-            top_k,
-            timeout=10,
-        )
-
-        if results is []:
-            return None
-
-        results = [models.Airport.model_validate(dict(r)) for r in results]
-        return results
-
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         result = await self.__pool.fetchrow(
             """
@@ -269,6 +238,42 @@ class Client(datastore.Client[Config]):
 
         results = [models.Amenity.model_validate(dict(r)) for r in results]
         return results
+
+    async def get_flight(self, flight_id: int) -> Optional[list[models.Flight]]:
+        results = await self.__pool.fetch(
+            """
+                SELECT * FROM flights
+                WHERE id = $1
+            """,
+            flight_id,
+            timeout=10,
+        )
+        flights = [models.Flight.model_validate(dict(r)) for r in results]
+        return flights
+
+    async def search_flights(
+        self,
+        departure_airport: Optional[str] = None,
+        arrival_airport: Optional[str] = None,
+    ) -> Optional[list[models.Flight]]:
+        # Check if either parameter is null.
+        if departure_airport is None:
+            departure_airport = "%"
+        if arrival_airport is None:
+            arrival_airport = "%"
+
+        results = await self.__pool.fetch(
+            """
+                SELECT * FROM flights
+                WHERE departure_airport LIKE $1
+                AND arrival_airport LIKE $2
+            """,
+            departure_airport,
+            arrival_airport,
+            timeout=10,
+        )
+        flights = [models.Flight.model_validate(dict(r)) for r in results]
+        return flights
 
     async def close(self):
         await self.__pool.close()

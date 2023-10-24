@@ -80,45 +80,6 @@ async def test_get_airport():
 
 
 @pytest.mark.asyncio
-async def test_airports_semantic_lookup():
-    mockRecord = [
-        MockRecord(
-            [
-                ("id", 1),
-                ("iata", "FOO"),
-                ("name", "Foo Bar"),
-                ("city", "baz"),
-                ("country", "bundy"),
-            ]
-        )
-    ]
-    query = """
-                 SELECT id, iata, name, city, country
-                 FROM (
-                     SELECT id, iata, name, city, country, 1 - (embedding <=> $1) AS similarity
-                     FROM airports
-                     WHERE 1 - (embedding <=> $1) > $2
-                     ORDER BY similarity DESC
-                     LIMIT $3
-                 ) AS sorted_airports
-             """
-    query = " ".join(q.strip() for q in query.splitlines()).strip()
-    mocks = {query: mockRecord}
-    mockCl = await mock_postgres_provider(mocks)
-    res = await mockCl.airports_semantic_lookup(1, 0.7, 1)
-    expected_res = [
-        models.Airport(
-            id=1,
-            iata="FOO",
-            name="Foo Bar",
-            city="baz",
-            country="bundy",
-        )
-    ]
-    assert res == expected_res
-
-
-@pytest.mark.asyncio
 async def test_get_amenity():
     mockRecord = MockRecord(
         [

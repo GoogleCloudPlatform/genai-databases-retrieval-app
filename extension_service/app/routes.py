@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+from typing import Optional
+
 from fastapi import APIRouter, Request
 from langchain.embeddings.base import Embeddings
 
@@ -60,3 +62,21 @@ async def amenities_search(query: str, top_k: int, request: Request):
 
     results = await ds.amenities_search(query_embedding, 0.3, top_k)
     return results
+
+
+@routes.get("/flights")
+async def get_flight(flight_id: int, request: Request):
+    ds: datastore.Client = request.app.state.datastore
+    flights = await ds.get_flight(flight_id)
+    return flights
+
+
+@routes.get("/flights/search")
+async def search_flights(
+    request: Request,
+    departure_airport: Optional[str] = None,
+    arrival_airport: Optional[str] = None,
+):
+    ds: datastore.Client = request.app.state.datastore
+    flights = await ds.search_flights(departure_airport, arrival_airport)
+    return flights

@@ -64,12 +64,6 @@ class Client(ABC, Generic[C]):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
-    async def airports_semantic_lookup(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> Optional[list[models.Airport]]:
-        raise NotImplementedError("Subclass should implement this!")
-
-    @abstractmethod
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         raise NotImplementedError("Subclass should implement this!")
 
@@ -77,6 +71,18 @@ class Client(ABC, Generic[C]):
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> Optional[list[models.Amenity]]:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
+    async def get_flight(self, flight_id: int) -> Optional[list[models.Flight]]:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
+    async def search_flights(
+        self,
+        departure_airport: Optional[str] = None,
+        arrival_airport: Optional[str] = None,
+    ) -> Optional[list[models.Flight]]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod

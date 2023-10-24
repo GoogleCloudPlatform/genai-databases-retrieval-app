@@ -105,3 +105,48 @@ def test_amenities_search(app):
     output = response.json()
     assert len(output) == 5
     assert output[0]
+
+
+def test_get_flight(app):
+    with TestClient(app) as client:
+        response = client.get(
+            "/flights",
+            params={"flight_id": 3998},
+        )
+    assert response.status_code == 200
+    output = response.json()
+    assert len(output) == 1
+    assert output[0]
+
+
+def test_search_flights_by_airport(app):
+    with TestClient(app) as client:
+        response = client.get(
+            "/flights/search",
+            params={"departure_airport": "LAX", "arrival_airport": "SFO"},
+        )
+    assert response.status_code == 200
+    output = response.json()
+    assert output[0]
+
+
+def test_search_flights_by_airport_arrival_only(app):
+    with TestClient(app) as client:
+        response = client.get(
+            "/flights/search",
+            params={"arrival_airport": "SFO"},
+        )
+    assert response.status_code == 200
+    output = response.json()
+    assert output[0]
+
+
+def test_search_flights_by_airport_departure_only(app):
+    with TestClient(app) as client:
+        response = client.get(
+            "/flights/search",
+            params={"departure_airport": "EWR"},
+        )
+    assert response.status_code == 200
+    output = response.json()
+    assert output[0]
