@@ -70,6 +70,7 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
     ) -> None:
         async with self.__pool.acquire() as conn:
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
             # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS flights CASCADE")
             # Create a new table
@@ -106,7 +107,6 @@ class Client(datastore.Client[Config]):
                     for f in flights
                 ],
             )
-            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
 
         async with self.__pool.acquire() as conn:
             # If the table already exists, drop it to avoid conflicts
@@ -238,6 +238,42 @@ class Client(datastore.Client[Config]):
 
         results = [models.Amenity.model_validate(dict(r)) for r in results]
         return results
+
+    async def get_flight(self, flight_id: int) -> Optional[list[models.Flight]]:
+        results = await self.__pool.fetch(
+            """
+                SELECT * FROM flights
+                WHERE id = $1
+            """,
+            flight_id,
+            timeout=10,
+        )
+        flights = [models.Flight.model_validate(dict(r)) for r in results]
+        return flights
+
+    async def search_flights(
+        self,
+        departure_airport: Optional[str] = None,
+        arrival_airport: Optional[str] = None,
+    ) -> Optional[list[models.Flight]]:
+        # Check if either parameter is null.
+        if departure_airport is None:
+            departure_airport = "%"
+        if arrival_airport is None:
+            arrival_airport = "%"
+
+        results = await self.__pool.fetch(
+            """
+                SELECT * FROM flights
+                WHERE departure_airport LIKE $1
+                AND arrival_airport LIKE $2
+            """,
+            departure_airport,
+            arrival_airport,
+            timeout=10,
+        )
+        flights = [models.Flight.model_validate(dict(r)) for r in results]
+        return flights
 
     async def close(self):
         await self.__pool.close()
