@@ -32,9 +32,11 @@ async function submitMessage() {
     log("user", msg)
     // Clear message
     $('.chat-bar input').val('');
+    $('.mdl-progress').show()
     try {
         // Prompt LLM
         let answer = await askQuestion(msg);
+        $('.mdl-progress').hide();
         // Add response to UI
         log("assistant", answer)
     } catch (err) {

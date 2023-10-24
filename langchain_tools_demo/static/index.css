@@ -20,7 +20,7 @@ body {
 }
 
 body {
-    color: #000000;
+    color: #212A3E;
     font-family: 'DM Sans', sans-serif;
     display: flex;
     flex-direction: column;
@@ -62,7 +62,7 @@ div.chat-content>span {
     width: 100%;
     bottom: 0;
     left: 0;
-    border: 1px solid black;
+    border: 1px solid #212A3E;
     border-radius: 10px;
     overflow: hidden;
 }
@@ -72,7 +72,7 @@ div.chat-content>span {
     font-size: 14px;
     padding: 15px;
     padding-right: 30%;
-    color: black;
+    color: #212A3E;
     border: none;
 }
 
@@ -102,10 +102,9 @@ div.chat-wrapper div.chat-content span.assistant {
     height: auto;
     display: inline-block;
     padding: 10px 12px;
-    background: #939393;
-    color: black;
+    background: #9BA4B5;
+    color: #212A3E;
     border-radius: 2px 15px 15px 15px;
-    box-shadow: 2px 2px 20px -2px lightgrey;
 }
 
 div.chat-wrapper div.chat-content span.user {
@@ -115,12 +114,19 @@ div.chat-wrapper div.chat-content span.user {
     height: auto;
     display: inline-block;
     padding: 10px 12px;
-    background: black;
-    color: #fff;
+    background: #212A3E;
+    color: #F1F6F9;
     border-radius: 15px 2px 15px 15px;
-    box-shadow: 2px 2px 20px lightgray,
 }
 
 *:focus {
     outline: none;
+}
+
+.mdl-progress {
+    width: 100%;
+    display: none;
+}
+.mdl-progress.mdl-progress__indeterminate>.bar1 {
+    background-color: #394867
 }
