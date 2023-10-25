@@ -38,7 +38,7 @@ def init_agent(history):
     agent = initialize_agent(
         tools,
         llm,
-        agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
+        agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
         verbose=DEBUG,
         memory=memory,
         handle_parsing_errors=True,
