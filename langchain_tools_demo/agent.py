@@ -28,6 +28,7 @@ DEBUG = bool(os.getenv("DEBUG", default=False))
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 
 
+# Agent
 def init_agent(history):
     """Load an agent executor with tools and LLM"""
     print("Initializing agent..")
@@ -50,12 +51,14 @@ def init_agent(history):
 
 
 def get_id_token():
+    """Helper Function for authenticated Requests"""
     auth_req = google.auth.transport.requests.Request()
     target_audience = BASE_URL
 
     return google.oauth2.id_token.fetch_id_token(auth_req, target_audience)
 
 
+# Tool Functions
 def get_flight(id: int):
     response = requests.get(
         f"{BASE_URL}/flights",
@@ -127,6 +130,7 @@ def get_airport(id: int):
     return response.json()
 
 
+# Arg Schema for tools
 class IdInput(BaseModel):
     id: int = Field(description="Unique identifier")
 
@@ -143,6 +147,7 @@ class ListFlights(BaseModel):
     date: str = Field(description="Date of flight departure", default="today")
 
 
+# Tools for agent
 tools = [
     Tool.from_function(
         name="get_flight",  # Name must be unique for tool set
