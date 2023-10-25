@@ -22,8 +22,6 @@ body {
 body {
     color: #212A3E;
     font-family: 'DM Sans', sans-serif;
-    display: flex;
-    flex-direction: column;
 }
 
 .container {
@@ -31,26 +29,26 @@ body {
     width: 70%;
     margin: 0px auto;
     height: 100%;
-
+    display: flex;
+    flex-direction: column;
 }
 
 .chat-header {
-    position: absolute;
-    width: 100%;
-    display: inline-block;
-    left: 0;
+    position: relative;
     font-size: 16px;
     font-weight: 500;
-    margin-top: 2px;
+    text-align: center;
 }
 
 .chat-wrapper {
-    margin-top: 100px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
 }
 
 .chat-content {
-    height: 600px;
-    overflow: scroll;
+    overflow-y: scroll;
 }
 
 div.chat-content>span {
@@ -58,31 +56,31 @@ div.chat-content>span {
 }
 
 .chat-bar {
-    position: absolute;
-    width: 100%;
-    bottom: 0;
-    left: 0;
+    position: relative;
+    margin-top: auto;
     border: 1px solid #212A3E;
     border-radius: 10px;
     overflow: hidden;
+    min-height: 48.1px;
 }
 
-.chat-bar .ip-msg {
-    width: 70%;
+.chat-input-container {
+    display: flex;
+}
+
+.chat-input-container .ip-msg {
+    width: 100%;
     font-size: 14px;
     padding: 15px;
-    padding-right: 30%;
     color: #212A3E;
     border: none;
 }
 
-.chat-bar span.btn-group {
-    position: absolute;
-    right: 0;
-    top: 0;
-    margin-top: 14px;
-    display: inline-block;
+.chat-input-container span.btn-group {
+    position: relative;
+    margin: auto;
     margin-right: 10px;
+    display: flex;
 }
 
 .chat-bubble {
