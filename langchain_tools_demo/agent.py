@@ -127,20 +127,6 @@ def get_airport(id: int):
     return response.json()
 
 
-def search_airports(query: str):
-    params = {"top_k": "5", "query": query}
-
-    response = requests.get(
-        f"{BASE_URL}/airports/semantic_lookup",
-        params,
-        headers={"Authorization": f"Bearer {get_id_token()}"},
-    )
-    if response.status_code != 200:
-        return f"Error searching airports: {response.text}"
-
-    return response.json()
-
-
 class IdInput(BaseModel):
     id: int = Field(description="Unique identifier")
 
@@ -158,18 +144,18 @@ class ListFlights(BaseModel):
 
 
 tools = [
-    # Tool.from_function(
-    #     name="get_flight",  # Name must be unique for tool set
-    #     func=get_flight,
-    #     description="Use this tool to get info for a specific flight. Takes an id and returns info on the flight.",
-    #     args_schema=IdInput,
-    # ),
-    # StructuredTool.from_function(
-    #     name="list_flights",
-    #     func=list_flights,
-    #     description="Use this tool to list all flights matching search criteria.",
-    #     args_schema=ListFlights,
-    # ),
+    Tool.from_function(
+        name="get_flight",  # Name must be unique for tool set
+        func=get_flight,
+        description="Use this tool to get info for a specific flight. Takes an id and returns info on the flight.",
+        args_schema=IdInput,
+    ),
+    StructuredTool.from_function(
+        name="list_flights",
+        func=list_flights,
+        description="Use this tool to list all flights matching search criteria.",
+        args_schema=ListFlights,
+    ),
     Tool.from_function(
         name="get_amenity",
         func=get_amenity,
@@ -187,11 +173,5 @@ tools = [
         func=get_airport,
         description="Use this tool to get info for a specific airport. Takes an id and returns info on the airport. Always use the id from the search_airports tool.",
         args_schema=IdInput,
-    ),
-    Tool.from_function(
-        name="search_airports",
-        func=search_airports,
-        description="Use this tool to search for airports. Returns several airports that are related to the query. Only recommend airports that are returned by this query.",
-        args_schema=QueryInput,
     ),
 ]
