@@ -2,15 +2,9 @@
 
 ## Pre-reqs
 
-* Google Cloud Project
-* Enabled APIs:
-    * Cloud Run
-    * Vertex AI
-    * Cloud SQL
-* Cloud SQL PostgreSQL instance or AlloyDB cluster
+See [Pre-reqs](./cloudrun_instructions.md).
 
-## Local Development
-### Setup
+## Setup
 
 We recommend using Python 3.11+ and installing the requirements into a virtualenv:
 ```bash
@@ -22,9 +16,8 @@ If you are developing or otherwise running tests, install the test requirements 
 pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/requirements-test.txt
 ```
 
- <!-- TODO: Add database setup -->
-
-### Running the server
+## Run the app locally
+### Running the extension service
 
 1. Change into the service directory:
 
@@ -38,9 +31,9 @@ pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/r
     cp example-config.yml config.yml
     ```
 
-1. Add your values to `config.yml`
+1. Add your database config to `config.yml`:
 
-1. Start the Cloud SQL Proxy
+1. Start the Cloud SQL Proxy or AlloyDB SSH tunnel.
 
 1. To run the app using uvicorn, execute the following:
 
@@ -48,9 +41,13 @@ pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/r
     python run_app.py
     ```
 
-## Running the frontend
+### Running the frontend
 
-1. Set up Application Default Credentials
+1. [Optional] Set up [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials#GAC):
+
+    ```bash
+    export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
+    ```
 
 1. Change into the demo directory:
 
@@ -86,7 +83,7 @@ pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/r
 
 1. View app at `http://localhost:9090/`
 
-# Testing
+## Testing
 
 1. Set environment variables:
 
@@ -100,89 +97,4 @@ pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/r
 
     ```bash
     pytest
-    ```
-
-# Deployment
-
-1. For easier deployment, set environment variables:
-
-    ```bash
-    export PROJECT_ID=<YOUR_PROJECT_ID>
-    ```
-
-1. Create a backend service account:
-
-    ```bash
-    gcloud iam service-accounts create extension-identity
-    ```
-
-1. Grant permissions to access Cloud SQL and/or AlloyDB:
-
-    ```bash
-    gcloud projects add-iam-policy-binding $PROJECT_ID \
-        --member serviceAccount:extension-identity@$PROJECT_ID.iam.gserviceaccount.com \
-        --role roles/cloudsql.client
-    ```
-
-    ```bash
-    gcloud projects add-iam-policy-binding $PROJECT_ID \
-        --member serviceAccount:extension-identity@$PROJECT_ID.iam.gserviceaccount.com \
-        --role roles/alloydb.client
-    ```
-
-1. Change into the service directory:
-
-    ```bash
-    cd extension_service
-    ```
-
-1. Deploy backend service to Cloud Run:
-
-    ```bash
-    gcloud run deploy extension-service \
-        --source . \
-        --no-allow-unauthenticated \
-        --service-account extension-identity \
-        --add-cloudsql-instances <PROJECT_ID:REGION:CLOUD_SQL_INSTANCE_NAME> \
-    ```
-
-1. Retrieve extension URL:
-
-    ```bash
-    export EXTENSION_URL=$(gcloud run services describe extension-service --format 'value(status.url)')
-    ```
-
-1. Create a frontend service account:
-
-    ```bash
-    gcloud iam service-accounts create demo-identity
-    ```
-
-1. Grant the service account access to invoke the backend service and VertexAI API:
-
-    ```bash
-    gcloud run services add-iam-policy-binding extension-service \
-        --member serviceAccount:demo-identity@$PROJECT_ID.iam.gserviceaccount.com \
-        --role roles/run.invoker
-    ```
-    ```bash
-    gcloud projects add-iam-policy-binding $PROJECT_ID \
-        --member serviceAccount:demo-identity@$PROJECT_ID.iam.gserviceaccount.com \
-        --role roles/aiplatform.user
-    ```
-
-1. Change into the service directory:
-
-    ```bash
-    cd langchain_tools-demos
-    ```
-
-1. Deploy to Cloud Run:
-
-    ```bash
-    gcloud run deploy demo-service \
-        --source . \
-        --allow-unauthenticated \
-        --set-env-vars=BASE_URL=$EXTENSION_URL \
-        --service-account demo-identity
     ```

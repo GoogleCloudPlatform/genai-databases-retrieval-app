@@ -50,22 +50,34 @@ def init_agent(history):
     return agent
 
 
-def get_id_token():
+def get_request(url, params):
+    if "http://" in url:
+        response = requests.get(
+            url,
+            params=params,
+        )
+    else:
+        response = requests.get(
+            url,
+            params=params,
+            headers={"Authorization": f"Bearer {get_id_token(url)}"},
+        )
+    return response
+
+
+def get_id_token(url):
     """Helper Function for authenticated Requests"""
     auth_req = google.auth.transport.requests.Request()
-    target_audience = BASE_URL
-
+    target_audience = url
     return google.oauth2.id_token.fetch_id_token(auth_req, target_audience)
 
 
 # Tool Functions
 def get_flight(id: int):
-    response = requests.get(
+    response = get_request(
         f"{BASE_URL}/flights",
-        params={"id": id},
-        headers={"Authorization": f"Bearer {get_id_token()}"},
+        {"id": id},
     )
-
     if response.status_code != 200:
         return f"Error trying to find flight: {response.text}"
 
@@ -73,16 +85,13 @@ def get_flight(id: int):
 
 
 def list_flights(departure_airport: str, arrival_airport: str, date: str):
-    params = {
-        "departure_airport": departure_airport,
-        "arrival_airport": arrival_airport,
-        "date": date,
-    }
-
-    response = requests.get(
+    response = get_request(
         f"{BASE_URL}/flights/search",
-        params,
-        headers={"Authorization": f"Bearer {get_id_token()}"},
+        {
+            "departure_airport": departure_airport,
+            "arrival_airport": arrival_airport,
+            "date": date,
+        },
     )
     if response.status_code != 200:
         return f"Error searching flights: {response.text}"
@@ -91,12 +100,10 @@ def list_flights(departure_airport: str, arrival_airport: str, date: str):
 
 
 def get_amenity(id: int):
-    response = requests.get(
+    response = get_request(
         f"{BASE_URL}/amenities",
-        params={"id": id},
-        headers={"Authorization": f"Bearer {get_id_token()}"},
+        {"id": id},
     )
-
     if response.status_code != 200:
         return f"Error trying to find amenity: {response.text}"
 
@@ -104,12 +111,8 @@ def get_amenity(id: int):
 
 
 def search_amenities(query: str):
-    params = {"top_k": "5", "query": query}
-
-    response = requests.get(
-        f"{BASE_URL}/amenities/search",
-        params,
-        headers={"Authorization": f"Bearer {get_id_token()}"},
+    response = get_request(
+        f"{BASE_URL}/amenities/search", {"top_k": "5", "query": query}
     )
     if response.status_code != 200:
         return f"Error searching amenities: {response.text}"
@@ -118,12 +121,10 @@ def search_amenities(query: str):
 
 
 def get_airport(id: int):
-    response = requests.get(
+    response = get_request(
         f"{BASE_URL}/airports",
-        params={"id": id},
-        headers={"Authorization": f"Bearer {get_id_token()}"},
+        {"id": id},
     )
-
     if response.status_code != 200:
         return f"Error trying to find airport: {response.text}"
 
