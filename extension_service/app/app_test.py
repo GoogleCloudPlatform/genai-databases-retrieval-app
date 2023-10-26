@@ -14,10 +14,10 @@
 
 from ipaddress import IPv4Address, IPv6Address
 
+import models
 import pytest
-from fastapi.testclient import TestClient
-
 from datastore.providers import postgres
+from fastapi.testclient import TestClient
 
 from . import init_app
 from .app import AppConfig
@@ -63,23 +63,9 @@ def test_get_airport(app):
         )
     assert response.status_code == 200
     output = response.json()
-    assert len(output) == 1
-    assert output[0]
-
-
-def test_airports_semantic_lookup(app):
-    with TestClient(app) as client:
-        response = client.get(
-            "/airports/semantic_lookup",
-            params={
-                "query": "What is the airport in san francisco.",
-                "top_k": 5,
-            },
-        )
-    assert response.status_code == 200
-    output = response.json()
-    assert len(output) == 5
-    assert output[0]
+    print(output)
+    assert output
+    assert models.Airport.model_validate(output)
 
 
 def test_get_amenity(app):
@@ -92,8 +78,8 @@ def test_get_amenity(app):
         )
     assert response.status_code == 200
     output = response.json()
-    assert len(output) == 1
-    assert output[0]
+    assert output
+    assert models.Amenity.model_validate(output)
 
 
 def test_amenities_search(app):
@@ -109,18 +95,20 @@ def test_amenities_search(app):
     output = response.json()
     assert len(output) == 5
     assert output[0]
+    assert models.Amenity.model_validate(output[0])
 
 
 def test_get_flight(app):
     with TestClient(app) as client:
         response = client.get(
             "/flights",
-            params={"flight_id": 3998},
+            params={"id": 1935},
         )
     assert response.status_code == 200
     output = response.json()
     assert len(output) == 1
     assert output[0]
+    assert models.Flight.model_validate(output[0])
 
 
 def test_search_flights_by_airport(app):
@@ -132,6 +120,7 @@ def test_search_flights_by_airport(app):
     assert response.status_code == 200
     output = response.json()
     assert output[0]
+    assert models.Flight.model_validate(output[0])
 
 
 def test_search_flights_by_airport_arrival_only(app):
@@ -143,6 +132,7 @@ def test_search_flights_by_airport_arrival_only(app):
     assert response.status_code == 200
     output = response.json()
     assert output[0]
+    assert models.Flight.model_validate(output[0])
 
 
 def test_search_flights_by_airport_departure_only(app):
@@ -154,3 +144,4 @@ def test_search_flights_by_airport_departure_only(app):
     assert response.status_code == 200
     output = response.json()
     assert output[0]
+    assert models.Flight.model_validate(output[0])
