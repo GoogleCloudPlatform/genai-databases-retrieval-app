@@ -1,0 +1,29 @@
+steps:
+  - id: "Deploy to Cloud Run"
+    name: "gcr.io/cloud-builders/gcloud:latest"
+    dir: langchain_tools_demo
+    entrypoint: /bin/bash
+    args:
+      - "-c"
+      - |
+        gcloud run deploy ${_SERVICE} \
+          --source . \
+          --region ${_REGION} \
+          --no-allow-unauthenticated
+
+  - id: "Delete image and service"
+    name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: "/bin/bash"
+    args:
+      - "-c"
+      - |
+        gcloud artifacts docker images delete $_GCR_HOSTNAME/$PROJECT_ID/cloud-run-source-deploy/$_SERVICE:$COMMIT_SHA --quiet
+        gcloud run services delete ${_SERVICE} --region ${_REGION} --quiet
+
+options:
+  dynamic_substitutions: true
+
+substitutions:
+  _GCR_HOSTNAME: ${_REGION}-docker.pkg.dev
+  _SERVICE: demo-service-${BUILD_ID}
+  _REGION: us-central1
