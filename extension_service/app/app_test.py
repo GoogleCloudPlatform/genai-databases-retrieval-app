@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-from fastapi.testclient import TestClient
+from ipaddress import IPv4Address, IPv6Address
 
+import pytest
 from datastore.providers import postgres
+from fastapi.testclient import TestClient
 
 from . import init_app
 from .app import AppConfig
@@ -24,6 +25,7 @@ from .helpers import get_env_var
 DB_USER = get_env_var("DB_USER", "name of a postgres user")
 DB_PASS = get_env_var("DB_PASS", "password for the postgres user")
 DB_NAME = get_env_var("DB_NAME", "name of a postgres database")
+DB_HOST = get_env_var("DB_HOST", "ip address of a postgres database")
 
 
 @pytest.fixture(scope="module")
@@ -34,6 +36,7 @@ def app():
             user=DB_USER,
             password=DB_PASS,
             database=DB_NAME,
+            host=IPv4Address(DB_HOST),
         )
     )
     app = init_app(cfg)
