@@ -16,13 +16,12 @@ import os
 import uuid
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from langchain.agents.agent import AgentExecutor
 from markdown import markdown
-from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
 from agent import init_agent
@@ -49,22 +48,15 @@ def index(request: Request):
     )
 
 
-class Prompt(BaseModel):
-    """Chat handler request object"""
-
-    prompt: str
-
-
 @app.post("/chat", response_class=PlainTextResponse)
-def chat_handler(prompt: Prompt, request: Request):
+async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     """Handler for LangChain chat requests"""
     # Retrieve user prompt
-    if not prompt and not prompt.prompt:
+    if not prompt:
         raise HTTPException(status_code=400, detail="Error: No user query")
 
-    content = prompt.prompt
     # Add user message to chat history
-    request.session["messages"] += [{"role": "user", "content": content}]
+    request.session["messages"] += [{"role": "user", "content": prompt}]
     # Agent setup
     if "uuid" in request.session and request.session["uuid"] in agents:
         agent = agents[request.session["uuid"]]
@@ -73,7 +65,7 @@ def chat_handler(prompt: Prompt, request: Request):
         agents[request.session["uuid"]] = agent
     try:
         # Send prompt to LLM
-        response = agent.invoke({"input": content})
+        response = agent.invoke({"input": prompt})
         request.session["messages"] += [
             {"role": "assistant", "content": response["output"]}
         ]
