@@ -15,9 +15,10 @@
 
 from typing import Optional
 
-import datastore
 from fastapi import APIRouter, Request
 from langchain.embeddings.base import Embeddings
+
+import datastore
 
 routes = APIRouter()
 
