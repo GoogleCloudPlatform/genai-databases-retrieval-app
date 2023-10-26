@@ -15,13 +15,14 @@
 import os
 from typing import Optional
 
-import google.auth.transport.requests
-import google.oauth2.id_token
+import google.auth.transport.requests  # type: ignore
+import google.oauth2.id_token  # type: ignore
 import requests
 from langchain.agents import AgentType, initialize_agent
+from langchain.agents.agent import AgentExecutor
 from langchain.llms.vertexai import VertexAI
 from langchain.memory import ConversationBufferMemory
-from langchain.tools import StructuredTool, Tool
+from langchain.tools import tool
 from pydantic.v1 import BaseModel, Field
 
 DEBUG = bool(os.getenv("DEBUG", default=False))
@@ -29,7 +30,7 @@ BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 
 
 # Agent
-def init_agent(history):
+def init_agent() -> AgentExecutor:
     """Load an agent executor with tools and LLM"""
     print("Initializing agent..")
     llm = VertexAI(max_output_tokens=512, verbose=DEBUG)
@@ -45,12 +46,14 @@ def init_agent(history):
         handle_parsing_errors=True,
         max_iterations=3,
     )
-    agent.agent.llm_chain.verbose = DEBUG
+    agent.agent.llm_chain.verbose = DEBUG  # type: ignore
 
     return agent
 
 
-def get_request(url, params):
+# Helper functions
+def get_request(url: str, params: dict) -> requests.Response:
+    """Helper method to make backend requests"""
     if "http://" in url:
         response = requests.get(
             url,
@@ -65,70 +68,17 @@ def get_request(url, params):
     return response
 
 
-def get_id_token(url):
-    """Helper Function for authenticated Requests"""
+def get_id_token(url: str) -> str:
+    """Helper method to generate ID tokens for authenticated requests"""
     auth_req = google.auth.transport.requests.Request()
-    target_audience = url
-    return google.oauth2.id_token.fetch_id_token(auth_req, target_audience)
+    return google.oauth2.id_token.fetch_id_token(auth_req, url)
 
 
-# Tool Functions
-def get_flight(id: int):
-    response = get_request(
-        f"{BASE_URL}/flights",
-        {"id": id},
-    )
-    if response.status_code != 200:
-        return f"Error trying to find flight: {response.text}"
+def get_date():
+    from datetime import datetime
 
-    return response.json()
-
-
-def list_flights(departure_airport: str, arrival_airport: str, date: str):
-    response = get_request(
-        f"{BASE_URL}/flights/search",
-        {
-            "departure_airport": departure_airport,
-            "arrival_airport": arrival_airport,
-            "date": date,
-        },
-    )
-    if response.status_code != 200:
-        return f"Error searching flights: {response.text}"
-
-    return response.json()
-
-
-def get_amenity(id: int):
-    response = get_request(
-        f"{BASE_URL}/amenities",
-        {"id": id},
-    )
-    if response.status_code != 200:
-        return f"Error trying to find amenity: {response.text}"
-
-    return response.json()
-
-
-def search_amenities(query: str):
-    response = get_request(
-        f"{BASE_URL}/amenities/search", {"top_k": "5", "query": query}
-    )
-    if response.status_code != 200:
-        return f"Error searching amenities: {response.text}"
-
-    return response.json()
-
-
-def get_airport(id: int):
-    response = get_request(
-        f"{BASE_URL}/airports",
-        {"id": id},
-    )
-    if response.status_code != 200:
-        return f"Error trying to find airport: {response.text}"
-
-    return response.json()
+    now = datetime.now()
+    return now.strftime("%Y-%m-%dT%H:%M:%S")
 
 
 # Arg Schema for tools
@@ -145,39 +95,100 @@ class ListFlights(BaseModel):
         description="Departure airport 3-letter code"
     )
     arrival_airport: Optional[str] = Field(description="Arrival airport 3-letter code")
-    date: str = Field(description="Date of flight departure", default="today")
+    date: str = Field(description="Date of flight departure", default=get_date())
+
+
+# Tool Functions
+@tool(
+    "Get Flight",
+    args_schema=IdInput,
+)
+def get_flight(id: int):
+    """
+    Use this tool to get info for a specific flight.
+    Takes an id and returns info on the flight.
+    """
+    response = get_request(
+        f"{BASE_URL}/flights",
+        {"flight_id": id},
+    )
+    if response.status_code != 200:
+        return f"Error trying to find flight: {response.text}"
+
+    return response.json()
+
+
+@tool(
+    "List Flights",
+    args_schema=ListFlights,
+)
+def list_flights(departure_airport: str, arrival_airport: str, date: str):
+    """Use this tool to list all flights matching search criteria."""
+    response = get_request(
+        f"{BASE_URL}/flights/search",
+        {
+            "departure_airport": departure_airport,
+            "arrival_airport": arrival_airport,
+            "date": date,
+        },
+    )
+    if response.status_code != 200:
+        return f"Error searching flights: {response.text}"
+
+    return response.json()
+
+
+@tool("Get Amenity", args_schema=IdInput)
+def get_amenity(id: int):
+    """
+    Use this tool to get info for a specific airport amenity.
+    Takes an id and returns info on the amenity.
+    Always use the id from the search_amenities tool.
+    """
+    response = get_request(
+        f"{BASE_URL}/amenities",
+        {"id": id},
+    )
+    if response.status_code != 200:
+        return f"Error trying to find amenity: {response.text}"
+
+    return response.json()
+
+
+@tool("Search Amenities", args_schema=QueryInput)
+def search_amenities(query: str):
+    """Use this tool to recommended airport amenities at SFO.
+    Returns several amenities that are related to the query.
+    Only recommend amenities that are returned by this query.
+    """
+    response = get_request(
+        f"{BASE_URL}/amenities/search", {"top_k": "5", "query": query}
+    )
+    if response.status_code != 200:
+        return f"Error searching amenities: {response.text}"
+
+    return response.json()
+
+
+@tool(
+    "Get Airport",
+    args_schema=IdInput,
+)
+def get_airport(id: int):
+    """
+    Use this tool to get info for a specific airport.
+    Takes an id and returns info on the airport.
+    Always use the id from the search_airports tool.
+    """
+    response = get_request(
+        f"{BASE_URL}/airports",
+        {"id": id},
+    )
+    if response.status_code != 200:
+        return f"Error trying to find airport: {response.text}"
+
+    return response.json()
 
 
 # Tools for agent
-tools = [
-    Tool.from_function(
-        name="get_flight",  # Name must be unique for tool set
-        func=get_flight,
-        description="Use this tool to get info for a specific flight. Takes an id and returns info on the flight.",
-        args_schema=IdInput,
-    ),
-    StructuredTool.from_function(
-        name="list_flights",
-        func=list_flights,
-        description="Use this tool to list all flights matching search criteria.",
-        args_schema=ListFlights,
-    ),
-    Tool.from_function(
-        name="get_amenity",
-        func=get_amenity,
-        description="Use this tool to get info for a specific airport amenity. Takes an id and returns info on the amenity. Always use the id from the search_amenities tool.",
-        args_schema=IdInput,
-    ),
-    Tool.from_function(
-        name="search_amenities",
-        func=search_amenities,
-        description="Use this tool to recommended airport amenities at SFO. Returns several amenities that are related to the query. Only recommend amenities that are returned by this query.",
-        args_schema=QueryInput,
-    ),
-    Tool.from_function(
-        name="get_airport",
-        func=get_airport,
-        description="Use this tool to get info for a specific airport. Takes an id and returns info on the airport. Always use the id from the search_airports tool.",
-        args_schema=IdInput,
-    ),
-]
+tools = [get_flight, list_flights, get_amenity, search_amenities, get_airport]

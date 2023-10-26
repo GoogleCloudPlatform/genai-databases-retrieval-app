@@ -37,12 +37,6 @@ agents: dict[str, AgentExecutor] = {}
 BASE_HISTORY = [{"role": "assistant", "content": "How can I help you?"}]
 
 
-class Prompt(BaseModel):
-    """Chat handler request object"""
-
-    prompt: str
-
-
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     """Render the default template."""
@@ -53,6 +47,12 @@ def index(request: Request):
     return templates.TemplateResponse(
         "index.html", {"request": request, "messages": request.session["messages"]}
     )
+
+
+class Prompt(BaseModel):
+    """Chat handler request object"""
+
+    prompt: str
 
 
 @app.post("/chat", response_class=PlainTextResponse)
@@ -69,7 +69,7 @@ def chat_handler(prompt: Prompt, request: Request):
     if "uuid" in request.session and request.session["uuid"] in agents:
         agent = agents[request.session["uuid"]]
     else:
-        agent = init_agent(request.session["messages"])
+        agent = init_agent()
         agents[request.session["uuid"]] = agent
     try:
         # Send prompt to LLM
