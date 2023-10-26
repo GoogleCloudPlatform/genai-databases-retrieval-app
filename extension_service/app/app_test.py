@@ -15,8 +15,9 @@
 from ipaddress import IPv4Address, IPv6Address
 
 import pytest
-from datastore.providers import postgres
 from fastapi.testclient import TestClient
+
+from datastore.providers import postgres
 
 from . import init_app
 from .app import AppConfig
