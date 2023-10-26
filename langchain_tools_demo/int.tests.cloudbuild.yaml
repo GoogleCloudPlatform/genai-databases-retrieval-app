@@ -11,6 +11,15 @@ steps:
           --region ${_REGION} \
           --no-allow-unauthenticated
 
+  - id: "Test Frontend"
+    name: "gcr.io/cloud-builders/gcloud:latest"
+    entrypoint: /bin/bash
+    args:
+      - "-c"
+      - |
+        export URL=$(gcloud run services describe ${_SERVICE} --format 'value(status.url)')
+        curl --header "Authorization: Bearer $(gcloud auth print-identity-token)" $URL
+
   - id: "Delete image and service"
     name: "gcr.io/cloud-builders/gcloud"
     entrypoint: "/bin/bash"
