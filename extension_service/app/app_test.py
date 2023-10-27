@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ipaddress import IPv4Address, IPv6Address
-
-import pytest
-from fastapi.testclient import TestClient
+from ipaddress import IPv4Address
 
 import models
+import pytest
 from datastore.providers import postgres
+from fastapi.testclient import TestClient
 
 from . import init_app
 from .app import AppConfig
@@ -64,7 +63,6 @@ def test_get_airport(app):
         )
     assert response.status_code == 200
     output = response.json()
-    print(output)
     assert output
     assert models.Airport.model_validate(output)
 
@@ -103,7 +101,7 @@ def test_get_flight(app):
     with TestClient(app) as client:
         response = client.get(
             "/flights",
-            params={"id": 1935},
+            params={"flight_id": 1935},
         )
     assert response.status_code == 200
     output = response.json()
