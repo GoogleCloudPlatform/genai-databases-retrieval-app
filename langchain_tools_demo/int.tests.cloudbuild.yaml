@@ -29,7 +29,8 @@ steps:
       - "-c"
       - |
         export URL=$(gcloud run services describe ${_SERVICE} --region ${_REGION} --format 'value(status.url)')
-        curl --header "Authorization: Bearer $(gcloud auth print-identity-token)" $$URL
+        export ID_TOKEN=$(gcloud auth print-identity-token --audiences $$URL)
+        curl -si --fail --show-error --header "Authorization: Bearer $$ID_TOKEN" $$URL
 
   - id: "Delete image and service"
     name: "gcr.io/cloud-builders/gcloud"
@@ -41,6 +42,7 @@ steps:
         gcloud run services delete ${_SERVICE} --region ${_REGION} --quiet
 
 options:
+  logging: CLOUD_LOGGING_ONLY
   dynamic_substitutions: true
 
 substitutions:
