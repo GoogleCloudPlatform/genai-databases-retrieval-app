@@ -28,7 +28,7 @@ steps:
     args:
       - "-c"
       - |
-        export URL=$(gcloud run services describe ${_SERVICE} --format 'value(status.url)')
+        export URL=$(gcloud run services describe ${_SERVICE} --region ${_REGION} --format 'value(status.url)')
         curl --header "Authorization: Bearer $(gcloud auth print-identity-token)" $$URL
 
   - id: "Delete image and service"
