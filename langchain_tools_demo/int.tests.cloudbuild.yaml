@@ -40,7 +40,7 @@ steps:
     args:
       - "-c"
       - |
-        gcloud artifacts docker images delete $_GCR_HOSTNAME/$PROJECT_ID/cloud-run-source-deploy/$_SERVICE:$COMMIT_SHA --quiet
+        gcloud artifacts docker images delete $_GCR_HOSTNAME/$PROJECT_ID/cloud-run-source-deploy/$_SERVICE --quiet
         gcloud run services delete ${_SERVICE} --region ${_REGION} --quiet
 
 options:
