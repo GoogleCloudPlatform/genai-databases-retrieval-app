@@ -49,7 +49,7 @@ async def amenities_search(query: str, top_k: int, request: Request):
     embed_service: Embeddings = request.app.state.embed_service
     query_embedding = embed_service.embed_query(query)
 
-    results = await ds.amenities_search(query_embedding, 0.7, top_k)
+    results = await ds.amenities_search(query_embedding, 0.3, top_k)
     return results
 
 

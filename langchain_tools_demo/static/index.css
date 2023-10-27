@@ -1,0 +1,130 @@
+/**
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the `License`);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an `AS IS` BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    color: #212A3E;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.container {
+    position: relative;
+    width: 70%;
+    margin: 0px auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-header {
+    position: relative;
+    font-size: 16px;
+    font-weight: 500;
+    text-align: center;
+}
+
+.chat-wrapper {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+}
+
+.chat-content {
+    overflow-y: scroll;
+}
+
+div.chat-content>span {
+    margin-bottom: 12px;
+}
+
+.chat-bar {
+    position: relative;
+    margin-top: auto;
+    border: 1px solid #212A3E;
+    border-radius: 10px;
+    overflow: hidden;
+    min-height: 48.1px;
+}
+
+.chat-input-container {
+    display: flex;
+}
+
+.chat-input-container .ip-msg {
+    width: 100%;
+    font-size: 14px;
+    padding: 15px;
+    color: #212A3E;
+    border: none;
+}
+
+.chat-input-container span.btn-group {
+    position: relative;
+    margin: auto;
+    margin-right: 10px;
+    display: flex;
+}
+
+.chat-bubble {
+    display: block;
+    padding: 50px;
+    overflow-wrap: break-word;
+}
+
+.chat-bubble p {
+    margin: 0;
+    padding: 0;
+}
+
+div.chat-wrapper div.chat-content span.assistant {
+    position: relative;
+    width: 70%;
+    height: auto;
+    display: inline-block;
+    padding: 10px 12px;
+    background: #9BA4B5;
+    color: #212A3E;
+    border-radius: 2px 15px 15px 15px;
+}
+
+div.chat-wrapper div.chat-content span.user {
+    position: relative;
+    float: right;
+    width: 70%;
+    height: auto;
+    display: inline-block;
+    padding: 10px 12px;
+    background: #212A3E;
+    color: #F1F6F9;
+    border-radius: 15px 2px 15px 15px;
+}
+
+*:focus {
+    outline: none;
+}
+
+.mdl-progress {
+    width: 100%;
+    display: none;
+}
+.mdl-progress.mdl-progress__indeterminate>.bar1 {
+    background-color: #394867
+}
