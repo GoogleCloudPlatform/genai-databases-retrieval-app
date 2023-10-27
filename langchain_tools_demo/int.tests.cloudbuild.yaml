@@ -43,9 +43,8 @@ steps:
         gcloud artifacts docker images delete $_GCR_HOSTNAME/$PROJECT_ID/cloud-run-source-deploy/$_SERVICE --quiet
         gcloud run services delete ${_SERVICE} --region ${_REGION} --quiet
 
-logsBucket: 'gs://ext-demo-testing-logs'
 options:
-  logging: GCS_ONLY
+  logging: CLOUD_LOGGING_ONLY
   dynamic_substitutions: true
 
 substitutions:
