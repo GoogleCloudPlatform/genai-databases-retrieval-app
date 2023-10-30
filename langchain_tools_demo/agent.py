@@ -16,7 +16,7 @@ import os
 
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent import AgentExecutor
-from langchain.globals import set_verbose
+from langchain.globals import set_verbose  # type: ignore
 from langchain.llms.vertexai import VertexAI
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import (

@@ -14,13 +14,13 @@
 
 import os
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional
 
 import dateutil.parser as dparser
-import google.auth.transport.requests
-import google.oauth2.id_token
+import google.auth.transport.requests  # type: ignore
+import google.oauth2.id_token  # type: ignore
 import requests
-from langchain.tools import BaseTool, Tool, tool
+from langchain.tools import tool
 from pydantic.v1 import BaseModel, Field
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
@@ -250,11 +250,5 @@ tools = [
     get_amenity,
     search_amenities,
     get_airport,
-    get_today
-    # DateTool()
-    # Tool.from_function(
-    #     func=get_today,
-    #     name="Get Date",
-    #     description="NEVER guess the date. Use this when you need to get today's date.",
-    # ),
+    get_today,
 ]
