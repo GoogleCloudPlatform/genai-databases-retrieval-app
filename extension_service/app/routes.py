@@ -15,10 +15,9 @@
 
 from typing import Optional
 
+import datastore
 from fastapi import APIRouter, Request
 from langchain.embeddings.base import Embeddings
-
-import datastore
 
 routes = APIRouter()
 
@@ -49,14 +48,22 @@ async def amenities_search(query: str, top_k: int, request: Request):
     embed_service: Embeddings = request.app.state.embed_service
     query_embedding = embed_service.embed_query(query)
 
-    results = await ds.amenities_search(query_embedding, 0.3, top_k)
+    results = await ds.amenities_search(query_embedding, 0.5, top_k)
     return results
 
 
 @routes.get("/flights")
-async def get_flight(flight_id: int, request: Request):
+async def get_flight(
+    request: Request,
+    flight_id: Optional[int] = None,
+    airline: Optional[str] = None,
+    flight_number: Optional[str] = None,
+):
     ds: datastore.Client = request.app.state.datastore
-    flights = await ds.get_flight(flight_id)
+    if flight_id:
+        flights = await ds.get_flight(flight_id)
+    else:
+        flights = await ds.get_flight_number(airline, flight_number)
     return flights
 
 
@@ -65,7 +72,8 @@ async def search_flights(
     request: Request,
     departure_airport: Optional[str] = None,
     arrival_airport: Optional[str] = None,
+    date: Optional[str] = None,
 ):
     ds: datastore.Client = request.app.state.datastore
-    flights = await ds.search_flights(departure_airport, arrival_airport)
+    flights = await ds.search_flights(departure_airport, arrival_airport, date)
     return flights
