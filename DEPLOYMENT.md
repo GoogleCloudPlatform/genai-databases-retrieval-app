@@ -3,8 +3,6 @@ Configuring and Deploying Extension-service to Cloud Run
 **Before you start:**
 
 1. In the Google Cloud console, on the project selector page, select or [create a Google Cloud project](https://cloud.google.com/resource-manager/docs/creating-managing-projects).\
-   Note: If you don't plan to keep the resources that you create in this procedure, create a project instead of selecting an existing project. After you finish these steps, you can delete the project, removing all resources associated with the project.\
-   [Go to project selector](https://console.cloud.google.com/projectselector2/home/dashboard)
 2. [Make sure that billing is enabled for your Google Cloud project](https://cloud.google.com/billing/docs/how-to/verify-billing-enabled#console).
 3. [Install](https://cloud.google.com/sdk/docs/install) the Google Cloud CLI.
 4. To [initialize](https://cloud.google.com/sdk/docs/initializing) the gcloud CLI, run the following command:
