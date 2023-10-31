@@ -6,18 +6,19 @@ product.
 
 ## Introduction
 
-The Database Query Extension is a easy to customize demonstration of how to
-extend an LLM-based application using cloud databases for advanced [Retrieval
-Augmented Generation (RAG)][rag]. The demo is a full, end to end application
-demonstrating a real world use-case. 
+This project is intended to be a working demo showcasing how to extend an
+LLM-based application using Cloud Databases for [Retrieval Augmented Generation
+(RAG)][rag]. It's intended to both demonstrate how to best use advanced RAG
+patterns with Databases, as well as provide a basic outline for extending your
+own LLMs.
 
-This repository is organized into several directories:
-
-| Directory                                    | Description                                                                   |
-|----------------------------------------------|-------------------------------------------------------------------------------|
-| [`data`](/data)                              | Contains CSV files with the dataset for a working demo.                       |
-| [`extension-service`](/extension-service)    | Contains the service for extending an LLM with information from the database. |
-| [`langchain_tools_demo`](/extension-service) | Contains an LLM-based application that that uses the extension service.       |
+This demo included is an "SFO Airport Assistant": a San Francisco Airport-based
+AI assistant that has access to information about airports, flights, and
+amenities. It can help answer users questions like:
+* Are there any luxury shops?
+* Where can I get coffee near gate A6?
+* Where can I find a gift?
+* What flights are headed to NYC tomorrow? 
 
 [rag]: https://www.promptingguide.ai/techniques/rag
 
@@ -26,46 +27,64 @@ This repository is organized into several directories:
 
 - [Introduction](#introduction)
 - [Table of Contents](#table-of-contents)
-- [Architecture Overview](#architecture-overview)
+- [Architecture](#architecture)
+    - [Overview](#overview)
+    - [Extension as a service](#extension-as-a-service)
 - [Deploying](#deploying)
-    - [Configuring the Database](#configuring-the-database)
+    - [Setting up your Database](#setting-up-your-database)
     - [Deploying the Extension Service](#deploying-the-extension-service)
     - [Running the LLM-based Application](#running-the-llm-based-application)
-- [Customization](#customization)
+- [Writing your own extension](#writing-your-own-extension)
 
 <!-- /TOC -->
 
-## Architecture Overview
+## Architecture 
+
+### Overview
 
 ![Overview](./architecture.png)
 
 This demo contains 3 key parts:
-1. **Application** -- the LLM-based app that acts as the interface between. In
-   our example, the app is an Airport Assistant for the SFO airport, designed to
-   help users navigate their trips to the airport. 
-1. **Extension** -- Our extension provides the LLM-based application concrete,
-   discrete actions that interact with the database. 
-1. **Database** -- The database in our demo is interchangeable, making it easy
-   to configure based on your needs.
+1. **Application** -- The LLM-based app that acts as orchestrates layer for the
+   interaction with the LLM.
+1. **Extension** -- The extension service provides the application concrete,
+   discrete actions that allow the LLM to interact with the Database .
+1. **Database** -- The database containing the data the LLM can use to answer
+   questions. For this application, the database used was intentionally designed
+   to be interchangeable in order to make it easier to run this on your
+   preferred database.
 
-Running the extension as a separate service has many benefits: 
-1. **Better Recall** - It helps map specific actions to specific query,
-   improving the LLMs ability to leverage it correctly. 
-1. **Better scalability** - It allows the extension to scale independently from
-   the LLM application, which opens the door for optimizations like caching
-   queries and connection pooling for reduced overhead. 
-1. **Better security** - It allows the extension and the application to handle
-   security concerns like authentication and authorization independently from
-   the LLM. 
+### Extension as a service
+
+While it's often possible to expose similar functionality directly into your
+application, running your extension service has several benefits: Running the
+extension as a separate service has many benefits: 
+1. **Better recall** - LLMs perform better when given smaller, discrete tasks
+   they can use to accomplish larger goals. My mapping a specific action to a
+   specify, pre-determined query it significantly improves the LLMs ability to
+   leverage it successfully.
+1. **Better scalability** - Running the extension as a separate service both
+   allows multiple different LLMs to leverage it, as well as allowing it to
+   scale independently. It allows allows production best practices such as
+   connection pooling or caching.
+1. **Better security** - LLMs are susceptible to attacks such as "jailbreaking"
+   to circumvent safety measures that are put in place. Using an intermediary
+   service allows the application to handle authentication and authorization
+   through more standard and secure channels. 
+
 ## Deploying
 
-This demo contains all the parts for a working application demonstrating
+Deploying this demo consists of 3 steps:
+1. Setting up your Database -- creating your database and initializing it with
+   data
+1. Deploying your Extension -- deploying your extension service and connecting
+   it to your database
+1. Running the LLM-based application -- running your application locally
 
-### Configuring the Database
+### Setting up your Database
 
-The extension service uses a configurable 'datastore' interface that makes it
-easy to deploy and test it with different databases. Choose the database that
-best fits your use case, or perhaps you are already familiar with: 
+The extension service uses an interchangeable 'datastore' interface. Choose one
+of any of the database's listed below to set up and initialize your database:
 
 // TODO: complete this link
 * [Set up and configure AlloyDB][]
@@ -78,24 +97,22 @@ best fits your use case, or perhaps you are already familiar with:
 
 // TODO: Instructions for running app locally
 
-## Customization
+## Writing your own extension
 
-This demo is intended not only demonstrate how to write extensions, but also as
-a convenient start point to building your own extensions. Free free to clone or
-fork this repo to jump start your own extension development. Keep in mind the
-following tips:
+This demo can also serve as a starting point for writing your own extension. The
+directory is organized into the following folders:
 
-1. **Use specific actions** -- It's tempting to expose your database through
-   generic interfaces and hoping that the LLM will figure out how best to query
-   the data. In practice, we've seen better results using specific, targeted
-   actions mapped to pre-written queries. This significantly improves the
-   accuracy and quality of responses using the extension.
-2. **Think about security** -- LLM-based applications don't have discrete
-   responses, which makes securing them difficult. Avoid letting the LLM provide
-   input or make decisions that have security-related consequences -- instead,
-   rely on your application,  extensions, and database working together in
-   more-traditional ways to make sure only the information intended is exposed
-   to the LLM or the user. 
+| Directory                                    | Description                                                                           |
+|----------------------------------------------|---------------------------------------------------------------------------------------|
+| [`data`](/data)                              | Contains CSV files with the dataset for a working demo.                               |
+| [`extension-service`](/extension-service)    | Contains the service for extending an LLM with information from the database.         |
+| [`langchain_tools_demo`](/extension-service) | Contains an git statLLM-based application that that uses the extension service via LangChain. |
 
-
+You can copy or fork the `extension-service` folder to customize it to your
+needs. There are two main places you want to start:
+- `extension-service/app/routes.py` - contains the API endpoints that the LLM
+  will call
+- `extension-service/datastore/datastore.py` - contains the interface used to
+  abstract the database. There are specific implementations of this in the
+  `providers` folder that can be customized with logic for your specific schema. 
 
