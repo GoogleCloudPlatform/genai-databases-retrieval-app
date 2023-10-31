@@ -58,7 +58,7 @@
 
 ### Create a AlloyDB cluster and its primary instance
 
-1. Set environment variables:
+1. Set environment variables. For security reasons, use a different password for DB_PASS:
 
     ```bash
     export CLUSTER=my-alloydb-cluster
@@ -91,11 +91,17 @@
 1. Get AlloyDB IP address:
 
     ```bash
-    export ALLOY_IP=$(gcloud beta alloydb instances describe $INSTANCE \
+    export ALLOY_IP=$(gcloud alloydb instances describe $INSTANCE \
         --cluster=$CLUSTER \
         --region=$REGION \
         --format=json | jq \
         --raw-output ".ipAddress")
+    ```
+
+1. Note the AlloyDB IP address for later use:
+
+    ```bash
+    echo $ALLOY_IP
     ```
 
 ### Connect to psql client and create a database
@@ -186,7 +192,7 @@
     gcloud services enable aiplatform.googleapis.com
     ```
 
-1. Fork github repo to your local
+1. Clone the repository:
 
     ```bash
     git clone git@github.com:GoogleCloudPlatform/database-query-extension.git
@@ -228,14 +234,15 @@
       # Example for postgres.py provider
       kind: "postgres"
       # if not using AlloyDB auth proxy, update host with private IP
+      # no change is needed if deployed to Cloud Run
       host: 127.0.0.1
       port: 5432
       # Update this with the database name
       database: "assistantdemo"
-      # Update with database user
+      # Update with database user, the default is `postgres`
       user: "postgres"
       # Update with database user password
-      password: "postgres"
+      password: "my-alloydb-pass"
     ```
 
 1. Populate data into database:
