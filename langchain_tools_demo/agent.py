@@ -20,6 +20,7 @@ from langchain.globals import set_verbose  # type: ignore
 from langchain.llms.vertexai import VertexAI
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
+
 from tools import tools
 
 set_verbose(bool(os.getenv("DEBUG", default=True)))
