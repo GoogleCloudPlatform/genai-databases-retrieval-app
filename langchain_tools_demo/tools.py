@@ -55,7 +55,7 @@ def convert_date(date_string: str) -> str:
         converted = date.today() + timedelta(1)
     elif date_string == "yesterday":
         converted = date.today() - timedelta(1)
-    elif date_string != "null" or date_string != "today" or date_string is not None:
+    elif date_string != "null" and date_string != "today" and date_string is not None:
         converted = dparser.parse(date_string, fuzzy=True).date()
     else:
         converted = date.today()
