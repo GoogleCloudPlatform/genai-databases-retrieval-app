@@ -15,7 +15,7 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from langchain.embeddings.base import Embeddings
 
 import datastore
@@ -64,7 +64,12 @@ async def get_flight(
     if flight_id:
         flights = await ds.get_flight(flight_id)
     elif airline and flight_number:
-        flights = await ds.get_flight_number(airline, flight_number)
+        flights = await ds.get_flight_by_number(airline, flight_number)
+    else:
+        raise HTTPException(
+            status_code=422,
+            detail="Request requires query params: flight_id or both airline and flight_number",
+        )
     return flights
 
 

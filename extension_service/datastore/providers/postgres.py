@@ -252,7 +252,7 @@ class Client(datastore.Client[Config]):
         flights = [models.Flight.model_validate(dict(r)) for r in results]
         return flights
 
-    async def get_flight_number(
+    async def get_flight_by_number(
         self, airline: str, number: int
     ) -> Optional[list[models.Flight]]:
         results = await self.__pool.fetch(

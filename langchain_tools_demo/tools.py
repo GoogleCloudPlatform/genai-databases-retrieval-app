@@ -136,7 +136,7 @@ class FlightNumberInput(BaseModel):
     "Get Flight by Number",
     args_schema=FlightNumberInput,
 )
-def get_flight_number(airline: str, flight_number: str):
+def get_flight_by_number(airline: str, flight_number: str):
     """
     Use this tool to get info for a specific flight. Do NOT use this tool with a flight id.
     Takes an airline and flight number and returns info on the flight.
@@ -246,7 +246,7 @@ def get_today():
 # Tools for agent
 tools = [
     get_flight,
-    get_flight_number,
+    get_flight_by_number,
     list_flights,
     get_amenity,
     search_amenities,
