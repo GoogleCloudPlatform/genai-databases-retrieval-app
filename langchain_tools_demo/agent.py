@@ -19,12 +19,7 @@ from langchain.agents.agent import AgentExecutor
 from langchain.globals import set_verbose  # type: ignore
 from langchain.llms.vertexai import VertexAI
 from langchain.memory import ConversationBufferMemory
-from langchain.prompts.chat import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    SystemMessagePromptTemplate,
-)
-
+from langchain.prompts.chat import ChatPromptTemplate
 from tools import tools
 
 set_verbose(bool(os.getenv("DEBUG", default=True)))
@@ -49,21 +44,18 @@ def init_agent() -> AgentExecutor:
         early_stopping_method="generate",
         return_intermediate_steps=True,
     )
-
+    # Create new prompt template
     tool_strings = "\n".join([f"> {tool.name}: {tool.description}" for tool in tools])
     tool_names = ", ".join([tool.name for tool in tools])
     format_instructions = FORMAT_INSTRUCTIONS.format(
-        tool_names=tool_names,  # ai_prefix=ai_prefix, human_prefix=human_prefix
+        tool_names=tool_names,
     )
     template = "\n\n".join([PREFIX, tool_strings, format_instructions, SUFFIX])
-    input_variables = ["input", "chat_history", "agent_scratchpad"]
     human_message_template = "{input}\n\n{agent_scratchpad}"
-    messages = [
-        SystemMessagePromptTemplate.from_template(template),
-        HumanMessagePromptTemplate.from_template(human_message_template),
-    ]
-    template = ChatPromptTemplate(messages=messages, input_variables=input_variables)
-    agent.agent.llm_chain.prompt = template  # type: ignore
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", template), ("human", human_message_template)]
+    )
+    agent.agent.llm_chain.prompt = prompt  # type: ignore
     return agent
 
 

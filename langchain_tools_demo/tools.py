@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 from typing import Optional
 
 import dateutil.parser as dparser
@@ -49,16 +49,16 @@ def get_id_token(url: str) -> str:
     return google.oauth2.id_token.fetch_id_token(auth_req, url)
 
 
-def convert_date(date: str) -> str:
+def convert_date(date_string: str) -> str:
     """Convert date into appropriate date string"""
-    if date == "today" or date is None:
-        converted = datetime.now()
-    elif date == "tomorrow":
-        converted = datetime.now() + timedelta(1)
-    elif date == "yesterday":
-        converted = datetime.now() - timedelta(1)
-    elif date != "null":
-        converted = dparser.parse(date, fuzzy=True).date()
+    if date_string == "tomorrow":
+        converted = date.today() + timedelta(1)
+    elif date_string == "yesterday":
+        converted = date.today() - timedelta(1)
+    elif date_string != "null" or date_string != "today" or date_string is not None:
+        converted = dparser.parse(date_string, fuzzy=True).date()
+    else:
+        converted = date.today()
 
     return converted.strftime("%Y-%m-%d")
 
@@ -168,6 +168,7 @@ def list_flights(departure_airport: str, arrival_airport: str, date: str):
     """
     Use this tool to list all flights matching search criteria.
     Takes an arrival airport and departure airport and returns all flights.
+    The agent can decide to return the results directly to the user.
     Input of this tool must be in JSON format and include all three inputs - arrival_airport, departure_airport, and date.
     Example:
     {{
@@ -205,7 +206,7 @@ def list_flights(departure_airport: str, arrival_airport: str, date: str):
         return "There are no flights matching that query. Let the user know there are no results."
     elif len(response.json()) > 5:
         return (
-            "There are more than 5 flights matching that query. Here are the first 5 results:\n"
+            f"There are {len(response.json())} flights matching that query. Here are the first 5 results:\n"
             + " ".join([f"{response.json()[i]}" for i in range(5)])
         )
     else:
