@@ -15,10 +15,9 @@
 
 from typing import Optional
 
+import datastore
 from fastapi import APIRouter, Request
 from langchain.embeddings.base import Embeddings
-
-import datastore
 
 routes = APIRouter()
 
@@ -58,12 +57,12 @@ async def get_flight(
     request: Request,
     flight_id: Optional[int] = None,
     airline: Optional[str] = None,
-    flight_number: Optional[str] = None,
+    flight_number: Optional[int] = None,
 ):
     ds: datastore.Client = request.app.state.datastore
     if flight_id:
         flights = await ds.get_flight(flight_id)
-    else:
+    elif airline and flight_number:
         flights = await ds.get_flight_number(airline, flight_number)
     return flights
 

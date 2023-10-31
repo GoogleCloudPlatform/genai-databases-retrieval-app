@@ -61,8 +61,8 @@ def init_agent() -> AgentExecutor:
         SystemMessagePromptTemplate.from_template(template),
         HumanMessagePromptTemplate.from_template(human_message_template),
     ]
-    temp = ChatPromptTemplate(messages=messages, input_variables=input_variables)
-    agent.agent.llm_chain.prompt = temp
+    template = ChatPromptTemplate(messages=messages, input_variables=input_variables)
+    agent.agent.llm_chain.prompt = template  # type: ignore
     return agent
 
 
