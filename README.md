@@ -22,17 +22,16 @@ This repository is organized into several directories:
 [rag]: https://www.promptingguide.ai/techniques/rag
 
 ## Table of Contents
-<!-- TOC -->
+<!-- TOC depthfrom:2 -->
 
-- [Database Query Extension](#database-query-extension)
-    - [Introduction](#introduction)
-    - [Table of Contents](#table-of-contents)
-    - [Architecture Overview](#architecture-overview)
-    - [Deploying](#deploying)
-        - [Configuring the Database](#configuring-the-database)
-        - [Deploying the Extension Service](#deploying-the-extension-service)
-        - [Running the LLM-based Application](#running-the-llm-based-application)
-    - [Customization](#customization)
+- [Introduction](#introduction)
+- [Table of Contents](#table-of-contents)
+- [Architecture Overview](#architecture-overview)
+- [Deploying](#deploying)
+    - [Configuring the Database](#configuring-the-database)
+    - [Deploying the Extension Service](#deploying-the-extension-service)
+    - [Running the LLM-based Application](#running-the-llm-based-application)
+- [Customization](#customization)
 
 <!-- /TOC -->
 
