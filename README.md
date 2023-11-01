@@ -48,7 +48,7 @@ This demo contains 3 key parts:
 1. **Application** -- The LLM-based app that acts as orchestrates layer for the
    interaction with the LLM.
 1. **Extension** -- The extension service provides the application concrete,
-   discrete actions that allow the LLM to interact with the Database .
+   discrete actions that allow the LLM to interact with the Database.
 1. **Database** -- The database containing the data the LLM can use to answer
    questions. For this application, the database used was intentionally designed
    to be interchangeable in order to make it easier to run this on your
