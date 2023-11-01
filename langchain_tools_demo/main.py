@@ -77,5 +77,5 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
 
 
 if __name__ == "__main__":
-    PORT = int(os.getenv("PORT", default=8080))
+    PORT = int(os.getenv("PORT", default=8081))
     uvicorn.run(app, host="0.0.0.0", port=PORT)

@@ -2,7 +2,7 @@
 
 ## Before you begin
 
-1. Make sure you've followed [one of the directions to setup and initialize a
+1. Make sure you've [setup and initialized your
    Database](../README.md#setting-up-your-database).
 
 1. You must have the following APIs Enabled:

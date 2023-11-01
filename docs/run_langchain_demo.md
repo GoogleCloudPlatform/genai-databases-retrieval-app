@@ -1,72 +1,44 @@
-# Run the Demo Application
+# Running the LangChain Demo
 
-The demo application can be run [locally](#running-the-application-locally) or deployed to [Cloud Run](#deploying-the-application).
+##  Before you begin
 
-## Pre-reqs
+1. Make sure you've [setup and initialized your
+   Database](../README.md#setting-up-your-database).
 
-1. [Setting up your Database](./datastore/alloydb.md)
+1. Make sure you've [deployed your extension service, and are running a
+   connection to it locally on
+   127.0.0.1:8080](../README.md#deploying-the-extension-service).
 
-1. [Deploying your Extension](./cloudrun_deployment.md)
+1. Make sure you have Python 3.11+ installed
 
-1. Retrieve extension URL:
-
-    ```bash
-    export EXTENSION_URL=$(gcloud run services describe extension-service --format 'value(status.url)')
-    ```
-
-## Running the application locally
+## Setting up your Environment
 
 1. Set up [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials#GAC):
 
     ```bash
-    export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
+        gcloud auth application-default login
     ```
 
-1. Change into the demo directory:
+1. Change into the `langchain_tools_demo` directory:
 
     ```bash
-    cd langchain_tools_demo
+        cd langchain_tools_demo
     ```
 
-1. To run the app using uvicorn, execute the following:
+1. Install the dependencies using `pip`. You may wish to do this in a
+   [venv](https://docs.python.org/3/library/venv.html):
 
     ```bash
-    python main.py
+        pip install -r requirements.txt
     ```
 
+
+## Running the Demo
+
+1. Start the application with:
+    ```
+        python main.py
+    ```
     Note: for hot reloading of the app use: `uvicorn main:app --host 0.0.0.0 --reload`
 
-1. View app at `http://localhost:8080/`
-
-## Deploying the application
-
-1. Create a frontend service account if you don't already have one:
-
-    ```bash
-    gcloud iam service-accounts create demo-identity
-    ```
-
-1. Grant the service account access to invoke the backend service and VertexAI API:
-
-    ```bash
-    gcloud run services add-iam-policy-binding extension-service \
-        --member serviceAccount:demo-identity@$PROJECT_ID.iam.gserviceaccount.com \
-        --role roles/run.invoker
-    ```
-    ```bash
-    gcloud projects add-iam-policy-binding $PROJECT_ID \
-        --member serviceAccount:demo-identity@$PROJECT_ID.iam.gserviceaccount.com \
-        --role roles/aiplatform.user
-    ```
-
-1. Deploy to Cloud Run:
-
-    ```bash
-    gcloud run deploy demo-service \
-        --source ./langchain_tools-demos/ \
-        --allow-unauthenticated \
-        --set-env-vars=BASE_URL=$EXTENSION_URL \
-        --service-account demo-identity
-    ```
-
-    Note: Your organization may not allow unauthenticated requests. Deploy with `--no-allow-unauthenticated` and use the proxy to view the frontend: `gcloud run services proxy demo-service`.
+1. View app at `http://localhost:8081/`
