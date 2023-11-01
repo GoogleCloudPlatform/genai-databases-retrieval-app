@@ -60,7 +60,20 @@ class Client(ABC, Generic[C]):
         pass
 
     @abstractmethod
-    async def get_airport(self, id: int) -> Optional[models.Airport]:
+    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
+    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
+    async def search_airports(
+        self,
+        country: Optional[str] = None,
+        city: Optional[str] = None,
+        name: Optional[str] = None,
+    ) -> Optional[list[models.Airport]]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod

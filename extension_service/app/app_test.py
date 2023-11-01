@@ -54,7 +54,7 @@ def test_hello_world(app):
         assert response.json() == {"message": "Hello World"}
 
 
-def test_get_airport(app):
+def test_get_airport_by_id(app):
     with TestClient(app) as client:
         response = client.get(
             "/airports",
@@ -66,6 +66,74 @@ def test_get_airport(app):
     output = response.json()
     assert output
     assert models.Airport.model_validate(output)
+
+
+def test_get_airport_by_iata(app):
+    with TestClient(app) as client:
+        response = client.get(
+            "/airports",
+            params={
+                "iata": "sfo",
+            },
+        )
+    assert response.status_code == 200
+    output = response.json()
+    assert len(output) == 1
+    assert output[0]
+
+
+def test_search_airports(app):
+    with TestClient(app) as client:
+        response = client.get(
+            "/airports/search",
+            params={
+                "city": "san francisco",
+                "country": "United States",
+                "name": "san francisco",
+            },
+        )
+    assert response.status_code == 200
+    output = response.json()
+    assert output[0]
+
+
+def test_search_airports_by_country_only(app):
+    with TestClient(app) as client:
+        response = client.get(
+            "/airports/search",
+            params={
+                "country": "United States",
+            },
+        )
+    assert response.status_code == 200
+    output = response.json()
+    assert output[0]
+
+
+def test_search_airports_by_city_only(app):
+    with TestClient(app) as client:
+        response = client.get(
+            "/airports/search",
+            params={
+                "city": "san francisco",
+            },
+        )
+    assert response.status_code == 200
+    output = response.json()
+    assert output[0]
+
+
+def test_search_airports_by_name_only(app):
+    with TestClient(app) as client:
+        response = client.get(
+            "/airports/search",
+            params={
+                "name": "san francisco",
+            },
+        )
+    assert response.status_code == 200
+    output = response.json()
+    assert output[0]
 
 
 def test_get_amenity(app):

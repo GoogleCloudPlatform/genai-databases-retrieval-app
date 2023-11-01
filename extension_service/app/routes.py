@@ -29,9 +29,28 @@ async def root():
 
 
 @routes.get("/airports")
-async def get_airport(id: int, request: Request):
+async def get_airport(
+    request: Request,
+    id: Optional[int] = None,
+    iata: Optional[str] = None,
+):
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.get_airport(id)
+    if id:
+        results = await ds.get_airport_by_id(id)
+    elif iata:
+        results = await ds.get_airport_by_iata(iata)
+    return results
+
+
+@routes.get("/airports/search")
+async def search_airports(
+    request: Request,
+    country: Optional[str] = None,
+    city: Optional[str] = None,
+    name: Optional[str] = None,
+):
+    ds: datastore.Client = request.app.state.datastore
+    results = await ds.search_airports(country, city, name)
     return results
 
 
