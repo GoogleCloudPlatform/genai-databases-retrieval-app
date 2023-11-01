@@ -201,13 +201,13 @@ def list_flights(departure_airport: str, arrival_airport: str, date: str):
     if response.status_code != 200:
         return f"Error searching flights: {response.text}"
 
-    # return response.json()
+    num = 2
     if len(response.json()) < 1:
         return "There are no flights matching that query. Let the user know there are no results."
-    elif len(response.json()) > 5:
+    elif len(response.json()) > num:
         return (
-            f"There are {len(response.json())} flights matching that query. Here are the first 5 results:\n"
-            + " ".join([f"{response.json()[i]}" for i in range(5)])
+            f"There are {len(response.json())} flights matching that query. Here are the first {num} results:\n"
+            + " ".join([f"{response.json()[i]}" for i in range(num)])
         )
     else:
         return "\n".join([f"{r}" for r in response.json()])
@@ -219,11 +219,14 @@ class QueryInput(BaseModel):
 
 @tool("Search Amenities", args_schema=QueryInput)
 def search_amenities(query: str):
-    """Use this tool to recommended airport amenities at SFO or
-    to find more info about a specific amenity by name.
+    """
+    Use this tool to search amenities by name or to recommended airport amenities at SFO.
     If user provides flight info, use 'Get Flight' and 'Get Flight by Number'
     first to get gate info and location.
     Only recommend amenities that are returned by this query.
+    Find amenities close to the user by matching the terminal and then comparing
+    the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
+    B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
     """
     response = get_request(
         f"{BASE_URL}/amenities/search", {"top_k": "5", "query": query}
@@ -234,15 +237,6 @@ def search_amenities(query: str):
     return response.json()
 
 
-@tool("Get Date", return_direct=True)
-def get_today():
-    """
-    Use this when you need to get today's date. NEVER guess the date. No parameter needed from input.
-    Always use an empty dict as action input
-    """
-    return convert_date("today")
-
-
 # Tools for agent
 tools = [
     get_flight,
@@ -251,5 +245,4 @@ tools = [
     get_amenity,
     search_amenities,
     get_airport,
-    get_today,
 ]

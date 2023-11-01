@@ -21,7 +21,7 @@ from langchain.llms.vertexai import VertexAI
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
 
-from tools import tools
+from tools import convert_date, tools
 
 set_verbose(bool(os.getenv("DEBUG", default=True)))
 
@@ -41,7 +41,7 @@ def init_agent() -> AgentExecutor:
         agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
         memory=memory,
         handle_parsing_errors=True,
-        max_iterations=5,
+        max_iterations=3,
         early_stopping_method="generate",
         return_intermediate_steps=True,
     )
@@ -51,7 +51,9 @@ def init_agent() -> AgentExecutor:
     format_instructions = FORMAT_INSTRUCTIONS.format(
         tool_names=tool_names,
     )
-    template = "\n\n".join([PREFIX, tool_strings, format_instructions, SUFFIX])
+    date = convert_date("today")
+    today = f"Today is {date}."
+    template = "\n\n".join([PREFIX, tool_strings, format_instructions, SUFFIX, today])
     human_message_template = "{input}\n\n{agent_scratchpad}"
     prompt = ChatPromptTemplate.from_messages(
         [("system", template), ("human", human_message_template)]
@@ -108,7 +110,7 @@ Action:
 }}}}
 ```"""
 
-SUFFIX = """Begin! Use tools if necessary.Respond directly if appropriate.
+SUFFIX = """Begin! Use tools if necessary. Respond directly if appropriate.
 If using a tool, reminder to ALWAYS respond with a valid json blob of a single action.
 Format is Action:```$JSON_BLOB```then Observation:.
 Thought:
