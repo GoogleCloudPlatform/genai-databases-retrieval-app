@@ -262,7 +262,7 @@ class Client(datastore.Client[Config]):
                 AND flight_number = $2;
             """,
             airline,
-            number,
+            str(number),
             timeout=10,
         )
         flights = [models.Flight.model_validate(dict(r)) for r in results]
