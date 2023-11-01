@@ -1,8 +1,6 @@
-# Postgres Datastore Setup
+# Setup and configure AlloyDB 
 
-## Database Setup
-
-### Before you begin
+## Before you begin
 
 1. Make sure you have a Google Cloud project and billing is enabled.
 
@@ -23,10 +21,23 @@
 1. Enable APIs:
 
     ```bash
-    gcloud services enable alloydb.googleapis.com compute.googleapis.com cloudresourcemanager.googleapis.com servicenetworking.googleapis.com vpcaccess.googleapis.com
+    gcloud services enable alloydb.googleapis.com \
+                           compute.googleapis.com \
+                           cloudresourcemanager.googleapis.com \ 
+                           servicenetworking.googleapis.com \
+                           vpcaccess.googleapis.com \
+                           aiplatform.googleapis.com
+    ```
+1. Download and install postgres-client cli (`psql`). 
+
+1. Clone this repo to your local machine:
+
+    ```bash
+        git clone git@github.com:GoogleCloudPlatform/database-query-extension.git
     ```
 
-### Enable private services access
+
+## Enable private services access
 
 1. Set environment variables:
 
@@ -46,19 +57,20 @@
         --network=default
     ```
 
-2. Create a private connection:
+1. Create a private connection:
 
     ```bash
     gcloud services vpc-peerings connect \
         --service=servicenetworking.googleapis.com \
-        --ranges=$RANGE_NAME \
+        --ranges="$RANGE_NAME" \
         --network=default
     ```
 
 
-### Create a AlloyDB cluster and its primary instance
+## Create a AlloyDB cluster
 
-1. Set environment variables. For security reasons, use a different password for DB_PASS:
+1. Set environment variables. For security reasons, use a different password for
+   DB_PASS:
 
     ```bash
     export CLUSTER=my-alloydb-cluster
@@ -77,7 +89,7 @@
         --project=$PROJECT_ID
     ```
 
-1. Create the primary instance:
+1. Create a primary instance:
 
     ```bash
     gcloud alloydb instances create $INSTANCE \
@@ -91,7 +103,7 @@
 1. Get AlloyDB IP address:
 
     ```bash
-    export ALLOY_IP=$(gcloud alloydb instances describe $INSTANCE \
+    export ALLOYDB_IP=$(gcloud alloydb instances describe $INSTANCE \
         --cluster=$CLUSTER \
         --region=$REGION \
         --format=json | jq \
@@ -101,10 +113,13 @@
 1. Note the AlloyDB IP address for later use:
 
     ```bash
-    echo $ALLOY_IP
+    echo $ALLOYDB_IP
     ```
 
-### Connect to psql client and create a database
+## Set up connection to AlloyDB
+
+For this section, we will create a Google Cloud Engine VM in the same VM as the
+AlloyDB cluster. We can use this VM to connect to our AlloyDB cluster.
 
 1. Set environment variables:
 
@@ -134,88 +149,40 @@
         --reservation-affinity=any
     ```
 
-1. SSH into the VM:
+1. Create an SSH tunnel through your GCE VM using port forwarding. This will
+   listen to `127.0.0.1:5432` and forward through the GCE VM to your AlloyDB
+   instance:
 
     ```bash
-    gcloud compute ssh --project=$PROJECT_ID --zone=$ZONE $VM_INSTANCE
+    gcloud compute ssh --project=$PROJECT_ID --zone=$ZONE $VM_INSTANCE \
+                       -- -NL 5432:$ALLOYDB_IP:5432
     ```
 
-1. Install psql client from the package manager:
+1. Verify you can connect to your instance with the `psql` tool. Enter
+   password for AlloyDB when prompted:
 
     ```bash
-    sudo apt-get update
-    sudo apt-get install --yes postgresql-client
-    ```
-1. Connect to your instance with the psql client tool:
-
-    ```bash
-    psql -h $ALLOY_IP -U postgres
+    psql -h 127.0.0.1 -U postgres
     ```
 
-1. Enter password for AlloyDB when prompted. If forgot, password could be found by the following command:
+## Initialize data in AlloyDB
 
-    ```bash
-    echo $DB_PASS
-    ```
-
-1. Create a database:
+1. While connected using `psql`, create a database and switch to it:
 
     ```bash
     CREATE DATABASE assistantdemo;
-    ```
-
-1. Select database:
-
-    ```bash
     \c assistantdemo
     ```
 
-1. Install vector in database:
+1. Install [`pgvector`][pgvector] extension in the database:
 
     ```bash
     CREATE EXTENSION vector;
     ```
 
-1. Exit from psql and VM:
+[pgvector]: https://github.com/pgvector/pgvector
 
-    ```bash
-    exit
-    ```
-
-## Datastore Setup
-
-### Before you begin
-
-1. Enable APIs:
-
-    ```bash
-    gcloud services enable aiplatform.googleapis.com
-    ```
-
-1. Clone the repository:
-
-    ```bash
-    git clone git@github.com:GoogleCloudPlatform/database-query-extension.git
-    ```
-
-1. Download the [AlloyDB Auth Proxy
-   client](https://cloud.google.com/alloydb/docs/auth-proxy/connect#install)
-
-1. Get connection URIs for the AlloyDB instances:
-
-    ```bash
-    export CONN_URI=(projects/$PROJECT_ID/locations/$REGION/clusters/$CLUSTER/instances/$INSTANCE)
-    ```
-
-1. Start the auth proxy client:
-
-    ```bash
-    ./alloydb-auth-proxy $CONN_URI
-    ```
-
-### Populate data into database
-
-1. Use a new terminal, change into the service directory:
+1. From the root of the project, change into the service directory:
 
     ```bash
     cd database-query-extension/extension_service
@@ -233,8 +200,6 @@
     datastore:
       # Example for postgres.py provider
       kind: "postgres"
-      # if not using AlloyDB auth proxy, update host with private IP
-      # no change is needed if deployed to Cloud Run
       host: 127.0.0.1
       port: 5432
       # Update this with the database name

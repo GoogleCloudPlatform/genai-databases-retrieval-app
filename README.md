@@ -85,8 +85,7 @@ Deploying this demo consists of 3 steps:
 The extension service uses an interchangeable 'datastore' interface. Choose one
 of any of the database's listed below to set up and initialize your database:
 
-// TODO: complete this link
-* [Set up and configure AlloyDB][]
+* [Set up and configure AlloyDB][docs/datastore/postgres.md]
 
 ### Deploying the Extension Service
 
