@@ -6,7 +6,7 @@ The demo application can be run [locally](#running-the-application-locally) or d
 
 1. [Setting up your Database](./datastore/alloydb.md)
 
-1. [Deploying your Extension](./cloudrud_deployment.md)
+1. [Deploying your Extension](./cloudrun_deployment.md)
 
 1. Change into the demo directory:
 
