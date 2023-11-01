@@ -89,7 +89,7 @@ of any of the database's listed below to set up and initialize your database:
 
 ### Deploying the Extension Service
 
-[Instructions for deploying the extension service](./docs/cloudrun_deployment.md)
+[Instructions for deploying the extension service](./docs/deploy_extension_service.md)
 
 ### Running the LLM-based Application
 
