@@ -9,11 +9,9 @@
 
     ```bash
     gcloud services enable cloudrun.googleapis.com \
-                           vertexai.googleapis.com \
-                           compute.googleapis.com \
                            cloudbuild.googleapis.com \
                            artifactregistry.googleapis.com \
-                           servicenetworking.googleapis.com
+                           iam.googleapis.com
     ```
 
 1. To create an IAM account, you must have the following IAM permissions (or
@@ -70,7 +68,7 @@ Next, we will use gcloud to authenticate requests to our Cloud Run instance:
 
 1. Run the `run services proxy` to proxy connections to Cloud Run: 
     ```bash
-        gcloud beta run services proxy my-service --port=8080
+        gcloud run services proxy my-service --port=8080
     ```
 
 1. Finally, use `curl` to verify the endpoint works:
