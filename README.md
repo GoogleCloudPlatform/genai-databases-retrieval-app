@@ -60,7 +60,7 @@ While it's often possible to expose similar functionality directly into your
 application, running your extension service has several benefits: Running the
 extension as a separate service has many benefits: 
 1. **Better recall** - LLMs perform better when given smaller, discrete tasks
-   they can use to accomplish larger goals. My mapping a specific action to a
+   they can use to accomplish larger goals. By mapping a specific action to a
    specify, pre-determined query it significantly improves the LLMs ability to
    leverage it successfully.
 1. **Better scalability** - Running the extension as a separate service both
