@@ -4,7 +4,7 @@
 
 1. Make sure you have a Google Cloud project and billing is enabled.
 
-1. Set PROJECT_ID environment variable:
+1. Set your `PROJECT_ID` environment variable:
 
     ```bash
     export PROJECT_ID=<YOUR_PROJECT_ID>
@@ -28,7 +28,9 @@
                            vpcaccess.googleapis.com \
                            aiplatform.googleapis.com
     ```
-1. Download and install postgres-client cli (`psql`). 
+1. Download and install [postgres-client cli (`psql`)][install-psql].
+
+[install-psql]: https://www.timescale.com/blog/how-to-install-psql-on-mac-ubuntu-debian-windows/
 
 1. Clone this repo to your local machine:
 
@@ -38,6 +40,9 @@
 
 
 ## Enable private services access
+
+In this step, we will enable Private Services Access so that AlloyDB is able to
+connect to your VPC. You should only need to do this once per VPC (per project). 
 
 1. Set environment variables:
 
@@ -118,8 +123,9 @@
 
 ## Set up connection to AlloyDB
 
-For this section, we will create a Google Cloud Engine VM in the same VM as the
-AlloyDB cluster. We can use this VM to connect to our AlloyDB cluster.
+For this section, we will create a Google Cloud Engine VM in the same VPC as the
+AlloyDB cluster. We can use this VM to connect to our AlloyDB cluster using
+Private IP.
 
 1. Set environment variables:
 
@@ -157,6 +163,9 @@ AlloyDB cluster. We can use this VM to connect to our AlloyDB cluster.
     gcloud compute ssh --project=$PROJECT_ID --zone=$ZONE $VM_INSTANCE \
                        -- -NL 5432:$ALLOYDB_IP:5432
     ```
+
+    You will need to allow this command to run while you are connecting to
+    AlloyDB. You may wish to open a new terminal to connect with.
 
 1. Verify you can connect to your instance with the `psql` tool. Enter
    password for AlloyDB when prompted:
