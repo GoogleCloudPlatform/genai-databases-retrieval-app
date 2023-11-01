@@ -12,7 +12,7 @@ LLM-based application using Cloud Databases for [Retrieval Augmented Generation
 patterns with Databases, as well as provide a basic outline for extending your
 own LLMs.
 
-This demo included is an "SFO Airport Assistant": a San Francisco Airport-based
+This demo showcases an "SFO Airport Assistant": a San Francisco Airport-based
 AI assistant that has access to information about airports, flights, and
 amenities. It can help answer users questions like:
 * Are there any luxury shops?
@@ -57,8 +57,7 @@ This demo contains 3 key parts:
 ### Extension as a service
 
 While it's often possible to expose similar functionality directly into your
-application, running your extension service has several benefits: Running the
-extension as a separate service has many benefits: 
+application, running your extension service has several benefits:
 1. **Better recall** - LLMs perform better when given smaller, discrete tasks
    they can use to accomplish larger goals. By mapping a specific action to a
    specify, pre-determined query it significantly improves the LLMs ability to
