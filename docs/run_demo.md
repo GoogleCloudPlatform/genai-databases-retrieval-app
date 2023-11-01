@@ -8,12 +8,6 @@ The demo application can be run [locally](#running-the-application-locally) or d
 
 1. [Deploying your Extension](./cloudrun_deployment.md)
 
-1. Change into the demo directory:
-
-    ```bash
-    cd langchain_tools_demo
-    ```
-
 1. Retrieve extension URL:
 
     ```bash
@@ -26,6 +20,12 @@ The demo application can be run [locally](#running-the-application-locally) or d
 
     ```bash
     export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
+    ```
+
+1. Change into the demo directory:
+
+    ```bash
+    cd langchain_tools_demo
     ```
 
 1. To run the app using uvicorn, execute the following:

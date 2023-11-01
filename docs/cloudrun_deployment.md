@@ -5,15 +5,17 @@
 1. In the Google Cloud console, on the project selector page, select or [create a Google Cloud project](https://cloud.google.com/resource-manager/docs/creating-managing-projects).
 2. [Make sure that billing is enabled for your Google Cloud project](https://cloud.google.com/billing/docs/how-to/verify-billing-enabled#console).
 3. [Install](https://cloud.google.com/sdk/docs/install) the Google Cloud CLI.
+
 4. To [initialize](https://cloud.google.com/sdk/docs/initializing) the gcloud CLI, run the following command:
-```
-gcloud init
-```
+    ```
+    gcloud init
+    ```
+
 5. To set the default project for your Cloud Run service:
 
-```
-gcloud config set project
-```
+    ```bash
+    gcloud config set project <PROJECT_ID>
+    ```
 
 1. You must have the following APIs Enabled:
 
