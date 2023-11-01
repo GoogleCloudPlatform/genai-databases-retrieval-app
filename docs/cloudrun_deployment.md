@@ -56,8 +56,7 @@ You must have the following APIs Enabled:
 ```
 You must have a Cloud SQL PostgreSQL instance or [AlloyDB cluster and primary instance](datastore/alloydb.md); have your config.yaml set up to connect to your database accordingly.
 
-
-## Deployment: ##
+## Deploy the Extension Service
 
 1. Create a backend service account if you don't already have one:
 
@@ -82,7 +81,7 @@ You must have a Cloud SQL PostgreSQL instance or [AlloyDB cluster and primary in
     * For AlloyDB:
 
         ```bash
-        gcloud alpha run deploy extension-service \
+        gcloud run deploy extension-service \
             --source=./extension_service/\
             --no-allow-unauthenticated \
             --service-account extension-identity \
@@ -90,39 +89,3 @@ You must have a Cloud SQL PostgreSQL instance or [AlloyDB cluster and primary in
             --network=default \
             --subnet=default
         ```
-1. Retrieve extension URL:
-
-    ```bash
-    export EXTENSION_URL=$(gcloud run services describe extension-service --format 'value(status.url)')
-    ```
-
-1. Create a frontend service account if you don't already have one:
-
-    ```bash
-    gcloud iam service-accounts create demo-identity
-    ```
-
-1. Grant the service account access to invoke the backend service and VertexAI API:
-
-    ```bash
-    gcloud run services add-iam-policy-binding extension-service \
-        --member serviceAccount:demo-identity@$PROJECT_ID.iam.gserviceaccount.com \
-        --role roles/run.invoker
-    ```
-    ```bash
-    gcloud projects add-iam-policy-binding $PROJECT_ID \
-        --member serviceAccount:demo-identity@$PROJECT_ID.iam.gserviceaccount.com \
-        --role roles/aiplatform.user
-    ```
-
-1. Deploy to Cloud Run:
-
-    ```bash
-    gcloud run deploy demo-service \
-        --source ./langchain_tools-demos/ \
-        --allow-unauthenticated \
-        --set-env-vars=BASE_URL=$EXTENSION_URL \
-        --service-account demo-identity
-    ```
-
-    Note: Your organization may not allow unauthenticated requests. Deploy with `--no-allow-unauthenticated` and use the proxy to view the frontend: `gcloud run services proxy demo-service`.

@@ -18,7 +18,7 @@ amenities. It can help answer users questions like:
 * Are there any luxury shops?
 * Where can I get coffee near gate A6?
 * Where can I find a gift?
-* What flights are headed to NYC tomorrow? 
+* What flights are headed to NYC tomorrow?
 
 [rag]: https://www.promptingguide.ai/techniques/rag
 
@@ -38,7 +38,7 @@ amenities. It can help answer users questions like:
 
 <!-- /TOC -->
 
-## Architecture 
+## Architecture
 
 ### Overview
 
@@ -69,7 +69,7 @@ application, running your extension service has several benefits:
 1. **Better security** - LLMs are susceptible to attacks such as "jailbreaking"
    to circumvent safety measures that are put in place. Using an intermediary
    service allows the application to handle authentication and authorization
-   through more standard and secure channels. 
+   through more standard and secure channels.
 
 ## Deploying
 
@@ -105,7 +105,7 @@ directory is organized into the following folders:
 |----------------------------------------------|---------------------------------------------------------------------------------------|
 | [`data`](/data)                              | Contains CSV files with the dataset for a working demo.                               |
 | [`extension-service`](/extension-service)    | Contains the service for extending an LLM with information from the database.         |
-| [`langchain_tools_demo`](/extension-service) | Contains an git statLLM-based application that that uses the extension service via LangChain. |
+| [`langchain_tools_demo`](/extension-service) | Contains an LLM-based application that that uses the extension service via LangChain. |
 
 You can copy or fork the `extension-service` folder to customize it to your
 needs. There are two main places you want to start:
@@ -113,5 +113,5 @@ needs. There are two main places you want to start:
   will call
 - `extension-service/datastore/datastore.py` - contains the interface used to
   abstract the database. There are specific implementations of this in the
-  `providers` folder that can be customized with logic for your specific schema. 
+  `providers` folder that can be customized with logic for your specific schema.
 

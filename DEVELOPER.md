@@ -91,7 +91,10 @@ pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/r
     export DB_USER=""
     export DB_PASS=""
     export DB_NAME=""
+    export DB_HOST=""
     ```
+
+1. Start the Cloud SQL Proxy or AlloyDB SSH tunnel.
 
 1. Run pytest to automatically run all tests:
 
