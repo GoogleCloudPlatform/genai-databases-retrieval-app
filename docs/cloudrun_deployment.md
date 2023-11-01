@@ -1,6 +1,6 @@
-**Deploy Extension-service to Cloud Run**
+# Deploy the Extension Service to Cloud Run #
 
-***Before you begin:***
+## Before you begin: ##
 
 1. In the Google Cloud console, on the project selector page, select or [create a Google Cloud project](https://cloud.google.com/resource-manager/docs/creating-managing-projects).\
 2. [Make sure that billing is enabled for your Google Cloud project](https://cloud.google.com/billing/docs/how-to/verify-billing-enabled#console).
@@ -20,38 +20,44 @@ gcloud config set project
 &nbsp;
 &nbsp;
 
-***Permissions required to deploy:***
+## Permissions required to deploy: ##
 
 To create a service account, you must have the following IAM permission:
-- Create Service Account role
+- Create Service Account role (roles/iam.serviceAccountCreator)
 
 
 To deploy from source, you must have ONE of the following IAM permission:
 - Owner role
 - Editor role
 - The following set of roles:
-  - Cloud Build Editor role
-  - Artifact Registry Admin role
-  - Storage Admin role
-  - Cloud Run Admin role
-  - Service Account User role
+  - Cloud Build Editor role (roles/cloudbuild.builds.editor)
+  - Artifact Registry Admin role (roles/artifactregistry.admin)
+  - Storage Admin role  (roles/storage.admin)
+  - Cloud Run Admin role (roles/run.admin)
+  - Service Account User role (roles/iam.serviceAccountUser)
 
-You must have the following APLs Enabled:
+You must have the following APIs Enabled:
 - Enabled APIs:
   - Cloud Run
   - Vertex AI
-  - Cloud SQL or AlloyDB
   - Compute
   - Cloud Build
   - Artifact Registry
   - Service Networking
 
-You must have a Cloud SQL PostgreSQL instance or AlloyDB cluster and primary instance
+```bash
+    # Command to enable APIs
+    gcloud services enable cloudrun.googleapis.com \
+                           vertexai.googleapis.com \
+                           compute.googleapis.com \
+                           cloudbuild.googleapis.com \
+                           artifactregistry.googleapis.com \
+                           servicenetworking.googleapis.com
+```
+You must have a Cloud SQL PostgreSQL instance or [AlloyDB cluster and primary instance](datastore/alloydb.md); have your config.yaml set up to connect to your database accordingly.
 
-&nbsp;
-&nbsp;
 
-***Deployment:***
+## Deployment: ##
 
 1. Create a backend service account if you don't already have one:
 
