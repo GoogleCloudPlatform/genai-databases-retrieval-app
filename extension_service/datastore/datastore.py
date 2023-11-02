@@ -78,17 +78,19 @@ class Client(ABC, Generic[C]):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
-    async def get_flight_by_number(
-        self, airline: str, flight_number: int
+    async def search_flights_by_number(
+        self,
+        airline: str,
+        flight_number: str,
     ) -> Optional[list[models.Flight]]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
     async def search_flights(
         self,
+        date,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
-        date: Optional[str] = None,
     ) -> Optional[list[models.Flight]]:
         raise NotImplementedError("Subclass should implement this!")
 

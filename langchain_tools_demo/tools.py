@@ -64,13 +64,37 @@ def convert_date(date_string: str) -> str:
 
 
 # Tools
-class IdInput(BaseModel):
+class AirportIdInput(BaseModel):
+    id: int = Field(description="Unique identifier")
+
+
+@tool(
+    "Get Airport",
+    args_schema=AirportIdInput,
+)
+def get_airport(id: int):
+    """
+    Use this tool to get info for a specific airport.
+    Do NOT guess an airport id.
+    Takes an id and returns info on the airport.
+    """
+    response = get_request(
+        f"{BASE_URL}/airports",
+        {"id": id},
+    )
+    if response.status_code != 200:
+        return f"Error trying to find airport: {response.text}"
+
+    return response.json()
+
+
+class FlightIdInput(BaseModel):
     id: int = Field(description="Unique identifier")
 
 
 @tool(
     "Get Flight",
-    args_schema=IdInput,
+    args_schema=FlightIdInput,
 )
 def get_flight(id: int):
     """
@@ -89,54 +113,16 @@ def get_flight(id: int):
     return response.json()
 
 
-@tool(
-    "Get Airport",
-    args_schema=IdInput,
-)
-def get_airport(id: int):
-    """
-    Use this tool to get info for a specific airport.
-    Do NOT guess an airport id.
-    Takes an id and returns info on the airport.
-    """
-    response = get_request(
-        f"{BASE_URL}/airports",
-        {"id": id},
-    )
-    if response.status_code != 200:
-        return f"Error trying to find airport: {response.text}"
-
-    return response.json()
-
-
-@tool("Get Amenity", args_schema=IdInput)
-def get_amenity(id: int):
-    """
-    Use this tool to get info for a specific airport amenity.
-    Takes an id and returns info on the amenity.
-    Do NOT guess and amenity id.
-    Always use the id from the search_amenities tool.
-    """
-    response = get_request(
-        f"{BASE_URL}/amenities",
-        {"id": id},
-    )
-    if response.status_code != 200:
-        return f"Error trying to find amenity: {response.text}"
-
-    return response.json()
-
-
 class FlightNumberInput(BaseModel):
     airline: str = Field(description="Airline unique 2 letter identifier")
     flight_number: str = Field(description="1 to 4 digit number")
 
 
 @tool(
-    "Get Flight by Number",
+    "Get Flights by Number",
     args_schema=FlightNumberInput,
 )
-def get_flight_by_number(airline: str, flight_number: str):
+def search_flights_by_number(airline: str, flight_number: str):
     """
     Use this tool to get info for a specific flight. Do NOT use this tool with a flight id.
     Takes an airline and flight number and returns info on the flight.
@@ -146,7 +132,7 @@ def get_flight_by_number(airline: str, flight_number: str):
     If the tool returns more than one option choose the date closes to today.
     """
     response = get_request(
-        f"{BASE_URL}/flights",
+        f"{BASE_URL}/flights/search",
         {"airline": airline, "flight_number": flight_number},
     )
     if response.status_code != 200:
@@ -160,7 +146,7 @@ class ListFlights(BaseModel):
         description="Departure airport 3-letter code",
     )
     arrival_airport: Optional[str] = Field(description="Arrival airport 3-letter code")
-    date: Optional[str] = Field(description="Date of flight departure", default="today")
+    date: Optional[str] = Field(description="Date of flight departure")
 
 
 @tool("List Flights", args_schema=ListFlights)
@@ -189,7 +175,6 @@ def list_flights(departure_airport: str, arrival_airport: str, date: str):
         "date": "2023-01-01"
     }}
     """
-    date = convert_date(date)
     response = get_request(
         f"{BASE_URL}/flights/search",
         {
@@ -213,6 +198,29 @@ def list_flights(departure_airport: str, arrival_airport: str, date: str):
         return "\n".join([f"{r}" for r in response.json()])
 
 
+# Amenities
+class AmenityIdInput(BaseModel):
+    id: int = Field(description="Unique identifier")
+
+
+@tool("Get Amenity", args_schema=AmenityIdInput)
+def get_amenity(id: int):
+    """
+    Use this tool to get info for a specific airport amenity.
+    Takes an id and returns info on the amenity.
+    Do NOT guess an amenity id. Use Search Amenities to search by name.
+    Always use the id from the search_amenities tool.
+    """
+    response = get_request(
+        f"{BASE_URL}/amenities",
+        {"id": id},
+    )
+    if response.status_code != 200:
+        return f"Error trying to find amenity: {response.text}"
+
+    return response.json()
+
+
 class QueryInput(BaseModel):
     query: str = Field(description="Search query")
 
@@ -221,7 +229,7 @@ class QueryInput(BaseModel):
 def search_amenities(query: str):
     """
     Use this tool to search amenities by name or to recommended airport amenities at SFO.
-    If user provides flight info, use 'Get Flight' and 'Get Flight by Number'
+    If user provides flight info, use 'Get Flight' and 'Get Flights by Number'
     first to get gate info and location.
     Only recommend amenities that are returned by this query.
     Find amenities close to the user by matching the terminal and then comparing
@@ -240,7 +248,7 @@ def search_amenities(query: str):
 # Tools for agent
 tools = [
     get_flight,
-    get_flight_by_number,
+    search_flights_by_number,
     list_flights,
     get_amenity,
     search_amenities,

@@ -54,22 +54,9 @@ async def amenities_search(query: str, top_k: int, request: Request):
 
 
 @routes.get("/flights")
-async def get_flight(
-    request: Request,
-    flight_id: Optional[int] = None,
-    airline: Optional[str] = None,
-    flight_number: Optional[int] = None,
-):
+async def get_flight(request: Request, flight_id: int):
     ds: datastore.Client = request.app.state.datastore
-    if flight_id:
-        flights = await ds.get_flight(flight_id)
-    elif airline and flight_number:
-        flights = await ds.get_flight_by_number(airline, flight_number)
-    else:
-        raise HTTPException(
-            status_code=422,
-            detail="Request requires query params: flight_id or both airline and flight_number",
-        )
+    flights = await ds.get_flight(flight_id)
     return flights
 
 
@@ -79,7 +66,17 @@ async def search_flights(
     departure_airport: Optional[str] = None,
     arrival_airport: Optional[str] = None,
     date: Optional[str] = None,
+    airline: Optional[str] = None,
+    flight_number: Optional[str] = None,
 ):
     ds: datastore.Client = request.app.state.datastore
-    flights = await ds.search_flights(departure_airport, arrival_airport, date)
+    if date and (arrival_airport or departure_airport):
+        flights = await ds.search_flights(date, departure_airport, arrival_airport)
+    elif airline and flight_number:
+        flights = await ds.search_flights_by_number(airline, flight_number)
+    else:
+        raise HTTPException(
+            status_code=422,
+            detail="Request requires query params: arrival_airport, departure_airport, date, or both airline and flight_number",
+        )
     return flights

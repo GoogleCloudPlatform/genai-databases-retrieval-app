@@ -252,8 +252,10 @@ class Client(datastore.Client[Config]):
         flights = [models.Flight.model_validate(dict(r)) for r in results]
         return flights
 
-    async def get_flight_by_number(
-        self, airline: str, number: int
+    async def search_flights_by_number(
+        self,
+        airline: str,
+        number: str,
     ) -> Optional[list[models.Flight]]:
         results = await self.__pool.fetch(
             """
@@ -262,7 +264,7 @@ class Client(datastore.Client[Config]):
                 AND flight_number = $2;
             """,
             airline,
-            str(number),
+            number,
             timeout=10,
         )
         flights = [models.Flight.model_validate(dict(r)) for r in results]
@@ -270,17 +272,15 @@ class Client(datastore.Client[Config]):
 
     async def search_flights(
         self,
+        date: str,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
-        date: Optional[str] = None,
     ) -> Optional[list[models.Flight]]:
         # Check if either parameter is null.
         if departure_airport is None:
             departure_airport = "%"
         if arrival_airport is None:
             arrival_airport = "%"
-        if date is None:
-            date = datetime.now().strftime("%Y-%m-%d")  # %H:%M:%S
         results = await self.__pool.fetch(
             """
                 SELECT * FROM flights
