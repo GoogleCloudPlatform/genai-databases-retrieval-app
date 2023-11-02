@@ -54,7 +54,7 @@ async def amenities_search(query: str, top_k: int, request: Request):
 
 
 @routes.get("/flights")
-async def get_flight(request: Request, flight_id: int):
+async def get_flight(flight_id: int, request: Request):
     ds: datastore.Client = request.app.state.datastore
     flights = await ds.get_flight(flight_id)
     return flights
