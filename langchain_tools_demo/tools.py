@@ -153,7 +153,7 @@ class ListFlights(BaseModel):
 def list_flights(departure_airport: str, arrival_airport: str, date: str):
     """
     Use this tool to list all flights matching search criteria.
-    Takes an arrival airport and departure airport and returns all flights.
+    Takes an arrival airport, a departure airport, or both, filters by date and returns all matching flights.
     The agent can decide to return the results directly to the user.
     Input of this tool must be in JSON format and include all three inputs - arrival_airport, departure_airport, and date.
     Example:
