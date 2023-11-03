@@ -71,7 +71,7 @@ async def search_flights(
 ):
     ds: datastore.Client = request.app.state.datastore
     if date and (arrival_airport or departure_airport):
-        flights = await ds.search_flights(date, departure_airport, arrival_airport)
+        flights = await ds.search_flights_by_airports(date, departure_airport, arrival_airport)
     elif airline and flight_number:
         flights = await ds.search_flights_by_number(airline, flight_number)
     else:

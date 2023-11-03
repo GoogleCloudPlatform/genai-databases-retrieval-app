@@ -86,7 +86,7 @@ class Client(ABC, Generic[C]):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
-    async def search_flights(
+    async def search_flights_by_airports(
         self,
         date,
         departure_airport: Optional[str] = None,
