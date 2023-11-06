@@ -49,6 +49,7 @@ body {
 
 .chat-content {
     overflow-y: scroll;
+    margin-bottom: 10px;
 }
 
 div.chat-content>span {
@@ -125,6 +126,7 @@ div.chat-wrapper div.chat-content span.user {
     width: 100%;
     display: none;
 }
+
 .mdl-progress.mdl-progress__indeterminate>.bar1 {
     background-color: #394867
 }
