@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import asyncio
+from datetime import datetime
 from ipaddress import IPv4Address, IPv6Address
 from typing import Any, Dict, Literal, Optional
 
@@ -251,8 +252,27 @@ class Client(datastore.Client[Config]):
         flights = [models.Flight.model_validate(dict(r)) for r in results]
         return flights
 
-    async def search_flights(
+    async def search_flights_by_number(
         self,
+        airline: str,
+        number: str,
+    ) -> Optional[list[models.Flight]]:
+        results = await self.__pool.fetch(
+            """
+                SELECT * FROM flights
+                WHERE airline = $1
+                AND flight_number = $2;
+            """,
+            airline,
+            number,
+            timeout=10,
+        )
+        flights = [models.Flight.model_validate(dict(r)) for r in results]
+        return flights
+
+    async def search_flights_by_airports(
+        self,
+        date: str,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
     ) -> Optional[list[models.Flight]]:
@@ -261,15 +281,17 @@ class Client(datastore.Client[Config]):
             departure_airport = "%"
         if arrival_airport is None:
             arrival_airport = "%"
-
         results = await self.__pool.fetch(
             """
                 SELECT * FROM flights
                 WHERE departure_airport LIKE $1
                 AND arrival_airport LIKE $2
+                AND departure_time > $3::timestamp - interval '1 day'
+                AND departure_time < $3::timestamp + interval '1 day';
             """,
             departure_airport,
             arrival_airport,
+            datetime.strptime(date, "%Y-%m-%d"),
             timeout=10,
         )
         flights = [models.Flight.model_validate(dict(r)) for r in results]

@@ -15,7 +15,7 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from langchain.embeddings.base import Embeddings
 
 import datastore
@@ -49,7 +49,7 @@ async def amenities_search(query: str, top_k: int, request: Request):
     embed_service: Embeddings = request.app.state.embed_service
     query_embedding = embed_service.embed_query(query)
 
-    results = await ds.amenities_search(query_embedding, 0.3, top_k)
+    results = await ds.amenities_search(query_embedding, 0.5, top_k)
     return results
 
 
@@ -65,7 +65,20 @@ async def search_flights(
     request: Request,
     departure_airport: Optional[str] = None,
     arrival_airport: Optional[str] = None,
+    date: Optional[str] = None,
+    airline: Optional[str] = None,
+    flight_number: Optional[str] = None,
 ):
     ds: datastore.Client = request.app.state.datastore
-    flights = await ds.search_flights(departure_airport, arrival_airport)
+    if date and (arrival_airport or departure_airport):
+        flights = await ds.search_flights_by_airports(
+            date, departure_airport, arrival_airport
+        )
+    elif airline and flight_number:
+        flights = await ds.search_flights_by_number(airline, flight_number)
+    else:
+        raise HTTPException(
+            status_code=422,
+            detail="Request requires query params: arrival_airport, departure_airport, date, or both airline and flight_number",
+        )
     return flights
