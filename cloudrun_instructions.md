@@ -113,8 +113,4 @@
         --service-account demo-identity
     ```
 
-<<<<<<< HEAD
     Note: Your organization may not allow unauthenticated requests. Deploy with `--no-allow-unauthenticated` and use the proxy to view the frontend: `gcloud run services proxy demo-service`.
-=======
-    Note: Your organization may not allow unauthenticated requests. Deploy with `--no-allow-unauthenticated` and use the proxy to view the frontend: `gcloud run services proxy demo-service`.
->>>>>>> d0d0531 (feat: refactor demo frontend (#15))
