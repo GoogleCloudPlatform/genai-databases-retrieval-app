@@ -13,9 +13,6 @@
     * Service Networking
 * Cloud SQL PostgreSQL instance or AlloyDB cluster and primary instance
 
-## Datastore Setup
-
-
 ## Deployment
 
 1. For easier deployment, set environment variables:
