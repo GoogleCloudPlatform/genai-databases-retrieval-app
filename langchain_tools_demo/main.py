@@ -56,7 +56,8 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
         raise HTTPException(status_code=400, detail="Error: No user query")
 
     # Add user message to chat history
-    request.session["messages"] += [{"role": "user", "content": prompt}]
+    if "messages" in request.session:
+        request.session["messages"] += [{"role": "user", "content": prompt}]
     # Agent setup
     if "uuid" in request.session and request.session["uuid"] in agents:
         agent = agents[request.session["uuid"]]
@@ -66,9 +67,10 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     try:
         # Send prompt to LLM
         response = agent.invoke({"input": prompt})
-        request.session["messages"] += [
-            {"role": "assistant", "content": response["output"]}
-        ]
+        if "messages" in request.session:
+            request.session["messages"] += [
+                {"role": "assistant", "content": response["output"]}
+            ]
         # Return assistant response
         return markdown(response["output"])
     except Exception as err:

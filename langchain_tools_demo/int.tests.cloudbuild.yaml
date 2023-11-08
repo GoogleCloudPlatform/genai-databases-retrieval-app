@@ -32,7 +32,17 @@ steps:
       - |
         export URL=$(gcloud run services describe ${_SERVICE} --region ${_REGION} --format 'value(status.url)')
         export ID_TOKEN=$(gcloud auth print-identity-token --audiences $$URL)
-        curl -si --fail --show-error --header "Authorization: Bearer $$ID_TOKEN" $$URL
+
+        # Test `/` route
+        curl -si --fail --show-error -H "Authorization: Bearer $$ID_TOKEN" $$URL
+
+        # Test `/chat`` route
+        curl -si --fail --show-error \
+          -X POST \
+          -H "Authorization: Bearer $$ID_TOKEN" \
+          -H 'Content-Type: application/json' \
+          -d '{"prompt":"How can you help me?"}' \
+          $$URL/chat
 
   - id: "Delete image and service"
     name: "gcr.io/cloud-builders/gcloud"
@@ -43,9 +53,9 @@ steps:
         gcloud artifacts docker images delete $_GCR_HOSTNAME/$PROJECT_ID/cloud-run-source-deploy/$_SERVICE --quiet
         gcloud run services delete ${_SERVICE} --region ${_REGION} --quiet
 
-serviceAccount: "projects/$PROJECT_ID/serviceAccounts/548341735270-compute@developer.gserviceaccount.com"
+serviceAccount: "projects/$PROJECT_ID/serviceAccounts/548341735270-compute@developer.gserviceaccount.com" # Necessary for ID token creation
 options:
-  logging: CLOUD_LOGGING_ONLY
+  logging: CLOUD_LOGGING_ONLY # Necessary for custom service account
   dynamic_substitutions: true
 
 substitutions:
