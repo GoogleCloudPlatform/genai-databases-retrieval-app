@@ -8,14 +8,6 @@
   "ignorePresets": [
     ":semanticPrefixFixDepsChoreOthers"
   ],
-  "ignorePaths": [
-    "docs/",
-    "data/",
-    "extension-service/requirements.txt",
-    "extension-service/requirements-test.txt",
-    "langchain_tools_demo/requirements.txt",
-    "langchain_tools_demo/requirements-test.txt"
-  ],
   "prConcurrentLimit": 0,
   "rebaseWhen": "behind-base-branch",
   "dependencyDashboard": true,
@@ -25,26 +17,7 @@
   "semanticCommits": "disabled",
   "pip_requirements": {
     "fileMatch": [
-      "extension_service/requirements-test.txt",
-      "langchain_tools_demo/requirements-test.txt"
+      "requirements-test.txt"
     ]
-  },
-  "packageRules": [
-    {
-      "matchPackagePatterns": [
-        "^actions/checkout",
-        "^actions/github-script",
-        "^actions/setup-python",
-        "^actions/upload-artifact",
-        "^dorny/paths-filter",
-        "^github/codeql-action",
-        "^google-github-actions/auth",
-        "^google-github-actions/get-secretmanager-secrets",
-        "^google-github-actions/setup-gcloud",
-        "^micnncim/action-label-syncer",
-        "^ossf/scorecard-action"
-      ],
-      "groupName": "dependencies for github"
-    }
-  ]
+  }
 }
