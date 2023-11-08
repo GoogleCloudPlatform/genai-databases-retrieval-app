@@ -119,34 +119,23 @@ def test_get_flight(app):
     assert output[0]
 
 
-def test_search_flights_by_airport(app):
+@pytest.mark.parametrize(
+    "params, expected",
+    [
+        pytest.param(
+            {"departure_airport": "LAX", "arrival_airport": "SFO"},
+            "foobar",
+            id="departure_and_arrival_airport",
+        ),
+        pytest.param({"arrival_airport": "SFO"}, "foobar", id="arrival_airport_only"),
+        pytest.param(
+            {"departure_airport": "EWR"}, "foobar", id="departure_airport_only"
+        ),
+    ],
+)
+def test_search_flights(app, params, expected):
     with TestClient(app) as client:
-        response = client.get(
-            "/flights/search",
-            params={"departure_airport": "LAX", "arrival_airport": "SFO"},
-        )
-    assert response.status_code == 200
-    output = response.json()
-    assert output[0]
-
-
-def test_search_flights_by_airport_arrival_only(app):
-    with TestClient(app) as client:
-        response = client.get(
-            "/flights/search",
-            params={"arrival_airport": "SFO"},
-        )
-    assert response.status_code == 200
-    output = response.json()
-    assert output[0]
-
-
-def test_search_flights_by_airport_departure_only(app):
-    with TestClient(app) as client:
-        response = client.get(
-            "/flights/search",
-            params={"departure_airport": "EWR"},
-        )
+        response = client.get("/flights/search", params=params)
     assert response.status_code == 200
     output = response.json()
     assert output[0]
