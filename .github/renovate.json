@@ -14,7 +14,7 @@
   "dependencyDashboardLabels": [
     "type: process"
   ],
-  "semanticCommits": "disabled",
+  "semanticCommits": "enabled",
   "pip_requirements": {
     "fileMatch": [
       "requirements-test.txt"
