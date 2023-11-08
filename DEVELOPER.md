@@ -52,9 +52,9 @@
 
     1. Set up [Application Default Credentials][ADC]:
 
-    ```bash
-    export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
-    ```
+        ```bash
+        export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
+        ```
 
     1. Set `BASE_URL` environment variable:
 
@@ -79,6 +79,24 @@
 1. View app at `http://localhost:8081/`
 
 ## Testing
+
+### Run tests locally
+
+1. Change into the `extension_service` directory
+1. Open a local connection to your database by starting the [Cloud SQL Auth Proxy][proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance.
+1. Set environment variables:
+
+    ```bash
+    export DB_USER=""
+    export DB_PASS=""
+    export DB_NAME=""
+    ```
+
+1. Run pytest to automatically run all tests:
+
+    ```bash
+    pytest
+    ```
 
 ### CI Platform Setup
 
@@ -115,30 +133,13 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 
 1. Create a Cloud Build private pool
 1. Enable Secret Manager API
-1. Create secret, `alloy_db_pass`, with AlloyDB password
+1. Create secret, `alloy_db_pass`, with your AlloyDB password
 1. Allow Cloud Build to access secret
 1. Add role Vertex AI User (roles/aiplatform.user) to Cloud Build Service account. Needed to run database init script.
 
 ##### Setup for demo service tests
 
 1. Add roles Cloud Run Admin, Service Account User, Log Writer, and Artifact Registry Admin to the demo service's Cloud Build trigger service account.
-
-### Run tests locally
-
-1. Change into the `extension_service` directory
-1. Set environment variables:
-
-    ```bash
-    export DB_USER=""
-    export DB_PASS=""
-    export DB_NAME=""
-    ```
-
-1. Run pytest to automatically run all tests:
-
-    ```bash
-    pytest
-    ```
 
 [proxy]: https://cloud.google.com/sql/docs/mysql/sql-proxy
 [tunnel]: https://github.com/GoogleCloudPlatform/database-query-extension/blob/main/docs/datastore/alloydb.md#set-up-connection-to-alloydb

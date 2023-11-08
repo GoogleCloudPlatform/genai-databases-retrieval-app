@@ -55,11 +55,14 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     if not prompt:
         raise HTTPException(status_code=400, detail="Error: No user query")
 
+    if "uuid" not in request.session:
+        request.session["uuid"] = str(uuid.uuid4())
+        request.session["messages"] = BASE_HISTORY
+
     # Add user message to chat history
-    if "messages" in request.session:
-        request.session["messages"] += [{"role": "user", "content": prompt}]
+    request.session["messages"] += [{"role": "user", "content": prompt}]
     # Agent setup
-    if "uuid" in request.session and request.session["uuid"] in agents:
+    if request.session["uuid"] in agents:
         agent = agents[request.session["uuid"]]
     else:
         agent = init_agent()
@@ -67,10 +70,9 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     try:
         # Send prompt to LLM
         response = agent.invoke({"input": prompt})
-        if "messages" in request.session:
-            request.session["messages"] += [
-                {"role": "assistant", "content": response["output"]}
-            ]
+        request.session["messages"] += [
+            {"role": "assistant", "content": response["output"]}
+        ]
         # Return assistant response
         return markdown(response["output"])
     except Exception as err:
