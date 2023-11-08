@@ -82,54 +82,29 @@ def test_get_airport_by_iata(app):
     assert output[0]
 
 
-def test_search_airports(app):
-    with TestClient(app) as client:
-        response = client.get(
-            "/airports/search",
-            params={
-                "city": "san francisco",
+@pytest.mark.parametrize(
+    "params, expected",
+    [
+        pytest.param(
+            {
                 "country": "United States",
+                "city": "san francisco",
                 "name": "san francisco",
             },
-        )
-    assert response.status_code == 200
-    output = response.json()
-    assert output[0]
-
-
-def test_search_airports_by_country_only(app):
+            "foobar",
+            id="country_city_and_name",
+        ),
+        pytest.param({"country": "United States"}, "foobar", id="country_only"),
+        pytest.param({"city": "san francisco"}, "foobar", id="city_only"),
+        pytest.param({"name": "san francisco"}, "foobar", id="name_only"),
+        pytest.param({}, "foobar", id="no_params"),
+    ],
+)
+def test_search_airports(app, params, expected):
     with TestClient(app) as client:
         response = client.get(
             "/airports/search",
-            params={
-                "country": "United States",
-            },
-        )
-    assert response.status_code == 200
-    output = response.json()
-    assert output[0]
-
-
-def test_search_airports_by_city_only(app):
-    with TestClient(app) as client:
-        response = client.get(
-            "/airports/search",
-            params={
-                "city": "san francisco",
-            },
-        )
-    assert response.status_code == 200
-    output = response.json()
-    assert output[0]
-
-
-def test_search_airports_by_name_only(app):
-    with TestClient(app) as client:
-        response = client.get(
-            "/airports/search",
-            params={
-                "name": "san francisco",
-            },
+            params=params,
         )
     assert response.status_code == 200
     output = response.json()

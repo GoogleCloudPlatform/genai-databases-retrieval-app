@@ -73,7 +73,7 @@ class Client(ABC, Generic[C]):
         country: Optional[str] = None,
         city: Optional[str] = None,
         name: Optional[str] = None,
-    ) -> Optional[list[models.Airport]]:
+    ) -> list[models.Airport]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
@@ -83,7 +83,7 @@ class Client(ABC, Generic[C]):
     @abstractmethod
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> Optional[list[models.Amenity]]:
+    ) -> list[models.Amenity]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
