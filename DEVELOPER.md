@@ -153,12 +153,14 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
     ```
 
 * Run Extension service unit tests:
+
     ```bash
     gcloud builds submit --config extension_service/alloydb.tests.cloudbuild.yaml \
         --substitutions _DATABASE_HOST=$DB_HOST,_DATABASE_NAME=$DB_NAME,_DATABASE_USER=$DB_USER
     ```
     Where `$DB_HOST`,`$DB_NAME`,`$DB_USER` are environment variables with your database values.
-    Note: Make sure to setup secrets describe in [Setup for extension service][#setup-for-extension-service]
+
+    Note: Make sure to setup secrets describe in [Setup for extension service](#setup-for-extension-service)
 
 #### Trigger
 
