@@ -29,9 +29,39 @@ async def root():
 
 
 @routes.get("/airports")
-async def get_airport(id: int, request: Request):
+async def get_airport(
+    request: Request,
+    id: Optional[int] = None,
+    iata: Optional[str] = None,
+):
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.get_airport(id)
+    if id:
+        results = await ds.get_airport_by_id(id)
+    elif iata:
+        results = await ds.get_airport_by_iata(iata)
+    else:
+        raise HTTPException(
+            status_code=422,
+            detail="Request requires query params: airport id or iata",
+        )
+    return results
+
+
+@routes.get("/airports/search")
+async def search_airports(
+    request: Request,
+    country: Optional[str] = None,
+    city: Optional[str] = None,
+    name: Optional[str] = None,
+):
+    if country == None and city == None and name == None:
+        raise HTTPException(
+            status_code=422,
+            detail="Request requires at least one query params: country, city, or airport name",
+        )
+
+    ds: datastore.Client = request.app.state.datastore
+    results = await ds.search_airports(country, city, name)
     return results
 
 
