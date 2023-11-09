@@ -50,10 +50,10 @@
 
 1. To use a live extension service on Cloud Run:
 
-    1. Set up [Application Default Credentials][ADC]:
+    1. Set Google user credentials:
 
         ```bash
-        export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
+        gcloud auth login
         ```
 
     1. Set `BASE_URL` environment variable:
@@ -61,6 +61,8 @@
         ```bash
         export BASE_URL=$(gcloud run services describe extension-service --format 'value(status.url)')
         ```
+
+    1. Allow your account to invoke the Cloud Run service by granting the [role Cloud Run invoker][invoker]
 
 1. [Optional] Turn off debugging by setting the `DEBUG` environment variable:
 
@@ -129,11 +131,12 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
     * [Instructions for deploying the extension service](./docs/deploy_extension_service.md)
 1. Setup Cloud Build triggers (above)
 
-##### Setup for extension service - Alloy DB tests
+##### Setup for extension service
 
 1. Create a Cloud Build private pool
 1. Enable Secret Manager API
 1. Create secret, `alloy_db_pass`, with your AlloyDB password
+1. Create secret, `alloy_db_user`, with your AlloyDB user
 1. Allow Cloud Build to access secret
 1. Add role Vertex AI User (roles/aiplatform.user) to Cloud Build Service account. Needed to run database init script.
 
@@ -141,8 +144,29 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 
 1. Add roles Cloud Run Admin, Service Account User, Log Writer, and Artifact Registry Admin to the demo service's Cloud Build trigger service account.
 
+#### Run tests with Cloud Build
+
+* Run Demo Service integration test:
+
+    ```bash
+    gcloud builds submit --config langchain_tools_demo/int.tests.cloudbuild.yaml
+    ```
+
+* Run Extension service unit tests:
+    ```bash
+    gcloud builds submit --config extension_service/alloydb.tests.cloudbuild.yaml \
+        --substitutions _DATABASE_HOST=$DB_HOST,_DATABASE_NAME=$DB_NAME,_DATABASE_USER=$DB_USER
+    ```
+    Where `$DB_HOST`,`$DB_NAME`,`$DB_USER` are environment variables with your database values.
+    Note: Make sure to setup secrets describe in [Setup for extension service][#setup-for-extension-service]
+
+#### Trigger
+
+To run Cloud Build tests on GitHub from external contributors, ie RenovateBot, comment: `/gcbrun`.
+
+
 [proxy]: https://cloud.google.com/sql/docs/mysql/sql-proxy
 [tunnel]: https://github.com/GoogleCloudPlatform/database-query-extension/blob/main/docs/datastore/alloydb.md#set-up-connection-to-alloydb
 [config]: https://github.com/GoogleCloudPlatform/database-query-extension/blob/main/docs/datastore/alloydb.md#initialize-data-in-alloydb
-[ADC]: https://cloud.google.com/docs/authentication/application-default-credentials#GAC
 [triggers]: https://console.cloud.google.com/cloud-build/triggers?e=13802955&project=extension-demo-testing
+[invoker]: https://cloud.google.com/run/docs/securing/managing-access#add-principals
