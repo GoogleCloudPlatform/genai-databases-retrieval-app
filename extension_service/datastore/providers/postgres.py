@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import asyncio
+from datetime import datetime
 from ipaddress import IPv4Address, IPv6Address
 from typing import Any, Dict, Literal, Optional
 
@@ -239,8 +240,8 @@ class Client(datastore.Client[Config]):
         results = [models.Amenity.model_validate(dict(r)) for r in results]
         return results
 
-    async def get_flight(self, flight_id: int) -> Optional[list[models.Flight]]:
-        results = await self.__pool.fetch(
+    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+        result = await self.__pool.fetchrow(
             """
                 SELECT * FROM flights
                 WHERE id = $1
@@ -248,32 +249,57 @@ class Client(datastore.Client[Config]):
             flight_id,
             timeout=10,
         )
-        flights = [models.Flight.model_validate(dict(r)) for r in results]
-        return flights
 
-    async def search_flights(
+        if result is None:
+            return None
+
+        result = models.Flight.model_validate(dict(result))
+        return result
+
+    async def search_flights_by_number(
         self,
+        airline: str,
+        number: str,
+    ) -> list[models.Flight]:
+        results = await self.__pool.fetch(
+            """
+                SELECT * FROM flights
+                WHERE airline = $1
+                AND flight_number = $2;
+            """,
+            airline,
+            number,
+            timeout=10,
+        )
+        results = [models.Flight.model_validate(dict(r)) for r in results]
+        return results
+
+    async def search_flights_by_airports(
+        self,
+        date: str,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
-    ) -> Optional[list[models.Flight]]:
+    ) -> list[models.Flight]:
         # Check if either parameter is null.
         if departure_airport is None:
             departure_airport = "%"
         if arrival_airport is None:
             arrival_airport = "%"
-
         results = await self.__pool.fetch(
             """
                 SELECT * FROM flights
                 WHERE departure_airport LIKE $1
                 AND arrival_airport LIKE $2
+                AND departure_time > $3::timestamp - interval '1 day'
+                AND departure_time < $3::timestamp + interval '1 day';
             """,
             departure_airport,
             arrival_airport,
+            datetime.strptime(date, "%Y-%m-%d"),
             timeout=10,
         )
-        flights = [models.Flight.model_validate(dict(r)) for r in results]
-        return flights
+        results = [models.Flight.model_validate(dict(r)) for r in results]
+        return results
 
     async def close(self):
         await self.__pool.close()

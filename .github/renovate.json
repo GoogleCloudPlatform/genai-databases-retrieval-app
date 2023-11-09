@@ -1,0 +1,23 @@
+{
+  "extends": [
+    "config:recommended",
+    ":semanticCommitTypeAll(chore)",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "commitMessagePrefix": "deps: ",
+  "ignorePresets": [
+    ":semanticPrefixFixDepsChoreOthers"
+  ],
+  "prConcurrentLimit": 0,
+  "rebaseWhen": "behind-base-branch",
+  "dependencyDashboard": true,
+  "dependencyDashboardLabels": [
+    "type: process"
+  ],
+  "semanticCommits": "enabled",
+  "pip_requirements": {
+    "fileMatch": [
+      "requirements-test.txt"
+    ]
+  }
+}
