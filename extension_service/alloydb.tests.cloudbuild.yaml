@@ -30,10 +30,9 @@ steps:
   - id: Create database
     name: postgres
     entrypoint: /bin/bash
-    env:
-      - "PGUSER=${_DATABASE_USER}" # Use built-in env vars for database connection
     secretEnv:
-      - PGPASSWORD # Use built-in env vars for database connection
+      - PGUSER # Use built-in env vars for database connection
+      - PGPASSWORD
     args:
       - "-c"
       - |
@@ -44,6 +43,7 @@ steps:
     name: python:3.11
     dir: extension_service
     secretEnv:
+      - PGUSER
       - PGPASSWORD
     entrypoint: /bin/bash
     args:
@@ -53,7 +53,7 @@ steps:
         cp example-config.yml config.yml
         sed -i "s/127.0.0.1/${_DATABASE_HOST}/g" config.yml
         sed -i "s/my_database/${_DATABASE_NAME}/g" config.yml
-        sed -i "s/my-user/${_DATABASE_USER}/g" config.yml
+        sed -i "s/my-user/$$PGUSER/g" config.yml
         sed -i "s/my-password/$$PGPASSWORD/g" config.yml
         # Run script
         python run_database_init.py
@@ -63,39 +63,41 @@ steps:
     dir: extension_service
     env: # Set env var expected by tests
       - "DB_NAME=${_DATABASE_NAME}"
-      - "DB_USER=${_DATABASE_USER}"
       - "DB_HOST=${_DATABASE_HOST}"
     secretEnv:
+      - PGUSER
       - PGPASSWORD
     entrypoint: /bin/bash
     args:
       - "-c"
       - |
-        export DB_PASS=$$PGPASSWORD # Set env var expected by tests
+        # Set env var expected by tests
+        export DB_USER=$$PGUSER
+        export DB_PASS=$$PGPASSWORD
         python -m pytest
 
   - id: Clean database
     name: postgres
     entrypoint: /bin/bash
-    env:
-      - "PGUSER=${_DATABASE_USER}"
     secretEnv:
+      - PGUSER
       - PGPASSWORD
     args:
       - "-c"
       - |
-        psql -h ${_DATABASE_HOST} -d ${_DATABASE_USER} -c "DROP DATABASE IF EXISTS ${_DATABASE_NAME};"
+        psql -h ${_DATABASE_HOST} -c "DROP DATABASE IF EXISTS ${_DATABASE_NAME};"
 
 substitutions:
   _DATABASE_NAME: test_${SHORT_SHA}
   _DATABASE_USER: postgres
   _DATABASE_HOST: 127.0.0.1
-  _DATABASE_PASSWORD_KEY: alloy_db_pass
 
 availableSecrets:
   secretManager:
-    - versionName: projects/$PROJECT_ID/secrets/${_DATABASE_PASSWORD_KEY}/versions/latest
+    - versionName: projects/$PROJECT_ID/secrets/alloy_db_pass/versions/latest
       env: PGPASSWORD
+    - versionName: projects/$PROJECT_ID/secrets/alloy_db_user/versions/latest
+      env: PGUSER
 options:
   dynamic_substitutions: true
   pool:
