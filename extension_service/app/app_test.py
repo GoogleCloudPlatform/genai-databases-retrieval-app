@@ -54,13 +54,23 @@ def test_hello_world(app):
         assert response.json() == {"message": "Hello World"}
 
 
-def test_get_airport_by_id(app):
+@pytest.mark.parametrize(
+    "params",
+    [
+        pytest.param(
+            {
+                "id": 1,
+            },
+            id="id_only",
+        ),
+        pytest.param({"iata": "sfo"}, id="iata_only"),
+    ],
+)
+def test_get_airport_by_id(app, params):
     with TestClient(app) as client:
         response = client.get(
             "/airports",
-            params={
-                "id": 1,
-            },
+            params=params,
         )
     assert response.status_code == 200
     output = response.json()
@@ -68,22 +78,8 @@ def test_get_airport_by_id(app):
     assert models.Airport.model_validate(output)
 
 
-def test_get_airport_by_iata(app):
-    with TestClient(app) as client:
-        response = client.get(
-            "/airports",
-            params={
-                "iata": "sfo",
-            },
-        )
-    assert response.status_code == 200
-    output = response.json()
-    assert len(output) == 1
-    assert output[0]
-
-
 @pytest.mark.parametrize(
-    "params, expected",
+    "params",
     [
         pytest.param(
             {
@@ -91,13 +87,11 @@ def test_get_airport_by_iata(app):
                 "city": "san francisco",
                 "name": "san francisco",
             },
-            "foobar",
             id="country_city_and_name",
         ),
-        pytest.param({"country": "United States"}, "foobar", id="country_only"),
-        pytest.param({"city": "san francisco"}, "foobar", id="city_only"),
-        pytest.param({"name": "san francisco"}, "foobar", id="name_only"),
-        pytest.param({}, "foobar", id="no_params"),
+        pytest.param({"country": "United States"}, id="country_only"),
+        pytest.param({"city": "san francisco"}, id="city_only"),
+        pytest.param({"name": "san francisco"}, id="name_only"),
     ],
 )
 def test_search_airports(app, params, expected):
@@ -108,7 +102,20 @@ def test_search_airports(app, params, expected):
         )
     assert response.status_code == 200
     output = response.json()
-    assert output[0]
+    assert output
+    assert models.Airport.model_validate(output)
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        pytest.param({}, id="no_params"),
+    ],
+)
+def test_search_airports_with_bad_params(app, params):
+    with TestClient(app) as client:
+        response = client.get("/airports/search", params=params)
+    assert response.status_code == 422
 
 
 def test_get_amenity(app):
