@@ -60,7 +60,20 @@ class Client(ABC, Generic[C]):
         pass
 
     @abstractmethod
-    async def get_airport(self, id: int) -> Optional[models.Airport]:
+    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
+    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
+    async def search_airports(
+        self,
+        country: Optional[str] = None,
+        city: Optional[str] = None,
+        name: Optional[str] = None,
+    ) -> list[models.Airport]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
@@ -70,7 +83,7 @@ class Client(ABC, Generic[C]):
     @abstractmethod
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> Optional[list[models.Amenity]]:
+    ) -> list[models.Amenity]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod

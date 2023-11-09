@@ -35,6 +35,7 @@ def get_request(url: str, params: dict) -> requests.Response:
             params=params,
         )
     else:
+        # Append ID Token to make authenticated requests to Cloud Run services
         response = requests.get(
             url,
             params=params,
@@ -45,8 +46,23 @@ def get_request(url: str, params: dict) -> requests.Response:
 
 def get_id_token(url: str) -> str:
     """Helper method to generate ID tokens for authenticated requests"""
-    auth_req = google.auth.transport.requests.Request()
-    return google.oauth2.id_token.fetch_id_token(auth_req, url)
+    # Use Application Default Credentials on Cloud Run
+    if os.getenv("K_SERVICE"):
+        auth_req = google.auth.transport.requests.Request()
+        return google.oauth2.id_token.fetch_id_token(auth_req, url)
+    else:
+        # Use gcloud credentials locally
+        import subprocess
+
+        return (
+            subprocess.run(
+                ["gcloud", "auth", "print-identity-token"],
+                stdout=subprocess.PIPE,
+                check=True,
+            )
+            .stdout.strip()
+            .decode()
+        )
 
 
 def convert_date(date_string: str) -> str:

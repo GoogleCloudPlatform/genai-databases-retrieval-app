@@ -185,10 +185,10 @@ class Client(datastore.Client[Config]):
         flights = [models.Flight.model_validate(dict(f)) for f in await flights_task]
         return airports, amenities, flights
 
-    async def get_airport(self, id: int) -> Optional[models.Airport]:
+    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
         result = await self.__pool.fetchrow(
             """
-              SELECT id, iata, name, city, country FROM airports WHERE id=$1
+              SELECT * FROM airports WHERE id=$1
             """,
             id,
         )
@@ -198,6 +198,42 @@ class Client(datastore.Client[Config]):
 
         result = models.Airport.model_validate(dict(result))
         return result
+
+    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+        result = await self.__pool.fetchrow(
+            """
+              SELECT * FROM airports WHERE iata ILIKE $1
+            """,
+            iata,
+        )
+
+        if result is None:
+            return None
+
+        result = models.Airport.model_validate(dict(result))
+        return result
+
+    async def search_airports(
+        self,
+        country: Optional[str] = None,
+        city: Optional[str] = None,
+        name: Optional[str] = None,
+    ) -> list[models.Airport]:
+        results = await self.__pool.fetch(
+            """
+            SELECT * FROM airports
+            WHERE ($1::TEXT IS NULL OR country ILIKE $1)
+            AND ($2::TEXT IS NULL OR city ILIKE $2)
+            AND ($3::TEXT IS NULL OR name ILIKE '%' || $3 || '%')
+            """,
+            country,
+            city,
+            name,
+            timeout=10,
+        )
+
+        results = [models.Airport.model_validate(dict(r)) for r in results]
+        return results
 
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         result = await self.__pool.fetchrow(
@@ -216,7 +252,7 @@ class Client(datastore.Client[Config]):
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> Optional[list[models.Amenity]]:
+    ) -> list[models.Amenity]:
         results = await self.__pool.fetch(
             """
                 SELECT id, name, description, location, terminal, category, hour
@@ -233,9 +269,6 @@ class Client(datastore.Client[Config]):
             top_k,
             timeout=10,
         )
-
-        if results is []:
-            return None
 
         results = [models.Amenity.model_validate(dict(r)) for r in results]
         return results
