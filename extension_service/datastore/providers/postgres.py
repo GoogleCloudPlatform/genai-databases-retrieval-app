@@ -240,8 +240,8 @@ class Client(datastore.Client[Config]):
         results = [models.Amenity.model_validate(dict(r)) for r in results]
         return results
 
-    async def get_flight(self, flight_id: int) -> Optional[list[models.Flight]]:
-        results = await self.__pool.fetch(
+    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+        result = await self.__pool.fetchrow(
             """
                 SELECT * FROM flights
                 WHERE id = $1
@@ -249,14 +249,18 @@ class Client(datastore.Client[Config]):
             flight_id,
             timeout=10,
         )
-        flights = [models.Flight.model_validate(dict(r)) for r in results]
-        return flights
+
+        if result is None:
+            return None
+
+        result = models.Flight.model_validate(dict(result))
+        return result
 
     async def search_flights_by_number(
         self,
         airline: str,
         number: str,
-    ) -> Optional[list[models.Flight]]:
+    ) -> list[models.Flight]:
         results = await self.__pool.fetch(
             """
                 SELECT * FROM flights
@@ -267,15 +271,15 @@ class Client(datastore.Client[Config]):
             number,
             timeout=10,
         )
-        flights = [models.Flight.model_validate(dict(r)) for r in results]
-        return flights
+        results = [models.Flight.model_validate(dict(r)) for r in results]
+        return results
 
     async def search_flights_by_airports(
         self,
         date: str,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
-    ) -> Optional[list[models.Flight]]:
+    ) -> list[models.Flight]:
         # Check if either parameter is null.
         if departure_airport is None:
             departure_airport = "%"
@@ -294,8 +298,8 @@ class Client(datastore.Client[Config]):
             datetime.strptime(date, "%Y-%m-%d"),
             timeout=10,
         )
-        flights = [models.Flight.model_validate(dict(r)) for r in results]
-        return flights
+        results = [models.Flight.model_validate(dict(r)) for r in results]
+        return results
 
     async def close(self):
         await self.__pool.close()
