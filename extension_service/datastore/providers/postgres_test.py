@@ -65,10 +65,10 @@ async def test_get_airport():
             ("country", "bundy"),
         ]
     )
-    query = "SELECT id, iata, name, city, country FROM airports WHERE id=$1"
+    query = "SELECT * FROM airports WHERE id=$1"
     mocks = {query: mockRecord}
     mockCl = await mock_postgres_provider(mocks)
-    res = await mockCl.get_airport(id=1)
+    res = await mockCl.get_airport_by_id(1)
     expected_res = models.Airport(
         id=1,
         iata="FOO",

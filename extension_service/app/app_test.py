@@ -66,7 +66,7 @@ def test_hello_world(app):
         pytest.param({"iata": "sfo"}, id="iata_only"),
     ],
 )
-def test_get_airport_by_id(app, params):
+def test_get_airport(app, params):
     with TestClient(app) as client:
         response = client.get(
             "/airports",
@@ -94,7 +94,7 @@ def test_get_airport_by_id(app, params):
         pytest.param({"name": "san francisco"}, id="name_only"),
     ],
 )
-def test_search_airports(app, params, expected):
+def test_search_airports(app, params):
     with TestClient(app) as client:
         response = client.get(
             "/airports/search",
@@ -103,7 +103,7 @@ def test_search_airports(app, params, expected):
     assert response.status_code == 200
     output = response.json()
     assert output
-    assert models.Airport.model_validate(output)
+    assert models.Airport.model_validate(output[0])
 
 
 @pytest.mark.parametrize(
