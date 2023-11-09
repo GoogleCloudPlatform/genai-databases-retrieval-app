@@ -219,18 +219,12 @@ class Client(datastore.Client[Config]):
         city: Optional[str] = None,
         name: Optional[str] = None,
     ) -> list[models.Airport]:
-        if country is None:
-            country = "%"
-        if city is None:
-            city = "%"
-        name = "%" if name is None else f"%{name}%"
-
         results = await self.__pool.fetch(
             """
             SELECT * FROM airports
-            WHERE (country IS NULL OR country ILIKE $1)
-            AND (city IS NULL OR city ILIKE $2)
-            AND (name IS NULL OR name ILIKE $3)
+            WHERE ($1::TEXT IS NULL OR country ILIKE $1)
+            AND ($2::TEXT IS NULL OR city ILIKE $2)
+            AND ($3::TEXT IS NULL OR name ILIKE '%' || $3 || '%')
             """,
             country,
             city,
