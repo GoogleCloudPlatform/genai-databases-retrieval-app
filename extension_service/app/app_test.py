@@ -106,29 +106,73 @@ def test_get_flight(app):
         )
     assert response.status_code == 200
     output = response.json()
-    assert len(output) == 1
-    assert output[0]
-    assert models.Flight.model_validate(output[0])
+    assert output
+    assert models.Flight.model_validate(output)
 
 
 @pytest.mark.parametrize(
-    "params, expected",
+    "params",
     [
         pytest.param(
-            {"departure_airport": "LAX", "arrival_airport": "SFO"},
-            "foobar",
+            {
+                "departure_airport": "LAX",
+                "arrival_airport": "SFO",
+                "date": "2023-11-01",
+            },
             id="departure_and_arrival_airport",
         ),
-        pytest.param({"arrival_airport": "SFO"}, "foobar", id="arrival_airport_only"),
         pytest.param(
-            {"departure_airport": "EWR"}, "foobar", id="departure_airport_only"
+            {"arrival_airport": "SFO", "date": "2023-11-01"},
+            id="arrival_airport_only",
+        ),
+        pytest.param(
+            {"departure_airport": "EWR", "date": "2023-11-01"},
+            id="departure_airport_only",
+        ),
+        pytest.param(
+            {"airline": "DL", "flight_number": "1106"},
+            id="flight_number",
         ),
     ],
 )
-def test_search_flights(app, params, expected):
+def test_search_flights(app, params):
     with TestClient(app) as client:
         response = client.get("/flights/search", params=params)
     assert response.status_code == 200
     output = response.json()
     assert output[0]
     assert models.Flight.model_validate(output[0])
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        pytest.param(
+            {
+                "departure_airport": "LAX",
+                "arrival_airport": "SFO",
+            },
+            id="departure_and_arrival_airport",
+        ),
+        pytest.param(
+            {"arrival_airport": "SFO"},
+            id="arrival_airport_only",
+        ),
+        pytest.param(
+            {"departure_airport": "EWR"},
+            id="departure_airport_only",
+        ),
+        pytest.param(
+            {"flight_number": "1106"},
+            id="flight_number_only",
+        ),
+        pytest.param(
+            {"airline": "DL"},
+            id="airline_only",
+        ),
+    ],
+)
+def test_search_flights_with_bad_params(app, params):
+    with TestClient(app) as client:
+        response = client.get("/flights/search", params=params)
+    assert response.status_code == 422
