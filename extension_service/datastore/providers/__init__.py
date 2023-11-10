@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from . import firestore
 from . import postgres
 
-__ALL__ = [postgres]
+__ALL__ = [firestore, postgres]
