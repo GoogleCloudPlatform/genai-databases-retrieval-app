@@ -23,7 +23,7 @@
     ```bash
     gcloud services enable alloydb.googleapis.com \
                            compute.googleapis.com \
-                           cloudresourcemanager.googleapis.com \ 
+                           cloudresourcemanager.googleapis.com \
                            servicenetworking.googleapis.com \
                            vpcaccess.googleapis.com \
                            aiplatform.googleapis.com
