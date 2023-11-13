@@ -68,7 +68,7 @@ Next, we will use gcloud to authenticate requests to our Cloud Run instance:
 
 1. Run the `run services proxy` to proxy connections to Cloud Run: 
     ```bash
-        gcloud run services proxy my-service --port=8080
+        gcloud run services proxy extension-service --port=8080 --region=us-central1
     ```
 
 1. Finally, use `curl` to verify the endpoint works:
