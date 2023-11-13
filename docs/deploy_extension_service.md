@@ -5,6 +5,8 @@
 1. Make sure you've [setup and initialized your
    Database](../README.md#setting-up-your-database).
 
+1. Check your database setting and make sure `Only SSL connections` is set to `No`.
+
 1. You must have the following APIs Enabled:
 
     ```bash
@@ -44,6 +46,34 @@ Notes:
     gcloud iam service-accounts create extension-identity
     ```
 
+1.  Grant permissions to access your database:
+
+    * For AlloyDB:
+
+        ```bash
+        gcloud projects add-iam-policy-binding $PROJECT_ID \
+            --member serviceAccount:extension-identity@$PROJECT_ID.iam.gserviceaccount.com \
+            --role roles/alloydb.client
+        ```
+
+## Configuration
+    
+Your Config.yaml should look like this for AlloyDB connection:
+
+```
+host: 0.0.0.0
+# port: 8080
+datastore:
+    # Example for AlloyDB
+    kind: "postgres"
+    host: {AlloyDB private IP address}
+    # port: 5432
+    database: "{database name}"
+    user: "{username}"
+    password: "{password}"
+```
+
+
 ## Deploy to Cloud Run
 
 1. From the root `database-query-extension` directory, deploy the extension
@@ -70,6 +100,8 @@ Next, we will use gcloud to authenticate requests to our Cloud Run instance:
     ```bash
         gcloud run services proxy extension-service --port=8080 --region=us-central1
     ```
+
+    If you get a prompt to install proxy, select Y to install.
 
 1. Finally, use `curl` to verify the endpoint works:
     
