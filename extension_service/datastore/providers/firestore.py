@@ -27,6 +27,9 @@ from .. import datastore
 import firebase_admin
 from firebase_admin import firestore
 from firebase_admin import credentials
+from firebase_admin import firestore_async
+from google.cloud.firestore_v1.base_query import FieldFilter
+import datetime
 
 
 class Config(BaseModel, datastore.AbstractConfig):
@@ -118,65 +121,73 @@ class Client(datastore.Client[Config]):
         return airports, amenities, flights
 
     async def get_airport(self, id: int) -> Optional[models.Airport]:
-        return None
+        query = (
+            self.__client.collection("airports")
+            .where(filter=FieldFilter("id", "==", id))
+            .select("id", "iata", "name", "city", "country")
+        )
+        return models.Airport.model_validate(query.get().to_dict())
 
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
-        return None
+        query = (
+            self.__client.collection("amenities")
+            .where(filter=FieldFilter("id", "==", id))
+            .select(
+                "id",
+                "name",
+                "description",
+                "location",
+                "terminal",
+                "category",
+                "hour",
+                "content",
+                "embedding",
+            )
+        )
+        return models.Airport.model_validate(query.get().to_dict())
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> Optional[list[models.Amenity]]:
-        results = await self.__pool.fetch(
-            """
-                SELECT id, name, description, location, terminal, category, hour
-                FROM (
-                    SELECT id, name, description, location, terminal, category, hour, 1 - (embedding <=> $1) AS similarity
-                    FROM amenities
-                    WHERE 1 - (embedding <=> $1) > $2
-                    ORDER BY similarity DESC
-                    LIMIT $3
-                ) AS sorted_amenities
-            """,
-            query_embedding,
-            similarity_threshold,
-            top_k,
-            timeout=10,
+        query = (
+            self.__client.collection("amenities")
+            .where("embedding", ">", 1 - similarity_threshold)
+            .select(
+                "id", "name", "description", "location", "terminal", "category", "hour"
+            )
+            .order_by("similarity", direction="descending")
+            .limit(top_k)
         )
 
-        if results is []:
+        docs = query.stream()
+        if docs is []:
             return None
 
-        results = [models.Amenity.model_validate(dict(r)) for r in results]
-        return results
+        amenities = [models.Amenity.model_validate(dict(doc)) async for doc in docs]
+        return amenities
 
     async def get_flight(self, flight_id: int) -> Optional[list[models.Flight]]:
-        results = await self.__pool.fetch(
-            """
-                SELECT * FROM flights
-                WHERE id = $1
-            """,
-            flight_id,
-            timeout=10,
+        query = self.__client.collection("flights").where(
+            filter=FieldFilter("id", "==", id)
         )
-        flights = [models.Flight.model_validate(dict(r)) for r in results]
-        return flights
+        return models.Airport.model_validate(query.get().to_dict())
 
     async def search_flights_by_number(
         self,
         airline: str,
         number: str,
     ) -> Optional[list[models.Flight]]:
-        results = await self.__pool.fetch(
-            """
-                SELECT * FROM flights
-                WHERE airline = $1
-                AND flight_number = $2;
-            """,
-            airline,
-            number,
-            timeout=10,
+        query = (
+            self.__client.collection("flights")
+            .where(filter=FieldFilter("airline", "==", airline))
+            .where(filter=FieldFilter("flight_number", "==", flight_number))
         )
-        flights = [models.Flight.model_validate(dict(r)) for r in results]
+
+        docs = query.stream()
+        if docs is []:
+            return None
+
+        flights = [models.Flight.model_validate(dict(doc)) async for doc in docs]
         return flights
 
     async def search_flights_by_airports(
@@ -186,25 +197,18 @@ class Client(datastore.Client[Config]):
         arrival_airport: Optional[str] = None,
     ) -> Optional[list[models.Flight]]:
         # Check if either parameter is null.
-        if departure_airport is None:
-            departure_airport = "%"
-        if arrival_airport is None:
-            arrival_airport = "%"
-        results = await self.__pool.fetch(
-            """
-                SELECT * FROM flights
-                WHERE departure_airport LIKE $1
-                AND arrival_airport LIKE $2
-                AND departure_time > $3::timestamp - interval '1 day'
-                AND departure_time < $3::timestamp + interval '1 day';
-            """,
-            departure_airport,
-            arrival_airport,
-            datetime.strptime(date, "%Y-%m-%d"),
-            timeout=10,
+
+        date_timestamp = datetime.combine(date, datetime.min.time())
+        query = (
+            self.__client.collection("flights")
+            .where("departure_time", ">=", date_timestamp - datetime.timedelta(days=1))
+            .where("departure_time", "<=", date_timestamp + datetime.timedelta(days=1))
         )
-        flights = [models.Flight.model_validate(dict(r)) for r in results]
-        return flights
+
+        if departure_airport is None:
+            query = query.where("departure_airport", "==", departure_airport)
+        if arrival_airport is None:
+            query = query.where("arrival_airport", "==", arrival_airport)
 
     async def close(self):
         await self.__pool.close()
