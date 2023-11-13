@@ -35,7 +35,7 @@
 1. Clone this repo to your local machine:
 
     ```bash
-        git clone git@github.com:GoogleCloudPlatform/database-query-extension.git
+    git clone https://github.com/GoogleCloudPlatform/database-query-extension.git
     ```
 
 
