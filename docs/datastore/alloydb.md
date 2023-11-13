@@ -29,9 +29,9 @@
                            aiplatform.googleapis.com
     ```
 
-1. [Install python][install-python] and set up python [virtual environment][venv].
+1. [Install python][install-python] and set up a python [virtual environment][venv].
 
-1. Make sure you have python version 3.10 and up.
+1. Make sure you have python version 3.10+ installed.
 
     ```bash
     python -V
@@ -80,7 +80,7 @@ connect to your VPC. You should only need to do this once per VPC (per project).
 ## Create a AlloyDB cluster
 
 1. Set environment variables. For security reasons, use a different password for
-   DB_PASS (note DB_PASS for later use when connecting to database):
+   `$DB_PASS` and note it for future use:
 
     ```bash
     export CLUSTER=my-alloydb-cluster
@@ -128,7 +128,8 @@ connect to your VPC. You should only need to do this once per VPC (per project).
 
 ## Set up connection to AlloyDB
 
-For this section, we will create a Google Cloud Engine VM in the same VPC as the
+AlloyDB supports network connectivity through private, internal IP addresses
+only. For this section, we will create a Google Cloud Engine VM in the same VPC as the
 AlloyDB cluster. We can use this VM to connect to our AlloyDB cluster using
 Private IP.
 
@@ -173,7 +174,7 @@ Private IP.
     AlloyDB. You may wish to open a new terminal to connect with.
 
 1. Verify you can connect to your instance with the `psql` tool. Enter
-   password for AlloyDB (DB_PASS environment variable above)  when prompted:
+   password for AlloyDB (`$DB_PASS` environment variable set above) when prompted:
 
     ```bash
     psql -h 127.0.0.1 -U postgres
