@@ -3,3 +3,4 @@ annotations:
     text: "/gcbrun"
 trustedContributors:
   - renovate-bot
+  - dependabot[bot]
