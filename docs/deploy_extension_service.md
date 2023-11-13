@@ -8,7 +8,7 @@
 1. You must have the following APIs Enabled:
 
     ```bash
-    gcloud services enable cloudrun.googleapis.com \
+    gcloud services enable run.googleapis.com \
                            cloudbuild.googleapis.com \
                            artifactregistry.googleapis.com \
                            iam.googleapis.com
