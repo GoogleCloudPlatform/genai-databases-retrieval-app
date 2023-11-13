@@ -202,7 +202,7 @@ Private IP.
     cp example-config.yml config.yml
     ```
 
-1. Update `config.yml` with your database information.  Be sure to update the host with the IP address of the AlloyDB cluster.  And update the password.
+1. Update `config.yml` with your database information. Be sure to update the host, with the IP address of the AlloyDB cluster, and the password.
 
     ```bash
     host: 0.0.0.0
