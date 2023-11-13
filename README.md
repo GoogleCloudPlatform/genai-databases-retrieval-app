@@ -72,6 +72,10 @@ application, running your extension service has several benefits:
    through more standard and secure channels.
 
 ## Deploying
+Clone this repo to your local machine:
+```bash
+git clone https://github.com/GoogleCloudPlatform/database-query-extension.git
+```
 
 Deploying this demo consists of 3 steps:
 1. Setting up your Database -- creating your database and initializing it with
