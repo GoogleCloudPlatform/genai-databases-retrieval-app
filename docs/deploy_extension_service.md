@@ -62,15 +62,12 @@ Your Config.yaml should look like this for AlloyDB connection:
 
 ```
 host: 0.0.0.0
-# port: 8080
 datastore:
-    # Example for AlloyDB
     kind: "postgres"
-    host: {AlloyDB private IP address}
-    # port: 5432
-    database: "{database name}"
-    user: "{username}"
-    password: "{password}"
+    host: <YOUR_ALLOY_DB_IP_ADDRESS>
+    database: "assistantdemo"  # Update if you created or are reusing a different database
+    user: "postgres"  # Update if you created or are reusing a different user
+    password: "my-alloydb-pass"  # Update if you updated or created a different password 
 ```
 
 
