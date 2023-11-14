@@ -1,5 +1,8 @@
 annotations:
   - type: comment
     text: "/gcbrun"
+  - type: label
+    text: "tests: run"
 trustedContributors:
   - renovate-bot
+  - dependabot[bot]
