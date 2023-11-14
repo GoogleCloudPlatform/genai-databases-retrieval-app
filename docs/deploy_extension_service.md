@@ -58,7 +58,7 @@ Notes:
 
 ## Configuration
     
-Your Config.yaml should look like this for AlloyDB connection:
+Your `config.yaml` should look like this for AlloyDB connection:
 
 ```
 host: 0.0.0.0
