@@ -105,19 +105,17 @@ class Client(datastore.Client[Config]):
     async def export_data(
         self,
     ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
-        airport_docs = self.__client.collection("airports").stream()
-        amenities_docs = self.__client.collection("amenities").stream()
-        flights_docs = self.__client.collection("flights").stream()
+        airport_docs = await self.__client.collection("airports").get()
+        amenities_docs = await self.__client.collection("amenities").get()
+        flights_docs = await self.__client.collection("flights").get()
 
         airports = [
-            models.Airport.model_validate(doc.to_dict()) for doc in await airport_docs
+            models.Airport.model_validate(doc.to_dict()) for doc in airport_docs
         ]
         amenities = [
-            models.Amenity.model_validate(doc.to_dict()) for doc in await amenities_docs
+            models.Amenity.model_validate(doc.to_dict()) for doc in amenities_docs
         ]
-        flights = [
-            models.Flight.model_validate(doc.to_dict()) for doc in await flights_docs
-        ]
+        flights = [models.Flight.model_validate(doc.to_dict()) for doc in flights_docs]
         return airports, amenities, flights
 
     async def get_airport(self, id: int) -> Optional[models.Airport]:
@@ -159,11 +157,11 @@ class Client(datastore.Client[Config]):
             .limit(top_k)
         )
 
-        docs = query.stream()
+        docs = await query.get()
         if docs is []:
             return None
 
-        amenities = [models.Amenity.model_validate(dict(doc)) async for doc in docs]
+        amenities = [models.Amenity.model_validate(dict(doc)) for doc in docs]
         return amenities
 
     async def get_flight(self, flight_id: int) -> Optional[list[models.Flight]]:
@@ -180,14 +178,14 @@ class Client(datastore.Client[Config]):
         query = (
             self.__client.collection("flights")
             .where(filter=FieldFilter("airline", "==", airline))
-            .where(filter=FieldFilter("flight_number", "==", flight_number))
+            .where(filter=FieldFilter("flight_number", "==", number))
         )
 
-        docs = query.stream()
+        docs = await query.get()
         if docs is []:
             return None
 
-        flights = [models.Flight.model_validate(dict(doc)) async for doc in docs]
+        flights = [models.Flight.model_validate(dict(doc)) for doc in docs]
         return flights
 
     async def search_flights_by_airports(
