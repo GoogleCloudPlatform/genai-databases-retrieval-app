@@ -12,24 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
+import datetime
 from ipaddress import IPv4Address, IPv6Address
 from typing import Any, Dict, Literal, Optional
 
-import asyncpg
-from pgvector.asyncpg import register_vector
+import firebase_admin
+from firebase_admin import credentials, firestore_async
+from google.cloud.firestore_v1.base_query import FieldFilter
 from pydantic import BaseModel
 
 import models
 
 from .. import datastore
-
-import firebase_admin
-from firebase_admin import firestore
-from firebase_admin import credentials
-from firebase_admin import firestore_async
-from google.cloud.firestore_v1.base_query import FieldFilter
-import datetime
 
 
 class Config(BaseModel, datastore.AbstractConfig):
@@ -39,13 +33,13 @@ class Config(BaseModel, datastore.AbstractConfig):
 
 
 class Client(datastore.Client[Config]):
-    __client: firestore.firestore
+    __client: firestore_async.firestore
 
     @datastore.classproperty
     def kind(cls):
         return "firestore"
 
-    def __init__(self, client: firestore.client):
+    def __init__(self, client: firestore_async.client):
         self.__client = client
 
     @classmethod
@@ -58,7 +52,7 @@ class Client(datastore.Client[Config]):
                 "serviceAccountId": config.serviceAccountId,
             },
         )
-        return cls(firestore.client())
+        return cls(firestore_async.client())
 
     async def initialize_data(
         self,
@@ -67,7 +61,7 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
     ) -> None:
         for a in airports:
-            self.__client.collection("airports").document(str(a.id)).set(
+            await self.__client.collection("airports").document(str(a.id)).set(
                 {
                     "iata": a.iata,
                     "name": a.name,
@@ -76,7 +70,7 @@ class Client(datastore.Client[Config]):
                 }
             )
         for a in amenities:
-            self.__client.collection("amenities").document(str(a.id)).set(
+            await self.__client.collection("amenities").document(str(a.id)).set(
                 {
                     "name": a.name,
                     "description": a.description,
@@ -89,7 +83,7 @@ class Client(datastore.Client[Config]):
                 }
             )
         for f in flights:
-            self.__client.collection("flights").document(str(f.id)).set(
+            await self.__client.collection("flights").document(str(f.id)).set(
                 {
                     "airline": f.airline,
                     "flight_number": f.flight_number,
@@ -105,17 +99,27 @@ class Client(datastore.Client[Config]):
     async def export_data(
         self,
     ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
-        airport_docs = await self.__client.collection("airports").get()
-        amenities_docs = await self.__client.collection("amenities").get()
-        flights_docs = await self.__client.collection("flights").get()
+        airport_docs = self.__client.collection("airports").stream()
+        amenities_docs = self.__client.collection("amenities").stream()
+        flights_docs = self.__client.collection("flights").stream()
 
-        airports = [
-            models.Airport.model_validate(doc.to_dict()) for doc in airport_docs
-        ]
-        amenities = [
-            models.Amenity.model_validate(doc.to_dict()) for doc in amenities_docs
-        ]
-        flights = [models.Flight.model_validate(doc.to_dict()) for doc in flights_docs]
+        airports, amenities, flights = [], [], []
+
+        for doc in airport_docs:
+            airport_dict = doc.to_dict()
+            airport_dict["id"] = doc.id
+            airports.append(models.Airport.model_validate(airport_dict))
+
+        for doc in amenities_docs:
+            amenity_dict = doc.to_dict()
+            amenity_dict["id"] = doc.id
+            amenities.append(models.Amenity.model_validate(amenity_dict))
+
+        for doc in flights_docs:
+            flight_dict = doc.to_dict()
+            flight_dict["id"] = doc.id
+            flights.append(models.Flight.model_validate(flight_dict))
+
         return airports, amenities, flights
 
     async def get_airport(self, id: int) -> Optional[models.Airport]:
@@ -124,7 +128,7 @@ class Client(datastore.Client[Config]):
             .where(filter=FieldFilter("id", "==", id))
             .select("id", "iata", "name", "city", "country")
         )
-        return models.Airport.model_validate(query.get().to_dict())
+        return models.Airport.model_validate(query.stream().to_dict())
 
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         query = (
@@ -142,7 +146,7 @@ class Client(datastore.Client[Config]):
                 "embedding",
             )
         )
-        return models.Airport.model_validate(query.get().to_dict())
+        return models.Airport.model_validate(query.stream().to_dict())
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
@@ -157,7 +161,7 @@ class Client(datastore.Client[Config]):
             .limit(top_k)
         )
 
-        docs = await query.get()
+        docs = await query.stream()
         if docs is []:
             return None
 
@@ -168,7 +172,7 @@ class Client(datastore.Client[Config]):
         query = self.__client.collection("flights").where(
             filter=FieldFilter("id", "==", id)
         )
-        return models.Airport.model_validate(query.get().to_dict())
+        return models.Airport.model_validate(query.stream().to_dict())
 
     async def search_flights_by_number(
         self,
@@ -181,7 +185,7 @@ class Client(datastore.Client[Config]):
             .where(filter=FieldFilter("flight_number", "==", number))
         )
 
-        docs = await query.get()
+        docs = await query.stream()
         if docs is []:
             return None
 
@@ -209,4 +213,4 @@ class Client(datastore.Client[Config]):
             query = query.where("arrival_airport", "==", arrival_airport)
 
     async def close(self):
-        await self.__pool.close()
+        self.__client.close()
