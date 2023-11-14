@@ -1,5 +1,5 @@
 asyncpg==0.28.0
-fastapi==0.101.1
+fastapi==0.104.1
 google-cloud-aiplatform==1.34.0
 langchain==0.0.329
 pgvector==0.2.3
