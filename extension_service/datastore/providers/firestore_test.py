@@ -19,7 +19,6 @@ import firebase_admin
 import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
-import datastore
 import models
 
 
