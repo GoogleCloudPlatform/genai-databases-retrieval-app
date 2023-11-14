@@ -98,7 +98,7 @@ Next, we will use gcloud to authenticate requests to our Cloud Run instance:
         gcloud run services proxy extension-service --port=8080 --region=us-central1
     ```
 
-    If you get a prompt to install proxy, select Y to install.
+    If you are prompted to install the proxy, reply *Y* to install.
 
 1. Finally, use `curl` to verify the endpoint works:
     
