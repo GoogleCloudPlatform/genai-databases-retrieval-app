@@ -5,8 +5,6 @@
 1. Make sure you've [setup and initialized your
    Database](../README.md#setting-up-your-database).
 
-1. Check your database setting and make sure `Only SSL connections` is set to `No`.
-
 1. You must have the following APIs Enabled:
 
     ```bash
@@ -57,14 +55,14 @@ Notes:
         ```
 
 ## Configuration
-    
+
 Your `config.yaml` should look like this for AlloyDB connection:
 
 ```
 host: 0.0.0.0
 datastore:
     kind: "postgres"
-    host: <YOUR_ALLOY_DB_IP_ADDRESS>
+    host: <YOUR_ALLOY_DB_IP_ADDRESS> # Use your AlloyDB private IP address
     database: "assistantdemo"  # Update if you created or are reusing a different database
     user: "postgres"  # Update if you created or are reusing a different user
     password: "my-alloydb-pass"  # Update if you updated or created a different password 
