@@ -1,4 +1,4 @@
-# Setup and configure AlloyDB 
+# Setup and configure AlloyDB
 
 ## Before you begin
 
@@ -28,15 +28,20 @@
                            vpcaccess.googleapis.com \
                            aiplatform.googleapis.com
     ```
-1. Download and install [postgres-client cli (`psql`)][install-psql].
 
-[install-psql]: https://www.timescale.com/blog/how-to-install-psql-on-mac-ubuntu-debian-windows/
+1. [Install python][install-python] and set up a python [virtual environment][venv].
 
-1. Clone this repo to your local machine:
+1. Make sure you have python version 3.10+ installed.
 
     ```bash
-    git clone https://github.com/GoogleCloudPlatform/database-query-extension.git
+    python -V
     ```
+
+1. Download and install [postgres-client cli (`psql`)][install-psql].
+
+[install-python]: https://cloud.google.com/python/docs/setup#installing_python
+[venv]: https://cloud.google.com/python/docs/setup#installing_and_using_virtualenv
+[install-psql]: https://www.timescale.com/blog/how-to-install-psql-on-mac-ubuntu-debian-windows/
 
 
 ## Enable private services access
@@ -75,7 +80,7 @@ connect to your VPC. You should only need to do this once per VPC (per project).
 ## Create a AlloyDB cluster
 
 1. Set environment variables. For security reasons, use a different password for
-   DB_PASS:
+   `$DB_PASS` and note it for future use:
 
     ```bash
     export CLUSTER=my-alloydb-cluster
@@ -102,7 +107,8 @@ connect to your VPC. You should only need to do this once per VPC (per project).
         --cpu-count=8 \
         --region=$REGION \
         --cluster=$CLUSTER \
-        --project=$PROJECT_ID
+        --project=$PROJECT_ID \
+        --ssl-mode=ALLOW_UNENCRYPTED_AND_ENCRYPTED
     ```
 
 1. Get AlloyDB IP address:
@@ -111,8 +117,7 @@ connect to your VPC. You should only need to do this once per VPC (per project).
     export ALLOYDB_IP=$(gcloud alloydb instances describe $INSTANCE \
         --cluster=$CLUSTER \
         --region=$REGION \
-        --format=json | jq \
-        --raw-output ".ipAddress")
+        --format 'value(ipAddress)')
     ```
 
 1. Note the AlloyDB IP address for later use:
@@ -123,7 +128,8 @@ connect to your VPC. You should only need to do this once per VPC (per project).
 
 ## Set up connection to AlloyDB
 
-For this section, we will create a Google Cloud Engine VM in the same VPC as the
+AlloyDB supports network connectivity through private, internal IP addresses
+only. For this section, we will create a Google Cloud Engine VM in the same VPC as the
 AlloyDB cluster. We can use this VM to connect to our AlloyDB cluster using
 Private IP.
 
@@ -132,7 +138,7 @@ Private IP.
     ```bash
     export ZONE=us-central1-a
     export PROJECT_NUM=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
-    export VM_INSTANCE=alloydb-vm-instance
+    export VM_INSTANCE=alloydb-proxy-vm
     ```
 
 1. Create a Compute Engine VM:
@@ -168,7 +174,7 @@ Private IP.
     AlloyDB. You may wish to open a new terminal to connect with.
 
 1. Verify you can connect to your instance with the `psql` tool. Enter
-   password for AlloyDB when prompted:
+   password for AlloyDB (`$DB_PASS` environment variable set above) when prompted:
 
     ```bash
     psql -h 127.0.0.1 -U postgres
@@ -189,20 +195,31 @@ Private IP.
     CREATE EXTENSION vector;
     ```
 
-[pgvector]: https://github.com/pgvector/pgvector
+1. In a separate shell terminal, change into the root of the project:
 
-1. From the root of the project, change into the service directory:
+    ```bash
+    cd database-query-extension
+    ```
+
+1. Install requirements:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+1. Change into the service directory:
 
     ```bash
     cd database-query-extension/extension_service
     ```
+
 1. Make a copy of `example-config.yml` and name it `config.yml`.
 
     ```bash
     cp example-config.yml config.yml
     ```
 
-1. Update `config.yml` with your database information.
+1. Update `config.yml` with your database information. Be sure to update the host, with the IP address of the AlloyDB cluster, and the password.
 
     ```bash
     host: 0.0.0.0
@@ -224,3 +241,5 @@ Private IP.
     ```bash
     python run_database_init.py
     ```
+
+[pgvector]: https://github.com/pgvector/pgvector

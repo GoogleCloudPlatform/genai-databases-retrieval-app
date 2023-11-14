@@ -80,6 +80,13 @@ Deploying this demo consists of 3 steps:
    it to your database
 1. Running the LLM-based application -- running your application locally
 
+### Before you begin
+
+Clone this repo to your local machine:
+```bash
+git clone https://github.com/GoogleCloudPlatform/database-query-extension.git
+```
+
 ### Setting up your Database
 
 The extension service uses an interchangeable 'datastore' interface. Choose one

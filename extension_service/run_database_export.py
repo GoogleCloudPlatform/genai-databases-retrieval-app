@@ -72,6 +72,8 @@ async def main():
         for f in flights:
             writer.writerow(f.model_dump())
 
+    print("database export done.")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
