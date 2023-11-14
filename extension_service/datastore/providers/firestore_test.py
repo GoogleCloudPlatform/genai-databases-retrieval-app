@@ -16,10 +16,11 @@ import datetime
 from typing import Dict, cast
 
 import firebase_admin
-import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 import models
+
+from . import firestore
 
 
 class MockDocument(Dict):

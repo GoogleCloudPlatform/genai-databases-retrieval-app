@@ -59,39 +59,39 @@ class Client(datastore.Client[Config]):
         amenities: list[models.Amenity],
         flights: list[models.Flight],
     ) -> None:
-        for a in airports:
-            await self.__client.collection("airports").document(str(a.id)).set(
+        for airport in airports:
+            await self.__client.collection("airports").document(str(airport.id)).set(
                 {
-                    "iata": a.iata,
-                    "name": a.name,
-                    "city": a.city,
-                    "country": a.country,
+                    "iata": airport.iata,
+                    "name": airport.name,
+                    "city": airport.city,
+                    "country": airport.country,
                 }
             )
-        for a in amenities:
-            await self.__client.collection("amenities").document(str(a.id)).set(
+        for amenity in amenities:
+            await self.__client.collection("amenities").document(str(amenity.id)).set(
                 {
-                    "name": a.name,
-                    "description": a.description,
-                    "location": a.location,
-                    "terminal": a.terminal,
-                    "category": a.category,
-                    "hour": a.hour,
-                    "content": a.content,
-                    "embedding": a.embedding,
+                    "name": amenity.name,
+                    "description": amenity.description,
+                    "location": amenity.location,
+                    "terminal": amenity.terminal,
+                    "category": amenity.category,
+                    "hour": amenity.hour,
+                    "content": amenity.content,
+                    "embedding": amenity.embedding,
                 }
             )
-        for f in flights:
-            await self.__client.collection("flights").document(str(f.id)).set(
+        for flight in flights:
+            await self.__client.collection("flights").document(str(flight.id)).set(
                 {
-                    "airline": f.airline,
-                    "flight_number": f.flight_number,
-                    "departure_airport": f.departure_airport,
-                    "arrival_airport": f.arrival_airport,
-                    "departure_time": f.departure_time,
-                    "arrival_time": f.arrival_time,
-                    "departure_gate": f.departure_gate,
-                    "arrival_gate": f.arrival_gate,
+                    "airline": flight.airline,
+                    "flight_number": flight.flight_number,
+                    "departure_airport": flight.departure_airport,
+                    "arrival_airport": flight.arrival_airport,
+                    "departure_time": flight.departure_time,
+                    "arrival_time": flight.arrival_time,
+                    "departure_gate": flight.departure_gate,
+                    "arrival_gate": flight.arrival_gate,
                 }
             )
 
