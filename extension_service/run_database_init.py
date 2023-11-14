@@ -42,6 +42,8 @@ async def main() -> None:
     await ds.initialize_data(airports, amenities, flights)
     await ds.close()
 
+    print("database init done.")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
