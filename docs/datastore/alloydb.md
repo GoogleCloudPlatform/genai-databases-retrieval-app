@@ -219,7 +219,7 @@ Private IP.
     cp example-config.yml config.yml
     ```
 
-1. Update `config.yml` with your database information. Keep using `127.0.0.1` as the host IP address for port forwarding.
+1. Update `config.yml` with your database information. Keep using `127.0.0.1` as the datastore host IP address for port forwarding.
 
     ```bash
     host: 0.0.0.0
