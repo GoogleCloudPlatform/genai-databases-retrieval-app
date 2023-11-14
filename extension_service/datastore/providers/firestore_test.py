@@ -15,7 +15,8 @@
 import datetime
 from typing import Dict, cast
 
-import firebase_admin
+import firebase_admin  # type: ignore
+from firebase_admin import firestore_async  # type: ignore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 import models
@@ -57,7 +58,7 @@ class MockCollection(Dict):
         return self.documents
 
 
-class MockFirestoreClient(firestore.firestore):
+class MockFirestoreClient(firestore_async.firestore):
     """
     Mock firestore client.
     """

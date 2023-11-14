@@ -15,7 +15,7 @@
 import datetime
 from typing import Any, Dict, Literal, Optional
 
-import firebase_admin
+import firebase_admin  # type: ignore
 from firebase_admin import credentials, firestore_async
 from google.cloud.firestore_v1.base_query import FieldFilter
 from pydantic import BaseModel
@@ -145,7 +145,7 @@ class Client(datastore.Client[Config]):
                 "embedding",
             )
         )
-        return models.Airport.model_validate(query.stream().to_dict())
+        return models.Amenity.model_validate(query.stream().to_dict())
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
@@ -171,7 +171,7 @@ class Client(datastore.Client[Config]):
         query = self.__client.collection("flights").where(
             filter=FieldFilter("id", "==", id)
         )
-        return models.Airport.model_validate(query.stream().to_dict())
+        return models.Flight.model_validate(query.stream().to_dict())
 
     async def search_flights_by_number(
         self,
@@ -210,6 +210,13 @@ class Client(datastore.Client[Config]):
             query = query.where("departure_airport", "==", departure_airport)
         if arrival_airport is None:
             query = query.where("arrival_airport", "==", arrival_airport)
+
+        docs = await query.stream()
+        if docs is []:
+            return None
+
+        flights = [models.Flight.model_validate(dict(doc)) for doc in docs]
+        return flights
 
     async def close(self):
         self.__client.close()

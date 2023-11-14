@@ -18,29 +18,49 @@ import pytest
 from fastapi.testclient import TestClient
 
 import models
+from datastore.providers import firestore
 from datastore.providers import postgres
 
 from . import init_app
 from .app import AppConfig
 from .helpers import get_env_var
 
-DB_USER = get_env_var("DB_USER", "name of a postgres user")
-DB_PASS = get_env_var("DB_PASS", "password for the postgres user")
-DB_NAME = get_env_var("DB_NAME", "name of a postgres database")
-DB_HOST = get_env_var("DB_HOST", "ip address of a postgres database")
+DB_KIND = get_env_var("DB_KIND", "firestore or postgres")
+
+# postgres
+DB_USER = get_env_var("DB_USER", "name of a postgres user", "postgres")
+DB_PASS = get_env_var("DB_PASS", "password for the postgres user", "postgres")
+DB_NAME = get_env_var("DB_NAME", "name of a postgres database", "postgres")
+DB_HOST = get_env_var("DB_HOST", "ip address of a postgres database", "postgres")
+
+# firestre
+DB_PROJECT = get_env_var("DB_PROJECT", "firestore project ID", "firestore")
+DB_SERVICE_ACCOUNT = get_env_var(
+    "DB_SERVICE_ACCOUNT", "firestore service account", "firestore"
+)
 
 
 @pytest.fixture(scope="module")
 def app():
-    cfg = AppConfig(
-        datastore=postgres.Config(
-            kind="postgres",
-            user=DB_USER,
-            password=DB_PASS,
-            database=DB_NAME,
-            host=IPv4Address(DB_HOST),
+    if DB_KIND == "postgres":
+        cfg = AppConfig(
+            datastore=postgres.Config(
+                kind=DB_KIND,
+                user=DB_USER,
+                password=DB_PASS,
+                database=DB_NAME,
+                host=IPv4Address(DB_HOST),
+            )
         )
-    )
+    elif DB_KIND == "firestore":
+        cfg = AppConfig(
+            datastore=firestore.Config(
+                kind=DB_KIND,
+                projectId=DB_PROJECT,
+                serviceAccoundId=DB_SERVICE_ACCOUNT,
+            )
+        )
+
     app = init_app(cfg)
     if app is None:
         raise TypeError("app did not initialize")
