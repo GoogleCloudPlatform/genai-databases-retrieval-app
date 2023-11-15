@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datetime
+from datetime import datetime
 from typing import Any, Dict, Literal, Optional
 
 import firebase_admin  # type: ignore
@@ -180,8 +180,6 @@ class Client(datastore.Client[Config]):
             query = query.where("name", ">=", name).where("name", "<=", name + "\uf8ff")
 
         docs = await query.stream()
-        if docs is []:
-            return None
 
         airports = [models.Airport.model_validate(dict(doc)) for doc in docs]
         return airports
@@ -218,8 +216,6 @@ class Client(datastore.Client[Config]):
         )
 
         docs = await query.stream()
-        if docs is []:
-            return None
 
         amenities = [models.Amenity.model_validate(dict(doc)) for doc in docs]
         return amenities
@@ -242,8 +238,6 @@ class Client(datastore.Client[Config]):
         )
 
         docs = await query.stream()
-        if docs is []:
-            return None
 
         flights = [models.Flight.model_validate(dict(doc)) for doc in docs]
         return flights
@@ -269,8 +263,6 @@ class Client(datastore.Client[Config]):
             query = query.where("arrival_airport", "==", arrival_airport)
 
         docs = await query.stream()
-        if docs is []:
-            return None
 
         flights = [models.Flight.model_validate(dict(doc)) for doc in docs]
         return flights
