@@ -28,18 +28,6 @@ class Airport(BaseModel):
     country: str
 
 
-class Flight(BaseModel):
-    id: int
-    airline: str
-    flight_number: str
-    departure_airport: str
-    arrival_airport: str
-    departure_time: datetime.datetime
-    arrival_time: datetime.datetime
-    departure_gate: str
-    arrival_gate: str
-
-
 class Amenity(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -59,3 +47,15 @@ class Amenity(BaseModel):
             v = ast.literal_eval(v)
             v = [float(f) for f in v]
         return v
+
+
+class Flight(BaseModel):
+    id: int
+    airline: str
+    flight_number: str
+    departure_airport: str
+    arrival_airport: str
+    departure_time: datetime.datetime
+    arrival_time: datetime.datetime
+    departure_gate: str
+    arrival_gate: str
