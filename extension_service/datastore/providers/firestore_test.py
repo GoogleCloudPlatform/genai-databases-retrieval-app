@@ -15,7 +15,6 @@
 from datetime import datetime
 from typing import Dict
 
-import firebase_admin  # type: ignore
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 

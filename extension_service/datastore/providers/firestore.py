@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, Literal, Optional
 
-import firebase_admin  # type: ignore
+import firebase_admin
 from firebase_admin import credentials, firestore_async
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
@@ -204,7 +204,7 @@ class Client(datastore.Client[Config]):
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> Optional[list[models.Amenity]]:
+    ) -> list[models.Amenity]:
         query = (
             self.__client.collection("amenities")
             .where("embedding", ">", 1 - similarity_threshold)
@@ -220,7 +220,7 @@ class Client(datastore.Client[Config]):
         amenities = [models.Amenity.model_validate(dict(doc)) for doc in docs]
         return amenities
 
-    async def get_flight(self, flight_id: int) -> Optional[list[models.Flight]]:
+    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
         query = self.__client.collection("flights").where(
             filter=FieldFilter("id", "==", id)
         )
@@ -230,7 +230,7 @@ class Client(datastore.Client[Config]):
         self,
         airline: str,
         number: str,
-    ) -> Optional[list[models.Flight]]:
+    ) -> list[models.Flight]:
         query = (
             self.__client.collection("flights")
             .where(filter=FieldFilter("airline", "==", airline))
@@ -247,14 +247,14 @@ class Client(datastore.Client[Config]):
         date: str,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
-    ) -> Optional[list[models.Flight]]:
+    ) -> list[models.Flight]:
         # Check if either parameter is null.
-
+        date = datetime.strptime(date, "%Y-%m-%d").date()
         date_timestamp = datetime.combine(date, datetime.min.time())
         query = (
             self.__client.collection("flights")
-            .where("departure_time", ">=", date_timestamp - datetime.timedelta(days=1))
-            .where("departure_time", "<=", date_timestamp + datetime.timedelta(days=1))
+            .where("departure_time", ">=", date_timestamp - timedelta(days=1))
+            .where("departure_time", "<=", date_timestamp + timedelta(days=1))
         )
 
         if departure_airport is None:
