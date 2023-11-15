@@ -87,19 +87,11 @@
 1. Change into the `extension_service` directory
 1. Open a local connection to your database by starting the [Cloud SQL Auth Proxy][proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance.
 1. Set environment variables:
-    * For postgres:
-    ```bash
-    export DB_KIND=postgres
-    export DB_USER=<YOUR_USERNAME>
-    export DB_PASS=<YOUR_PASSWORD>
-    export DB_NAME=<YOUR_DATABASE_NAME>
-    ```
 
-    * For firestore:
     ```bash
-    export DB_KIND=firestore
-    export DB_PROJECT=<YOUR_PROJECT_ID>
-    export DB_SERVICE_ACCOUNT=<YOUR_FIRESTORE_SERVICE_ACCOUNT>
+    export DB_USER=""
+    export DB_PASS=""
+    export DB_NAME=""
     ```
 
 1. Run pytest to automatically run all tests:
