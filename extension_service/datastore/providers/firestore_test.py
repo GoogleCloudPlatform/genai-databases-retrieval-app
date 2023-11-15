@@ -13,15 +13,15 @@
 # limitations under the License.
 
 import datetime
-from typing import Dict, cast
+from typing import Dict
 
-import firebase_admin  # type: ignore
-from firebase_admin import firestore_async  # type: ignore
+from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
+import firebase_admin  # type: ignore
 import models
 
-from . import firestore
+from . import firestore as firestore_provider
 
 
 class MockDocument(Dict):
@@ -58,7 +58,7 @@ class MockCollection(Dict):
         return self.documents
 
 
-class MockFirestoreClient(firestore_async.firestore):
+class MockFirestoreClient(firestore.AsyncClient):
     """
     Mock firestore client.
     """
@@ -73,22 +73,18 @@ class MockFirestoreClient(firestore_async.firestore):
 
 
 async def mock_client(mock_firestore_client: MockFirestoreClient) -> firestore.Client:
-    return firestore.Client(mock_firestore_client)
+    return firestore_provider.Client(mock_firestore_client)
 
 
-async def test_get_airport():
+async def test_get_airport_by_id():
     fake_id = 1
     mock_document = MockDocument(
         fake_id,
         {
-            "iata",
-            "Fake iata",
-            "name",
-            "Fake name",
-            "city",
-            "Fake city",
-            "country",
-            "Fake country",
+            "iata": "Fake iata",
+            "name": "Fake name",
+            "city": "Fake city",
+            "country": "Fake country",
         },
     )
     mock_collection = MockCollection("airports")
@@ -97,7 +93,7 @@ async def test_get_airport():
     mock_firestore_client.collection["airports"] = mock_collection
 
     mock_client = await mock_client(mock_firestore_client)
-    res = await mock_client.get_airport(fake_id)
+    res = await mock_client.get_airport_by_id(fake_id)
     expected_res = models.Airport(
         id=fake_id,
         iata="Fake iata",
@@ -105,6 +101,69 @@ async def test_get_airport():
         city="Fake city",
         country="Fake country",
     )
+    assert res == expected_res
+
+
+async def test_get_airport_by_iata():
+    fake_id = 1
+    fake_iata = "Fake iata"
+    mock_document = MockDocument(
+        fake_id,
+        {
+            "iata": fake_iata,
+            "name": "Fake name",
+            "city": "Fake city",
+            "country": "Fake country",
+        },
+    )
+    mock_collection = MockCollection("airports")
+    mock_collection.documents[fake_id, mock_document]
+    mock_firestore_client = MockFirestoreClient()
+    mock_firestore_client.collection["airports"] = mock_collection
+
+    mock_client = await mock_client(mock_firestore_client)
+    res = await mock_client.get_airport_by_iata(fake_iata)
+    expected_res = models.Airport(
+        id=fake_id,
+        iata=fake_iata,
+        name="Fake name",
+        city="Fake city",
+        country="Fake country",
+    )
+    assert res == expected_res
+
+
+async def test_search_airports():
+    fake_id = 3
+    fake_name = "Fake name"
+    fake_country = "Fake country"
+    fake_city = "Fake city"
+    mock_document = MockDocument(
+        fake_id,
+        {
+            "iata": "Fake iata",
+            "name": fake_name,
+            "city": fake_city,
+            "country": fake_country,
+        },
+    )
+    mock_collection = MockCollection("airports")
+    mock_collection.documents[fake_id, mock_document]
+    mock_firestore_client = MockFirestoreClient()
+    mock_firestore_client.collection["airports"] = mock_collection
+
+    mock_client = await mock_client(mock_firestore_client)
+    res = await mock_client.search_airports(fake_country, fake_city, fake_name)
+    expected_res = [
+        models.Airport(
+            id=fake_id,
+            iata="Fake iata",
+            name=fake_name,
+            city=fake_city,
+            country=fake_country,
+        )
+    ]
+
     assert res == expected_res
 
 

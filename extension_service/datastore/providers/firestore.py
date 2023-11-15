@@ -15,12 +15,13 @@
 import datetime
 from typing import Any, Dict, Literal, Optional
 
-import firebase_admin  # type: ignore
-from firebase_admin import credentials, firestore_async
+from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
-from pydantic import BaseModel
 
+import firebase_admin  # type: ignore
 import models
+from firebase_admin import credentials, firestore_async
+from pydantic import BaseModel
 
 from .. import datastore
 
@@ -32,13 +33,13 @@ class Config(BaseModel, datastore.AbstractConfig):
 
 
 class Client(datastore.Client[Config]):
-    __client: firestore_async.firestore
+    __client: firestore.AsyncClient
 
     @datastore.classproperty
     def kind(cls):
         return "firestore"
 
-    def __init__(self, client: firestore_async.client):
+    def __init__(self, client: firestore.AsyncClient):
         self.__client = client
 
     @classmethod
@@ -51,7 +52,7 @@ class Client(datastore.Client[Config]):
                 "serviceAccountId": config.serviceAccountId,
             },
         )
-        return cls(firestore_async.client())
+        return cls(firestore.AsyncClient(project=config.projectId))
 
     async def initialize_data(
         self,
@@ -59,6 +60,34 @@ class Client(datastore.Client[Config]):
         amenities: list[models.Amenity],
         flights: list[models.Flight],
     ) -> None:
+        async def delete_collection(coll_ref, batch_size=400):
+            docs = coll_ref.limit(batch_size).stream()
+            deleted = 0
+
+            async for doc in docs:
+                await doc.reference.delete()
+                deleted = deleted + 1
+
+            if deleted >= batch_size:
+                return await delete_collection(coll_ref, batch_size)
+
+        # Check if the collections already exist; if so, delete collections
+        airports_ref = self.__client.collection("airports")
+        airports_exist = await airports_ref.limit(1).get()
+        if airports_exist:
+            await delete_collection(airports_ref)
+
+        amenities_ref = self.__client.collection("amenities")
+        amenities_exist = await amenities_ref.limit(1).get()
+        if amenities_exist:
+            await delete_collection(amenities_ref)
+
+        flights_ref = self.__client.collection("flights")
+        flights_exist = await flights_ref.limit(1).get()
+        if flights_exist:
+            await delete_collection(flights_ref)
+
+        # initialize collections
         for airport in airports:
             await self.__client.collection("airports").document(str(airport.id)).set(
                 {
@@ -121,13 +150,41 @@ class Client(datastore.Client[Config]):
 
         return airports, amenities, flights
 
-    async def get_airport(self, id: int) -> Optional[models.Airport]:
-        query = (
-            self.__client.collection("airports")
-            .where(filter=FieldFilter("id", "==", id))
-            .select("id", "iata", "name", "city", "country")
+    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+        query = self.__client.collection("airports").where(
+            filter=FieldFilter("id", "==", id)
         )
         return models.Airport.model_validate(query.stream().to_dict())
+
+    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+        query = self.__client.collection("airports").where(
+            filter=FieldFilter("iata", "==", iata)
+        )
+        return models.Airport.model_validate(query.stream().to_dict())
+
+    async def search_airports(
+        self,
+        country: Optional[str] = None,
+        city: Optional[str] = None,
+        name: Optional[str] = None,
+    ) -> list[models.Airport]:
+        query = self.__client.collection("airports")
+
+        if country:
+            query = query.where("country", "==", country)
+
+        if city:
+            query = query.where("city", "==", city)
+
+        if name:
+            query = query.where("name", ">=", name).where("name", "<=", name + "\uf8ff")
+
+        docs = await query.stream()
+        if docs is []:
+            return None
+
+        airports = [models.Airport.model_validate(dict(doc)) for doc in docs]
+        return airports
 
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         query = (
