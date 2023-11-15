@@ -9,7 +9,7 @@
     ":semanticPrefixFixDepsChoreOthers"
   ],
   "prConcurrentLimit": 0,
-  "rebaseWhen": "behind-base-branch",
+  "rebaseWhen": "never",
   "dependencyDashboard": true,
   "dependencyDashboardLabels": [
     "type: process"
