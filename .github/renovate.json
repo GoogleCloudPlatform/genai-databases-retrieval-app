@@ -22,7 +22,7 @@
   },
   "packageRules": [
     {
-      "groupName": "ayncpg",
+      "groupName": "asyncpg",
       "matchPackageNames": [
         "asyncpg",
         "asyncpg-stubs"
