@@ -441,8 +441,8 @@ class Client(datastore.Client[Config]):
                         sqlalchemy.text(
                             """
                         SELECT * FROM flights
-                        WHERE departure_airport LIKE :departure_airport
-                        AND arrival_airport LIKE :arrival_airport
+                        WHERE departure_airport ILIKE :departure_airport
+                        AND arrival_airport ILIKE :arrival_airport
                         AND departure_time > CAST(:datetime AS timestamp) - interval '1 day'
                         AND departure_time < CAST(:datetime AS timestamp) + interval '1 day';
                     """
