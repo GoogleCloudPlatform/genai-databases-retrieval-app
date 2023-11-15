@@ -19,5 +19,14 @@
     "fileMatch": [
       "requirements-test.txt"
     ]
-  }
+  },
+  "packageRules": [
+    {
+      "groupName": "asyncpg",
+      "matchPackageNames": [
+        "asyncpg",
+        "asyncpg-stubs"
+      ]
+    }
+  ]
 }
