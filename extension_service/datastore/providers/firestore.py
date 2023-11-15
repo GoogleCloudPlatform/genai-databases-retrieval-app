@@ -248,9 +248,8 @@ class Client(datastore.Client[Config]):
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
     ) -> list[models.Flight]:
-        # Check if either parameter is null.
-        date = datetime.strptime(date, "%Y-%m-%d").date()
-        date_timestamp = datetime.combine(date, datetime.min.time())
+        date_obj = datetime.strptime(date, "%Y-%m-%d").date()
+        date_timestamp = datetime.combine(date_obj, datetime.min.time())
         query = (
             self.__client.collection("flights")
             .where("departure_time", ">=", date_timestamp - timedelta(days=1))
