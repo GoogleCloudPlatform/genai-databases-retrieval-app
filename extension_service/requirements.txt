@@ -1,6 +1,6 @@
 asyncpg==0.28.0
 fastapi==0.104.1
-google-cloud-aiplatform==1.34.0
+google-cloud-aiplatform==1.36.3
 langchain==0.0.335
 pgvector==0.2.3
 pydantic==2.2.0
