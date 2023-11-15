@@ -15,13 +15,13 @@
 import datetime
 from typing import Any, Dict, Literal, Optional
 
+import firebase_admin  # type: ignore
+from firebase_admin import credentials, firestore_async
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
-
-import firebase_admin  # type: ignore
-import models
-from firebase_admin import credentials, firestore_async
 from pydantic import BaseModel
+
+import models
 
 from .. import datastore
 
