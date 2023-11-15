@@ -4,4 +4,4 @@ google-cloud-aiplatform==1.36.3
 langchain==0.0.335
 pgvector==0.2.3
 pydantic==2.5.1
-uvicorn[standard]==0.23.2
+uvicorn[standard]==0.24.0.post1
