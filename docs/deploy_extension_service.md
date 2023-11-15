@@ -44,6 +44,31 @@ Notes:
     gcloud iam service-accounts create extension-identity
     ```
 
+1.  Grant permissions to access your database:
+
+    * For AlloyDB:
+
+        ```bash
+        gcloud projects add-iam-policy-binding $PROJECT_ID \
+            --member serviceAccount:extension-identity@$PROJECT_ID.iam.gserviceaccount.com \
+            --role roles/alloydb.client
+        ```
+
+## Configuration
+
+Your `config.yaml` should look like this for AlloyDB connection:
+
+```
+host: 0.0.0.0
+datastore:
+    kind: "postgres"
+    host: <YOUR_ALLOY_DB_IP_ADDRESS> # Use your AlloyDB private IP address
+    database: "assistantdemo"  # Update if you created or are reusing a different database
+    user: "postgres"  # Update if you created or are reusing a different user
+    password: "my-alloydb-pass"  # Update if you updated or created a different password 
+```
+
+
 ## Deploy to Cloud Run
 
 1. From the root `database-query-extension` directory, deploy the extension
@@ -70,6 +95,8 @@ Next, we will use gcloud to authenticate requests to our Cloud Run instance:
     ```bash
         gcloud run services proxy extension-service --port=8080 --region=us-central1
     ```
+
+    If you are prompted to install the proxy, reply *Y* to install.
 
 1. Finally, use `curl` to verify the endpoint works:
     
