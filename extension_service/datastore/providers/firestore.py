@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 from datetime import datetime, timedelta
 from typing import Literal, Optional
 
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
+from google.cloud.firestore_v1.collection import CollectionReference
 from pydantic import BaseModel
 
 import models
@@ -49,71 +51,83 @@ class Client(datastore.Client[Config]):
         amenities: list[models.Amenity],
         flights: list[models.Flight],
     ) -> None:
-        async def delete_collection(coll_ref, batch_size=400):
-            # Deletes all documents within a collection in batches.
-            # Prevents out-of-memory error in case the collection is large.
-            docs = await coll_ref.limit(batch_size).stream()
-            deleted = 0
+        async def delete_collections(collection_list: list[CollectionReference]):
+            # Checks if colelction exists and deletes all documents
+            delete_tasks = []
+            for collection_ref in collection_list:
+                collection_exists = await collection_ref.limit(1).get()
+                if not collection_exists:
+                    return
 
-            async for doc in docs:
-                await doc.reference.delete()
-                deleted = deleted + 1
-
-            if deleted >= batch_size:
-                return await delete_collection(coll_ref, batch_size)
+                docs = collection_ref.stream()
+                async for doc in docs:
+                    delete_tasks.append(asyncio.create_task(doc.reference.delete()))
+            asyncio.gather(*delete_tasks)
 
         # Check if the collections already exist; if so, delete collections
         airports_ref = self.__client.collection("airports")
-        airports_exist = await airports_ref.limit(1).get()
-        if airports_exist:
-            await delete_collection(airports_ref)
-
         amenities_ref = self.__client.collection("amenities")
-        amenities_exist = await amenities_ref.limit(1).get()
-        if amenities_exist:
-            await delete_collection(amenities_ref)
-
         flights_ref = self.__client.collection("flights")
-        flights_exist = await flights_ref.limit(1).get()
-        if flights_exist:
-            await delete_collection(flights_ref)
+        await delete_collections([airports_ref, amenities_ref, flights_ref])
 
         # initialize collections
+        create_airports_tasks = []
         for airport in airports:
-            await self.__client.collection("airports").document(str(airport.id)).set(
-                {
-                    "iata": airport.iata,
-                    "name": airport.name,
-                    "city": airport.city,
-                    "country": airport.country,
-                }
+            create_airports_tasks.append(
+                self.__client.collection("airports")
+                .document(str(airport.id))
+                .set(
+                    {
+                        "iata": airport.iata,
+                        "name": airport.name,
+                        "city": airport.city,
+                        "country": airport.country,
+                    }
+                )
             )
+        await asyncio.gather(*create_airports_tasks)
+        create_amenities_tasks = []
         for amenity in amenities:
-            await self.__client.collection("amenities").document(str(amenity.id)).set(
-                {
-                    "name": amenity.name,
-                    "description": amenity.description,
-                    "location": amenity.location,
-                    "terminal": amenity.terminal,
-                    "category": amenity.category,
-                    "hour": amenity.hour,
-                    "content": amenity.content,
-                    "embedding": amenity.embedding,
-                }
+            create_amenities_tasks.append(
+                self.__client.collection("amenities")
+                .document(str(amenity.id))
+                .set(
+                    {
+                        "name": amenity.name,
+                        "description": amenity.description,
+                        "location": amenity.location,
+                        "terminal": amenity.terminal,
+                        "category": amenity.category,
+                        "hour": amenity.hour,
+                        "content": amenity.content,
+                        "embedding": amenity.embedding,
+                    }
+                )
             )
+        await asyncio.gather(*create_amenities_tasks)
+        create_flights_tasks = []
         for flight in flights:
-            await self.__client.collection("flights").document(str(flight.id)).set(
-                {
-                    "airline": flight.airline,
-                    "flight_number": flight.flight_number,
-                    "departure_airport": flight.departure_airport,
-                    "arrival_airport": flight.arrival_airport,
-                    "departure_time": flight.departure_time,
-                    "arrival_time": flight.arrival_time,
-                    "departure_gate": flight.departure_gate,
-                    "arrival_gate": flight.arrival_gate,
-                }
+            create_flights_tasks.append(
+                self.__client.collection("flights")
+                .document(str(flight.id))
+                .set(
+                    {
+                        "airline": flight.airline,
+                        "flight_number": flight.flight_number,
+                        "departure_airport": flight.departure_airport,
+                        "arrival_airport": flight.arrival_airport,
+                        "departure_time": flight.departure_time,
+                        "arrival_time": flight.arrival_time,
+                        "departure_gate": flight.departure_gate,
+                        "arrival_gate": flight.arrival_gate,
+                    }
+                )
             )
+            if len(create_flights_tasks) % 10000 == 0:
+                # avoid gRPC batch write timeout error
+                await asyncio.gather(*create_flights_tasks)
+                create_flights_tasks.clear()
+        await asyncio.gather(*create_flights_tasks)
 
     async def export_data(
         self,
@@ -124,19 +138,19 @@ class Client(datastore.Client[Config]):
 
         airports = []
 
-        for doc in airport_docs:
+        async for doc in airport_docs:
             airport_dict = doc.to_dict()
             airport_dict["id"] = doc.id
             airports.append(models.Airport.model_validate(airport_dict))
 
         amenities = []
-        for doc in amenities_docs:
+        async for doc in amenities_docs:
             amenity_dict = doc.to_dict()
             amenity_dict["id"] = doc.id
             amenities.append(models.Amenity.model_validate(amenity_dict))
 
         flights = []
-        for doc in flights_docs:
+        async for doc in flights_docs:
             flight_dict = doc.to_dict()
             flight_dict["id"] = doc.id
             flights.append(models.Flight.model_validate(flight_dict))
@@ -153,7 +167,7 @@ class Client(datastore.Client[Config]):
         query = self.__client.collection("airports").where(
             filter=FieldFilter("iata", "==", iata)
         )
-        return models.Airport.model_validate(await query.stream().to_dict())
+        return models.Airport.model_validate(query.stream().to_dict())
 
     async def search_airports(
         self,
@@ -172,9 +186,10 @@ class Client(datastore.Client[Config]):
         if name is not None:
             query = query.where("name", ">=", name).where("name", "<=", name + "\uf8ff")
 
-        docs = await query.stream()
-
-        airports = [models.Airport.model_validate(dict(doc)) for doc in docs]
+        docs = query.stream()
+        airports = []
+        async for doc in docs:
+            airports.append(models.Airport.model_validate(dict(doc)))
         return airports
 
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
@@ -193,7 +208,7 @@ class Client(datastore.Client[Config]):
                 "embedding",
             )
         )
-        return models.Amenity.model_validate(await query.stream().to_dict())
+        return models.Amenity.model_validate(query.stream().to_dict())
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
@@ -208,16 +223,17 @@ class Client(datastore.Client[Config]):
             .limit(top_k)
         )
 
-        docs = await query.stream()
-
-        amenities = [models.Amenity.model_validate(dict(doc)) for doc in docs]
+        docs = query.stream()
+        amenities = []
+        async for doc in docs:
+            amenities.append(models.Amenity.model_validate(dict(doc)))
         return amenities
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
         query = self.__client.collection("flights").where(
             filter=FieldFilter("id", "==", id)
         )
-        return models.Flight.model_validate(await query.stream().to_dict())
+        return models.Flight.model_validate(query.stream().to_dict())
 
     async def search_flights_by_number(
         self,
@@ -230,9 +246,10 @@ class Client(datastore.Client[Config]):
             .where(filter=FieldFilter("flight_number", "==", number))
         )
 
-        docs = await query.stream()
-
-        flights = [models.Flight.model_validate(dict(doc)) for doc in docs]
+        docs = query.stream()
+        flights = []
+        async for doc in docs:
+            flights.append(models.Flight.model_validate(dict(doc)))
         return flights
 
     async def search_flights_by_airports(
@@ -254,9 +271,10 @@ class Client(datastore.Client[Config]):
         if arrival_airport is None:
             query = query.where("arrival_airport", "==", arrival_airport)
 
-        docs = await query.stream()
-
-        flights = [models.Flight.model_validate(dict(doc)) for doc in docs]
+        docs = query.stream()
+        flights = []
+        async for doc in docs:
+            flights.append(models.Flight.model_validate(dict(doc)))
         return flights
 
     async def close(self):
