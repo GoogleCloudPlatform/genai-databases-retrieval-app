@@ -82,7 +82,15 @@ datastore:
             --no-allow-unauthenticated \
             --service-account extension-identity \
             --region us-central1 \
-            # The follow flags are optional if you aren't using a VPC 
+        ```
+
+        If you are using a VPC network, use the command below:
+        ```bash
+        gcloud alpha run deploy extension-service \
+            --source=./extension_service/\
+            --no-allow-unauthenticated \
+            --service-account extension-identity \
+            --region us-central1 \
             --network=default \ 
             --subnet=default
         ```
