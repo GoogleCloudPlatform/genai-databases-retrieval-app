@@ -13,10 +13,8 @@
 # limitations under the License.
 
 from datetime import datetime, timedelta
-from typing import Any, Dict, Literal, Optional
+from typing import Literal, Optional
 
-import firebase_admin
-from firebase_admin import credentials, firestore_async
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from pydantic import BaseModel
@@ -28,8 +26,7 @@ from .. import datastore
 
 class Config(BaseModel, datastore.AbstractConfig):
     kind: Literal["firestore"]
-    projectId: str
-    serviceAccountId: str
+    projectId: Optional[str]
 
 
 class Client(datastore.Client[Config]):
@@ -44,14 +41,6 @@ class Client(datastore.Client[Config]):
 
     @classmethod
     async def create(cls, config: Config) -> "Client":
-        cred = credentials.ApplicationDefault()
-        firebase_admin.initialize_app(
-            cred,
-            options={
-                "projectId": config.projectId,
-                "serviceAccountId": config.serviceAccountId,
-            },
-        )
         return cls(firestore.AsyncClient(project=config.projectId))
 
     async def initialize_data(
@@ -61,7 +50,9 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
     ) -> None:
         async def delete_collection(coll_ref, batch_size=400):
-            docs = coll_ref.limit(batch_size).stream()
+            # Deletes all documents within a collection in batches.
+            # Prevents out-of-memory error in case the collection is large.
+            docs = await coll_ref.limit(batch_size).stream()
             deleted = 0
 
             async for doc in docs:
@@ -131,18 +122,20 @@ class Client(datastore.Client[Config]):
         amenities_docs = self.__client.collection("amenities").stream()
         flights_docs = self.__client.collection("flights").stream()
 
-        airports, amenities, flights = [], [], []
+        airports = []
 
         for doc in airport_docs:
             airport_dict = doc.to_dict()
             airport_dict["id"] = doc.id
             airports.append(models.Airport.model_validate(airport_dict))
 
+        amenities = []
         for doc in amenities_docs:
             amenity_dict = doc.to_dict()
             amenity_dict["id"] = doc.id
             amenities.append(models.Amenity.model_validate(amenity_dict))
 
+        flights = []
         for doc in flights_docs:
             flight_dict = doc.to_dict()
             flight_dict["id"] = doc.id
@@ -160,7 +153,7 @@ class Client(datastore.Client[Config]):
         query = self.__client.collection("airports").where(
             filter=FieldFilter("iata", "==", iata)
         )
-        return models.Airport.model_validate(query.stream().to_dict())
+        return models.Airport.model_validate(await query.stream().to_dict())
 
     async def search_airports(
         self,
@@ -170,13 +163,13 @@ class Client(datastore.Client[Config]):
     ) -> list[models.Airport]:
         query = self.__client.collection("airports")
 
-        if country:
+        if country is not None:
             query = query.where("country", "==", country)
 
-        if city:
+        if city is not None:
             query = query.where("city", "==", city)
 
-        if name:
+        if name is not None:
             query = query.where("name", ">=", name).where("name", "<=", name + "\uf8ff")
 
         docs = await query.stream()
@@ -200,7 +193,7 @@ class Client(datastore.Client[Config]):
                 "embedding",
             )
         )
-        return models.Amenity.model_validate(query.stream().to_dict())
+        return models.Amenity.model_validate(await query.stream().to_dict())
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
@@ -224,7 +217,7 @@ class Client(datastore.Client[Config]):
         query = self.__client.collection("flights").where(
             filter=FieldFilter("id", "==", id)
         )
-        return models.Flight.model_validate(query.stream().to_dict())
+        return models.Flight.model_validate(await query.stream().to_dict())
 
     async def search_flights_by_number(
         self,
