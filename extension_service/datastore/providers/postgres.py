@@ -71,45 +71,6 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
     ) -> None:
         async with self.__pool.acquire() as conn:
-            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
-            # If the table already exists, drop it to avoid conflicts
-            await conn.execute("DROP TABLE IF EXISTS flights CASCADE")
-            # Create a new table
-            await conn.execute(
-                """
-                CREATE TABLE flights(
-                  id INTEGER PRIMARY KEY,
-                  airline TEXT,
-                  flight_number TEXT,
-                  departure_airport TEXT,
-                  arrival_airport TEXT,
-                  departure_time TIMESTAMP,
-                  arrival_time TIMESTAMP,
-                  departure_gate TEXT,
-                  arrival_gate TEXT
-                )
-                """
-            )
-            # Insert all the data
-            await conn.executemany(
-                """INSERT INTO flights VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)""",
-                [
-                    (
-                        f.id,
-                        f.airline,
-                        f.flight_number,
-                        f.departure_airport,
-                        f.arrival_airport,
-                        f.departure_time,
-                        f.arrival_time,
-                        f.departure_gate,
-                        f.arrival_gate,
-                    )
-                    for f in flights
-                ],
-            )
-
-        async with self.__pool.acquire() as conn:
             # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS airports CASCADE")
             # Create a new table
@@ -130,6 +91,7 @@ class Client(datastore.Client[Config]):
                 [(a.id, a.iata, a.name, a.city, a.country) for a in airports],
             )
 
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
             # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS amenities CASCADE")
             # Create a new table
@@ -167,6 +129,43 @@ class Client(datastore.Client[Config]):
                 ],
             )
 
+            # If the table already exists, drop it to avoid conflicts
+            await conn.execute("DROP TABLE IF EXISTS flights CASCADE")
+            # Create a new table
+            await conn.execute(
+                """
+                CREATE TABLE flights(
+                  id INTEGER PRIMARY KEY,
+                  airline TEXT,
+                  flight_number TEXT,
+                  departure_airport TEXT,
+                  arrival_airport TEXT,
+                  departure_time TIMESTAMP,
+                  arrival_time TIMESTAMP,
+                  departure_gate TEXT,
+                  arrival_gate TEXT
+                )
+                """
+            )
+            # Insert all the data
+            await conn.executemany(
+                """INSERT INTO flights VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)""",
+                [
+                    (
+                        f.id,
+                        f.airline,
+                        f.flight_number,
+                        f.departure_airport,
+                        f.arrival_airport,
+                        f.departure_time,
+                        f.arrival_time,
+                        f.departure_gate,
+                        f.arrival_gate,
+                    )
+                    for f in flights
+                ],
+            )
+
     async def export_data(
         self,
     ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
@@ -176,13 +175,13 @@ class Client(datastore.Client[Config]):
         amenity_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM amenities""")
         )
-        flights_task = asyncio.create_task(
+        flight_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM flights""")
         )
 
         airports = [models.Airport.model_validate(dict(a)) for a in await airport_task]
         amenities = [models.Amenity.model_validate(dict(a)) for a in await amenity_task]
-        flights = [models.Flight.model_validate(dict(f)) for f in await flights_task]
+        flights = [models.Flight.model_validate(dict(f)) for f in await flight_task]
         return airports, amenities, flights
 
     async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
@@ -313,16 +312,11 @@ class Client(datastore.Client[Config]):
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
     ) -> list[models.Flight]:
-        # Check if either parameter is null.
-        if departure_airport is None:
-            departure_airport = "%"
-        if arrival_airport is None:
-            arrival_airport = "%"
         results = await self.__pool.fetch(
             """
                 SELECT * FROM flights
-                WHERE departure_airport LIKE $1
-                AND arrival_airport LIKE $2
+                WHERE ($1::TEXT IS NULL OR departure_airport ILIKE $1)
+                AND ($2::TEXT IS NULL OR arrival_airport ILIKE $2)
                 AND departure_time > $3::timestamp - interval '1 day'
                 AND departure_time < $3::timestamp + interval '1 day';
             """,
