@@ -17,8 +17,8 @@ from datetime import datetime, timedelta
 from typing import Literal, Optional
 
 from google.cloud import firestore
+from google.cloud.firestore_v1.async_collection import AsyncCollectionReference
 from google.cloud.firestore_v1.base_query import FieldFilter
-from google.cloud.firestore_v1.collection import CollectionReference
 from pydantic import BaseModel
 
 import models
@@ -51,11 +51,11 @@ class Client(datastore.Client[Config]):
         amenities: list[models.Amenity],
         flights: list[models.Flight],
     ) -> None:
-        async def delete_collections(collection_list: list[CollectionReference]):
+        async def delete_collections(collection_list: list[AsyncCollectionReference]):
             # Checks if colelction exists and deletes all documents
             delete_tasks = []
             for collection_ref in collection_list:
-                collection_exists = await collection_ref.limit(1).get()
+                collection_exists = collection_ref.limit(1).stream()
                 if not collection_exists:
                     return
 
