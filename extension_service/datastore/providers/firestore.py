@@ -161,13 +161,13 @@ class Client(datastore.Client[Config]):
         query = self.__client.collection("airports").where(
             filter=FieldFilter("id", "==", id)
         )
-        return models.Airport.model_validate(query.stream().to_dict())
+        return models.Airport.model_validate(await query.get().to_dict())
 
     async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
         query = self.__client.collection("airports").where(
             filter=FieldFilter("iata", "==", iata)
         )
-        return models.Airport.model_validate(query.stream().to_dict())
+        return models.Airport.model_validate(await query.get().to_dict())
 
     async def search_airports(
         self,
@@ -194,7 +194,7 @@ class Client(datastore.Client[Config]):
         query = self.__client.collection("amenities").where(
             filter=FieldFilter("id", "==", id)
         )
-        return models.Amenity.model_validate(query.stream().to_dict())
+        return models.Amenity.model_validate(await query.get().to_dict())
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
@@ -205,7 +205,7 @@ class Client(datastore.Client[Config]):
         query = self.__client.collection("flights").where(
             filter=FieldFilter("id", "==", id)
         )
-        return models.Flight.model_validate(query.stream().to_dict())
+        return models.Flight.model_validate(await query.get().to_dict())
 
     async def search_flights_by_number(
         self,
