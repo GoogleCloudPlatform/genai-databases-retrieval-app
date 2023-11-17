@@ -199,16 +199,7 @@ class Client(datastore.Client[Config]):
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[models.Amenity]:
-        query = (
-            self.__client.collection("amenities")
-            .where("embedding", ">", 1 - similarity_threshold)
-            .order_by("similarity", direction="descending")
-            .limit(top_k)
-        )
-
-        docs = query.stream()
-        amenities = [models.Amenity.model_validate(dict(doc)) async for doc in docs]
-        return amenities
+        raise NotImplementedError("Semantic search not yet supported in Firestore.")
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
         query = self.__client.collection("flights").where(
