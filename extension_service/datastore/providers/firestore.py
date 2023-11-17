@@ -187,26 +187,12 @@ class Client(datastore.Client[Config]):
             query = query.where("name", ">=", name).where("name", "<=", name + "\uf8ff")
 
         docs = query.stream()
-        airports = []
-        async for doc in docs:
-            airports.append(models.Airport.model_validate(dict(doc)))
+        airports = [models.Airport.model_validate(dict(doc)) async for doc in docs]
         return airports
 
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
-        query = (
-            self.__client.collection("amenities")
-            .where(filter=FieldFilter("id", "==", id))
-            .select(
-                "id",
-                "name",
-                "description",
-                "location",
-                "terminal",
-                "category",
-                "hour",
-                "content",
-                "embedding",
-            )
+        query = self.__client.collection("amenities").where(
+            filter=FieldFilter("id", "==", id)
         )
         return models.Amenity.model_validate(query.stream().to_dict())
 
@@ -216,17 +202,12 @@ class Client(datastore.Client[Config]):
         query = (
             self.__client.collection("amenities")
             .where("embedding", ">", 1 - similarity_threshold)
-            .select(
-                "id", "name", "description", "location", "terminal", "category", "hour"
-            )
             .order_by("similarity", direction="descending")
             .limit(top_k)
         )
 
         docs = query.stream()
-        amenities = []
-        async for doc in docs:
-            amenities.append(models.Amenity.model_validate(dict(doc)))
+        amenities = [models.Amenity.model_validate(dict(doc)) async for doc in docs]
         return amenities
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
@@ -247,9 +228,7 @@ class Client(datastore.Client[Config]):
         )
 
         docs = query.stream()
-        flights = []
-        async for doc in docs:
-            flights.append(models.Flight.model_validate(dict(doc)))
+        flights = [models.Flight.model_validate(dict(doc)) async for doc in docs]
         return flights
 
     async def search_flights_by_airports(
@@ -272,9 +251,7 @@ class Client(datastore.Client[Config]):
             query = query.where("arrival_airport", "==", arrival_airport)
 
         docs = query.stream()
-        flights = []
-        async for doc in docs:
-            flights.append(models.Flight.model_validate(dict(doc)))
+        flights = [models.Flight.model_validate(dict(doc)) async for doc in docs]
         return flights
 
     async def close(self):
