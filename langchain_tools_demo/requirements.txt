@@ -1,5 +1,5 @@
 fastapi==0.104.1
-google-cloud-aiplatform==1.36.3
+google-cloud-aiplatform==1.36.4
 google-auth==2.23.4
 itsdangerous==2.1.2
 jinja2==3.1.2
