@@ -20,9 +20,7 @@ from .datastore import Client, create
 Config = Union[
     providers.firestore.Config,
     providers.postgres.Config,
-    providers.postgres.Config,
-    providers.cloudsql.Config,
-    providers.cloudsql.Config,
+    providers.cloudsql_postgres.Config,
 ]
 
 __ALL__ = [Client, Config, create, providers]

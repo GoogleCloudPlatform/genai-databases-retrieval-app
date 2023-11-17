@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import cloudsql, postgres, firestore
+from . import cloudsql_postgres, firestore, postgres
 
-__ALL__ = [postgres, cloudsql, firestore]
+__ALL__ = [postgres, cloudsql_postgres, firestore]

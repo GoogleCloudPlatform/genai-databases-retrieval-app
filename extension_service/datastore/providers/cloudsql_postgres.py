@@ -21,6 +21,7 @@ import sqlalchemy
 from google.cloud.sql.connector import Connector
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 import models
@@ -64,6 +65,7 @@ class Client(datastore.Client[Config]):
                     password=f"{config.password}",
                     db=f"{config.database}",
                 )
+            await register_vector(conn)
             return conn
 
         pool = create_async_engine(
@@ -82,10 +84,10 @@ class Client(datastore.Client[Config]):
     ) -> None:
         async with self.__pool.connect() as conn:
             # If the table already exists, drop it to avoid conflicts
-            await conn.execute(sqlalchemy.text("DROP TABLE IF EXISTS airports CASCADE"))
+            await conn.execute(text("DROP TABLE IF EXISTS airports CASCADE"))
             # Create a new table
             await conn.execute(
-                sqlalchemy.text(
+                text(
                     """
                     CREATE TABLE airports(
                       id INT PRIMARY KEY,
@@ -99,7 +101,7 @@ class Client(datastore.Client[Config]):
             )
             # Insert all the data
             await conn.execute(
-                sqlalchemy.text(
+                text(
                     """INSERT INTO airports VALUES (:id, :iata, :name, :city, :country)"""
                 ),
                 [
@@ -114,14 +116,12 @@ class Client(datastore.Client[Config]):
                 ],
             )
 
-            await conn.execute(sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS vector"))
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
             # If the table already exists, drop it to avoid conflicts
-            await conn.execute(
-                sqlalchemy.text("DROP TABLE IF EXISTS amenities CASCADE")
-            )
+            await conn.execute(text("DROP TABLE IF EXISTS amenities CASCADE"))
             # Create a new table
             await conn.execute(
-                sqlalchemy.text(
+                text(
                     """
                     CREATE TABLE amenities(
                       id INT PRIMARY KEY,
@@ -139,7 +139,7 @@ class Client(datastore.Client[Config]):
             )
             # Insert all the data
             await conn.execute(
-                sqlalchemy.text(
+                text(
                     """INSERT INTO amenities VALUES (:id, :name, :description, :location, :terminal, :category, :hour, :content, :embedding)"""
                 ),
                 [
@@ -152,19 +152,17 @@ class Client(datastore.Client[Config]):
                         "category": a.category,
                         "hour": a.hour,
                         "content": a.content,
-                        "embedding": None
-                        if a.embedding is None
-                        else "[" + ",".join(str(e) for e in a.embedding) + "]",
+                        "embedding": a.embedding,
                     }
                     for a in amenities
                 ],
             )
 
             # If the table already exists, drop it to avoid conflicts
-            await conn.execute(sqlalchemy.text("DROP TABLE IF EXISTS flights CASCADE"))
+            await conn.execute(text("DROP TABLE IF EXISTS flights CASCADE"))
             # Create a new table
             await conn.execute(
-                sqlalchemy.text(
+                text(
                     """
                     CREATE TABLE flights(
                       id INTEGER PRIMARY KEY,
@@ -182,7 +180,7 @@ class Client(datastore.Client[Config]):
             )
             # Insert all the data
             await conn.execute(
-                sqlalchemy.text(
+                text(
                     """INSERT INTO flights VALUES (:id, :airline, :flight_number, :departure_airport, :arrival_airport, :departure_time, :arrival_time, :departure_gate, :arrival_gate)"""
                 ),
                 [
@@ -207,14 +205,14 @@ class Client(datastore.Client[Config]):
     ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
         async with self.__pool.connect() as conn:
             airport_task = asyncio.create_task(
-                conn.execute(sqlalchemy.text("""SELECT * FROM airports"""))
+                conn.execute(text("""SELECT * FROM airports"""))
             )
 
             amenity_task = asyncio.create_task(
-                conn.execute(sqlalchemy.text("""SELECT * FROM amenities"""))
+                conn.execute(text("""SELECT * FROM amenities"""))
             )
             flights_task = asyncio.create_task(
-                conn.execute(sqlalchemy.text("""SELECT * FROM flights"""))
+                conn.execute(text("""SELECT * FROM flights"""))
             )
 
             airport_results = (await airport_task).mappings().fetchall()
@@ -228,22 +226,9 @@ class Client(datastore.Client[Config]):
 
     async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
         async with self.__pool.connect() as conn:
-            result = (
-                (
-                    await conn.execute(
-                        sqlalchemy.text(
-                            """
-                      SELECT * FROM airports WHERE id=:id
-                    """
-                        ),
-                        parameters={
-                            "id": id,
-                        },
-                    )
-                )
-                .mappings()
-                .fetchone()
-            )
+            s = text("""SELECT * FROM airports WHERE id=:id""")
+            params = {"id": id}
+            result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
             return None
@@ -253,22 +238,9 @@ class Client(datastore.Client[Config]):
 
     async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
         async with self.__pool.connect() as conn:
-            result = (
-                (
-                    await conn.execute(
-                        sqlalchemy.text(
-                            """
-                      SELECT * FROM airports WHERE iata ILIKE :iata
-                    """
-                        ),
-                        parameters={
-                            "iata": iata,
-                        },
-                    )
-                )
-                .mappings()
-                .fetchone()
-            )
+            s = text("""SELECT * FROM airports WHERE iata ILIKE :iata""")
+            params = {"iata": iata}
+            result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
             return None
@@ -283,50 +255,34 @@ class Client(datastore.Client[Config]):
         name: Optional[str] = None,
     ) -> list[models.Airport]:
         async with self.__pool.connect() as conn:
-            results = (
-                (
-                    await conn.execute(
-                        sqlalchemy.text(
-                            """
-                    SELECT * FROM airports
-                    WHERE (CAST(:country AS TEXT) IS NULL OR country ILIKE :country)
-                    AND (CAST(:city AS TEXT) IS NULL OR city ILIKE :city)
-                    AND (CAST(:name AS TEXT) IS NULL OR name ILIKE '%' || :name || '%')
-                    """
-                        ),
-                        parameters={
-                            "country": country,
-                            "city": city,
-                            "name": name,
-                        },
-                    )
-                )
-                .mappings()
-                .fetchall()
+            s = text(
+                """
+                SELECT * FROM airports
+                  WHERE (CAST(:country AS TEXT) IS NULL OR country ILIKE :country)
+                  AND (CAST(:city AS TEXT) IS NULL OR city ILIKE :city)
+                  AND (CAST(:name AS TEXT) IS NULL OR name ILIKE '%' || :name || '%')
+                """
             )
+            params = {
+                "country": country,
+                "city": city,
+                "name": name,
+            }
+            results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [models.Airport.model_validate(r) for r in results]
         return res
 
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         async with self.__pool.connect() as conn:
-            result = (
-                (
-                    await conn.execute(
-                        sqlalchemy.text(
-                            """
-                    SELECT id, name, description, location, terminal, category, hour
-                    FROM amenities WHERE id=:id
-                    """
-                        ),
-                        parameters={
-                            "id": id,
-                        },
-                    )
-                )
-                .mappings()
-                .fetchone()
+            s = text(
+                """
+                SELECT id, name, description, location, terminal, category, hour
+                  FROM amenities WHERE id=:id
+                """
             )
+            params = {"id": id}
+            result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
             return None
@@ -338,56 +294,38 @@ class Client(datastore.Client[Config]):
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[models.Amenity]:
         async with self.__pool.connect() as conn:
-            results = (
-                (
-                    await conn.execute(
-                        sqlalchemy.text(
-                            """
-                        SELECT id, name, description, location, terminal, category, hour
-                        FROM (
-                            SELECT id, name, description, location, terminal, category, hour, 1 - (embedding <=> :query_embedding) AS similarity
-                            FROM amenities
-                            WHERE 1 - (embedding <=> :query_embedding) > :similarity_threshold
-                            ORDER BY similarity DESC
-                            LIMIT :top_k
-                        ) AS sorted_amenities
-                    """
-                        ),
-                        parameters={
-                            "query_embedding": "["
-                            + ",".join(str(e) for e in query_embedding)
-                            + "]",
-                            "similarity_threshold": similarity_threshold,
-                            "top_k": top_k,
-                        },
-                    )
-                )
-                .mappings()
-                .fetchall()
+            s = text(
+                """
+                SELECT id, name, description, location, terminal, category, hour
+                  FROM (
+                      SELECT id, name, description, location, terminal, category, hour, 1 - (embedding <=> :query_embedding) AS similarity
+                      FROM amenities
+                      WHERE 1 - (embedding <=> :query_embedding) > :similarity_threshold
+                      ORDER BY similarity DESC
+                      LIMIT :top_k
+                  ) AS sorted_amenities
+                """
             )
+            params = {
+                "query_embedding": query_embedding,
+                "similarity_threshold": similarity_threshold,
+                "top_k": top_k,
+            }
+            results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [models.Amenity.model_validate(r) for r in results]
         return res
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
         async with self.__pool.connect() as conn:
-            result = (
-                (
-                    await conn.execute(
-                        sqlalchemy.text(
-                            """
-                        SELECT * FROM flights
-                        WHERE id = :flight_id
-                    """
-                        ),
-                        parameters={
-                            "flight_id": flight_id,
-                        },
-                    )
-                )
-                .mappings()
-                .fetchone()
+            s = text(
+                """
+                SELECT * FROM flights
+                  WHERE id = :flight_id
+                """
             )
+            params = {"flight_id": flight_id}
+            result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
             return None
@@ -401,25 +339,19 @@ class Client(datastore.Client[Config]):
         number: str,
     ) -> list[models.Flight]:
         async with self.__pool.connect() as conn:
-            results = (
-                (
-                    await conn.execute(
-                        sqlalchemy.text(
-                            """
-                        SELECT * FROM flights
-                        WHERE airline = :airline
-                        AND flight_number = :number;
-                    """
-                        ),
-                        parameters={
-                            "airline": airline,
-                            "number": number,
-                        },
-                    )
-                )
-                .mappings()
-                .fetchall()
+            s = text(
+                """
+                SELECT * FROM flights
+                  WHERE airline = :airline
+                  AND flight_number = :number
+                """
             )
+            params = {
+                "airline": airline,
+                "number": number,
+            }
+            results = (await conn.execute(s, params)).mappings().fetchall()
+
         res = [models.Flight.model_validate(r) for r in results]
         return res
 
@@ -429,34 +361,24 @@ class Client(datastore.Client[Config]):
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
     ) -> list[models.Flight]:
-        # Check if either parameter is null.
-        if departure_airport is None:
-            departure_airport = "%"
-        if arrival_airport is None:
-            arrival_airport = "%"
         async with self.__pool.connect() as conn:
-            results = (
-                (
-                    await conn.execute(
-                        sqlalchemy.text(
-                            """
-                        SELECT * FROM flights
-                        WHERE departure_airport ILIKE :departure_airport
-                        AND arrival_airport ILIKE :arrival_airport
-                        AND departure_time > CAST(:datetime AS timestamp) - interval '1 day'
-                        AND departure_time < CAST(:datetime AS timestamp) + interval '1 day';
-                    """
-                        ),
-                        parameters={
-                            "departure_airport": departure_airport,
-                            "arrival_airport": arrival_airport,
-                            "datetime": datetime.strptime(date, "%Y-%m-%d"),
-                        },
-                    )
-                )
-                .mappings()
-                .fetchall()
+            s = text(
+                """
+                SELECT * FROM flights
+                  WHERE (CAST(:departure_airport AS TEXT) IS NULL OR departure_airport ILIKE :departure_airport)
+                  AND (CAST(:arrival_airport AS TEXT) IS NULL OR arrival_airport ILIKE :arrival_airport)
+                  AND departure_time > CAST(:datetime AS timestamp) - interval '1 day'
+                  AND departure_time < CAST(:datetime AS timestamp) + interval '1 day'
+                """
             )
+            params = {
+                "departure_airport": departure_airport,
+                "arrival_airport": arrival_airport,
+                "datetime": datetime.strptime(date, "%Y-%m-%d"),
+            }
+
+            results = (await conn.execute(s, params)).mappings().fetchall()
+
         res = [models.Flight.model_validate(r) for r in results]
         return res
 
