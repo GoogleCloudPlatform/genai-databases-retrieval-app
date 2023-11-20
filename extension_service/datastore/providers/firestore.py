@@ -57,7 +57,7 @@ class Client(datastore.Client[Config]):
             for collection_ref in collection_list:
                 collection_exists = collection_ref.limit(1).stream()
                 if not collection_exists:
-                    return
+                    continue
 
                 docs = collection_ref.stream()
                 async for doc in docs:
@@ -218,8 +218,9 @@ class Client(datastore.Client[Config]):
             .where(filter=FieldFilter("flight_number", "==", number))
         )
 
-        docs = query.stream()
-        flights = [models.Flight.model_validate(dict(doc)) async for doc in docs]
+        flights = [
+            models.Flight.model_validate(dict(doc)) async for doc in query.stream()
+        ]
         return flights
 
     async def search_flights_by_airports(
