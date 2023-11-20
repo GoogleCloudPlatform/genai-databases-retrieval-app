@@ -194,23 +194,17 @@ Private IP.
     ```bash
     CREATE EXTENSION vector;
     ```
-
-1. In a separate shell terminal, change into the root of the project:
+    
+1. Change into the extension service directory:
 
     ```bash
-    cd database-query-extension
+    cd database-query-extension/extension_service
     ```
 
 1. Install requirements:
 
     ```bash
     pip install -r requirements.txt
-    ```
-
-1. Change into the service directory:
-
-    ```bash
-    cd database-query-extension/extension_service
     ```
 
 1. Make a copy of `example-config.yml` and name it `config.yml`.
