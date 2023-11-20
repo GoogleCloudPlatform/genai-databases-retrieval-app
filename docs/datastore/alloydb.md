@@ -195,7 +195,7 @@ Private IP.
     CREATE EXTENSION vector;
     ```
     
-1. Change into the service directory:
+1. Change into the extension service directory:
 
     ```bash
     cd database-query-extension/extension_service
