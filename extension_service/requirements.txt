@@ -7,4 +7,4 @@ pgvector==0.2.3
 pydantic==2.5.1
 uvicorn[standard]==0.24.0.post1
 cloud-sql-python-connector==1.4.3
-sqlalchemy==2.0.21
+sqlalchemy==2.0.23
