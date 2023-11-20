@@ -17,7 +17,6 @@ import datetime
 from decimal import Decimal
 from typing import Optional
 
-from numpy import float32
 from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
 
 
@@ -40,13 +39,13 @@ class Amenity(BaseModel):
     category: str
     hour: str
     content: Optional[str] = None
-    embedding: Optional[list[float32]] = None
+    embedding: Optional[list[float]] = None
 
     @field_validator("embedding", mode="before")
     def validate(cls, v):
         if type(v) == str:
             v = ast.literal_eval(v)
-            v = [float32(f) for f in v]
+            v = [float(f) for f in v]
         return v
 
 
