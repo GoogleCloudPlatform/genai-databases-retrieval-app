@@ -233,7 +233,7 @@ class Client(datastore.Client[Config]):
         flights = []
         async for doc in docs:
             flight_dict = doc.to_dict() | {"id": doc.id}
-            flights.append(models.Airport.model_validate(flight_dict))
+            flights.append(models.Flight.model_validate(flight_dict))
         return flights
 
     async def search_flights_by_airports(
@@ -259,7 +259,7 @@ class Client(datastore.Client[Config]):
         flights = []
         async for doc in docs:
             flight_dict = doc.to_dict() | {"id": doc.id}
-            flights.append(models.Airport.model_validate(flight_dict))
+            flights.append(models.Flight.model_validate(flight_dict))
         return flights
 
     async def close(self):
