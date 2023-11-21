@@ -1,4 +1,4 @@
-# Setup and configure CloudSQL for Postgres
+# Setup and configure Cloud SQL for Postgres
 
 ## Before you begin
 
@@ -43,18 +43,16 @@
 [install-cloudsql-proxy]: https://cloud.google.com/sql/docs/postgres/connect-instance-auth-proxy#install-proxy
 
 
-## Create a CloudSQL cluster
+## Create a Cloud SQL for PostgreSQL instance
 
 1. Set environment variables. For security reasons, use a different password for
    `$DB_PASS` and note it for future use:
 
     ```bash
-    export CLUSTER=my-cloudsql-cluster
     export DB_PASS=my-cloudsql-pass
     export DB_USER=postgres
     export INSTANCE=my-cloudsql-instance
     export REGION=us-central1
-    export ZONE=us-central1-a
     ```
 
 1. Create a PostgreSQL instance:
@@ -76,7 +74,7 @@
     ```
 
 
-## Connect to CloudSQL instance
+## Connect to the Cloud SQL instance
 
 1. Set environment variables:
 
@@ -91,13 +89,13 @@
     ```
 
 1. Verify you can connect to your instance with the `psql` tool. Enter
-   password for CloudSQL (`$DB_PASS` environment variable set above) when prompted:
+   password for Cloud SQL (`$DB_PASS` environment variable set above) when prompted:
 
     ```bash
     psql "host=127.0.0.1 port=5432 sslmode=disable user=$DB_USER"
     ```
 
-## Initialize data in AlloyDB
+## Initialize data
 
 1. While connected using `psql`, create a database and switch to it:
 
