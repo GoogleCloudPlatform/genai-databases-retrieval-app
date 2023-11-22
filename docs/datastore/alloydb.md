@@ -195,10 +195,10 @@ Private IP.
     CREATE EXTENSION vector;
     ```
     
-1. Change into the extension service directory:
+1. Change into the retrieval service directory:
 
     ```bash
-    cd database-query-extension/extension_service
+    cd genai-database-retrieval-app/retrieval_service
     ```
 
 1. Install requirements:

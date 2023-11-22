@@ -6,7 +6,7 @@
 
 1. Install required dependencies:
     ```bash
-    cd extension_service
+    cd retrieval_service
     pip install -r requirements.txt
     ```
 
@@ -18,7 +18,7 @@
 
 ## Initialize data in Firestore
 
-1. Create or edit your existing `extension_service/config.yml`:
+1. Create or edit your existing `retrieval_service/config.yml`:
 
     ```bash
     host: 0.0.0.0
@@ -27,10 +27,10 @@
         projectId: <YOUR_GCP_PROJECT_ID> # (Optional) default to env variable `GCLOUD_PROJECT`
     ```
 
-1. Change to the `extension_service` directory:
+1. Change to the `retrieval_service` directory:
 
     ```bash
-    cd extension_service
+    cd retrieval_service
     ```
 
 1. Populate your Firestore database with the command below. It will take several minutes to run:

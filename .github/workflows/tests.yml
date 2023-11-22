@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dir: [extension_service, langchain_tools_demo]
+        dir: [retrieval_service, langchain_tools_demo]
       fail-fast: false
     permissions:
       contents: read

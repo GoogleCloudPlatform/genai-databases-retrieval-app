@@ -33,9 +33,9 @@ amenities. It can help answer users questions like:
 - [Deploying](#deploying)
     - [Before you begin](#before-you-begin)
     - [Setting up your Database](#setting-up-your-database)
-    - [Deploying the Extension Service](#deploying-the-extension-service)
+    - [Deploying the Retrieval Service](#deploying-the-retrieval-service)
     - [Running the LLM-based Application](#running-the-llm-based-application)
-- [Writing your own extension](#writing-your-own-extension)
+- [Writing your own service](#writing-your-own-service)
 
 <!-- /TOC -->
 
@@ -79,8 +79,8 @@ and decide when it needs to access it.
 This demo contains 3 key parts:
 1. **Application** -- The LLM-based app that acts as orchestrates layer for the
    interaction with the LLM.
-1. **Extension** -- The extension service provides the application concrete,
-   discrete actions that allow the LLM to interact with the Database.
+1. **Retrieval Service** -- The retrieval service provides the application
+   concrete, discrete actions that allow the LLM to interact with the Database.
 1. **Database** -- The database containing the data the LLM can use to answer
    questions. For this application, the database used was intentionally designed
    to be interchangeable in order to make it easier to run this on your
@@ -106,7 +106,7 @@ help address a number of challenges
 Deploying this demo consists of 3 steps:
 1. Setting up your Database -- creating your database and initializing it with
    data
-1. Deploying your Extension -- deploying your extension service and connecting
+1. Deploying your service -- deploying your retrieval service and connecting
    it to your database
 1. Running the LLM-based application -- running your application locally
 
@@ -114,34 +114,34 @@ Deploying this demo consists of 3 steps:
 
 Clone this repo to your local machine:
 ```bash
-git clone https://github.com/GoogleCloudPlatform/genai-database-retrevial-app.git
+git clone https://github.com/GoogleCloudPlatform/genai-database-retrieval-app.git
 ```
 
 ### Setting up your Database
 
-The extension service uses an interchangeable 'datastore' interface. Choose one
+The Retrieval service uses an interchangeable 'datastore' interface. Choose one
 of any of the database's listed below to set up and initialize your database:
 
 * [Set up and configure AlloyDB](./docs/datastore/alloydb.md)
 
-### Deploying the Extension Service
+### Deploying the Retrieval Service
 
-[Instructions for deploying the extension service](./docs/deploy_extension_service.md)
+[Instructions for deploying the Retrieval service](./docs/deploy_retrieval_service.md)
 
 ### Running the LLM-based Application
 
 [Instructions for running app locally](./docs/run_langchain_demo.md)
 
-## Writing your own extension
+## Writing your own service
 
-This demo can also serve as a starting point for writing your own extension. The
+This demo can also serve as a starting point for writing your own service. The
 directory is organized into the following folders:
 
 | Directory                                    | Description                                                                           |
 |----------------------------------------------|---------------------------------------------------------------------------------------|
 | [`data`](/data)                              | Contains CSV files with the dataset for a working demo.                               |
-| [`langchain_tools_demo`](/extension-service) | Contains an LLM-based application that that uses the extension service via LangChain. |
-| [`retrieval_service`](/extension-service)    | Contains the service for extending an LLM with information from the database.         |
+| [`langchain_tools_demo`](/retrieval-service) | Contains an LLM-based application that that uses the retrieval service via LangChain. |
+| [`retrieval_service`](/retrieval-service)    | Contains the service for extending an LLM with information from the database.         |
 
 You can copy or fork the `retrieval_service` folder to customize it to your
 needs. There are two main places you want to start:

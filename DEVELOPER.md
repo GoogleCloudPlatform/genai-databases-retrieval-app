@@ -10,23 +10,23 @@
 1. Install dependencies. We recommend using a virtualenv:
 
     ```bash
-    pip install -r extension_service/requirements.txt -r langchain_tools_demo/requirements.txt
+    pip install -r retrieval_service/requirements.txt -r langchain_tools_demo/requirements.txt
     ```
 
 1. Install test dependencies:
 
     ```bash
-    pip install -r extension_service/requirements-test.txt -r langchain_tools_demo/requirements-test.txt
+    pip install -r retrieval_service/requirements-test.txt -r langchain_tools_demo/requirements-test.txt
     ```
 
 ## Run the app locally
 
-### Running the extension service
+### Running the retrieval service
 
 1. Change into the service directory:
 
     ```bash
-    cd extension_service
+    cd retrieval_service
     ```
 
 1. Open a local connection to your database by starting the [Cloud SQL Auth Proxy][proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance.
@@ -48,7 +48,7 @@
     cd langchain_tools_demo
     ```
 
-1. To use a live extension service on Cloud Run:
+1. To use a live retrieval service on Cloud Run:
 
     1. Set Google user credentials:
 
@@ -59,7 +59,7 @@
     1. Set `BASE_URL` environment variable:
 
         ```bash
-        export BASE_URL=$(gcloud run services describe extension-service --format 'value(status.url)')
+        export BASE_URL=$(gcloud run services describe retrieval-service --format 'value(status.url)')
         ```
 
     1. Allow your account to invoke the Cloud Run service by granting the [role Cloud Run invoker][invoker]
@@ -84,7 +84,7 @@
 
 ### Run tests locally
 
-1. Change into the `extension_service` directory
+1. Change into the `retrieval_service` directory
 1. Open a local connection to your database by starting the [Cloud SQL Auth Proxy][proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance.
 1. Set environment variables:
 
@@ -102,7 +102,7 @@
 
 ### CI Platform Setup
 
-Cloud Build is used to run tests against Google Cloud resources in test project: extension-demo-testing.
+Cloud Build is used to run tests against Google Cloud resources in test project: retrieval-demo-testing.
 Each test has a corresponding Cloud Build trigger, see [all triggers][triggers].
 
 #### Trigger Setup
@@ -114,7 +114,7 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
     * global - for default worker pools
 * Source:
   * Generation: 1st gen
-  * Repo: GoogleCloudPlatform/database-query-extension (GitHub App)
+  * Repo: GoogleCloudPlatform/genai-database-retrieval-app (GitHub App)
   * Base branch: `^main$`
 * Comment control: Required except for owners and collaborators
 * Filters: add directory filter
@@ -128,10 +128,10 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 
 1. Follow instructions to setup the test project:
     * [Set up and configure AlloyDB](./docs/datastore/alloydb.md)
-    * [Instructions for deploying the extension service](./docs/deploy_extension_service.md)
+    * [Instructions for deploying the retrieval service](./docs/deploy_retrieval_service.md)
 1. Setup Cloud Build triggers (above)
 
-##### Setup for extension service
+##### Setup for retrieval service
 
 1. Create a Cloud Build private pool
 1. Enable Secret Manager API
@@ -152,15 +152,15 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
     gcloud builds submit --config langchain_tools_demo/int.tests.cloudbuild.yaml
     ```
 
-* Run Extension service unit tests:
+* Run retrieval service unit tests:
 
     ```bash
-    gcloud builds submit --config extension_service/alloydb.tests.cloudbuild.yaml \
+    gcloud builds submit --config retrieval_service/alloydb.tests.cloudbuild.yaml \
         --substitutions _DATABASE_HOST=$DB_HOST,_DATABASE_NAME=$DB_NAME,_DATABASE_USER=$DB_USER
     ```
     Where `$DB_HOST`,`$DB_NAME`,`$DB_USER` are environment variables with your database values.
 
-    Note: Make sure to setup secrets describe in [Setup for extension service](#setup-for-extension-service)
+    Note: Make sure to setup secrets describe in [Setup for retrieval service](#setup-for-retrieval-service)
 
 #### Trigger
 
@@ -168,7 +168,7 @@ To run Cloud Build tests on GitHub from external contributors, ie RenovateBot, c
 
 
 [proxy]: https://cloud.google.com/sql/docs/mysql/sql-proxy
-[tunnel]: https://github.com/GoogleCloudPlatform/database-query-extension/blob/main/docs/datastore/alloydb.md#set-up-connection-to-alloydb
-[config]: https://github.com/GoogleCloudPlatform/database-query-extension/blob/main/docs/datastore/alloydb.md#initialize-data-in-alloydb
+[tunnel]: https://github.com/GoogleCloudPlatform/genai-database-retrieval-app/blob/main/docs/datastore/alloydb.md#set-up-connection-to-alloydb
+[config]: https://github.com/GoogleCloudPlatform/genai-database-retrieval-app/blob/main/docs/datastore/alloydb.md#initialize-data-in-alloydb
 [triggers]: https://console.cloud.google.com/cloud-build/triggers?e=13802955&project=extension-demo-testing
 [invoker]: https://cloud.google.com/run/docs/securing/managing-access#add-principals
