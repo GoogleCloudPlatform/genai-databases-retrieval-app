@@ -47,7 +47,7 @@
 ## Enable private services access
 
 In this step, we will enable Private Services Access so that AlloyDB is able to
-connect to your VPC. You should only need to do this once per VPC (per project). 
+connect to your VPC. You should only need to do this once per VPC (per project).
 
 1. Set environment variables:
 
@@ -153,7 +153,7 @@ Private IP.
         --provisioning-model=STANDARD \
         --service-account=$PROJECT_NUM-compute@developer.gserviceaccount.com \
         --scopes=https://www.googleapis.com/auth/cloud-platform \
-        --create-disk=auto-delete=yes,boot=yes,device-name=$VM_INSTANCE,image=projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20231025,mode=rw,size=10,type=projects/$PROJECT_ID/zones/$ZONE/diskTypes/pd-balanced \
+        --create-disk=auto-delete=yes,boot=yes,device-name=$VM_INSTANCE,image-family=ubuntu-2004-lts,image-project=ubuntu-os-cloud,mode=rw,size=10,type=projects/$PROJECT_ID/zones/$ZONE/diskTypes/pd-balanced \
         --no-shielded-secure-boot \
         --shielded-vtpm \
         --shielded-integrity-monitoring \
@@ -194,7 +194,7 @@ Private IP.
     ```bash
     CREATE EXTENSION vector;
     ```
-    
+
 1. Change into the retrieval service directory:
 
     ```bash
