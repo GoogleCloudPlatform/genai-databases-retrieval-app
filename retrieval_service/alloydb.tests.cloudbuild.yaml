@@ -15,7 +15,7 @@
 steps:
   - id: Install dependencies
     name: python:3.11
-    dir: extension_service
+    dir: retrieval_service
     entrypoint: pip
     args:
       [
@@ -41,7 +41,7 @@ steps:
 
   - id: Initialize data
     name: python:3.11
-    dir: extension_service
+    dir: retrieval_service
     secretEnv:
       - PGUSER
       - PGPASSWORD
@@ -60,7 +60,7 @@ steps:
 
   - id: Run Alloy DB integration tests
     name: python:3.11
-    dir: extension_service
+    dir: retrieval_service
     env: # Set env var expected by tests
       - "DB_NAME=${_DATABASE_NAME}"
       - "DB_HOST=${_DATABASE_HOST}"

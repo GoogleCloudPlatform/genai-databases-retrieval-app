@@ -1,4 +1,4 @@
-# Deploy the Extension Service to Cloud Run
+# Deploy the Retrieval Service to Cloud Run
 
 ## Before you begin
 
@@ -41,7 +41,7 @@ Notes:
 1. Create a backend service account if you don't already have one:
 
     ```bash
-    gcloud iam service-accounts create extension-identity
+    gcloud iam service-accounts create retrieval-identity
     ```
 
 1.  Grant permissions to access your database:
@@ -50,7 +50,7 @@ Notes:
 
         ```bash
         gcloud projects add-iam-policy-binding $PROJECT_ID \
-            --member serviceAccount:extension-identity@$PROJECT_ID.iam.gserviceaccount.com \
+            --member serviceAccount:retrieval-identity@$PROJECT_ID.iam.gserviceaccount.com \
             --role roles/alloydb.client
         ```
 
@@ -71,25 +71,25 @@ datastore:
 
 ## Deploy to Cloud Run
 
-1. From the root `database-query-extension` directory, deploy the extension
+1. From the root `genai-database-retrieval-app` directory, deploy the retrieval
    service to Cloud Run using the following command:
 
     * For AlloyDB:
 
         ```bash
-        gcloud run deploy extension-service \
-            --source=./extension_service/\
+        gcloud run deploy retrieval-service \
+            --source=./retrieval_service/\
             --no-allow-unauthenticated \
-            --service-account extension-identity \
-            --region us-central1 \
+            --service-account retrieval-identity \
+            --region us-central1
         ```
 
         If you are using a VPC network, use the command below:
         ```bash
-        gcloud alpha run deploy extension-service \
-            --source=./extension_service/\
+        gcloud alpha run deploy retrieval-service \
+            --source=./retrieval_service/\
             --no-allow-unauthenticated \
-            --service-account extension-identity \
+            --service-account retrieval-identity \
             --region us-central1 \
             --network=default \ 
             --subnet=default
@@ -101,7 +101,7 @@ Next, we will use gcloud to authenticate requests to our Cloud Run instance:
 
 1. Run the `run services proxy` to proxy connections to Cloud Run: 
     ```bash
-        gcloud run services proxy extension-service --port=8080 --region=us-central1
+        gcloud run services proxy retrieval-service --port=8080 --region=us-central1
     ```
 
     If you are prompted to install the proxy, reply *Y* to install.
