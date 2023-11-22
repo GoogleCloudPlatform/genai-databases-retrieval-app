@@ -35,7 +35,7 @@ amenities. It can help answer users questions like:
     - [Setting up your Database](#setting-up-your-database)
     - [Deploying the Retrieval Service](#deploying-the-retrieval-service)
     - [Running the LLM-based Application](#running-the-llm-based-application)
-- [Writing your own service](#writing-your-own-service)
+- [Writing your own retrieval service](#writing-your-own-retrieval-service)
 
 <!-- /TOC -->
 
@@ -119,23 +119,23 @@ git clone https://github.com/GoogleCloudPlatform/genai-database-retrieval-app.gi
 
 ### Setting up your Database
 
-The Retrieval service uses an interchangeable 'datastore' interface. Choose one
+The retrieval service uses an interchangeable 'datastore' interface. Choose one
 of any of the database's listed below to set up and initialize your database:
 
 * [Set up and configure AlloyDB](./docs/datastore/alloydb.md)
 
 ### Deploying the Retrieval Service
 
-[Instructions for deploying the Retrieval service](./docs/deploy_retrieval_service.md)
+[Instructions for deploying the retrieval service](./docs/deploy_retrieval_service.md)
 
 ### Running the LLM-based Application
 
 [Instructions for running app locally](./docs/run_langchain_demo.md)
 
-## Writing your own service
+## Writing your own retrieval service
 
-This demo can also serve as a starting point for writing your own service. The
-directory is organized into the following folders:
+This demo can also serve as a starting point for writing your own retrieval
+service. The directory is organized into the following folders:
 
 | Directory                                    | Description                                                                           |
 |----------------------------------------------|---------------------------------------------------------------------------------------|
