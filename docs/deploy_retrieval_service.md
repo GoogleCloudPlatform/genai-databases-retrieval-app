@@ -81,7 +81,7 @@ datastore:
             --source=./retrieval_service/\
             --no-allow-unauthenticated \
             --service-account retrieval-identity \
-            --region us-central1 \
+            --region us-central1
         ```
 
         If you are using a VPC network, use the command below:
