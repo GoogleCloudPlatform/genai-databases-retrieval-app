@@ -1,16 +1,14 @@
-# Database Query Extension
+# GenAI Database Retrieval App
 
-Note: This project is experimental and is not an officially supported Google
-product.
+Note: This project is for demonstration only and is not an officially supported
+Google product.
 
 
 ## Introduction
 
-This project is intended to be a working demo showcasing how to extend an
-LLM-based application using Cloud Databases for [Retrieval Augmented Generation
-(RAG)][rag]. It's intended to both demonstrate how to best use advanced RAG
-patterns with Databases, as well as provide a basic outline for extending your
-own LLMs.
+This project demonstrates production-quality practices for using techniques like
+[Retrieval Augmented Generation (RAG)][rag] and [ReACT][react] to extend your
+Gen AI application with information from Cloud Databases. 
 
 This demo showcases an "SFO Airport Assistant": a San Francisco Airport-based
 AI assistant that has access to information about airports, flights, and
@@ -21,16 +19,19 @@ amenities. It can help answer users questions like:
 * What flights are headed to NYC tomorrow?
 
 [rag]: https://www.promptingguide.ai/techniques/rag
+[react]: https://www.promptingguide.ai/techniques/react
 
 ## Table of Contents
 <!-- TOC depthfrom:2 -->
 
 - [Introduction](#introduction)
 - [Table of Contents](#table-of-contents)
-- [Architecture](#architecture)
-    - [Overview](#overview)
-    - [Extension as a service](#extension-as-a-service)
+- [Understanding the demo](#understanding-the-demo)
+    - [Understanding Retrieval Augmented Generation RAG](#understanding-retrieval-augmented-generation-rag)
+    - [Using ReACT + RAG together](#using-react--rag-together)
+    - [Architecture](#architecture)
 - [Deploying](#deploying)
+    - [Before you begin](#before-you-begin)
     - [Setting up your Database](#setting-up-your-database)
     - [Deploying the Extension Service](#deploying-the-extension-service)
     - [Running the LLM-based Application](#running-the-llm-based-application)
@@ -38,11 +39,42 @@ amenities. It can help answer users questions like:
 
 <!-- /TOC -->
 
-## Architecture
+## Understanding the demo
 
-### Overview
+### Understanding Retrieval Augmented Generation (RAG)
 
-![Overview](./architecture.png)
+One of the best tools for reducing hallucinations is to use Retrieval Augmented
+Generation (RAG). RAG is the concept of retrieving some data or information,
+augmenting your prompt to the LLM, and allowing it to generate more accurate
+responses based on the data included in the prompt. This grounds the model’s
+response, making it less likely to hallucinate. This technique is also useful
+for allowing the LLM to access data it didn’t have when it was trained.  And
+unlike fine-tuning, the information retrieved for RAG does not alter the model
+or otherwise leave the context of the request - making it more suitable for use
+cases where information privacy and security are important.
+
+Cloud databases provide a managed solution for storing and accessing data in a
+scalable and a reliable way. By connecting an LLM to a cloud database,
+developers can give their applications access to a wider range of information
+and reduce the risk of hallucinations.
+
+
+### Using ReACT + RAG together
+
+Another increasingly popular technique for LLMs is called ReACT Prompting. ReACT
+(a combination of “Reason” and “Act”) is a technique for asking your LLM to
+think through verbal reasoning. This technique establishes a framework for the
+model (acting as an Agent) to “think aloud” using a specific template - things
+like “Thoughts”, “Actions”, and “Observations”. 
+
+Many platforms support similar patterns to help extend your LLM’s capabilities –
+Vertex AI has Extensions, LangChain has Tools, and ChatGPT has plugins. We can
+leverage this pattern to help an LLM understand what information it can access
+and decide when it needs to access it. 
+
+### Architecture
+
+![Overview](./architecture.svg)
 
 This demo contains 3 key parts:
 1. **Application** -- The LLM-based app that acts as orchestrates layer for the
@@ -54,22 +86,20 @@ This demo contains 3 key parts:
    to be interchangeable in order to make it easier to run this on your
    preferred database.
 
-### Extension as a service
-
-While it's often possible to expose similar functionality directly into your
-application, running your extension service has several benefits:
+Running the retrieval service separately (as opposed to in the app itself) can 
+help address a number of challenges 
 1. **Better recall** - LLMs perform better when given smaller, discrete tasks
    they can use to accomplish larger goals. By mapping a specific action to a
    specify, pre-determined query it significantly improves the LLMs ability to
    leverage it successfully.
-1. **Better scalability** - Running the extension as a separate service both
+1. **Better scalability** - Running the retrieval as a separate service both
    allows multiple different LLMs to leverage it, as well as allowing it to
    scale independently. It allows allows production best practices such as
    connection pooling or caching.
 1. **Better security** - LLMs are susceptible to attacks such as "jailbreaking"
    to circumvent safety measures that are put in place. Using an intermediary
    service allows the application to handle authentication and authorization
-   through more standard and secure channels.
+   through more standard and secure channels (like existing auth web frameworks).
 
 ## Deploying
 
@@ -84,7 +114,7 @@ Deploying this demo consists of 3 steps:
 
 Clone this repo to your local machine:
 ```bash
-git clone https://github.com/GoogleCloudPlatform/database-query-extension.git
+git clone https://github.com/GoogleCloudPlatform/genai-database-retrevial-app.git
 ```
 
 ### Setting up your Database
@@ -110,14 +140,14 @@ directory is organized into the following folders:
 | Directory                                    | Description                                                                           |
 |----------------------------------------------|---------------------------------------------------------------------------------------|
 | [`data`](/data)                              | Contains CSV files with the dataset for a working demo.                               |
-| [`extension-service`](/extension-service)    | Contains the service for extending an LLM with information from the database.         |
 | [`langchain_tools_demo`](/extension-service) | Contains an LLM-based application that that uses the extension service via LangChain. |
+| [`retrieval_service`](/extension-service)    | Contains the service for extending an LLM with information from the database.         |
 
-You can copy or fork the `extension-service` folder to customize it to your
+You can copy or fork the `retrieval_service` folder to customize it to your
 needs. There are two main places you want to start:
-- `extension-service/app/routes.py` - contains the API endpoints that the LLM
+- `retrieval_service/app/routes.py` - contains the API endpoints that the LLM
   will call
-- `extension-service/datastore/datastore.py` - contains the interface used to
+- `retrieval_service/datastore/datastore.py` - contains the interface used to
   abstract the database. There are specific implementations of this in the
   `providers` folder that can be customized with logic for your specific schema.
 

@@ -5,9 +5,9 @@
 1. Make sure you've [setup and initialized your
    Database](../README.md#setting-up-your-database).
 
-1. Make sure you've [deployed your extension service, and are running a
+1. Make sure you've [deployed your retrieval service, and are running a
    connection to it locally on
-   127.0.0.1:8080](../README.md#deploying-the-extension-service).
+   127.0.0.1:8080](../README.md#deploying-the-retrieval-service).
 
 1. Make sure you have Python 3.11+ installed
 
