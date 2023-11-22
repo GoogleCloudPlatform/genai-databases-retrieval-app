@@ -38,6 +38,7 @@ async def main() -> None:
         flights = [models.Flight.model_validate(line) for line in reader]
 
     cfg = parse_config("config.yml")
+    print(cfg.datastore.kind)
     ds = await datastore.create(cfg.datastore)
     await ds.initialize_data(airports, amenities, flights)
     await ds.close()
