@@ -76,16 +76,10 @@
 
 ## Connect to the Cloud SQL instance
 
-1. Set environment variables:
-
-    ```bash
-    export INSTANCE_CONNECTION_NAME=$PROJECT_ID:$REGION:$INSTANCE
-    ```
-
 1. Connect to instance using cloud sql proxy:
 
     ```bash
-    ./cloud-sql-proxy $INSTANCE_CONNECTION_NAME
+    ./cloud-sql-proxy $PROJECT_ID:$REGION:$INSTANCE
     ```
 
 1. Verify you can connect to your instance with the `psql` tool. Enter
@@ -136,7 +130,7 @@
       # Example for cloudsql_postgres.py provider
       kind: "cloudsql-postgres"
       # Update this with your project ID
-      project: <PROJECT_ID>
+      project: $PROJECT_ID
       region: us-central1
       instance: my-cloudsql-instance
       # Update this with the database name
@@ -144,7 +138,7 @@
       # Update with database user, the default is `postgres`
       user: "postgres"
       # Update with database user password
-      password: "my-cloudsql-pass"
+      password: $DB_PASS
     ```
 
 1. Populate data into database:
