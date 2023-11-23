@@ -132,6 +132,10 @@ of any of the database's listed below to set up and initialize your database:
 
 [Instructions for running app locally](./docs/run_langchain_demo.md)
 
+### Clean up resources
+
+[Instructions for cleaning up resources](./docs/clean_up.md)
+
 ## Writing your own retrieval service
 
 This demo can also serve as a starting point for writing your own retrieval
