@@ -23,7 +23,7 @@ from langchain.prompts.chat import ChatPromptTemplate
 
 from tools import convert_date, tools
 
-set_verbose(bool(os.getenv("DEBUG", default=True)))
+set_verbose(bool(os.getenv("DEBUG", default=False)))
 
 
 # Agent

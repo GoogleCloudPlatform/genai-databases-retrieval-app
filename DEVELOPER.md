@@ -64,10 +64,10 @@
 
     1. Allow your account to invoke the Cloud Run service by granting the [role Cloud Run invoker][invoker]
 
-1. [Optional] Turn off debugging by setting the `DEBUG` environment variable:
+1. [Optional] Turn on debugging by setting the `DEBUG` environment variable:
 
     ```bash
-    export DEBUG=False
+    export DEBUG=True
     ```
 
 1. To run the app using uvicorn, execute the following:
