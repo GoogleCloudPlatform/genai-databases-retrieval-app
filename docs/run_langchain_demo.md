@@ -15,31 +15,32 @@
 
 1. Set up [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials#GAC):
 
-```bash
+    ```bash
     gcloud auth application-default login
-```
+    ```
 
 1. Change into the `langchain_tools_demo` directory:
 
-```bash
+    ```bash
     cd langchain_tools_demo
-```
+    ```
 
 1. Install the dependencies using `pip`. You may wish to do this in a
    [venv](https://docs.python.org/3/library/venv.html):
 
-```bash
+    ```bash
     pip install -r requirements.txt
-```
+    ```
 
 
 ## Running the Demo
 
 1. Start the application with:
 
-```
+    ```bash
     python main.py
-```
-Note: for hot reloading of the app use: `uvicorn main:app --host 0.0.0.0 --reload`
+    ```
+
+    Note: for hot reloading of the app use: `uvicorn main:app --host 0.0.0.0 --reload`
 
 1. View app at `http://localhost:8081/`

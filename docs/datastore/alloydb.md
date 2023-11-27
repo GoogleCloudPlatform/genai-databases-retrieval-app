@@ -195,6 +195,12 @@ Private IP.
     CREATE EXTENSION vector;
     ```
 
+1. Exit from `psql`:
+
+    ```bash
+    exit
+    ```
+
 1. Change into the retrieval service directory:
 
     ```bash
