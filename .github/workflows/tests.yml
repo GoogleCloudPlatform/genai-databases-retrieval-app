@@ -15,11 +15,17 @@
 name: tests
 on:
   pull_request:
+    paths-ignore:
+      - "docs/**"
   push:
     branches:
       - main
+    paths-ignore:
+      - "docs/**"
   pull_request_target:
     types: [labeled]
+    paths-ignore:
+      - "docs/**"
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -79,8 +85,3 @@ jobs:
           black --check .
           isort --check .
           mypy .
-
-      # Temporarily disabled until integration tests are properly working
-      # - name: Run tests
-      #   working-directory: ${{ matrix.dir }}
-      #   run: pytest .
