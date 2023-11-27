@@ -5,7 +5,7 @@
 1. Make sure you've [setup and initialized your
    Database](../README.md#setting-up-your-database).
 
-1. Install Python 3.11+
+1. Install Python 3.10+
 
 1. Install dependencies. We recommend using a virtualenv:
 

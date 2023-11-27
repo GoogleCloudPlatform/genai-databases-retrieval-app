@@ -9,7 +9,7 @@
    connection to it locally on
    127.0.0.1:8080](../README.md#deploying-the-retrieval-service).
 
-1. Make sure you have Python 3.11+ installed
+1. Make sure you have Python 3.10+ installed
 
 ## Setting up your Environment
 
