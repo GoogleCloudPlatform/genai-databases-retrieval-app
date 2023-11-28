@@ -13,14 +13,40 @@
 # limitations under the License.
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from langchain.embeddings.base import Embeddings
-
+from fastapi.security import OAuth2AuthorizationCodeBearer
 import datastore
+from google.auth.transport import requests
+from google.oauth2 import _id_token_async
 
 routes = APIRouter()
+
+oauth2_scheme = OAuth2AuthorizationCodeBearer(
+    tokenUrl="https://oauth2.googleapis.com/token"
+)
+
+GOOGLE_CLIENT_ID = (
+    "548341735270-6qu1l8tttfuhmt7nbfb7a4q6j4hso2f7.apps.googleusercontent.com"
+)
+
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    try:
+        id_info = _id_token_async.verify_oauth2_token(
+            token, requests.Request(), GOOGLE_CLIENT_ID
+        )
+
+        return {
+            "user_id": id_info["sub"],
+            "name": id_info["name"],
+            "email": id_info["email"],
+        }
+
+    except Exception:  # pylint: disable=broad-except
+        print("Error verifying oauth2 id_token")
 
 
 @routes.get("/")
@@ -31,6 +57,7 @@ async def root():
 @routes.get("/airports")
 async def get_airport(
     request: Request,
+    current_user: Annotated[dict, Depends(get_current_user)],
     id: Optional[int] = None,
     iata: Optional[str] = None,
 ):
