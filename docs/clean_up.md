@@ -1,5 +1,9 @@
 # Clean up
 
+The fastest way to clean up is to delete the entire Google Cloud project. Follow
+the steps below if you want to keep the project but delete resources created
+through this demo.
+
 ## Before you begin
 
 1. Set your PROJECT_ID environment variable:
