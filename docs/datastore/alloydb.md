@@ -31,7 +31,7 @@
 
 1. [Install python][install-python] and set up a python [virtual environment][venv].
 
-1. Make sure you have python version 3.10+ installed.
+1. Make sure you have python version 3.11+ installed.
 
     ```bash
     python -V
