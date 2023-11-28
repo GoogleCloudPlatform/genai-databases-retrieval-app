@@ -122,7 +122,7 @@
     cp example-config.yml config.yml
     ```
 
-1. Update `config.yml` with your database information. Keep using `127.0.0.1` as the datastore host IP address for port forwarding.
+1. Update `config.yml` with your database information.
 
     ```bash
     host: 0.0.0.0
@@ -130,7 +130,7 @@
       # Example for cloudsql_postgres.py provider
       kind: "cloudsql-postgres"
       # Update this with your project ID
-      project: $PROJECT_ID
+      project: <PROJECT_ID>
       region: us-central1
       instance: my-cloudsql-instance
       # Update this with the database name
@@ -138,7 +138,7 @@
       # Update with database user, the default is `postgres`
       user: "postgres"
       # Update with database user password
-      password: $DB_PASS
+      password: "my-cloudsql-pass"
     ```
 
 1. Populate data into database:
