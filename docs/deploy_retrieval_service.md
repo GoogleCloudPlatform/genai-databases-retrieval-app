@@ -71,7 +71,7 @@ datastore:
 
 ## Deploy to Cloud Run
 
-1. From the root `genai-database-retrieval-app` directory, deploy the retrieval
+1. From the root `genai-databases-retrieval-app` directory, deploy the retrieval
    service to Cloud Run using the following command:
 
     * For AlloyDB:
