@@ -204,7 +204,7 @@ Private IP.
 1. Change into the retrieval service directory:
 
     ```bash
-    cd genai-database-retrieval-app/retrieval_service
+    cd genai-databases-retrieval-app/retrieval_service
     ```
 
 1. Install requirements:

@@ -114,7 +114,7 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
     * global - for default worker pools
 * Source:
   * Generation: 1st gen
-  * Repo: GoogleCloudPlatform/genai-database-retrieval-app (GitHub App)
+  * Repo: GoogleCloudPlatform/genai-databases-retrieval-app (GitHub App)
   * Base branch: `^main$`
 * Comment control: Required except for owners and collaborators
 * Filters: add directory filter
@@ -168,7 +168,7 @@ To run Cloud Build tests on GitHub from external contributors, ie RenovateBot, c
 
 
 [proxy]: https://cloud.google.com/sql/docs/mysql/sql-proxy
-[tunnel]: https://github.com/GoogleCloudPlatform/genai-database-retrieval-app/blob/main/docs/datastore/alloydb.md#set-up-connection-to-alloydb
-[config]: https://github.com/GoogleCloudPlatform/genai-database-retrieval-app/blob/main/docs/datastore/alloydb.md#initialize-data-in-alloydb
+[tunnel]: https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/blob/main/docs/datastore/alloydb.md#set-up-connection-to-alloydb
+[config]: https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/blob/main/docs/datastore/alloydb.md#initialize-data-in-alloydb
 [triggers]: https://console.cloud.google.com/cloud-build/triggers?e=13802955&project=extension-demo-testing
 [invoker]: https://cloud.google.com/run/docs/securing/managing-access#add-principals
