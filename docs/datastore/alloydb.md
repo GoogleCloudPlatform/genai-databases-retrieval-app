@@ -243,3 +243,38 @@ Private IP.
     ```
 
 [pgvector]: https://github.com/pgvector/pgvector
+
+## Clean up resources
+
+Clean up after completing the demo.
+
+1. Set environment variables:
+
+    ```bash
+    export VM_INSTANCE=alloydb-proxy-vm
+    export CLUSTER=my-alloydb-cluster
+    export REGION=us-central1
+    export RANGE_NAME=my-allocated-range-default
+    ```
+
+1. Delete Compute Engine VM:
+
+    ```bash
+    gcloud compute instances delete $VM_INSTANCE
+    ```
+
+1. Delete AlloyDB cluster that contains instances:
+
+    ```bash
+    gcloud alloydb clusters delete $CLUSTER \
+        --force \
+        --region=$REGION \
+        --project=$PROJECT_ID
+    ```
+
+1. Delete an allocated IP address range:
+
+    ```bash
+    gcloud compute addresses delete $RANGE_NAME \
+        --global
+    ```

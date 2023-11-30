@@ -35,6 +35,7 @@ amenities. It can help answer users questions like:
     - [Setting up your Database](#setting-up-your-database)
     - [Deploying the Retrieval Service](#deploying-the-retrieval-service)
     - [Running the LLM-based Application](#running-the-llm-based-application)
+    - [Clean up Resources](#clean-up-resources)
 - [Writing your own retrieval service](#writing-your-own-retrieval-service)
 
 <!-- /TOC -->
@@ -131,6 +132,10 @@ of any of the database's listed below to set up and initialize your database:
 ### Running the LLM-based Application
 
 [Instructions for running app locally](./docs/run_langchain_demo.md)
+
+### Clean up Resources
+
+[Instructions for cleaning up resources](./docs/clean_up.md)
 
 ## Writing your own retrieval service
 

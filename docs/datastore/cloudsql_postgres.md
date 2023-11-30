@@ -148,3 +148,13 @@
     ```
 
 [pgvector]: https://github.com/pgvector/pgvector
+
+## Clean up resources
+
+Clean up after completing the demo.
+
+1. Delete the Cloud SQL instance:
+
+    ```bash
+    gcloud sql instances delete my-cloudsql-instance
+    ```
