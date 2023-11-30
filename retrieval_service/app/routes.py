@@ -21,22 +21,19 @@ from fastapi.security import OAuth2AuthorizationCodeBearer
 import datastore
 from google.auth.transport import requests
 from google.oauth2 import _id_token_async
+from authlib.integrations.starlette_client import OAuth, OAuthError
+from starlette.config import Config
+from starlette.responses import HTMLResponse, RedirectResponse
 
 routes = APIRouter()
-
-oauth2_scheme = OAuth2AuthorizationCodeBearer(
-    tokenUrl="https://oauth2.googleapis.com/token"
-)
-
-GOOGLE_CLIENT_ID = (
-    "548341735270-6qu1l8tttfuhmt7nbfb7a4q6j4hso2f7.apps.googleusercontent.com"
-)
+config = Config(".env")
+oauth = OAuth(config)
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+async def get_current_user(token: str):
     try:
-        id_info = _id_token_async.verify_oauth2_token(
-            token, requests.Request(), GOOGLE_CLIENT_ID
+        id_info = await _id_token_async.verify_oauth2_token(
+            token, requests.Request(), Config.GOOGLE_CLIENT_ID
         )
 
         return {
@@ -52,6 +49,18 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 @routes.get("/")
 async def root():
     return {"message": "Hello World"}
+
+
+@routes.post("/auth")
+async def auth(request: Request):
+    try:
+        token = await oauth.google.authorize_access_token(request)
+    except OAuthError as error:
+        return HTMLResponse(f"<h1>{error.error}</h1>")
+    user = token.get("userinfo")
+    if user:
+        request.session["user"] = dict(user)
+    return RedirectResponse(url="/")
 
 
 @routes.get("/airports")

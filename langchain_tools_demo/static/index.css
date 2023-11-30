@@ -45,6 +45,12 @@ body {
     position: absolute;
     margin-right: 0px;
     font-size: 38px;
+
+#g_id_onload,
+.g_id_signin {
+    position: absolute;
+    top: 20px;
+    right: 20px;
 }
 
 .chat-wrapper {
