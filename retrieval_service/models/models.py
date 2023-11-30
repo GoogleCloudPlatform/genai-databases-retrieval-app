@@ -93,3 +93,15 @@ class Flight(BaseModel):
     arrival_time: datetime.datetime
     departure_gate: str
     arrival_gate: str
+
+
+class Ticket(BaseModel):
+    user_id: int
+    user_name: str
+    user_email: str
+    airline: str
+    flight_number: str
+    departure_airport: str
+    arrival_airport: str
+    departure_time: datetime.datetime
+    arrival_time: datetime.datetime

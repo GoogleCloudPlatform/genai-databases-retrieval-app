@@ -14,8 +14,8 @@
 
 import csv
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, TypeVar
-
+from typing import Any, Dict, Generic, Optional, TypeVar
+import datetime
 import models
 
 
@@ -189,6 +189,19 @@ class Client(ABC, Generic[C]):
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
     ) -> list[models.Flight]:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
+    async def insert_ticket(
+        self,
+        current_user: dict,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        arrival_airport: str,
+        departure_time: datetime.datetime,
+        arrival_time: datetime.datetime,
+    ) -> list[models.Ticket]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod

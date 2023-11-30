@@ -200,6 +200,24 @@ class Client(datastore.Client[Config]):
                     for f in flights
                 ],
             )
+            # If the table already exists, drop it to avoid conflicts
+            await conn.execute("DROP TABLE IF EXISTS flight_tickets CASCADE")
+            # Create a new table
+            await conn.execute(
+                """
+                CREATE TABLE flight_tickets(
+                  user_id INTEGER,
+                  user_name TEXT,
+                  user_email TEXT,
+                  airline TEXT,
+                  flight_number TEXT,
+                  departure_airport TEXT,
+                  arrival_airport TEXT,
+                  departure_time TIMESTAMP,
+                  arrival_time TIMESTAMP,
+                )
+                """
+            )
 
     async def export_data(
         self,
@@ -362,6 +380,63 @@ class Client(datastore.Client[Config]):
             timeout=10,
         )
         results = [models.Flight.model_validate(dict(r)) for r in results]
+        return results
+
+    async def insert_ticket(
+        self,
+        user_id: int,
+        user_name: str,
+        user_email: str,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        arrival_airport: str,
+        departure_time: datetime.datetime,
+        arrival_time: datetime.datetime,
+    ) -> list[models.Ticket]:
+        result = await self.__pool.execute(
+            """
+                INSERT INTO flight_tickets (
+                    user_id,
+                    user_name,
+                    user_email,
+                    airline,
+                    flight_number,
+                    departure_airport,
+                    arrival_airport,
+                    departure_time,
+                    arrival_time
+                ) VALUES (
+                   $1, $2, $3, $4, $5, $6, $7, $8, $9
+                ) RETURNING *;
+            """,
+            user_id,
+            user_name,
+            user_email,
+            airline,
+            flight_number,
+            departure_airport,
+            arrival_airport,
+            departure_time,
+            arrival_time,
+            timeout=10,
+        )
+        result = models.Ticket.model_validate(dict(result))
+        return result
+
+    async def get_ticket(
+        self,
+        user_id: int,
+    ) -> list[models.Ticket]:
+        results = await self.__pool.fetch(
+            """
+                SELECT * FROM flight_tickets
+                WHERE user_id == $1
+            """,
+            user_id,
+            timeout=10,
+        )
+        results = [models.Ticket.model_validate(dict(r)) for r in results]
         return results
 
     async def close(self):
