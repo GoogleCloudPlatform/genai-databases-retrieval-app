@@ -1,4 +1,4 @@
-# GenAI Database Retrieval App
+# GenAI Databases Retrieval App
 
 Note: This project is for demonstration only and is not an officially supported
 Google product.
