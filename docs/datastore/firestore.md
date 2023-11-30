@@ -38,3 +38,13 @@
     ```bash
     python run_database_init.py
     ```
+
+## Clean up resources
+
+Clean up after completing the demo.
+
+1. Delete the default firestore database:
+
+    ```bash
+    gcloud alpha firestore databases delete --database='(default)'
+    ```
