@@ -23,12 +23,12 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown import markdown
-from starlette.middleware.sessions import SessionMiddleware
 from google.oauth2 import id_token
 from agent import init_agent
 from fastapi.security import OAuth2PasswordBearer
 from google.auth.transport import requests
-
+import yaml
+from pydantic import BaseModel
 
 
 @asynccontextmanager
@@ -47,18 +47,24 @@ async def lifespan(app: FastAPI):
 # FastAPI setup
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
-# TODO: set secret_key for production
-app.add_middleware(SessionMiddleware, secret_key="SECRET_KEY")
 templates = Jinja2Templates(directory="templates")
 BASE_HISTORY = [{"role": "assistant", "content": "How can I help you?"}]
 
 # Authentication
+
+CONFIG_FILE_PATH = "./config.yml"
 GOOGLE_REDIRECT_URI = "http://localhost:8081/login/google"
-GOOGLE_CLIENT_ID = (
-    "548341735270-6qu1l8tttfuhmt7nbfb7a4q6j4hso2f7.apps.googleusercontent.com"
-)
-GOOGLE_CLIENT_SECRET = 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+class AppConfig(BaseModel):
+    google_client_id: str
+
+
+def parse_config(path: str) -> AppConfig:
+    with open(path, "r") as file:
+        config = yaml.safe_load(file)
+    return AppConfig(**config)
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -86,25 +92,24 @@ async def login_google(
     token = form_data.get("credential", "")
     try:
         # Specify the CLIENT_ID of the app that accesses the backend:
-        user_info = id_token.verify_oauth2_token(
-            token, requests.Request(), GOOGLE_CLIENT_ID
+        id_token.verify_oauth2_token(
+            token, requests.Request(), os.getenv("GOOGLE_CLIENT_ID")
         )
 
-        # ID token is valid. Get the user's Google Account ID from the decoded token.
-        user_id = user_info["sub"]
-        user_full_name = user_info["name"]
-        user_given_name = user_info["given_name"]
-        user_family_name = user_info["family_name"]
-        user_picture = user_info["picture"]
-        user_email = user_info["email"]
-        source_url = request.headers.get("Referer")  # Get the Referer header
+        os.environ["USER_ID_TOKEN"] = token
+
+        # Init a new agent
+        agent = init_agent()
+        agents[request.session["uuid"]] = agent
+
+        # Redirect to source URL
+        source_url = request.headers.get("Referer")
         if source_url:
             return RedirectResponse(url=source_url)
         else:
             return RedirectResponse(url=GOOGLE_REDIRECT_URI)
     except ValueError:
-        # Invalid token
-        pass
+        print("Invalid token")
 
 
 @app.post("/chat", response_class=PlainTextResponse)
@@ -151,16 +156,6 @@ async def reset(request: Request):
 
 
 if __name__ == "__main__":
-    import logging
-    from uvicorn import Config, Server
-
-    logging.basicConfig(level=logging.DEBUG)
-
-    # ... your UVicore application setup code ...
-
-    # Create a Uvicorn configuration
-    config = Config(app="main:app", host="0.0.0.0", port=8081, reload=True)
-
-    # Create a Uvicorn server
-    server = Server(config)
-    server.run()
+    set_env()
+    PORT = int(os.getenv("PORT", default=8081))
+    uvicorn.run(app, host="0.0.0.0", port=PORT)

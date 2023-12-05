@@ -27,10 +27,15 @@ from .routes import routes
 EMBEDDING_MODEL_NAME = "textembedding-gecko@001"
 
 
+class CredentialsConfig(BaseModel):
+    googleClientId: str
+
+
 class AppConfig(BaseModel):
     host: IPv4Address | IPv6Address = IPv4Address("127.0.0.1")
     port: int = 8080
     datastore: datastore.Config
+    credentials: CredentialsConfig
 
 
 def parse_config(path: str) -> AppConfig:

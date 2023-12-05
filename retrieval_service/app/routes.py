@@ -22,53 +22,12 @@ import datastore
 from google.auth.transport import requests
 from google.oauth2 import id_token
 from fastapi.security import OAuth2PasswordBearer
+import os
 
 routes = APIRouter()
 
-# GOOGLE_CLIENT_ID = (
-#     "64747076245-i1o9a69imntsgqaust9c9igd77r4creh.apps.googleusercontent.com"
-# )
-GOOGLE_CLIENT_ID = (
-    "548341735270-6qu1l8tttfuhmt7nbfb7a4q6j4hso2f7.apps.googleusercontent.com"
-)
-GOOGLE_CLIENT_SECRET = 
-GOOGLE_REDIRECT_URI = "http://localhost:8081/login/google"
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-
-# @routes.post("/login/google")
-# async def login_google():
-# return {
-#     "url": f"https://accounts.google.com/o/oauth2/auth?response_type=code&client_id={GOOGLE_CLIENT_ID}&redirect_uri={GOOGLE_REDIRECT_URI}&scope=openid%20profile%20email&access_type=offline"
-# }
-
-
-@routes.post("/auth/google")
-async def auth_google(code: str):
-    token_url = "https://accounts.google.com/o/oauth2/token"
-    data = {
-        "code": code,
-        "client_id": GOOGLE_CLIENT_ID,
-        "client_secret": GOOGLE_CLIENT_SECRET,
-        "redirect_uri": GOOGLE_REDIRECT_URI,
-        "grant_type": "authorization_code",
-    }
-    response = requests.post(token_url, data=data)
-    access_token = response.json().get("access_token")
-    user_info = requests.get(
-        "https://www.googleapis.com/oauth2/v1/userinfo",
-        headers={"Authorization": f"Bearer {access_token}"},
-    )
-    return user_info.json()
-
-
-@routes.get("/token")
-async def get_token(token: str = Depends(oauth2_scheme)):
-    return jwt.decode(token, GOOGLE_CLIENT_SECRET, algorithms=["HS256"])
-
-
-
 
 
 def _ParseBearerToken(headers: Mapping[str, Any]) -> Optional[str]:
@@ -91,8 +50,8 @@ async def get_current_user(headers: Mapping[str, Any]):
     token = _ParseBearerToken(headers)
     print(token)
     try:
-        id_info = _id_token_async.verify_oauth2_token(
-            token, requests.Request(), audience=GOOGLE_CLIENT_ID
+        id_info = id_token.verify_oauth2_token(
+            token, requests.Request(), audience=os.getenv("GOOGLE_CLIENT_ID")
         )
 
         return {
