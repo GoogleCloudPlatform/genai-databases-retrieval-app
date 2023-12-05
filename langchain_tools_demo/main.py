@@ -17,14 +17,17 @@ import uuid
 
 import uvicorn
 from fastapi import Body, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from langchain.agents.agent import AgentExecutor
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
-
+from google.oauth2 import id_token
 from agent import init_agent
+from fastapi.security import OAuth2PasswordBearer
+from google.auth.transport import requests
+
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -35,17 +38,53 @@ templates = Jinja2Templates(directory="templates")
 agents: dict[str, AgentExecutor] = {}
 BASE_HISTORY = [{"role": "assistant", "content": "How can I help you?"}]
 
+# Authentication
+GOOGLE_REDIRECT_URI = "http://localhost:8081/login/google"
+GOOGLE_CLIENT_ID = (
+    "548341735270-6qu1l8tttfuhmt7nbfb7a4q6j4hso2f7.apps.googleusercontent.com"
+)
+GOOGLE_CLIENT_SECRET = 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-@app.get("/", response_class=HTMLResponse)
+
+@app.route("/", methods=["GET", "POST"])
 def index(request: Request):
     """Render the default template."""
-    request.session.clear()  # Clear chat history, if needed
     if "uuid" not in request.session:
         request.session["uuid"] = str(uuid.uuid4())
         request.session["messages"] = BASE_HISTORY
     return templates.TemplateResponse(
         "index.html", {"request": request, "messages": request.session["messages"]}
     )
+
+
+@app.post("/login/google")
+async def login_google(
+    request: Request,
+):
+    form_data = await request.form()
+    token = form_data.get("credential", "")
+    try:
+        # Specify the CLIENT_ID of the app that accesses the backend:
+        user_info = id_token.verify_oauth2_token(
+            token, requests.Request(), GOOGLE_CLIENT_ID
+        )
+
+        # ID token is valid. Get the user's Google Account ID from the decoded token.
+        user_id = user_info["sub"]
+        user_full_name = user_info["name"]
+        user_given_name = user_info["given_name"]
+        user_family_name = user_info["family_name"]
+        user_picture = user_info["picture"]
+        user_email = user_info["email"]
+        source_url = request.headers.get("Referer")  # Get the Referer header
+        if source_url:
+            return RedirectResponse(url=source_url)
+        else:
+            return RedirectResponse(url=GOOGLE_REDIRECT_URI)
+    except ValueError:
+        # Invalid token
+        pass
 
 
 @app.post("/chat", response_class=PlainTextResponse)
@@ -81,5 +120,16 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
 
 
 if __name__ == "__main__":
-    PORT = int(os.getenv("PORT", default=8081))
-    uvicorn.run(app, host="0.0.0.0", port=PORT)
+    import logging
+    from uvicorn import Config, Server
+
+    logging.basicConfig(level=logging.DEBUG)
+
+    # ... your UVicore application setup code ...
+
+    # Create a Uvicorn configuration
+    config = Config(app="main:app", host="0.0.0.0", port=8081, reload=True)
+
+    # Create a Uvicorn server
+    server = Server(config)
+    server.run()
