@@ -2,7 +2,7 @@ asyncpg==0.29.0
 fastapi==0.104.1
 google-cloud-firestore==2.13.1
 google-cloud-aiplatform==1.37.0
-langchain==0.0.345
+langchain==0.0.346
 pgvector==0.2.4
 pydantic==2.5.2
 uvicorn[standard]==0.24.0.post1
