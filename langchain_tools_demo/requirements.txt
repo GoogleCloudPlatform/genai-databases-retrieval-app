@@ -3,7 +3,7 @@ google-cloud-aiplatform==1.36.4
 google-auth==2.25.1
 itsdangerous==2.1.2
 jinja2==3.1.2
-langchain==0.0.345
+langchain==0.0.346
 markdown==3.5.1
 types-Markdown==3.5.0.3
 uvicorn[standard]==0.24.0.post1
