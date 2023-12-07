@@ -34,7 +34,7 @@ Notes:
   unauthenticated invocations for your project, you will need to access your
   deployed service as described under [Testing private
   services](https://cloud.google.com/run/docs/triggering/https-request#testing-private).
-* If you are using VPC based datastore, make sure your Cloud Run service and datastore are in the same VPC network. 
+* If you are using VPC based datastore, make sure your Cloud Run service and datastore are in the same VPC network.
 
 ## Create a service account
 
@@ -53,6 +53,14 @@ Notes:
             --member serviceAccount:retrieval-identity@$PROJECT_ID.iam.gserviceaccount.com \
             --role roles/alloydb.client
         ```
+
+1.  Grant permissions to use VertexAI to generate embeddings for similarity searches:
+
+    ```bash
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+        --member serviceAccount:retrieval-identity@$PROJECT_ID.iam.gserviceaccount.com \
+        --role roles/aiplatform.user
+    ```
 
 ## Configuration
 
