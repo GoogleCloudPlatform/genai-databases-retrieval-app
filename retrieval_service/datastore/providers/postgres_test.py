@@ -36,7 +36,8 @@ DB_HOST = get_env_var("DB_HOST", "ip address of a postgres database")
 
 @pytest.fixture(scope="module")
 def event_loop():
-    loop = asyncio.get_event_loop()
+    # loop = asyncio.get_event_loop()
+    loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
 
@@ -53,10 +54,10 @@ async def ds():
     ds = await datastore.create(cfg)
     if ds is None:
         raise TypeError("datastore creation failure")
-    else:
-        print("done")
     yield ds
+    print("after yield")
     await ds.close()
+    print("closed database")
 
 
 @pytest.mark.asyncio
