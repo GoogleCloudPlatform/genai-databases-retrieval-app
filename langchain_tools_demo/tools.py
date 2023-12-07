@@ -290,6 +290,24 @@ def search_amenities(query: str):
     return response.json()
 
 
+@tool("Insert Ticket", args_schema=AmenityIdInput)
+def insert_ticket(id: int):
+    """
+    Use this tool to get info for a specific airport amenity.
+    Takes an id and returns info on the amenity.
+    Do NOT guess an amenity id. Use Search Amenities to search by name.
+    Always use the id from the search_amenities tool.
+    """
+    response = get_request(
+        f"{BASE_URL}/amenities",
+        {"id": id},
+    )
+    if response.status_code != 200:
+        return f"Error trying to find amenity: {response.text}"
+
+    return response.json()
+
+
 # Tools for agent
 tools = [
     get_flight,
@@ -298,4 +316,5 @@ tools = [
     get_amenity,
     search_amenities,
     get_airport,
+    insert_ticket,
 ]

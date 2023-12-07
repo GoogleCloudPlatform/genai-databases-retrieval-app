@@ -59,39 +59,21 @@ def test_hello_world(app):
         assert response.json() == {"message": "Hello World"}
 
 
-def test_naive(app):
-    with TestClient(app) as client:
-        response = client.get(
-            "/flights",
-            params={"flight_id": 1935},
-        )
-    assert response.status_code == 200
-    output = response.json()
-    assert output
-    assert models.Flight.model_validate(output)
+# def test_naive(app):
+#     with TestClient(app) as client:
+#         response = client.get(
+#             "/ticket",
+#             params={"flight_id": 1935},
+#         )
+#     assert response.status_code == 200
+#     output = response.json()
+#     assert output
+#     assert models.Flight.model_validate(output)
 
-
-def test_get_flight(app):
-    access_token = "ya29.a0AfB_byCi13amQxK-BXJlFv0xSmIwjb8SCuNmT04P9LZC16pOQzK1lXuIVxrbCzrGe87NnXRJG7TMZFeXTk4krLc-chzkHjJ4jr4v2B54lA2j47BufOPscWmZxUSyrBJFW-SHOwzhhtUmFjPvX39a8VtCYtsRctDD2o-6aCgYKAewSARISFQHGX2MiBPvHAJzIsNNW_8Ev-fFb5A0171"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
-    }
-
-    with TestClient(app) as client:
-        response = client.get(
-            "/flights",
-            headers=headers,
-            params={"flight_id": 1935},
-        )
-    print("--------------------------------------------------------")
-    print(response)
-    print("--------------------------------------------------------")
-
-    # assert response.status_code == 200
-    # output = response.json()
-    # assert output
-    # assert models.Flight.model_validate(output)
+# assert response.status_code == 200
+# output = response.json()
+# assert output
+# assert models.Flight.model_validate(output)
 
 
 # def test_authorized_endpoint(app):

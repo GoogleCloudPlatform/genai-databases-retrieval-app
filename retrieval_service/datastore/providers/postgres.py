@@ -172,7 +172,7 @@ class Client(datastore.Client[Config]):
             await conn.execute(
                 """
                 CREATE TABLE flight_tickets(
-                  user_id INTEGER,
+                  user_id TEXT,
                   user_name TEXT,
                   user_email TEXT,
                   airline TEXT,
@@ -180,7 +180,7 @@ class Client(datastore.Client[Config]):
                   departure_airport TEXT,
                   arrival_airport TEXT,
                   departure_time TIMESTAMP,
-                  arrival_time TIMESTAMP,
+                  arrival_time TIMESTAMP
                 )
                 """
             )
