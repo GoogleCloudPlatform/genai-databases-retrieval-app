@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import asyncio
+from datetime import datetime
 from collections import OrderedDict
 from ipaddress import IPv4Address
 from typing import Dict, cast
@@ -261,8 +262,8 @@ async def test_get_flight(ds):
         flight_number="1158",
         departure_airport="SFO",
         arrival_airport="ORD",
-        departure_time="2023-01-01 05:57:00",
-        arrival_time="2023-01-01 12:13:00",
+        departure_time=datetime.strptime("2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"),
+        arrival_time=datetime.strptime("2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"),
         departure_gate="C38",
         arrival_gate="D30",
     )
@@ -283,8 +284,12 @@ async def test_get_flight(ds):
                     flight_number="1158",
                     departure_airport="SFO",
                     arrival_airport="ORD",
-                    departure_time="2023-01-01 05:57:00",
-                    arrival_time="2023-01-01 12:13:00",
+                    departure_time=datetime.strptime(
+                        "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                    ),
+                    arrival_time=datetime.strptime(
+                        "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                    ),
                     departure_gate="C38",
                     arrival_gate="D30",
                 ),
@@ -294,8 +299,12 @@ async def test_get_flight(ds):
                     flight_number="1158",
                     departure_airport="SFO",
                     arrival_airport="JFK",
-                    departure_time="2023-10-15 05:18:00",
-                    arrival_time="2023-10-15 08:40:00",
+                    departure_time=datetime.strptime(
+                        "2023-10-15 05:18:00", "%Y-%m-%d %H:%M:%S"
+                    ),
+                    arrival_time=datetime.strptime(
+                        "2023-10-15 08:40:00", "%Y-%m-%d %H:%M:%S"
+                    ),
                     departure_gate="B50",
                     arrival_gate="E4",
                 ),
@@ -330,8 +339,12 @@ async def test_search_flights_by_number(ds, airline, number, expected):
                     flight_number="1158",
                     departure_airport="SFO",
                     arrival_airport="ORD",
-                    departure_time="2023-01-01 05:57:00",
-                    arrival_time="2023-01-01 12:13:00",
+                    departure_time=datetime.strptime(
+                        "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                    ),
+                    arrival_time=datetime.strptime(
+                        "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                    ),
                     departure_gate="C38",
                     arrival_gate="D30",
                 ),
@@ -341,8 +354,12 @@ async def test_search_flights_by_number(ds, airline, number, expected):
                     flight_number="616",
                     departure_airport="SFO",
                     arrival_airport="ORD",
-                    departure_time="2023-01-01 07:14:00",
-                    arrival_time="2023-01-01 13:24:00",
+                    departure_time=datetime.strptime(
+                        "2023-01-01 07:14:00", "%Y-%m-%d %H:%M:%S"
+                    ),
+                    arrival_time=datetime.strptime(
+                        "2023-01-01 13:24:00", "%Y-%m-%d %H:%M:%S"
+                    ),
                     departure_gate="A11",
                     arrival_gate="D8",
                 ),
@@ -352,8 +369,12 @@ async def test_search_flights_by_number(ds, airline, number, expected):
                     flight_number="242",
                     departure_airport="SFO",
                     arrival_airport="ORD",
-                    departure_time="2023-01-01 08:18:00",
-                    arrival_time="2023-01-01 14:26:00",
+                    departure_time=datetime.strptime(
+                        "2023-01-01 08:18:00", "%Y-%m-%d %H:%M:%S"
+                    ),
+                    arrival_time=datetime.strptime(
+                        "2023-01-01 14:26:00", "%Y-%m-%d %H:%M:%S"
+                    ),
                     departure_gate="E30",
                     arrival_gate="C1",
                 ),
@@ -363,8 +384,12 @@ async def test_search_flights_by_number(ds, airline, number, expected):
                     flight_number="1640",
                     departure_airport="SFO",
                     arrival_airport="ORD",
-                    departure_time="2023-01-01 17:01:00",
-                    arrival_time="2023-01-01 23:02:00",
+                    departure_time=datetime.strptime(
+                        "2023-01-01 17:01:00", "%Y-%m-%d %H:%M:%S"
+                    ),
+                    arrival_time=datetime.strptime(
+                        "2023-01-01 23:02:00", "%Y-%m-%d %H:%M:%S"
+                    ),
                     departure_gate="E27",
                     arrival_gate="C24",
                 ),
@@ -374,8 +399,12 @@ async def test_search_flights_by_number(ds, airline, number, expected):
                     flight_number="197",
                     departure_airport="SFO",
                     arrival_airport="ORD",
-                    departure_time="2023-01-01 17:21:00",
-                    arrival_time="2023-01-01 23:33:00",
+                    departure_time=datetime.strptime(
+                        "2023-01-01 17:21:00", "%Y-%m-%d %H:%M:%S"
+                    ),
+                    arrival_time=datetime.strptime(
+                        "2023-01-01 23:33:00", "%Y-%m-%d %H:%M:%S"
+                    ),
                     departure_gate="D25",
                     arrival_gate="E49",
                 ),
@@ -385,8 +414,12 @@ async def test_search_flights_by_number(ds, airline, number, expected):
                     flight_number="1564",
                     departure_airport="SFO",
                     arrival_airport="ORD",
-                    departure_time="2023-01-01 19:14:00",
-                    arrival_time="2023-01-02 01:14:00",
+                    departure_time=datetime.strptime(
+                        "2023-01-01 19:14:00", "%Y-%m-%d %H:%M:%S"
+                    ),
+                    arrival_time=datetime.strptime(
+                        "2023-01-02 01:14:00", "%Y-%m-%d %H:%M:%S"
+                    ),
                     departure_gate="E3",
                     arrival_gate="C48",
                 ),
