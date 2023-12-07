@@ -14,16 +14,16 @@
 
 from contextlib import asynccontextmanager
 from ipaddress import IPv4Address, IPv6Address
-from typing import Union
 
+import datastore
 import yaml
 from fastapi import FastAPI
 from langchain.embeddings import VertexAIEmbeddings
 from pydantic import BaseModel
 
-import datastore
-
 from .routes import routes
+
+EMBEDDING_MODEL_NAME = "textembedding-gecko@001"
 
 
 class AppConfig(BaseModel):
@@ -42,7 +42,9 @@ def parse_config(path: str) -> AppConfig:
 def gen_init(cfg: AppConfig):
     async def initialize_datastore(app: FastAPI):
         app.state.datastore = await datastore.create(cfg.datastore)
-        app.state.embed_service = VertexAIEmbeddings()
+        app.state.embed_service = VertexAIEmbeddings(
+            model_name=EMBEDDING_MODEL_NAME
+        )
         yield
         await app.state.datastore.close()
 
