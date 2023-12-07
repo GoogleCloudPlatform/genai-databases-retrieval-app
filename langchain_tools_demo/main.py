@@ -28,9 +28,14 @@ from fastapi.security import OAuth2PasswordBearer
 from google.auth.transport import requests
 import yaml
 from pydantic import BaseModel
+from starlette.middleware.sessions import SessionMiddleware
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+# TODO: set secret_key for production
+app.add_middleware(SessionMiddleware, secret_key="SECRET_KEY")
 templates = Jinja2Templates(directory="templates")
 
 agents: dict[str, AgentExecutor] = {}

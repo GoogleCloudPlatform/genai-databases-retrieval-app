@@ -28,7 +28,7 @@ async def main():
     server = uvicorn.Server(
         uvicorn.Config(app, host=str(cfg.host), port=cfg.port, log_level="info")
     )
-    os.setenv("GOOGLE_CLIENT_ID", cfg.credentals.googleClientId)
+    os.environ["GOOGLE_CLIENT_ID"] = "cfg.credentals.googleClientId"
     await server.serve()
 
 

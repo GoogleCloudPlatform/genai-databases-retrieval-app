@@ -22,6 +22,7 @@ from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 
 import models
+import datetime
 
 from .. import datastore
 
