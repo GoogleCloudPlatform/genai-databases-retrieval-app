@@ -36,7 +36,6 @@ DB_HOST = get_env_var("DB_HOST", "ip address of a postgres database")
 
 @pytest.fixture(scope="module")
 def event_loop():
-    # loop = asyncio.get_event_loop()
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
@@ -60,7 +59,7 @@ async def ds():
     print("closed database")
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_event_loop
 async def test_get_airport_by_id(ds):
     res = await ds.get_airport_by_id(1)
     expected = models.Airport(
@@ -73,7 +72,7 @@ async def test_get_airport_by_id(ds):
     assert res == expected
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_event_loop
 @pytest.mark.parametrize(
     "iata",
     [
@@ -93,7 +92,7 @@ async def test_get_airport_by_iata(ds, iata):
     assert res == expected
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_event_loop
 @pytest.mark.parametrize(
     "country, city, name, expected",
     [
@@ -170,7 +169,7 @@ async def test_search_airports(ds, country, city, name, expected):
     assert res == expected
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_event_loop
 async def test_get_amenity(ds):
     res = await ds.get_amenity(1)
     expected = models.Amenity(
@@ -185,7 +184,7 @@ async def test_get_amenity(ds):
     assert res == expected
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_event_loop
 @pytest.mark.parametrize(
     "query, similarity_threshold, top_k, expected",
     [
@@ -254,7 +253,7 @@ async def test_amenities_search(ds, query, similarity_threshold, top_k, expected
     assert res == expected
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_event_loop
 async def test_get_flight(ds):
     res = await ds.get_flight(1)
     expected = models.Flight(
@@ -271,7 +270,7 @@ async def test_get_flight(ds):
     assert res == expected
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_event_loop
 @pytest.mark.parametrize(
     "airline, number, expected",
     [
@@ -325,7 +324,7 @@ async def test_search_flights_by_number(ds, airline, number, expected):
     assert res == expected
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio_event_loop
 @pytest.mark.parametrize(
     "date, departure_airport, arrival_airport, expected",
     [
