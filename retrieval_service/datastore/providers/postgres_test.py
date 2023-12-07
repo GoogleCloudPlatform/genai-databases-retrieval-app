@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import asyncio
-from datetime import datetime
 from collections import OrderedDict
+from datetime import datetime
 from ipaddress import IPv4Address
 from typing import Dict, cast
 
