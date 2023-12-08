@@ -29,8 +29,9 @@ async def main() -> None:
         reader = csv.DictReader(f, delimiter=",")
         for line in reader:
             amenity = models.Amenity.model_validate(line)
-            amenity.embedding = embed_service.embed_query(amenity.content)
-            amenities.append(amenity)
+            if amenity.content:
+                amenity.embedding = embed_service.embed_query(amenity.content)
+                amenities.append(amenity)
 
     print("Completed embedding generation.")
 
