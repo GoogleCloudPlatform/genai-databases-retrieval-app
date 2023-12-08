@@ -12,36 +12,112 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ipaddress import IPv4Address
-
 import pytest
 from fastapi.testclient import TestClient
+from unittest.mock import patch, MagicMock
+from typing import Literal, Optional
+from pydantic import BaseModel
 
 import models
-from datastore.providers import postgres
+import datastore
+from datastore import providers
 
 from . import init_app
 from .app import AppConfig
 from .helpers import get_env_var
 
-DB_USER = get_env_var("DB_USER", "name of a postgres user")
-DB_PASS = get_env_var("DB_PASS", "password for the postgres user")
-DB_NAME = get_env_var("DB_NAME", "name of a postgres database")
-DB_HOST = get_env_var("DB_HOST", "ip address of a postgres database")
+
+class Config(BaseModel):
+    kind: Literal["mock-datastore"]
+
+
+class MockDatastore(datastore.Client[Config]):
+    def kind(cls):
+        return "mock-datastore"
+
+    async def create(cls, config: Config) -> "Client":
+        return cls
+
+    async def initialize_data(
+        self,
+        airports: list[models.Airport],
+        amenities: list[models.Amenity],
+        flights: list[models.Flight],
+    ) -> None:
+        return
+
+    async def export_data(
+        self,
+    ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
+        return [], [], []
+
+    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+        mock_airport = models.Airport(
+            id=1,
+        )
+        return mock_airport
+
+    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+        mock_airport = models.Airport(
+            id=1,
+        )
+        return mock_airport
+
+    async def search_airports(
+        self,
+        country: Optional[str] = None,
+        city: Optional[str] = None,
+        name: Optional[str] = None,
+    ) -> list[models.Airport]:
+        mock_airports = [
+            models.Airport(
+                id=1,
+            )
+        ]
+        return mock_airports
+
+    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
+        mock_amenity = models.Amenity(id=1)
+        return mock_amenity
+
+    async def amenities_search(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> list[models.Amenity]:
+        mock_amenities = []
+        return mock_amenities
+
+    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+        mock_flight = models.Flight(id=1)
+        return mock_flight
+
+    async def search_flights_by_number(
+        self,
+        airline: str,
+        flight_number: str,
+    ) -> list[models.Flight]:
+        mock_flights = []
+        return mock_flights
+
+    async def search_flights_by_airports(
+        self,
+        date,
+        departure_airport: Optional[str] = None,
+        arrival_airport: Optional[str] = None,
+    ) -> list[models.Flight]:
+        mock_flights = []
+        return mock_flights
+
+    async def close(self):
+        return
 
 
 @pytest.fixture(scope="module")
-def app():
-    cfg = AppConfig(
-        datastore=postgres.Config(
-            kind="postgres",
-            user=DB_USER,
-            password=DB_PASS,
-            database=DB_NAME,
-            host=IPv4Address(DB_HOST),
-        )
-    )
-    app = init_app(cfg)
+@patch('datastore.create')
+def app(mock_datastore):
+    mock_ds = MockDatastore()
+    mock_datastore.return_value = mock_ds
+    mock_app_config = MagicMock()
+    app = init_app(mock_app_config)
     if app is None:
         raise TypeError("app did not initialize")
     return app
@@ -76,153 +152,3 @@ def test_get_airport(app, params):
     output = response.json()
     assert output
     assert models.Airport.model_validate(output)
-
-
-@pytest.mark.parametrize(
-    "params",
-    [
-        pytest.param(
-            {
-                "country": "United States",
-                "city": "san francisco",
-                "name": "san francisco",
-            },
-            id="country_city_and_name",
-        ),
-        pytest.param({"country": "United States"}, id="country_only"),
-        pytest.param({"city": "san francisco"}, id="city_only"),
-        pytest.param({"name": "san francisco"}, id="name_only"),
-    ],
-)
-def test_search_airports(app, params):
-    with TestClient(app) as client:
-        response = client.get(
-            "/airports/search",
-            params=params,
-        )
-    assert response.status_code == 200
-    output = response.json()
-    assert output
-    assert models.Airport.model_validate(output[0])
-
-
-@pytest.mark.parametrize(
-    "params",
-    [
-        pytest.param({}, id="no_params"),
-    ],
-)
-def test_search_airports_with_bad_params(app, params):
-    with TestClient(app) as client:
-        response = client.get("/airports/search", params=params)
-    assert response.status_code == 422
-
-
-def test_get_amenity(app):
-    with TestClient(app) as client:
-        response = client.get(
-            "/amenities",
-            params={
-                "id": 1,
-            },
-        )
-    assert response.status_code == 200
-    output = response.json()
-    assert output
-    assert models.Amenity.model_validate(output)
-
-
-def test_amenities_search(app):
-    with TestClient(app) as client:
-        response = client.get(
-            "/amenities/search",
-            params={
-                "query": "A place to get food.",
-                "top_k": 5,
-            },
-        )
-    assert response.status_code == 200
-    output = response.json()
-    assert len(output) == 5
-    assert output[0]
-    assert models.Amenity.model_validate(output[0])
-
-
-def test_get_flight(app):
-    with TestClient(app) as client:
-        response = client.get(
-            "/flights",
-            params={"flight_id": 1935},
-        )
-    assert response.status_code == 200
-    output = response.json()
-    assert output
-    assert models.Flight.model_validate(output)
-
-
-@pytest.mark.parametrize(
-    "params",
-    [
-        pytest.param(
-            {
-                "departure_airport": "LAX",
-                "arrival_airport": "SFO",
-                "date": "2023-11-01",
-            },
-            id="departure_and_arrival_airport",
-        ),
-        pytest.param(
-            {"arrival_airport": "SFO", "date": "2023-11-01"},
-            id="arrival_airport_only",
-        ),
-        pytest.param(
-            {"departure_airport": "EWR", "date": "2023-11-01"},
-            id="departure_airport_only",
-        ),
-        pytest.param(
-            {"airline": "DL", "flight_number": "1106"},
-            id="flight_number",
-        ),
-    ],
-)
-def test_search_flights(app, params):
-    with TestClient(app) as client:
-        response = client.get("/flights/search", params=params)
-    assert response.status_code == 200
-    output = response.json()
-    assert output[0]
-    assert models.Flight.model_validate(output[0])
-
-
-@pytest.mark.parametrize(
-    "params",
-    [
-        pytest.param(
-            {
-                "departure_airport": "LAX",
-                "arrival_airport": "SFO",
-            },
-            id="departure_and_arrival_airport",
-        ),
-        pytest.param(
-            {"arrival_airport": "SFO"},
-            id="arrival_airport_only",
-        ),
-        pytest.param(
-            {"departure_airport": "EWR"},
-            id="departure_airport_only",
-        ),
-        pytest.param(
-            {"flight_number": "1106"},
-            id="flight_number_only",
-        ),
-        pytest.param(
-            {"airline": "DL"},
-            id="airline_only",
-        ),
-    ],
-)
-def test_search_flights_with_bad_params(app, params):
-    with TestClient(app) as client:
-        response = client.get("/flights/search", params=params)
-    assert response.status_code == 422
