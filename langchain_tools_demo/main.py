@@ -69,11 +69,13 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
         agents[request.session["uuid"]] = agent
     try:
         # Send prompt to LLM
-        response = agent.invoke({"input": prompt})
+        response = await agent.ainvoke({"input": prompt})
         request.session["messages"] += [
             {"role": "assistant", "content": response["output"]}
         ]
         # Return assistant response
+        print(response)
+        print(response.text())
         return markdown(response["output"])
     except Exception as err:
         print(err)
