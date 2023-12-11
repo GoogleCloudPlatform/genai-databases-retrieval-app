@@ -33,11 +33,11 @@ class Config(BaseModel):
     kind: Literal["mock-datastore"]
 
 
-class MockDatastore(datastore.Client[Config]):
+class MockDatastore(datastore.Client[Config]):  # type: ignore
     def kind(cls):
         return "mock-datastore"
 
-    async def create(cls, config: Config) -> "Client":
+    async def create(cls, config: Config) -> "MockDatastore":  # type: ignore
         return cls
 
     async def initialize_data(
