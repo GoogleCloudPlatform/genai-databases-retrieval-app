@@ -311,13 +311,13 @@ search_airports_params = [
     pytest.param(
         {"name": "san francisco"},
         [
-        {
-            "id": 1,
-            "iata": "FOO",
-            "name": "search_airports",
-            "city": "BAR",
-            "country": "FOO BAR",
-        }
+            {
+                "id": 1,
+                "iata": "FOO",
+                "name": "search_airports",
+                "city": "BAR",
+                "country": "FOO BAR",
+            }
         ],
         id="name_only",
     ),
