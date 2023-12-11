@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .app import init_app, parse_config
+from .app import EMBEDDING_MODEL_NAME, init_app, parse_config
