@@ -76,6 +76,30 @@ steps:
         export DB_PASS=$$PGPASSWORD
         python -m pytest
 
+  - id: Run database export
+    name: python:3.11
+    dir: retrieval_service
+    entrypoint: /bin/bash
+    args:
+      - "-c"
+      - |
+        # Run script
+        python run_database_export.py
+        cd ../data
+        diff --strip-trailing-cr -Z airport_dataset.csv airport_dataset.csv.new || (echo "airport dataset export fail" && exit 1)
+        diff --strip-trailing-cr -Z amenity_dataset.csv amenity_dataset.csv.new || (echo "amenity dataset export fail" && exit 1)
+        diff --strip-trailing-cr -Z flights_dataset.csv flights_dataset.csv.new || (echo "flight dataset export fail" && exit 1)
+
+  - id: Clean exported files
+    name: python:3.11
+    dir: data
+    entrypoint: /bin/bash
+    args:
+      - "-c"
+      - |
+        rm airport_dataset.csv.new amenity_dataset.csv.new flights_dataset.csv.new
+
+
   - id: Clean database
     name: postgres
     entrypoint: /bin/bash
