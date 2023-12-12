@@ -25,6 +25,7 @@ from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
 from agent import init_agent
+from tools import session
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -34,6 +35,14 @@ templates = Jinja2Templates(directory="templates")
 
 agents: dict[str, AgentExecutor] = {}
 BASE_HISTORY = [{"role": "assistant", "content": "How can I help you?"}]
+
+
+async def on_shutdown():
+    if session is not None:
+        await session.close()
+
+
+app.add_event_handler("shutdown", on_shutdown)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -69,7 +78,7 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
         agents[request.session["uuid"]] = agent
     try:
         # Send prompt to LLM
-        response = agent.invoke({"input": prompt})
+        response = await agent.ainvoke({"input": prompt})
         request.session["messages"] += [
             {"role": "assistant", "content": response["output"]}
         ]
