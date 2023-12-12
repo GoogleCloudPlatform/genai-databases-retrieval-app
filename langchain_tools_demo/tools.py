@@ -197,8 +197,6 @@ async def search_amenities(query: str):
         return f"Error searching amenities: {response}"
 
     response = await response.json()
-    print("printing response")
-    print(response)
     return response
 
 
