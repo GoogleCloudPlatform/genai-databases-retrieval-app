@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 from datetime import datetime
 from ipaddress import IPv4Address
-from typing import Any, AsyncGenerator, List, Union
+from typing import Any, AsyncGenerator, List
 
 import pytest
 import pytest_asyncio
@@ -28,10 +27,6 @@ from .test_data import query_embedding1, query_embedding2, query_embedding3
 from .utils import get_env_var
 
 pytestmark = pytest.mark.asyncio(scope="module")
-
-loop: asyncio.AbstractEventLoop
-
-Fixture = Union
 
 
 @pytest.fixture(scope="module")
