@@ -28,7 +28,17 @@ limitations under the License.
     <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
     <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
-    <link rel="stylesheet" href="/static/index.css">
+    <link rel="stylesheet" href="../static/index.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        function onSignIn(googleUser) {
+            var profile = googleUser.getBasicProfile();
+            console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
+            console.log('Name: ' + profile.getName());
+            console.log('Image URL: ' + profile.getImageUrl());
+            console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
+            }
+    </script>
 
 </head>
 
@@ -36,6 +46,23 @@ limitations under the License.
     <div class="container">
         <div class="chat-header">
             <h1>SFO Airport Assistant</h1>
+        </div>
+        <div id="g_id_onload"
+            data-client_id="548341735270-6qu1l8tttfuhmt7nbfb7a4q6j4hso2f7.apps.googleusercontent.com"
+            data-context="signin"
+            data-ux_mode="popup"
+            data-login_uri="http://localhost:8081/login/google"
+            data-auto_prompt="false">
+        </div>
+
+        <div class="g_id_signin"
+            data-type="standard"
+            data-shape="rectangular"
+            data-theme="outline"
+            data-text="signin_with"
+            data-size="large"
+            data-logo_alignment="left"
+            data-onsuccess="onSignIn">
         </div>
         <div class="chat-wrapper">
             <div class="chat-content">

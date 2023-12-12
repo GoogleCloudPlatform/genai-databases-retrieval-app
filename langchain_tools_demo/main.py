@@ -17,17 +17,23 @@ import uuid
 
 import uvicorn
 from fastapi import Body, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from langchain.agents.agent import AgentExecutor
 from markdown import markdown
-from starlette.middleware.sessions import SessionMiddleware
-
+from google.oauth2 import id_token
 from agent import init_agent
+from fastapi.security import OAuth2PasswordBearer
+from google.auth.transport import requests
+import yaml
+from pydantic import BaseModel
+from starlette.middleware.sessions import SessionMiddleware
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
 # TODO: set secret_key for production
 app.add_middleware(SessionMiddleware, secret_key="SECRET_KEY")
 templates = Jinja2Templates(directory="templates")
@@ -35,17 +41,60 @@ templates = Jinja2Templates(directory="templates")
 agents: dict[str, AgentExecutor] = {}
 BASE_HISTORY = [{"role": "assistant", "content": "How can I help you?"}]
 
+# Authentication
 
-@app.get("/", response_class=HTMLResponse)
+CONFIG_FILE_PATH = "./config.yml"
+GOOGLE_REDIRECT_URI = "http://localhost:8081/login/google"
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+class AppConfig(BaseModel):
+    google_client_id: str
+
+
+def parse_config(path: str) -> AppConfig:
+    with open(path, "r") as file:
+        config = yaml.safe_load(file)
+    return AppConfig(**config)
+
+
+@app.route("/", methods=["GET", "POST"])
 def index(request: Request):
     """Render the default template."""
-    request.session.clear()  # Clear chat history, if needed
     if "uuid" not in request.session:
         request.session["uuid"] = str(uuid.uuid4())
         request.session["messages"] = BASE_HISTORY
     return templates.TemplateResponse(
         "index.html", {"request": request, "messages": request.session["messages"]}
     )
+
+
+@app.post("/login/google")
+async def login_google(
+    request: Request,
+):
+    form_data = await request.form()
+    token = form_data.get("credential", "")
+    try:
+        # Specify the CLIENT_ID of the app that accesses the backend:
+        id_token.verify_oauth2_token(
+            token, requests.Request(), os.getenv("GOOGLE_CLIENT_ID")
+        )
+
+        os.environ["USER_ID_TOKEN"] = token
+
+        # Init a new agent
+        agent = init_agent()
+        agents[request.session["uuid"]] = agent
+
+        # Redirect to source URL
+        source_url = request.headers.get("Referer")
+        if source_url:
+            return RedirectResponse(url=source_url)
+        else:
+            return RedirectResponse(url=GOOGLE_REDIRECT_URI)
+    except ValueError:
+        print("Invalid token")
 
 
 @app.post("/chat", response_class=PlainTextResponse)
@@ -80,6 +129,12 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
         raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
 
 
+def set_env():
+    cfg = parse_config(CONFIG_FILE_PATH)
+    os.environ["GOOGLE_CLIENT_ID"] = cfg.google_client_id
+
+
 if __name__ == "__main__":
+    set_env()
     PORT = int(os.getenv("PORT", default=8081))
     uvicorn.run(app, host="0.0.0.0", port=PORT)

@@ -13,19 +13,63 @@
 # limitations under the License.
 
 
-from typing import Optional
+from typing import Annotated, Optional, Mapping, Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from langchain.embeddings.base import Embeddings
-
+from fastapi.security import OAuth2AuthorizationCodeBearer
 import datastore
+from google.auth.transport import requests
+from google.oauth2 import id_token
+from fastapi.security import OAuth2PasswordBearer
+import os
 
 routes = APIRouter()
 
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+def _ParseBearerToken(headers: Mapping[str, Any]) -> Optional[str]:
+    """Parses the bearer token out of the request headers."""
+    # authorization_header = headers.lower()
+    authorization_header = headers.get("authorization")
+    print(authorization_header)
+    if not authorization_header:
+        print("no authorization header")
+        return None
+
+    parts = str(authorization_header).split(" ")
+    if len(parts) != 2 or parts[0] != "Bearer":
+        return None
+
+    return parts[1]
+
+
+async def get_current_user(headers: Mapping[str, Any]):
+    token = _ParseBearerToken(headers)
+    print(token)
+    try:
+        id_info = id_token.verify_oauth2_token(
+            token, requests.Request(), audience=os.getenv("GOOGLE_CLIENT_ID")
+        )
+
+        return {
+            "user_id": id_info["sub"],
+            "name": id_info["name"],
+            "email": id_info["email"],
+        }
+
+    except Exception as e:  # pylint: disable=broad-except
+        print(e)
+
+
 @routes.get("/")
-async def root():
-    return {"message": "Hello World"}
+async def root(request: Request):
+    user = request.session.get("user")
+    if user is not None:
+        return {id: user.id}
+    return {"error": "Un-authorized"}
 
 
 @routes.get("/airports")
@@ -84,7 +128,17 @@ async def amenities_search(query: str, top_k: int, request: Request):
 
 
 @routes.get("/flights")
-async def get_flight(flight_id: int, request: Request):
+async def get_flight(
+    flight_id: int,
+    request: Request,
+):
+    user_info = await get_current_user(request.headers)
+    print(user_info)
+    if user_info is None:
+        raise HTTPException(
+            status_code=401,
+            detail="User login required for data insertion",
+        )
     ds: datastore.Client = request.app.state.datastore
     flights = await ds.get_flight(flight_id)
     return flights
@@ -112,3 +166,34 @@ async def search_flights(
             detail="Request requires query params: arrival_airport, departure_airport, date, or both airline and flight_number",
         )
     return flights
+
+
+@routes.post("/ticket")
+async def insert_ticket(
+    request: Request,
+    current_user: Annotated[dict, Depends(get_current_user)],
+    airline: str,
+    flight_number: str,
+    departure_airport: str,
+    arrival_airport: str,
+    departure_time: str,
+    arrival_time: str,
+):
+    if current_user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="User login required for data insertion",
+        )
+    ds: datastore.Client = request.app.state.datastore
+    results = await ds.insert_ticket(
+        current_user.get("user_id"),
+        current_user.get("user_name"),
+        current_user.get("user_email"),
+        airline,
+        flight_number,
+        departure_airport,
+        arrival_airport,
+        departure_time,
+        arrival_time,
+    )
+    return results

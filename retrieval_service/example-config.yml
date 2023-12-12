@@ -8,3 +8,6 @@ datastore:
   database: "my_database"
   user: "my-user"
   password: "my-password"
+credentials:
+  google_client_id: ""
+  google_client_secret: ""

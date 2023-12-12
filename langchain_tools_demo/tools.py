@@ -33,15 +33,44 @@ def get_request(url: str, params: dict) -> requests.Response:
         response = requests.get(
             url,
             params=params,
+            headers={"User-Id-Token": f"Bearer {get_user_id_token()}"},
         )
     else:
         # Append ID Token to make authenticated requests to Cloud Run services
         response = requests.get(
             url,
             params=params,
-            headers={"Authorization": f"Bearer {get_id_token(url)}"},
+            headers={
+                "Authorization": f"Bearer {get_id_token(url)}",
+                "User-Id-Token": f"Bearer {get_user_id_token()}",
+            },
         )
     return response
+
+
+def post_request(url: str, params: dict) -> requests.Response:
+    """Helper method to make backend requests"""
+    if "http://" in url:
+        response = requests.post(
+            url,
+            params=params,
+            headers={"User-Id-Token": f"Bearer {get_user_id_token()}"},
+        )
+    else:
+        # Append ID Token to make authenticated requests to Cloud Run services
+        response = requests.post(
+            url,
+            params=params,
+            headers={
+                "Authorization": f"Bearer {get_id_token(url)}",
+                "User-Id-Token": f"Bearer {get_user_id_token()}",
+            },
+        )
+    return response
+
+
+def get_user_id_token() -> str:
+    return os.getenv("USER_ID_TOKEN", default="")
 
 
 def get_id_token(url: str) -> str:
@@ -261,6 +290,24 @@ def search_amenities(query: str):
     return response.json()
 
 
+@tool("Insert Ticket", args_schema=AmenityIdInput)
+def insert_ticket(id: int):
+    """
+    Use this tool to get info for a specific airport amenity.
+    Takes an id and returns info on the amenity.
+    Do NOT guess an amenity id. Use Search Amenities to search by name.
+    Always use the id from the search_amenities tool.
+    """
+    response = get_request(
+        f"{BASE_URL}/amenities",
+        {"id": id},
+    )
+    if response.status_code != 200:
+        return f"Error trying to find amenity: {response.text}"
+
+    return response.json()
+
+
 # Tools for agent
 tools = [
     get_flight,
@@ -269,4 +316,5 @@ tools = [
     get_amenity,
     search_amenities,
     get_airport,
+    insert_ticket,
 ]
