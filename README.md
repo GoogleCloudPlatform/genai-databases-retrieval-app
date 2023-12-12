@@ -145,8 +145,8 @@ service. The directory is organized into the following folders:
 | Directory                                    | Description                                                                           |
 |----------------------------------------------|---------------------------------------------------------------------------------------|
 | [`data`](/data)                              | Contains CSV files with the dataset for a working demo.                               |
-| [`langchain_tools_demo`](/retrieval-service) | Contains an LLM-based application that that uses the retrieval service via LangChain. |
-| [`retrieval_service`](/retrieval-service)    | Contains the service for extending an LLM with information from the database.         |
+| [`langchain_tools_demo`](/langchain_tools_demo) | Contains an LLM-based application that that uses the retrieval service via LangChain. |
+| [`retrieval_service`](/retrieval_service)    | Contains the service for extending an LLM with information from the database.         |
 
 You can copy or fork the `retrieval_service` folder to customize it to your
 needs. There are two main places you want to start:
