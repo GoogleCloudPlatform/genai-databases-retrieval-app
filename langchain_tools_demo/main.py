@@ -37,12 +37,12 @@ agents: dict[str, AgentExecutor] = {}
 BASE_HISTORY = [{"role": "assistant", "content": "How can I help you?"}]
 
 
-# async def on_shutdown():
-#     if session is not None:
-#         await session.close()
+async def on_shutdown():
+    if session is not None:
+        await session.close()
 
 
-# app.add_event_handler("shutdown", on_shutdown)
+app.add_event_handler("shutdown", on_shutdown)
 
 
 @app.get("/", response_class=HTMLResponse)

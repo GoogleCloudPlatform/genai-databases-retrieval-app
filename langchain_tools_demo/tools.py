@@ -14,7 +14,7 @@
 
 import os
 from datetime import date, timedelta
-from typing import Any, Coroutine, Optional
+from typing import Optional
 
 import aiohttp
 import dateutil.parser as dparser
@@ -35,7 +35,7 @@ async def get_session():
 
 
 # Helper functions
-async def get_request(url: str, params: dict) -> Coroutine[Any, Any, Any]:
+async def get_request(url: str, params: dict) -> aiohttp.ClientResponse:
     """Helper method to make backend requests"""
     session = await get_session()
     if "http://" in url:
