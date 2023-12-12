@@ -181,7 +181,6 @@ async def get_amenity(id: int):
     )
     if response.status != 200:
         return f"Error trying to find amenity: {response}"
-
     return await response.json()
 
 
@@ -196,8 +195,7 @@ async def search_amenities(query: str):
     if response.status != 200:
         return f"Error searching amenities: {response}"
 
-    response = await response.json()
-    return response
+    return await response.json()
 
 
 # Tools for agent
