@@ -207,8 +207,7 @@ class MockDatastore(datastore.Client[Config]):  # type: ignore
 
 @pytest.fixture(scope="module")
 def app():
-    mock_app_config = MagicMock()
-    app = init_app(mock_app_config)
+    app = init_app(MagicMock())
     if app is None:
         raise TypeError("app did not initialize")
     return app
@@ -251,9 +250,32 @@ get_airport_params = [
 
 
 @pytest.mark.parametrize("params, expected", get_airport_params)
-@patch.object(datastore, "create", AsyncMock(return_value=MockDatastore()))
-def test_get_airport(app, params, expected):
+@patch.object(datastore, "create")
+def test_get_airport(m_datastore, app, params, expected):
+    mock_airport_by_id = models.Airport(
+        id=1,
+        iata="FOO",
+        name="get_airport_by_id",
+        city="BAR",
+        country="FOO BAR",
+    )
+    mock_airport_by_iata = models.Airport(
+        id=1,
+        iata="FOO",
+        name="get_airport_by_iata",
+        city="BAR",
+        country="FOO BAR",
+    )
+    # m_datastore.return_value = AsyncMock(
+    #     return_value={
+    #         get_airport_by.id = mock_airport_by_id
+    #     }
+    # )
+    m_datastore.return_value.get_airport_by_iata = AsyncMock(
+        return_value=mock_airport_by_iata
+    )
     with TestClient(app) as client:
+        client.get_airport_by_id = mock_airport_by_id
         response = client.get(
             "/airports",
             params=params,
