@@ -188,8 +188,6 @@ async def list_flights(departure_airport: str, arrival_airport: str, date: str):
         "date": "2023-01-01"
     }}
     """
-    departure_airport = "SFO"
-    arrival_airport = "LAX"
     response = await get_request(
         f"{BASE_URL}/flights/search",
         {
