@@ -95,11 +95,6 @@ class AirportIdInput(BaseModel):
 
 
 async def get_airport(id: int):
-    """
-    Use this tool to get info for a specific airport.
-    Do NOT guess an airport id.
-    Takes an id and returns info on the airport.
-    """
     response = await get_request(
         f"{BASE_URL}/airports",
         {"id": id},
@@ -115,12 +110,6 @@ class FlightIdInput(BaseModel):
 
 
 async def get_flight(id: int):
-    """
-    Use this tool to get info for a specific flight.
-    Takes an id and returns info on the flight.
-    Do NOT use this tool if you have a flight number.
-    Do NOT guess an airline or flight number.
-    """
     response = await get_request(
         f"{BASE_URL}/flights",
         {"flight_id": id},
@@ -137,14 +126,6 @@ class FlightNumberInput(BaseModel):
 
 
 async def search_flights_by_number(airline: str, flight_number: str):
-    """
-    Use this tool to get info for a specific flight. Do NOT use this tool with a flight id.
-    Takes an airline and flight number and returns info on the flight.
-    Do NOT guess an airline or flight number.
-    A flight number is a code for an airline service consisting of two-character
-    airline designator and a 1 to 4 digit number ex. OO123, DL 1234, BA 405, AS 3452.
-    If the tool returns more than one option choose the date closes to today.
-    """
     response = await get_request(
         f"{BASE_URL}/flights/search",
         {"airline": airline, "flight_number": flight_number},
@@ -164,30 +145,6 @@ class ListFlights(BaseModel):
 
 
 async def list_flights(departure_airport: str, arrival_airport: str, date: str):
-    """
-    Use this tool to list all flights matching search criteria.
-    Takes an arrival airport, a departure airport, or both, filters by date and returns all matching flights.
-    The agent can decide to return the results directly to the user.
-    Input of this tool must be in JSON format and include all three inputs - arrival_airport, departure_airport, and date.
-    Example:
-    {{
-        "departure_airport": "SFO",
-        "arrival_airport": null,
-        "date": null
-    }}
-    Example:
-    {{
-        "departure_airport": "SFO",
-        "arrival_airport": "SEA",
-        "date": "2023-11-01"
-    }}
-    Example:
-    {{
-        "departure_airport": null,
-        "arrival_airport": "SFO",
-        "date": "2023-01-01"
-    }}
-    """
     response = await get_request(
         f"{BASE_URL}/flights/search",
         {
@@ -217,21 +174,13 @@ class AmenityIdInput(BaseModel):
     id: int = Field(description="Unique identifier")
 
 
-@tool("Get Amenity", args_schema=AmenityIdInput)
 async def get_amenity(id: int):
-    """
-    Use this tool to get info for a specific airport amenity.
-    Takes an id and returns info on the amenity.
-    Do NOT guess an amenity id. Use Search Amenities to search by name.
-    Always use the id from the search_amenities tool.
-    """
     response = await get_request(
         f"{BASE_URL}/amenities",
         {"id": id},
     )
     if response.status != 200:
         return f"Error trying to find amenity: {response}"
-
     return await response.json()
 
 
@@ -240,25 +189,13 @@ class QueryInput(BaseModel):
 
 
 async def search_amenities(query: str):
-    """
-    Use this tool to search amenities by name or to recommended airport amenities at SFO.
-    If user provides flight info, use 'Get Flight' and 'Get Flights by Number'
-    first to get gate info and location.
-    Only recommend amenities that are returned by this query.
-    Find amenities close to the user by matching the terminal and then comparing
-    the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
-    B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
-    """
     response = await get_request(
         f"{BASE_URL}/amenities/search", {"top_k": "5", "query": query}
     )
     if response.status != 200:
         return f"Error searching amenities: {response}"
 
-    response = await response.json()
-    print("printing response")
-    print(response)
-    return response
+    return await response.json()
 
 
 # Tools for agent
