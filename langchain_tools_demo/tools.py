@@ -15,13 +15,13 @@
 import os
 from datetime import date, timedelta
 from typing import Any, Coroutine, Optional
-from fastapi import APIRouter, HTTPException, Request
+
+import aiohttp
 import dateutil.parser as dparser
 import google.auth.transport.requests  # type: ignore
 import google.oauth2.id_token  # type: ignore
 from langchain.tools import StructuredTool, tool
 from pydantic.v1 import BaseModel, Field
-import aiohttp
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 session = None
@@ -39,19 +39,19 @@ async def get_request(url: str, params: dict) -> Coroutine[Any, Any, Any]:
     """Helper method to make backend requests"""
     session = await get_session()
     if "http://" in url:
-        async with session.get(
+        response = await session.get(
             url,
             params=params,
-        ) as response:
-            return response
+        )
+        return response
     else:
         # Append ID Token to make authenticated requests to Cloud Run services
-        async with session.get(
+        response = await session.get(
             url,
             params=params,
             headers={"Authorization": f"Bearer {get_id_token(url)}"},
-        ) as response:
-            return response
+        )
+        return response
 
 
 def get_id_token(url: str) -> str:
@@ -107,7 +107,7 @@ async def get_airport(id: int):
     if response.status != 200:
         return f"Error trying to find airport: {response}"
 
-    return response.json()
+    return await response.json()
 
 
 class FlightIdInput(BaseModel):
@@ -128,7 +128,7 @@ async def get_flight(id: int):
     if response.status != 200:
         return f"Error trying to find flight: {response}"
 
-    return response.json()
+    return await response.json()
 
 
 class FlightNumberInput(BaseModel):
@@ -152,7 +152,7 @@ async def search_flights_by_number(airline: str, flight_number: str):
     if response.status != 200:
         return f"Error trying to find flight: {response}"
 
-    return response.json()
+    return await response.json()
 
 
 class ListFlights(BaseModel):
@@ -188,10 +188,6 @@ async def list_flights(departure_airport: str, arrival_airport: str, date: str):
         "date": "2023-01-01"
     }}
     """
-    print("hello")
-    print(departure_airport)
-    print(arrival_airport)
-    print(date)
     departure_airport = "SFO"
     arrival_airport = "LAX"
     response = await get_request(
@@ -202,20 +198,20 @@ async def list_flights(departure_airport: str, arrival_airport: str, date: str):
             "date": date,
         },
     )
-    print(response)
     if response.status != 200:
         return f"Error searching flights: {response}"
 
     num = 2
-    if len(response.json()) < 1:
+    response_json = await response.json()
+    if len(response_json) < 1:
         return "There are no flights matching that query. Let the user know there are no results."
-    elif len(response.json()) > num:
+    elif len(response_json) > num:
         return (
-            f"There are {len(response.json())} flights matching that query. Here are the first {num} results:\n"
-            + " ".join([f"{response.json()[i]}" for i in range(num)])
+            f"There are {len(response_json)} flights matching that query. Here are the first {num} results:\n"
+            + " ".join([f"{response_json[i]}" for i in range(num)])
         )
     else:
-        return "\n".join([f"{r}" for r in response.json()])
+        return "\n".join([f"{r}" for r in response_json])
 
 
 # Amenities
@@ -238,7 +234,7 @@ async def get_amenity(id: int):
     if response.status != 200:
         return f"Error trying to find amenity: {response}"
 
-    return response.json()
+    return await response.json()
 
 
 class QueryInput(BaseModel):
@@ -261,7 +257,10 @@ async def search_amenities(query: str):
     if response.status != 200:
         return f"Error searching amenities: {response}"
 
-    return response.json()
+    response = await response.json()
+    print("printing response")
+    print(response)
+    return response
 
 
 # Tools for agent
