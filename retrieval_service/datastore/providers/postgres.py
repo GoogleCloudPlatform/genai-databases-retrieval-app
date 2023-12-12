@@ -170,13 +170,13 @@ class Client(datastore.Client[Config]):
         self,
     ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
         airport_task = asyncio.create_task(
-            self.__pool.fetch("""SELECT * FROM airports""")
+            self.__pool.fetch("""SELECT * FROM airports ORDER BY id ASC""")
         )
         amenity_task = asyncio.create_task(
-            self.__pool.fetch("""SELECT * FROM amenities""")
+            self.__pool.fetch("""SELECT * FROM amenities ORDER BY id ASC""")
         )
         flight_task = asyncio.create_task(
-            self.__pool.fetch("""SELECT * FROM flights""")
+            self.__pool.fetch("""SELECT * FROM flights ORDER BY id ASC""")
         )
 
         airports = [models.Airport.model_validate(dict(a)) for a in await airport_task]
