@@ -21,20 +21,23 @@ from langchain.llms.vertexai import VertexAI
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
 
-from tools import convert_date, tools
+from tools import convert_date, initialize_tools
+import aiohttp
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
+session = None
 
 
 # Agent
-def init_agent() -> AgentExecutor:
+async def init_agent() -> AgentExecutor:
     """Load an agent executor with tools and LLM"""
     print("Initializing agent..")
     llm = VertexAI(max_output_tokens=512)
     memory = ConversationBufferMemory(
         memory_key="chat_history", input_key="input", output_key="output"
     )
-
+    session = aiohttp.ClientSession()
+    tools = await initialize_tools(session)
     agent = initialize_agent(
         tools,
         llm,
