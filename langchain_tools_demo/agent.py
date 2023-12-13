@@ -25,19 +25,34 @@ from tools import convert_date, initialize_tools
 import aiohttp
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
-session = None
+connector = None
+
+
+class ClientAgent:
+    client: aiohttp.ClientSession
+    agent: AgentExecutor
+
+    def __init__(self, client, agent) -> None:
+        self.client = client
+        self.agent = agent
+
+
+async def get_connector():
+    if connector is None:
+        connector = aiohttp.TCPConnector()
+    return connector
 
 
 # Agent
-async def init_agent() -> AgentExecutor:
+async def init_agent() -> ClientAgent:
     """Load an agent executor with tools and LLM"""
     print("Initializing agent..")
     llm = VertexAI(max_output_tokens=512)
     memory = ConversationBufferMemory(
         memory_key="chat_history", input_key="input", output_key="output"
     )
-    session = aiohttp.ClientSession()
-    tools = await initialize_tools(session)
+    client = aiohttp.ClientSession(connector=await get_connector())
+    tools = await initialize_tools(client)
     agent = initialize_agent(
         tools,
         llm,
@@ -62,7 +77,8 @@ async def init_agent() -> AgentExecutor:
         [("system", template), ("human", human_message_template)]
     )
     agent.agent.llm_chain.prompt = prompt  # type: ignore
-    return agent
+
+    return ClientAgent(client, agent)
 
 
 PREFIX = """SFO Airport Assistant helps travelers find their way at the airport.
