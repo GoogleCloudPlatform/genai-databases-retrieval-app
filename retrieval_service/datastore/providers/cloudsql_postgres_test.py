@@ -68,7 +68,7 @@ async def ds(
     db_region: str,
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
-    cfg = postgres.Config(
+    cfg = cloudsql_postgres.Config(
         kind="cloudsql-postgres",
         user=db_user,
         password=db_pass,
