@@ -8,3 +8,9 @@ warn_unused_configs = true
 [[tool.mypy.overrides]]
 module = ["pgvector.asyncpg"]
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+markers = [
+    "cloudsql",
+    "postgres",
+]
