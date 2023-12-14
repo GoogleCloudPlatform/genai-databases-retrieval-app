@@ -38,6 +38,7 @@ async def get_session():
 async def get_request(url: str, params: dict) -> aiohttp.ClientResponse:
     """Helper method to make backend requests"""
     session = await get_session()
+    params = {key: value for key, value in params.items() if value is not None}
     if "http://" in url:
         response = await session.get(
             url,
