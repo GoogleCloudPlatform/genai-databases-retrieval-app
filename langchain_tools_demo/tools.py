@@ -130,7 +130,11 @@ async def search_airports(country: str, city: str, name: str):
         return "There are no airports matching that query. Let the user know there are no results."
     elif len(response_json) > num:
         return (
-            f"There are {len(response_json)} airports matching that query. Here are the first {num} results:\n" + " ".join([f"{response_json[i]}" for i in range(num)])
+            f"There are {len(response_json)} airports matching that query. Here are the first {num} results:\n"
+            + " ".join([f"{response_json[i]}" for i in range(num)])
+        )
+    else:
+        return "\n".join([f"{r}" for r in response_json])
 
 
 class FlightIdInput(BaseModel):
