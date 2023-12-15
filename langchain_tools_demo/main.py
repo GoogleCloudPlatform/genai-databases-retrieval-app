@@ -36,10 +36,10 @@ async def lifespan(app: FastAPI):
     yield
     # FastAPI app shutdown event
     close_client_tasks = [
-        asyncio.create_task(c.session.close()) for c in client_agents.values()
+        asyncio.create_task(c.client.close()) for c in client_agents.values()
     ]
 
-    asyncio.gather(close_client_tasks)
+    asyncio.gather(*close_client_tasks)
 
 
 # FastAPI setup
