@@ -127,7 +127,7 @@ async def generate_list_flights(client: aiohttp.ClientSession):
             "date": date,
         }
         response = await client.get(
-            url=f"{BASE_URL}/flights/search?depar",
+            url=f"{BASE_URL}/flights/search",
             params=filter_none_values(params),
         )
 

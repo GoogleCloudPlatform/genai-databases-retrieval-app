@@ -27,13 +27,13 @@ from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
 
 from tools import initialize_tools
+from typing import Dict, Optional
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 
 # aiohttp context
 connector = None
-client_agents = {}
 
 
 class ClientAgent:
@@ -43,6 +43,9 @@ class ClientAgent:
     def __init__(self, client, agent) -> None:
         self.client = client
         self.agent = agent
+
+
+client_agents: Dict[str, ClientAgent] = {}
 
 
 def get_id_token(url: str) -> str:
@@ -80,10 +83,9 @@ def convert_date(date_string: str) -> str:
     return converted.strftime("%Y-%m-%d")
 
 
-def get_header() -> dict:
-    headers = {}
+def get_header() -> Optional[dict]:
     if "http://" in BASE_URL:
-        return headers
+        return None
     else:
         # Append ID Token to make authenticated requests to Cloud Run services
         headers = {"Authorization": f"Bearer {get_id_token(BASE_URL)}"}

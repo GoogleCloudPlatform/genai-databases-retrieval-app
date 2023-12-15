@@ -26,7 +26,7 @@ from langchain.agents.agent import AgentExecutor
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
-from agent import ClientAgent, client_agents, init_agent
+from agent import client_agents, init_agent
 
 
 @asynccontextmanager
@@ -35,9 +35,9 @@ async def lifespan(app: FastAPI):
     print("Loading application...")
     yield
     # FastAPI app shutdown event
-    close_client_tasks = []
-    for c in client_agents.items:
-        tasks += asyncio.ensure_task(c.session.close())
+    close_client_tasks = [
+        asyncio.create_task(c.session.close()) for c in client_agents.values()
+    ]
 
     asyncio.gather(close_client_tasks)
 
@@ -48,8 +48,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # TODO: set secret_key for production
 app.add_middleware(SessionMiddleware, secret_key="SECRET_KEY")
 templates = Jinja2Templates(directory="templates")
-
-client_agents: dict[str, ClientAgent] = {}
 BASE_HISTORY = [{"role": "assistant", "content": "How can I help you?"}]
 
 
