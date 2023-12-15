@@ -13,7 +13,12 @@
 # limitations under the License.
 
 import os
+from datetime import date, timedelta
 
+import aiohttp
+import dateutil.parser as dparser
+import google.auth.transport.requests  # type: ignore
+import google.oauth2.id_token  # type: ignore
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent import AgentExecutor
 from langchain.globals import set_verbose  # type: ignore
@@ -21,11 +26,14 @@ from langchain.llms.vertexai import VertexAI
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
 
-from tools import convert_date, initialize_tools
-import aiohttp
+from tools import initialize_tools
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
+BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
+
+# aiohttp context
 connector = None
+client_agents = {}
 
 
 class ClientAgent:
@@ -37,10 +45,69 @@ class ClientAgent:
         self.agent = agent
 
 
+def get_id_token(url: str) -> str:
+    """Helper method to generate ID tokens for authenticated requests"""
+    # Use Application Default Credentials on Cloud Run
+    if os.getenv("K_SERVICE"):
+        auth_req = google.auth.transport.requests.Request()
+        return google.oauth2.id_token.fetch_id_token(auth_req, url)
+    else:
+        # Use gcloud credentials locally
+        import subprocess
+
+        return (
+            subprocess.run(
+                ["gcloud", "auth", "print-identity-token"],
+                stdout=subprocess.PIPE,
+                check=True,
+            )
+            .stdout.strip()
+            .decode()
+        )
+
+
+def convert_date(date_string: str) -> str:
+    """Convert date into appropriate date string"""
+    if date_string == "tomorrow":
+        converted = date.today() + timedelta(1)
+    elif date_string == "yesterday":
+        converted = date.today() - timedelta(1)
+    elif date_string != "null" and date_string != "today" and date_string is not None:
+        converted = dparser.parse(date_string, fuzzy=True).date()
+    else:
+        converted = date.today()
+
+    return converted.strftime("%Y-%m-%d")
+
+
+def get_header() -> dict:
+    headers = {}
+    if "http://" in BASE_URL:
+        return headers
+    else:
+        # Append ID Token to make authenticated requests to Cloud Run services
+        headers = {"Authorization": f"Bearer {get_id_token(BASE_URL)}"}
+        return headers
+
+
 async def get_connector():
+    global connector
     if connector is None:
-        connector = aiohttp.TCPConnector()
+        connector = aiohttp.TCPConnector(limit=100)
     return connector
+
+
+async def handle_error_response(response):
+    if response.status != 200:
+        return f"Error sending {response.method} request to {str(response.url)}): {await response.text()}"
+
+
+async def create_client_session() -> aiohttp.ClientSession:
+    return aiohttp.ClientSession(
+        connector=await get_connector(),
+        headers=get_header(),
+        raise_for_status=handle_error_response,
+    )
 
 
 # Agent
@@ -51,7 +118,7 @@ async def init_agent() -> ClientAgent:
     memory = ConversationBufferMemory(
         memory_key="chat_history", input_key="input", output_key="output"
     )
-    client = aiohttp.ClientSession(connector=await get_connector())
+    client = await create_client_session()
     tools = await initialize_tools(client)
     agent = initialize_agent(
         tools,

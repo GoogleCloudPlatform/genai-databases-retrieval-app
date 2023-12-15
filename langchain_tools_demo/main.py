@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import os
 import uuid
-
-import asyncio
-import uvicorn
 from contextlib import asynccontextmanager
+
+import uvicorn
 from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -26,7 +26,7 @@ from langchain.agents.agent import AgentExecutor
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
-from agent import ClientAgent, init_agent
+from agent import ClientAgent, client_agents, init_agent
 
 
 @asynccontextmanager
@@ -36,8 +36,8 @@ async def lifespan(app: FastAPI):
     yield
     # FastAPI app shutdown event
     close_client_tasks = []
-    for ca in client_agents:
-        tasks += asyncio.ensure_task(ca.session.close())
+    for c in client_agents.items:
+        tasks += asyncio.ensure_task(c.session.close())
 
     asyncio.gather(close_client_tasks)
 
@@ -86,7 +86,7 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
         client_agents[request.session["uuid"]] = client_agent
     try:
         # Send prompt to LLM
-        response = await agent.ainvoke({"input": prompt})
+        response = await client_agent.agent.ainvoke({"input": prompt})
         request.session["messages"] += [
             {"role": "assistant", "content": response["output"]}
         ]

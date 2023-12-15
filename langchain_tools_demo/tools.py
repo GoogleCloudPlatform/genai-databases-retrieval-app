@@ -13,73 +13,17 @@
 # limitations under the License.
 
 import os
-from datetime import date, timedelta
 from typing import Optional
 
 import aiohttp
-import dateutil.parser as dparser
-import google.auth.transport.requests  # type: ignore
-import google.oauth2.id_token  # type: ignore
 from langchain.tools import StructuredTool, tool
 from pydantic.v1 import BaseModel, Field
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 
 
-# Helper functions
-async def get_request(
-    session: aiohttp.ClientSession, url: str, params: dict
-) -> aiohttp.ClientResponse:
-    """Helper method to make backend requests"""
-    if "http://" in url:
-        response = await session.get(
-            url,
-            params=params,
-        )
-        return response
-    else:
-        # Append ID Token to make authenticated requests to Cloud Run services
-        response = await session.get(
-            url,
-            params=params,
-            headers={"Authorization": f"Bearer {get_id_token(url)}"},
-        )
-        return response
-
-
-def get_id_token(url: str) -> str:
-    """Helper method to generate ID tokens for authenticated requests"""
-    # Use Application Default Credentials on Cloud Run
-    if os.getenv("K_SERVICE"):
-        auth_req = google.auth.transport.requests.Request()
-        return google.oauth2.id_token.fetch_id_token(auth_req, url)
-    else:
-        # Use gcloud credentials locally
-        import subprocess
-
-        return (
-            subprocess.run(
-                ["gcloud", "auth", "print-identity-token"],
-                stdout=subprocess.PIPE,
-                check=True,
-            )
-            .stdout.strip()
-            .decode()
-        )
-
-
-def convert_date(date_string: str) -> str:
-    """Convert date into appropriate date string"""
-    if date_string == "tomorrow":
-        converted = date.today() + timedelta(1)
-    elif date_string == "yesterday":
-        converted = date.today() - timedelta(1)
-    elif date_string != "null" and date_string != "today" and date_string is not None:
-        converted = dparser.parse(date_string, fuzzy=True).date()
-    else:
-        converted = date.today()
-
-    return converted.strftime("%Y-%m-%d")
+def filter_none_values(params: dict) -> dict:
+    return {key: value for key, value in params.items() if value is not None}
 
 
 # Tools
@@ -87,15 +31,12 @@ class AirportIdInput(BaseModel):
     id: int = Field(description="Unique identifier")
 
 
-async def generate_get_airport(session: aiohttp.ClientSession):
+async def generate_get_airport(client: aiohttp.ClientSession):
     async def get_airport(id: int):
-        response = await get_request(
-            session,
-            f"{BASE_URL}/airports",
-            {"id": id},
+        response = await client.get(
+            url=f"{BASE_URL}/airports",
+            params={"id": id},
         )
-        if response.status != 200:
-            return f"Error trying to find airport: {response}"
 
         return await response.json()
 
@@ -137,15 +78,12 @@ class FlightIdInput(BaseModel):
     id: int = Field(description="Unique identifier")
 
 
-async def generate_get_flight(session: aiohttp.ClientSession):
+async def generate_get_flight(client: aiohttp.ClientSession):
     async def get_flight(id: int):
-        response = await get_request(
-            session,
-            f"{BASE_URL}/flights",
-            {"flight_id": id},
+        response = await client.get(
+            url=f"{BASE_URL}/flights",
+            params={"flight_id": id},
         )
-        if response.status != 200:
-            return f"Error trying to find flight: {response}"
 
         return await response.json()
 
@@ -157,15 +95,12 @@ class FlightNumberInput(BaseModel):
     flight_number: str = Field(description="1 to 4 digit number")
 
 
-async def generate_search_flights_by_number(session: aiohttp.ClientSession):
+async def generate_search_flights_by_number(client: aiohttp.ClientSession):
     async def search_flights_by_number(airline: str, flight_number: str):
-        response = await get_request(
-            session,
-            f"{BASE_URL}/flights/search",
-            {"airline": airline, "flight_number": flight_number},
+        response = await client.get(
+            url=f"{BASE_URL}/flights/search",
+            params={"airline": airline, "flight_number": flight_number},
         )
-        if response.status != 200:
-            return f"Error trying to find flight: {response}"
 
         return await response.json()
 
@@ -180,19 +115,21 @@ class ListFlights(BaseModel):
     date: Optional[str] = Field(description="Date of flight departure")
 
 
-async def generate_list_flights(session: aiohttp.ClientSession):
-    async def list_flights(departure_airport: str, arrival_airport: str, date: str):
-        response = await get_request(
-            session,
-            f"{BASE_URL}/flights/search",
-            {
-                "departure_airport": departure_airport,
-                "arrival_airport": arrival_airport,
-                "date": date,
-            },
+async def generate_list_flights(client: aiohttp.ClientSession):
+    async def list_flights(
+        departure_airport: Optional[str],
+        arrival_airport: Optional[str],
+        date: Optional[str],
+    ):
+        params = {
+            "departure_airport": departure_airport,
+            "arrival_airport": arrival_airport,
+            "date": date,
+        }
+        response = await client.get(
+            url=f"{BASE_URL}/flights/search?depar",
+            params=filter_none_values(params),
         )
-        if response.status != 200:
-            return f"Error searching flights: {response}"
 
         num = 2
         response_json = await response.json()
@@ -214,15 +151,9 @@ class AmenityIdInput(BaseModel):
     id: int = Field(description="Unique identifier")
 
 
-async def generate_get_amenity(session: aiohttp.ClientSession):
+async def generate_get_amenity(client: aiohttp.ClientSession):
     async def get_amenity(id: int):
-        response = await get_request(
-            session,
-            f"{BASE_URL}/amenities",
-            {"id": id},
-        )
-        if response.status != 200:
-            return f"Error trying to find amenity: {response}"
+        response = await client.get(url=f"{BASE_URL}/amenities", params={"id": id})
         return await response.json()
 
     return get_amenity
@@ -232,7 +163,7 @@ class QueryInput(BaseModel):
     query: str = Field(description="Search query")
 
 
-async def generate_search_amenities(session: aiohttp.ClientSession):
+async def generate_search_amenities(client: aiohttp.ClientSession):
     async def search_amenities(query: str):
         """
         Use this tool to search amenities by name or to recommended airport amenities at SFO.
@@ -243,11 +174,9 @@ async def generate_search_amenities(session: aiohttp.ClientSession):
         the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
         B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
         """
-        response = await get_request(
-            session, f"{BASE_URL}/amenities/search", {"top_k": "5", "query": query}
+        response = await client.get(
+            url=f"{BASE_URL}/amenities/search", params={"top_k": "5", "query": query}
         )
-        if response.status != 200:
-            return f"Error searching amenities: {response}"
 
         response = await response.json()
         return response
@@ -256,10 +185,10 @@ async def generate_search_amenities(session: aiohttp.ClientSession):
 
 
 # Tools for agent
-async def initialize_tools(session: aiohttp.ClientSession):
+async def initialize_tools(client: aiohttp.ClientSession):
     return [
         StructuredTool.from_function(
-            coroutine=await generate_get_airport(session),
+            coroutine=await generate_get_airport(client),
             name="Get Airport",
             description="""Use this tool to get info for a specific airport.
                             Do NOT guess an airport id.
@@ -311,7 +240,7 @@ async def initialize_tools(session: aiohttp.ClientSession):
             args_schema=FlightIdInput,
         ),
         StructuredTool.from_function(
-            coroutine=await generate_search_flights_by_number(session),
+            coroutine=await generate_search_flights_by_number(client),
             name="Search Flights By Flight Number",
             description="""
                         Use this tool to get info for a specific flight. Do NOT use this tool with a flight id.
@@ -324,7 +253,7 @@ async def initialize_tools(session: aiohttp.ClientSession):
             args_schema=FlightNumberInput,
         ),
         StructuredTool.from_function(
-            coroutine=await generate_list_flights(session),
+            coroutine=await generate_list_flights(client),
             name="List Flights",
             description="""
                         Use this tool to list all flights matching search criteria.
@@ -353,7 +282,7 @@ async def initialize_tools(session: aiohttp.ClientSession):
             args_schema=ListFlights,
         ),
         StructuredTool.from_function(
-            coroutine=await generate_get_amenity(session),
+            coroutine=await generate_get_amenity(client),
             name="Get Amenity",
             description="""
                         Use this tool to get info for a specific airport amenity.
@@ -364,7 +293,7 @@ async def initialize_tools(session: aiohttp.ClientSession):
             args_schema=AmenityIdInput,
         ),
         StructuredTool.from_function(
-            coroutine=await generate_search_amenities(session),
+            coroutine=await generate_search_amenities(client),
             name="Search Amenities",
             description="""
                         Use this tool to search amenities by name or to recommended airport amenities at SFO.
