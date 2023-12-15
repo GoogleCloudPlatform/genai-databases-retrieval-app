@@ -14,6 +14,7 @@
 
 import os
 from datetime import date, timedelta
+from typing import Dict, Optional
 
 import aiohttp
 import dateutil.parser as dparser
@@ -27,7 +28,6 @@ from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
 
 from tools import initialize_tools
-from typing import Dict, Optional
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
