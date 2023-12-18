@@ -12,97 +12,215 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ipaddress import IPv4Address
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
+import datastore
 import models
-from datastore.providers import postgres
 
 from . import init_app
 from .app import AppConfig
-from .helpers import get_env_var
-
-DB_USER = get_env_var("DB_USER", "name of a postgres user")
-DB_PASS = get_env_var("DB_PASS", "password for the postgres user")
-DB_NAME = get_env_var("DB_NAME", "name of a postgres database")
-DB_HOST = get_env_var("DB_HOST", "ip address of a postgres database")
 
 
 @pytest.fixture(scope="module")
 def app():
-    cfg = AppConfig(
-        datastore=postgres.Config(
-            kind="postgres",
-            user=DB_USER,
-            password=DB_PASS,
-            database=DB_NAME,
-            host=IPv4Address(DB_HOST),
-        )
-    )
-    app = init_app(cfg)
+    app = init_app(MagicMock())
     if app is None:
         raise TypeError("app did not initialize")
     return app
 
 
-def test_hello_world(app):
+@patch.object(datastore, "create")
+def test_hello_world(m_datastore, app):
+    m_datastore = AsyncMock()
     with TestClient(app) as client:
         response = client.get("/")
         assert response.status_code == 200
         assert response.json() == {"message": "Hello World"}
 
 
-@pytest.mark.parametrize(
-    "params",
-    [
-        pytest.param(
-            {
-                "id": 1,
-            },
-            id="id_only",
+get_airport_params = [
+    pytest.param(
+        "get_airport_by_id",
+        {
+            "id": 1,
+        },
+        models.Airport(
+            id=1,
+            iata="FOO",
+            name="get_airport_by_id",
+            city="BAR",
+            country="FOO BAR",
         ),
-        pytest.param({"iata": "sfo"}, id="iata_only"),
-    ],
+        {
+            "id": 1,
+            "iata": "FOO",
+            "name": "get_airport_by_id",
+            "city": "BAR",
+            "country": "FOO BAR",
+        },
+        id="id_only",
+    ),
+    pytest.param(
+        "get_airport_by_iata",
+        {"iata": "sfo"},
+        models.Airport(
+            id=1,
+            iata="FOO",
+            name="get_airport_by_iata",
+            city="BAR",
+            country="FOO BAR",
+        ),
+        {
+            "id": 1,
+            "iata": "FOO",
+            "name": "get_airport_by_iata",
+            "city": "BAR",
+            "country": "FOO BAR",
+        },
+        id="iata_only",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "method_name, params, mock_return, expected", get_airport_params
 )
-def test_get_airport(app, params):
+@patch.object(datastore, "create")
+def test_get_airport(m_datastore, app, method_name, params, mock_return, expected):
     with TestClient(app) as client:
-        response = client.get(
-            "/airports",
-            params=params,
-        )
+        with patch.object(
+            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+        ) as mock_method:
+            response = client.get(
+                "/airports",
+                params=params,
+            )
     assert response.status_code == 200
     output = response.json()
-    assert output
+    assert output == expected
     assert models.Airport.model_validate(output)
 
 
-@pytest.mark.parametrize(
-    "params",
-    [
-        pytest.param(
+search_airports_params = [
+    pytest.param(
+        "search_airports",
+        {
+            "country": "United States",
+            "city": "san francisco",
+            "name": "san francisco",
+        },
+        [
+            models.Airport(
+                id=1,
+                iata="FOO",
+                name="search_airports",
+                city="BAR",
+                country="FOO BAR",
+            )
+        ],
+        [
             {
-                "country": "United States",
-                "city": "san francisco",
-                "name": "san francisco",
-            },
-            id="country_city_and_name",
-        ),
-        pytest.param({"country": "United States"}, id="country_only"),
-        pytest.param({"city": "san francisco"}, id="city_only"),
-        pytest.param({"name": "san francisco"}, id="name_only"),
-    ],
+                "id": 1,
+                "iata": "FOO",
+                "name": "search_airports",
+                "city": "BAR",
+                "country": "FOO BAR",
+            }
+        ],
+        id="country_city_and_name",
+    ),
+    pytest.param(
+        "search_airports",
+        {"country": "United States"},
+        [
+            models.Airport(
+                id=1,
+                iata="FOO",
+                name="search_airports",
+                city="BAR",
+                country="FOO BAR",
+            )
+        ],
+        [
+            {
+                "id": 1,
+                "iata": "FOO",
+                "name": "search_airports",
+                "city": "BAR",
+                "country": "FOO BAR",
+            }
+        ],
+        id="country_only",
+    ),
+    pytest.param(
+        "search_airports",
+        {"city": "san francisco"},
+        [
+            models.Airport(
+                id=1,
+                iata="FOO",
+                name="search_airports",
+                city="BAR",
+                country="FOO BAR",
+            )
+        ],
+        [
+            {
+                "id": 1,
+                "iata": "FOO",
+                "name": "search_airports",
+                "city": "BAR",
+                "country": "FOO BAR",
+            }
+        ],
+        id="city_only",
+    ),
+    pytest.param(
+        "search_airports",
+        {"name": "san francisco"},
+        [
+            models.Airport(
+                id=1,
+                iata="FOO",
+                name="search_airports",
+                city="BAR",
+                country="FOO BAR",
+            )
+        ],
+        [
+            {
+                "id": 1,
+                "iata": "FOO",
+                "name": "search_airports",
+                "city": "BAR",
+                "country": "FOO BAR",
+            }
+        ],
+        id="name_only",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "method_name, params, mock_return, expected", search_airports_params
 )
-def test_search_airports(app, params):
+@patch.object(datastore, "create")
+def test_search_airports(m_datastore, app, method_name, params, mock_return, expected):
     with TestClient(app) as client:
-        response = client.get(
-            "/airports/search",
-            params=params,
-        )
+        with patch.object(
+            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+        ) as mock_method:
+            response = client.get(
+                "/airports/search",
+                params=params,
+            )
     assert response.status_code == 200
     output = response.json()
-    assert output
+    assert output == expected
     assert models.Airport.model_validate(output[0])
 
 
@@ -112,117 +230,385 @@ def test_search_airports(app, params):
         pytest.param({}, id="no_params"),
     ],
 )
-def test_search_airports_with_bad_params(app, params):
+@patch.object(datastore, "create")
+def test_search_airports_with_bad_params(m_datastore, app, params):
+    m_datastore = AsyncMock()
     with TestClient(app) as client:
         response = client.get("/airports/search", params=params)
     assert response.status_code == 422
 
 
-def test_get_amenity(app):
+get_amenity_params = [
+    pytest.param(
+        "get_amenity",
+        {"id": 1},
+        models.Amenity(
+            id=1,
+            name="get_amenity",
+            description="FOO",
+            location="BAR",
+            terminal="FOO BAR",
+            category="FEE",
+            hour="BAZ",
+        ),
+        {
+            "id": 1,
+            "name": "get_amenity",
+            "description": "FOO",
+            "location": "BAR",
+            "terminal": "FOO BAR",
+            "category": "FEE",
+            "hour": "BAZ",
+            "content": None,
+            "embedding": None,
+        },
+    )
+]
+
+
+@pytest.mark.parametrize(
+    "method_name, params, mock_return, expected", get_amenity_params
+)
+@patch.object(datastore, "create")
+def test_get_amenity(m_datastore, app, method_name, params, mock_return, expected):
     with TestClient(app) as client:
-        response = client.get(
-            "/amenities",
-            params={
-                "id": 1,
-            },
-        )
+        with patch.object(
+            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+        ) as mock_method:
+            response = client.get(
+                "/amenities",
+                params={
+                    "id": 1,
+                },
+            )
     assert response.status_code == 200
     output = response.json()
-    assert output
+    assert output == expected
     assert models.Amenity.model_validate(output)
 
 
-def test_amenities_search(app):
-    with TestClient(app) as client:
-        response = client.get(
-            "/amenities/search",
-            params={
-                "query": "A place to get food.",
-                "top_k": 5,
+amenities_search_params = [
+    pytest.param(
+        "amenities_search",
+        {
+            "query": "A place to get food.",
+            "top_k": 2,
+        },
+        [
+            models.Amenity(
+                id=1,
+                name="amenities_search",
+                description="FOO",
+                location="BAR",
+                terminal="FOO BAR",
+                category="FEE",
+                hour="BAZ",
+            ),
+            models.Amenity(
+                id=2,
+                name="amenities_search",
+                description="FOO",
+                location="BAR",
+                terminal="FOO BAR",
+                category="FEE",
+                hour="BAZ",
+            ),
+        ],
+        [
+            {
+                "id": 1,
+                "name": "amenities_search",
+                "description": "FOO",
+                "location": "BAR",
+                "terminal": "FOO BAR",
+                "category": "FEE",
+                "hour": "BAZ",
+                "content": None,
+                "embedding": None,
             },
-        )
+            {
+                "id": 2,
+                "name": "amenities_search",
+                "description": "FOO",
+                "location": "BAR",
+                "terminal": "FOO BAR",
+                "category": "FEE",
+                "hour": "BAZ",
+                "content": None,
+                "embedding": None,
+            },
+        ],
+    )
+]
+
+
+@pytest.mark.parametrize(
+    "method_name, params, mock_return, expected", amenities_search_params
+)
+@patch.object(datastore, "create")
+def test_amenities_search(m_datastore, app, method_name, params, mock_return, expected):
+    with TestClient(app) as client:
+        with patch.object(
+            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+        ) as mock_method:
+            response = client.get(
+                "/amenities/search",
+                params=params,
+            )
     assert response.status_code == 200
     output = response.json()
-    assert len(output) == 5
-    assert output[0]
+    assert len(output) == params["top_k"]
+    assert output == expected
     assert models.Amenity.model_validate(output[0])
 
 
-def test_get_flight(app):
+get_flight_params = [
+    pytest.param(
+        "get_flight",
+        {"flight_id": 1935},
+        models.Flight(
+            id=1,
+            airline="get_flight",
+            flight_number="FOOBAR",
+            departure_airport="FOO",
+            arrival_airport="BAR",
+            departure_time=datetime.strptime(
+                "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+            ),
+            arrival_time=datetime.strptime("2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"),
+            departure_gate="BAZ",
+            arrival_gate="QUX",
+        ),
+        {
+            "id": 1,
+            "airline": "get_flight",
+            "flight_number": "FOOBAR",
+            "departure_airport": "FOO",
+            "arrival_airport": "BAR",
+            "departure_time": "2023-01-01T05:57:00",
+            "arrival_time": "2023-01-01T12:13:00",
+            "departure_gate": "BAZ",
+            "arrival_gate": "QUX",
+        },
+        id="successful",
+    )
+]
+
+
+@pytest.mark.parametrize(
+    "method_name, params, mock_return, expected", get_flight_params
+)
+@patch.object(datastore, "create")
+def test_get_flight(m_datastore, app, method_name, params, mock_return, expected):
     with TestClient(app) as client:
-        response = client.get(
-            "/flights",
-            params={"flight_id": 1935},
-        )
+        with patch.object(
+            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+        ) as mock_method:
+            response = client.get(
+                "/flights",
+                params=params,
+            )
     assert response.status_code == 200
     output = response.json()
-    assert output
+    assert output == expected
     assert models.Flight.model_validate(output)
 
 
-@pytest.mark.parametrize(
-    "params",
-    [
-        pytest.param(
+search_flights_params = [
+    pytest.param(
+        "search_flights_by_airports",
+        {
+            "departure_airport": "LAX",
+            "arrival_airport": "SFO",
+            "date": "2023-11-01",
+        },
+        [
+            models.Flight(
+                id=1,
+                airline="search_flights_by_airports",
+                flight_number="FOOBAR",
+                departure_airport="FOO",
+                arrival_airport="BAR",
+                departure_time=datetime.strptime(
+                    "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                arrival_time=datetime.strptime(
+                    "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                departure_gate="BAZ",
+                arrival_gate="QUX",
+            )
+        ],
+        [
             {
-                "departure_airport": "LAX",
-                "arrival_airport": "SFO",
-                "date": "2023-11-01",
-            },
-            id="departure_and_arrival_airport",
-        ),
-        pytest.param(
-            {"arrival_airport": "SFO", "date": "2023-11-01"},
-            id="arrival_airport_only",
-        ),
-        pytest.param(
-            {"departure_airport": "EWR", "date": "2023-11-01"},
-            id="departure_airport_only",
-        ),
-        pytest.param(
-            {"airline": "DL", "flight_number": "1106"},
-            id="flight_number",
-        ),
-    ],
+                "id": 1,
+                "airline": "search_flights_by_airports",
+                "flight_number": "FOOBAR",
+                "departure_airport": "FOO",
+                "arrival_airport": "BAR",
+                "departure_time": "2023-01-01T05:57:00",
+                "arrival_time": "2023-01-01T12:13:00",
+                "departure_gate": "BAZ",
+                "arrival_gate": "QUX",
+            }
+        ],
+        id="departure_and_arrival_airport",
+    ),
+    pytest.param(
+        "search_flights_by_airports",
+        {"arrival_airport": "SFO", "date": "2023-11-01"},
+        [
+            models.Flight(
+                id=1,
+                airline="search_flights_by_airports",
+                flight_number="FOOBAR",
+                departure_airport="FOO",
+                arrival_airport="BAR",
+                departure_time=datetime.strptime(
+                    "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                arrival_time=datetime.strptime(
+                    "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                departure_gate="BAZ",
+                arrival_gate="QUX",
+            )
+        ],
+        [
+            {
+                "id": 1,
+                "airline": "search_flights_by_airports",
+                "flight_number": "FOOBAR",
+                "departure_airport": "FOO",
+                "arrival_airport": "BAR",
+                "departure_time": "2023-01-01T05:57:00",
+                "arrival_time": "2023-01-01T12:13:00",
+                "departure_gate": "BAZ",
+                "arrival_gate": "QUX",
+            }
+        ],
+        id="arrival_airport_only",
+    ),
+    pytest.param(
+        "search_flights_by_airports",
+        {"departure_airport": "EWR", "date": "2023-11-01"},
+        [
+            models.Flight(
+                id=1,
+                airline="search_flights_by_airports",
+                flight_number="FOOBAR",
+                departure_airport="FOO",
+                arrival_airport="BAR",
+                departure_time=datetime.strptime(
+                    "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                arrival_time=datetime.strptime(
+                    "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                departure_gate="BAZ",
+                arrival_gate="QUX",
+            )
+        ],
+        [
+            {
+                "id": 1,
+                "airline": "search_flights_by_airports",
+                "flight_number": "FOOBAR",
+                "departure_airport": "FOO",
+                "arrival_airport": "BAR",
+                "departure_time": "2023-01-01T05:57:00",
+                "arrival_time": "2023-01-01T12:13:00",
+                "departure_gate": "BAZ",
+                "arrival_gate": "QUX",
+            }
+        ],
+        id="departure_airport_only",
+    ),
+    pytest.param(
+        "search_flights_by_number",
+        {"airline": "DL", "flight_number": "1106"},
+        [
+            models.Flight(
+                id=1,
+                airline="search_flights_by_number",
+                flight_number="FOOBAR",
+                departure_airport="FOO",
+                arrival_airport="BAR",
+                departure_time=datetime.strptime(
+                    "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                arrival_time=datetime.strptime(
+                    "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                departure_gate="BAZ",
+                arrival_gate="QUX",
+            )
+        ],
+        [
+            {
+                "id": 1,
+                "airline": "search_flights_by_number",
+                "flight_number": "FOOBAR",
+                "departure_airport": "FOO",
+                "arrival_airport": "BAR",
+                "departure_time": "2023-01-01T05:57:00",
+                "arrival_time": "2023-01-01T12:13:00",
+                "departure_gate": "BAZ",
+                "arrival_gate": "QUX",
+            }
+        ],
+        id="airline_and_flight_number",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "method_name, params, mock_return, expected", search_flights_params
 )
-def test_search_flights(app, params):
+@patch.object(datastore, "create")
+def test_search_flights(m_datastore, app, method_name, params, mock_return, expected):
     with TestClient(app) as client:
-        response = client.get("/flights/search", params=params)
+        with patch.object(
+            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+        ) as mock_method:
+            response = client.get("/flights/search", params=params)
     assert response.status_code == 200
     output = response.json()
-    assert output[0]
+    assert output == expected
     assert models.Flight.model_validate(output[0])
 
 
-@pytest.mark.parametrize(
-    "params",
-    [
-        pytest.param(
-            {
-                "departure_airport": "LAX",
-                "arrival_airport": "SFO",
-            },
-            id="departure_and_arrival_airport",
-        ),
-        pytest.param(
-            {"arrival_airport": "SFO"},
-            id="arrival_airport_only",
-        ),
-        pytest.param(
-            {"departure_airport": "EWR"},
-            id="departure_airport_only",
-        ),
-        pytest.param(
-            {"flight_number": "1106"},
-            id="flight_number_only",
-        ),
-        pytest.param(
-            {"airline": "DL"},
-            id="airline_only",
-        ),
-    ],
-)
-def test_search_flights_with_bad_params(app, params):
+search_flights_bad_params = [
+    pytest.param(
+        {
+            "departure_airport": "LAX",
+            "arrival_airport": "SFO",
+        },
+        id="departure_and_arrival_airport",
+    ),
+    pytest.param(
+        {"arrival_airport": "SFO"},
+        id="arrival_airport_only",
+    ),
+    pytest.param(
+        {"departure_airport": "EWR"},
+        id="departure_airport_only",
+    ),
+    pytest.param(
+        {"flight_number": "1106"},
+        id="flight_number_only",
+    ),
+    pytest.param(
+        {"airline": "DL"},
+        id="airline_only",
+    ),
+]
+
+
+@pytest.mark.parametrize("params", search_flights_bad_params)
+@patch.object(datastore, "create")
+def test_search_flights_with_bad_params(m_datastore, app, params):
+    m_datastore = AsyncMock()
     with TestClient(app) as client:
         response = client.get("/flights/search", params=params)
     assert response.status_code == 422
