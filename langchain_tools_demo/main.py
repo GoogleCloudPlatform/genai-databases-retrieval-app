@@ -26,7 +26,7 @@ from langchain.agents.agent import AgentExecutor
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
-from agent import client_agents, init_agent
+from agent import user_agents, init_agent
 
 
 @asynccontextmanager
@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
     yield
     # FastAPI app shutdown event
     close_client_tasks = [
-        asyncio.create_task(c.client.close()) for c in client_agents.values()
+        asyncio.create_task(c.client.close()) for c in user_agents.values()
     ]
 
     asyncio.gather(*close_client_tasks)
@@ -77,14 +77,14 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     # Add user message to chat history
     request.session["messages"] += [{"role": "user", "content": prompt}]
     # Agent setup
-    if request.session["uuid"] in client_agents:
-        client_agent = client_agents[request.session["uuid"]]
+    if request.session["uuid"] in user_agents:
+        user_agent = user_agents[request.session["uuid"]]
     else:
-        client_agent = await init_agent()
-        client_agents[request.session["uuid"]] = client_agent
+        user_agent = await init_agent()
+        user_agents[request.session["uuid"]] = user_agent
     try:
         # Send prompt to LLM
-        response = await client_agent.agent.ainvoke({"input": prompt})
+        response = await user_agent.agent.ainvoke({"input": prompt})
         request.session["messages"] += [
             {"role": "assistant", "content": response["output"]}
         ]

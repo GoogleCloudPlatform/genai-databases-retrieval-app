@@ -36,7 +36,8 @@ BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 connector = None
 
 
-class ClientAgent:
+# Class for setting up a dedicated llm agent for each individual user
+class UserAgent:
     client: aiohttp.ClientSession
     agent: AgentExecutor
 
@@ -45,7 +46,7 @@ class ClientAgent:
         self.agent = agent
 
 
-client_agents: Dict[str, ClientAgent] = {}
+user_agents: Dict[str, UserAgent] = {}
 
 
 def get_id_token(url: str) -> str:
@@ -113,7 +114,7 @@ async def create_client_session() -> aiohttp.ClientSession:
 
 
 # Agent
-async def init_agent() -> ClientAgent:
+async def init_agent() -> UserAgent:
     """Load an agent executor with tools and LLM"""
     print("Initializing agent..")
     llm = VertexAI(max_output_tokens=512)
@@ -147,7 +148,7 @@ async def init_agent() -> ClientAgent:
     )
     agent.agent.llm_chain.prompt = prompt  # type: ignore
 
-    return ClientAgent(client, agent)
+    return UserAgent(client, agent)
 
 
 PREFIX = """SFO Airport Assistant helps travelers find their way at the airport.
