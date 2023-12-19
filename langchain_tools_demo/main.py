@@ -26,7 +26,7 @@ from langchain.agents.agent import AgentExecutor
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
-from agent import user_agents, init_agent
+from agent import init_agent, user_agents
 
 
 @asynccontextmanager
