@@ -75,7 +75,9 @@ async def login_google(
     request.session.clear()
     form_data = await request.form()
     user_id_token = form_data.get("credential", "")
-
+    # create new request session
+    request.session["uuid"] = str(uuid.uuid4())
+    request.session["messages"] = BASE_HISTORY
     user_agent = await init_agent(user_id_token)
     user_agents[request.session["uuid"]] = user_agent
 
