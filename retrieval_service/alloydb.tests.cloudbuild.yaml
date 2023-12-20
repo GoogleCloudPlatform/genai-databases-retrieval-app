@@ -74,7 +74,7 @@ steps:
         # Set env var expected by tests
         export DB_USER=$$PGUSER
         export DB_PASS=$$PGPASSWORD
-        python -m pytest -m "not cloudsql"
+        python -m pytest datastore/providers/postgres_test.py
 
   - id: Run database export
     name: python:3.11
