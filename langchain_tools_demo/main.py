@@ -19,9 +19,10 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import Body, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from google.oauth2 import id_token
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -65,6 +66,24 @@ async def index(request: Request):
     return templates.TemplateResponse(
         "index.html", {"request": request, "messages": request.session["messages"]}
     )
+
+
+@app.post("/login/google")
+async def login_google(
+    request: Request,
+):
+    form_data = await request.form()
+    user_id_token = form_data.get("credential", "")
+    try:
+        # Init a new agent
+        agent = init_agent(user_id_token)
+        user_agents[request.session["uuid"]] = agent
+
+        # Redirect to source URL
+        source_url = request.headers.get("Referer")
+        return RedirectResponse(url=source_url)
+    except ValueError:
+        print("Invalid token")
 
 
 @app.post("/chat", response_class=PlainTextResponse)

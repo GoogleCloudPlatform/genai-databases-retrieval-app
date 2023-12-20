@@ -70,12 +70,30 @@ def get_id_token(url: str) -> str:
         )
 
 
-def get_header() -> Optional[dict]:
+def convert_date(date_string: str) -> str:
+    """Convert date into appropriate date string"""
+    if date_string == "tomorrow":
+        converted = date.today() + timedelta(1)
+    elif date_string == "yesterday":
+        converted = date.today() - timedelta(1)
+    elif date_string != "null" and date_string != "today" and date_string is not None:
+        converted = dparser.parse(date_string, fuzzy=True).date()
+    else:
+        converted = date.today()
+
+    return converted.strftime("%Y-%m-%d")
+
+
+def get_header(user_id_token: Optional[str]) -> Optional[dict]:
     if "http://" in BASE_URL:
         return None
     else:
         # Append ID Token to make authenticated requests to Cloud Run services
-        headers = {"Authorization": f"Bearer {get_id_token(BASE_URL)}"}
+        headers = {
+            "Authorization": f"Bearer {get_id_token(BASE_URL)}",
+        }
+        if user_id_token is not None:
+            headers["User-Id-Token"] = f"Bearer {user_id_token}"
         return headers
 
 
@@ -91,7 +109,7 @@ async def handle_error_response(response):
         return f"Error sending {response.method} request to {str(response.url)}): {await response.text()}"
 
 
-async def create_client_session() -> aiohttp.ClientSession:
+async def create_client_session(user_id_token: Optional[str]) -> aiohttp.ClientSession:
     return aiohttp.ClientSession(
         connector=await get_connector(),
         connector_owner=False,  # Prevents connector being closed when closing session
@@ -101,14 +119,14 @@ async def create_client_session() -> aiohttp.ClientSession:
 
 
 # Agent
-async def init_agent() -> UserAgent:
+async def init_agent(user_id_token: Optional[str]) -> UserAgent:
     """Load an agent executor with tools and LLM"""
     print("Initializing agent..")
     llm = VertexAI(max_output_tokens=512, model_name="gemini-pro")
     memory = ConversationBufferMemory(
         memory_key="chat_history", input_key="input", output_key="output"
     )
-    client = await create_client_session()
+    client = await create_client_session(user_id_token)
     tools = await initialize_tools(client)
     agent = initialize_agent(
         tools,

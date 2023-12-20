@@ -47,6 +47,15 @@ body {
     font-size: 38px;
 }
 
+
+#g_id_onload,
+.g_id_signin {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+
 .chat-wrapper {
     display: flex;
     flex-direction: column;
