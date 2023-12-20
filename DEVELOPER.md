@@ -76,7 +76,7 @@
     python main.py
     ```
 
-    Note: for hot reloading of the app use: `uvicorn main:app --host 0.0.0.0 --reload`
+    Note: for hot reloading of the app use: `uvicorn main:app --host 0.0.0.0 --reload --port 8081`
 
 1. View app at `http://localhost:8081/`
 

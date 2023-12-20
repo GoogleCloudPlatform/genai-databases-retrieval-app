@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
     yield
     # FastAPI app shutdown event
     close_client_tasks = [
-        asyncio.create_task(c.client.close()) for c in user_agents.values()
+        asyncio.create_task(a.client.close()) for a in user_agents.values()
     ]
 
     asyncio.gather(*close_client_tasks)
@@ -74,16 +74,13 @@ async def login_google(
 ):
     form_data = await request.form()
     user_id_token = form_data.get("credential", "")
-    try:
-        # Init a new agent
-        agent = init_agent(user_id_token)
-        user_agents[request.session["uuid"]] = agent
 
-        # Redirect to source URL
-        source_url = request.headers.get("Referer")
-        return RedirectResponse(url=source_url)
-    except ValueError:
-        print("Invalid token")
+    user_agent = await init_agent(user_id_token)
+    user_agents[request.session["uuid"]] = user_agent
+
+    # Redirect to source URL
+    source_url = request.headers.get("Referer")
+    return RedirectResponse(url=source_url)
 
 
 @app.post("/chat", response_class=PlainTextResponse)
@@ -92,7 +89,6 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     # Retrieve user prompt
     if not prompt:
         raise HTTPException(status_code=400, detail="Error: No user query")
-
     if "uuid" not in request.session:
         raise HTTPException(
             status_code=400, detail="Error: Invoke index handler before start chatting"
@@ -111,7 +107,6 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
         # Return assistant response
         return markdown(response["output"])
     except Exception as err:
-        print(err)
         raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
 
 
