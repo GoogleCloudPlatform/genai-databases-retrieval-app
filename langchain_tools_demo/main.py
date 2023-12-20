@@ -68,6 +68,7 @@ def index(request: Request):
 async def login_google(
     request: Request,
 ):
+    request.session.clear()
     form_data = await request.form()
     user_id_token = form_data.get("credential", "")
 
