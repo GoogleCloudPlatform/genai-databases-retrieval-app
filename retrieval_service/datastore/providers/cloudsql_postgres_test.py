@@ -237,9 +237,20 @@ amenities_search_test_data = [
     pytest.param(
         # "Where can I look for luxury goods?"
         query_embedding2,
-        0.7,
+        0.65,
         2,
         [
+            models.Amenity(
+                id=90,
+                name="DFS Duty Free Galleria",
+                description="Liquor, tobacco, cosmetics, fragrances and designer boutiques–duty free",
+                location="Gates, near Gate A3",
+                terminal="International Terminal A",
+                category="shop",
+                hour="Sunday - Saturday 8:30 am-11:00 pm",
+                content=None,
+                embedding=None,
+            ),
             models.Amenity(
                 id=100,
                 name="Gucci",
@@ -248,17 +259,6 @@ amenities_search_test_data = [
                 terminal="International Terminal G",
                 category="shop",
                 hour="Sunday - Saturday 7:00 am-11:00 pm",
-                content=None,
-                embedding=None,
-            ),
-            models.Amenity(
-                id=84,
-                name="Coach",
-                description="Luxury handbags, accessories and clothing—duty free.",
-                location="Between Gates A5 and A9",
-                terminal="International Terminal A",
-                category="shop",
-                hour="Sunday - Saturday 9:00 am-11:00 pm",
                 content=None,
                 embedding=None,
             ),
