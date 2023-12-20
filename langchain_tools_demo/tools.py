@@ -106,6 +106,37 @@ async def get_airport(id: int):
     return await response.json()
 
 
+class AirportSearchInput(BaseModel):
+    country: Optional[str] = Field(description="Country")
+    city: Optional[str] = Field(description="City")
+    name: Optional[str] = Field(description="Airport name")
+
+
+async def search_airports(country: str, city: str, name: str):
+    response = await get_request(
+        f"{BASE_URL}/airports/search",
+        {
+            "country": country,
+            "city": city,
+            "name": name,
+        },
+    )
+    if response.status != 200:
+        return f"Error searching airports: {response}"
+
+    num = 2
+    response_json = await response.json()
+    if len(response_json) < 1:
+        return "There are no airports matching that query. Let the user know there are no results."
+    elif len(response_json) > num:
+        return (
+            f"There are {len(response_json)} airports matching that query. Here are the first {num} results:\n"
+            + " ".join([f"{response_json[i]}" for i in range(num)])
+        )
+    else:
+        return "\n".join([f"{r}" for r in response_json])
+
+
 class FlightIdInput(BaseModel):
     id: int = Field(description="Unique identifier")
 
@@ -210,6 +241,35 @@ def initialize_tools():
                             Takes an id and returns info on the airport.
                         """,
             args_schema=AirportIdInput,
+        ),
+        StructuredTool.from_function(
+            coroutine=search_airports,
+            name="Search Airport",
+            description="""
+                        Use this tool to list all airports matching search criteria.
+                        Takes at least one of country, city, name, or all and returns all matching airports.
+                        The agent can decide to return the results directly to the user.
+                        Input of this tool must be in JSON format and include all three inputs - country, city, name.
+                        Example:
+                        {{
+                            "country": "United States",
+                            "city": "San Francisco",
+                            "name": null
+                        }}
+                        Example:
+                        {{
+                            "country": null,
+                            "city": "Goroka",
+                            "name": "Goroka"
+                        }}
+                        Example:
+                        {{
+                            "country": "Mexico",
+                            "city": null,
+                            "name": null
+                        }}
+                        """,
+            args_schema=AirportSearchInput,
         ),
         StructuredTool.from_function(
             coroutine=get_flight,
