@@ -49,29 +49,30 @@ class AirportSearchInput(BaseModel):
     name: Optional[str] = Field(description="Airport name")
 
 
-async def search_airports(country: str, city: str, name: str):
-    response = await get_request(
-        f"{BASE_URL}/airports/search",
-        {
-            "country": country,
-            "city": city,
-            "name": name,
-        },
-    )
-    if response.status != 200:
-        return f"Error searching airports: {response}"
-
-    num = 2
-    response_json = await response.json()
-    if len(response_json) < 1:
-        return "There are no airports matching that query. Let the user know there are no results."
-    elif len(response_json) > num:
-        return (
-            f"There are {len(response_json)} airports matching that query. Here are the first {num} results:\n"
-            + " ".join([f"{response_json[i]}" for i in range(num)])
+async def generate_search_airports(client: aiohttp.ClientSession):
+    async def search_airports(country: str, city: str, name: str):
+        response = await client.get(
+            url=f"{BASE_URL}/airports/search",
+            params={
+                "country": country,
+                "city": city,
+                "name": name,
+            },
         )
-    else:
-        return "\n".join([f"{r}" for r in response_json])
+
+        num = 2
+        response_json = await response.json()
+        if len(response_json) < 1:
+            return "There are no airports matching that query. Let the user know there are no results."
+        elif len(response_json) > num:
+            return (
+                f"There are {len(response_json)} airports matching that query. Here are the first {num} results:\n"
+                + " ".join([f"{response_json[i]}" for i in range(num)])
+            )
+        else:
+            return "\n".join([f"{r}" for r in response_json])
+
+    return search_airports
 
 
 class FlightIdInput(BaseModel):
@@ -197,7 +198,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             args_schema=AirportIdInput,
         ),
         StructuredTool.from_function(
-            coroutine=search_airports,
+            coroutine=generate_search_airports,
             name="Search Airport",
             description="""
                         Use this tool to list all airports matching search criteria.
@@ -226,7 +227,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             args_schema=AirportSearchInput,
         ),
         StructuredTool.from_function(
-            coroutine=get_flight,
+            coroutine=await generate_get_flight(client),
             name="Get Flight",
             description="""
                         Use this tool to get info for a specific flight.
