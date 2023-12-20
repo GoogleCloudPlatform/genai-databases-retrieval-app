@@ -22,7 +22,7 @@ import pytest_asyncio
 import models
 
 from .. import datastore
-from . import postgres
+from . import cloudsql_postgres
 from .test_data import query_embedding1, query_embedding2, query_embedding3
 from .utils import get_env_var
 
@@ -45,20 +45,37 @@ def db_name() -> str:
 
 
 @pytest.fixture(scope="module")
-def db_host() -> str:
-    return get_env_var("DB_HOST", "ip address of a postgres database")
+def db_project() -> str:
+    return get_env_var("DB_PROJECT", "project id for google cloud")
+
+
+@pytest.fixture(scope="module")
+def db_region() -> str:
+    return get_env_var("DB_REGION", "region for cloud sql instance")
+
+
+@pytest.fixture(scope="module")
+def db_instance() -> str:
+    return get_env_var("DB_INSTANCE", "instance for cloud sql")
 
 
 @pytest_asyncio.fixture(scope="module")
 async def ds(
-    db_user: str, db_pass: str, db_name: str, db_host: str
+    db_user: str,
+    db_pass: str,
+    db_name: str,
+    db_project: str,
+    db_region: str,
+    db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
-    cfg = postgres.Config(
-        kind="postgres",
+    cfg = cloudsql_postgres.Config(
+        kind="cloudsql-postgres",
         user=db_user,
         password=db_pass,
         database=db_name,
-        host=IPv4Address(db_host),
+        project=db_project,
+        region=db_region,
+        instance=db_instance,
     )
     ds = await datastore.create(cfg)
     if ds is None:
@@ -69,7 +86,7 @@ async def ds(
     print("closed database")
 
 
-async def test_get_airport_by_id(ds: postgres.Client):
+async def test_get_airport_by_id(ds: cloudsql_postgres.Client):
     res = await ds.get_airport_by_id(1)
     expected = models.Airport(
         id=1,
@@ -88,7 +105,7 @@ async def test_get_airport_by_id(ds: postgres.Client):
         pytest.param("sfo", id="lower_case"),
     ],
 )
-async def test_get_airport_by_iata(ds: postgres.Client, iata: str):
+async def test_get_airport_by_iata(ds: cloudsql_postgres.Client, iata: str):
     res = await ds.get_airport_by_iata(iata)
     expected = models.Airport(
         id=3270,
@@ -172,7 +189,7 @@ search_airports_test_data = [
 
 @pytest.mark.parametrize("country, city, name, expected", search_airports_test_data)
 async def test_search_airports(
-    ds: postgres.Client,
+    ds: cloudsql_postgres.Client,
     country: str,
     city: str,
     name: str,
@@ -182,7 +199,7 @@ async def test_search_airports(
     assert res == expected
 
 
-async def test_get_amenity(ds: postgres.Client):
+async def test_get_amenity(ds: cloudsql_postgres.Client):
     res = await ds.get_amenity(1)
     expected = models.Amenity(
         id=1,
@@ -263,7 +280,7 @@ amenities_search_test_data = [
     "query_embedding, similarity_threshold, top_k, expected", amenities_search_test_data
 )
 async def test_amenities_search(
-    ds: postgres.Client,
+    ds: cloudsql_postgres.Client,
     query_embedding: List[float],
     similarity_threshold: float,
     top_k: int,
@@ -273,7 +290,7 @@ async def test_amenities_search(
     assert res == expected
 
 
-async def test_get_flight(ds: postgres.Client):
+async def test_get_flight(ds: cloudsql_postgres.Client):
     res = await ds.get_flight(1)
     expected = models.Flight(
         id=1,
@@ -340,7 +357,10 @@ search_flights_by_number_test_data = [
     "airline, number, expected", search_flights_by_number_test_data
 )
 async def test_search_flights_by_number(
-    ds: postgres.Client, airline: str, number: str, expected: List[models.Flight]
+    ds: cloudsql_postgres.Client,
+    airline: str,
+    number: str,
+    expected: List[models.Flight],
 ):
     res = await ds.search_flights_by_number(airline, number)
     assert res == expected
@@ -460,7 +480,7 @@ search_flights_by_airports_test_data = [
     search_flights_by_airports_test_data,
 )
 async def test_search_flights_by_airports(
-    ds: postgres.Client,
+    ds: cloudsql_postgres.Client,
     date: str,
     departure_airport: str,
     arrival_airport: str,
