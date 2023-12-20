@@ -51,13 +51,13 @@ class AirportSearchInput(BaseModel):
 
 async def generate_search_airports(client: aiohttp.ClientSession):
     async def search_airports(country: str, city: str, name: str):
+        params = {
+            "country": country,
+            "city": city,
+            "name": name,
+        }
         response = await client.get(
-            url=f"{BASE_URL}/airports/search",
-            params={
-                "country": country,
-                "city": city,
-                "name": name,
-            },
+            url=f"{BASE_URL}/airports/search", params=filter_none_values(params)
         )
 
         num = 2
@@ -118,9 +118,9 @@ class ListFlights(BaseModel):
 
 async def generate_list_flights(client: aiohttp.ClientSession):
     async def list_flights(
-        departure_airport: Optional[str],
-        arrival_airport: Optional[str],
-        date: Optional[str],
+        departure_airport: str,
+        arrival_airport: str,
+        date: str,
     ):
         params = {
             "departure_airport": departure_airport,
@@ -176,7 +176,8 @@ async def generate_search_amenities(client: aiohttp.ClientSession):
         B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
         """
         response = await client.get(
-            url=f"{BASE_URL}/amenities/search", params={"top_k": "5", "query": query}
+            url=f"{BASE_URL}/amenities/search",
+            params={"top_k": "5", "query": query},
         )
 
         response = await response.json()
@@ -198,7 +199,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             args_schema=AirportIdInput,
         ),
         StructuredTool.from_function(
-            coroutine=generate_search_airports,
+            coroutine=await generate_search_airports(client),
             name="Search Airport",
             description="""
                         Use this tool to list all airports matching search criteria.
