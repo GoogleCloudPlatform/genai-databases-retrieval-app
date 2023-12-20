@@ -27,7 +27,7 @@ from . import postgres
 from .test_data import query_embedding1, query_embedding2, query_embedding3
 from .utils import get_env_var
 
-pytestmark = [pytest.mark.asyncio(scope="module"), pytest.mark.postgres]
+pytestmark = pytest.mark.asyncio(scope="module")
 
 
 @pytest.fixture(scope="module")
