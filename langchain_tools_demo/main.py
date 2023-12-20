@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import os
 import uuid
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import Body, FastAPI, HTTPException, Request
@@ -24,25 +26,29 @@ from langchain.agents.agent import AgentExecutor
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
-from agent import init_agent
-from tools import session
+from agent import init_agent, user_agents
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # FastAPI app startup event
+    print("Loading application...")
+    yield
+    # FastAPI app shutdown event
+    close_client_tasks = [
+        asyncio.create_task(c.client.close()) for c in user_agents.values()
+    ]
+
+    asyncio.gather(*close_client_tasks)
+
+
+# FastAPI setup
+app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 # TODO: set secret_key for production
 app.add_middleware(SessionMiddleware, secret_key="SECRET_KEY")
 templates = Jinja2Templates(directory="templates")
-
-agents: dict[str, AgentExecutor] = {}
 BASE_HISTORY = [{"role": "assistant", "content": "How can I help you?"}]
-
-
-async def on_shutdown():
-    if session is not None:
-        await session.close()
-
-
-app.add_event_handler("shutdown", on_shutdown)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -71,14 +77,14 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     # Add user message to chat history
     request.session["messages"] += [{"role": "user", "content": prompt}]
     # Agent setup
-    if request.session["uuid"] in agents:
-        agent = agents[request.session["uuid"]]
+    if request.session["uuid"] in user_agents:
+        user_agent = user_agents[request.session["uuid"]]
     else:
-        agent = init_agent()
-        agents[request.session["uuid"]] = agent
+        user_agent = await init_agent()
+        user_agents[request.session["uuid"]] = user_agent
     try:
         # Send prompt to LLM
-        response = await agent.ainvoke({"input": prompt})
+        response = await user_agent.agent.ainvoke({"input": prompt})
         request.session["messages"] += [
             {"role": "assistant", "content": response["output"]}
         ]

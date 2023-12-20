@@ -13,81 +13,17 @@
 # limitations under the License.
 
 import os
-from datetime import date, timedelta
 from typing import Optional
 
 import aiohttp
-import dateutil.parser as dparser
-import google.auth.transport.requests  # type: ignore
-import google.oauth2.id_token  # type: ignore
 from langchain.tools import StructuredTool, tool
 from pydantic.v1 import BaseModel, Field
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
-session = None
 
 
-# create a new client session
-async def get_session():
-    if session is None:
-        client_session = aiohttp.ClientSession()
-    return client_session
-
-
-# Helper functions
-async def get_request(url: str, params: dict) -> aiohttp.ClientResponse:
-    """Helper method to make backend requests"""
-    session = await get_session()
-    params = {key: value for key, value in params.items() if value is not None}
-    if "http://" in url:
-        response = await session.get(
-            url,
-            params=params,
-        )
-        return response
-    else:
-        # Append ID Token to make authenticated requests to Cloud Run services
-        response = await session.get(
-            url,
-            params=params,
-            headers={"Authorization": f"Bearer {get_id_token(url)}"},
-        )
-        return response
-
-
-def get_id_token(url: str) -> str:
-    """Helper method to generate ID tokens for authenticated requests"""
-    # Use Application Default Credentials on Cloud Run
-    if os.getenv("K_SERVICE"):
-        auth_req = google.auth.transport.requests.Request()
-        return google.oauth2.id_token.fetch_id_token(auth_req, url)
-    else:
-        # Use gcloud credentials locally
-        import subprocess
-
-        return (
-            subprocess.run(
-                ["gcloud", "auth", "print-identity-token"],
-                stdout=subprocess.PIPE,
-                check=True,
-            )
-            .stdout.strip()
-            .decode()
-        )
-
-
-def convert_date(date_string: str) -> str:
-    """Convert date into appropriate date string"""
-    if date_string == "tomorrow":
-        converted = date.today() + timedelta(1)
-    elif date_string == "yesterday":
-        converted = date.today() - timedelta(1)
-    elif date_string != "null" and date_string != "today" and date_string is not None:
-        converted = dparser.parse(date_string, fuzzy=True).date()
-    else:
-        converted = date.today()
-
-    return converted.strftime("%Y-%m-%d")
+def filter_none_values(params: dict) -> dict:
+    return {key: value for key, value in params.items() if value is not None}
 
 
 # Tools
@@ -95,15 +31,16 @@ class AirportIdInput(BaseModel):
     id: int = Field(description="Unique identifier")
 
 
-async def get_airport(id: int):
-    response = await get_request(
-        f"{BASE_URL}/airports",
-        {"id": id},
-    )
-    if response.status != 200:
-        return f"Error trying to find airport: {response}"
+async def generate_get_airport(client: aiohttp.ClientSession):
+    async def get_airport(id: int):
+        response = await client.get(
+            url=f"{BASE_URL}/airports",
+            params={"id": id},
+        )
 
-    return await response.json()
+        return await response.json()
+
+    return get_airport
 
 
 class AirportSearchInput(BaseModel):
@@ -112,44 +49,46 @@ class AirportSearchInput(BaseModel):
     name: Optional[str] = Field(description="Airport name")
 
 
-async def search_airports(country: str, city: str, name: str):
-    response = await get_request(
-        f"{BASE_URL}/airports/search",
-        {
-            "country": country,
-            "city": city,
-            "name": name,
-        },
-    )
-    if response.status != 200:
-        return f"Error searching airports: {response}"
-
-    num = 2
-    response_json = await response.json()
-    if len(response_json) < 1:
-        return "There are no airports matching that query. Let the user know there are no results."
-    elif len(response_json) > num:
-        return (
-            f"There are {len(response_json)} airports matching that query. Here are the first {num} results:\n"
-            + " ".join([f"{response_json[i]}" for i in range(num)])
+async def generate_search_airports(client: aiohttp.ClientSession):
+    async def search_airports(country: str, city: str, name: str):
+        response = await client.get(
+            url=f"{BASE_URL}/airports/search",
+            params={
+                "country": country,
+                "city": city,
+                "name": name,
+            },
         )
-    else:
-        return "\n".join([f"{r}" for r in response_json])
+
+        num = 2
+        response_json = await response.json()
+        if len(response_json) < 1:
+            return "There are no airports matching that query. Let the user know there are no results."
+        elif len(response_json) > num:
+            return (
+                f"There are {len(response_json)} airports matching that query. Here are the first {num} results:\n"
+                + " ".join([f"{response_json[i]}" for i in range(num)])
+            )
+        else:
+            return "\n".join([f"{r}" for r in response_json])
+
+    return search_airports
 
 
 class FlightIdInput(BaseModel):
     id: int = Field(description="Unique identifier")
 
 
-async def get_flight(id: int):
-    response = await get_request(
-        f"{BASE_URL}/flights",
-        {"flight_id": id},
-    )
-    if response.status != 200:
-        return f"Error trying to find flight: {response}"
+async def generate_get_flight(client: aiohttp.ClientSession):
+    async def get_flight(id: int):
+        response = await client.get(
+            url=f"{BASE_URL}/flights",
+            params={"flight_id": id},
+        )
 
-    return await response.json()
+        return await response.json()
+
+    return get_flight
 
 
 class FlightNumberInput(BaseModel):
@@ -157,15 +96,16 @@ class FlightNumberInput(BaseModel):
     flight_number: str = Field(description="1 to 4 digit number")
 
 
-async def search_flights_by_number(airline: str, flight_number: str):
-    response = await get_request(
-        f"{BASE_URL}/flights/search",
-        {"airline": airline, "flight_number": flight_number},
-    )
-    if response.status != 200:
-        return f"Error trying to find flight: {response}"
+async def generate_search_flights_by_number(client: aiohttp.ClientSession):
+    async def search_flights_by_number(airline: str, flight_number: str):
+        response = await client.get(
+            url=f"{BASE_URL}/flights/search",
+            params={"airline": airline, "flight_number": flight_number},
+        )
 
-    return await response.json()
+        return await response.json()
+
+    return search_flights_by_number
 
 
 class ListFlights(BaseModel):
@@ -176,29 +116,35 @@ class ListFlights(BaseModel):
     date: Optional[str] = Field(description="Date of flight departure")
 
 
-async def list_flights(departure_airport: str, arrival_airport: str, date: str):
-    response = await get_request(
-        f"{BASE_URL}/flights/search",
-        {
+async def generate_list_flights(client: aiohttp.ClientSession):
+    async def list_flights(
+        departure_airport: Optional[str],
+        arrival_airport: Optional[str],
+        date: Optional[str],
+    ):
+        params = {
             "departure_airport": departure_airport,
             "arrival_airport": arrival_airport,
             "date": date,
-        },
-    )
-    if response.status != 200:
-        return f"Error searching flights: {response}"
-
-    num = 2
-    response_json = await response.json()
-    if len(response_json) < 1:
-        return "There are no flights matching that query. Let the user know there are no results."
-    elif len(response_json) > num:
-        return (
-            f"There are {len(response_json)} flights matching that query. Here are the first {num} results:\n"
-            + " ".join([f"{response_json[i]}" for i in range(num)])
+        }
+        response = await client.get(
+            url=f"{BASE_URL}/flights/search",
+            params=filter_none_values(params),
         )
-    else:
-        return "\n".join([f"{r}" for r in response_json])
+
+        num = 2
+        response_json = await response.json()
+        if len(response_json) < 1:
+            return "There are no flights matching that query. Let the user know there are no results."
+        elif len(response_json) > num:
+            return (
+                f"There are {len(response_json)} flights matching that query. Here are the first {num} results:\n"
+                + " ".join([f"{response_json[i]}" for i in range(num)])
+            )
+        else:
+            return "\n".join([f"{r}" for r in response_json])
+
+    return list_flights
 
 
 # Amenities
@@ -206,35 +152,44 @@ class AmenityIdInput(BaseModel):
     id: int = Field(description="Unique identifier")
 
 
-async def get_amenity(id: int):
-    response = await get_request(
-        f"{BASE_URL}/amenities",
-        {"id": id},
-    )
-    if response.status != 200:
-        return f"Error trying to find amenity: {response}"
-    return await response.json()
+async def generate_get_amenity(client: aiohttp.ClientSession):
+    async def get_amenity(id: int):
+        response = await client.get(url=f"{BASE_URL}/amenities", params={"id": id})
+        return await response.json()
+
+    return get_amenity
 
 
 class QueryInput(BaseModel):
     query: str = Field(description="Search query")
 
 
-async def search_amenities(query: str):
-    response = await get_request(
-        f"{BASE_URL}/amenities/search", {"top_k": "5", "query": query}
-    )
-    if response.status != 200:
-        return f"Error searching amenities: {response}"
+async def generate_search_amenities(client: aiohttp.ClientSession):
+    async def search_amenities(query: str):
+        """
+        Use this tool to search amenities by name or to recommended airport amenities at SFO.
+        If user provides flight info, use 'Get Flight' and 'Get Flights by Number'
+        first to get gate info and location.
+        Only recommend amenities that are returned by this query.
+        Find amenities close to the user by matching the terminal and then comparing
+        the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
+        B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
+        """
+        response = await client.get(
+            url=f"{BASE_URL}/amenities/search", params={"top_k": "5", "query": query}
+        )
 
-    return await response.json()
+        response = await response.json()
+        return response
+
+    return search_amenities
 
 
 # Tools for agent
-def initialize_tools():
+async def initialize_tools(client: aiohttp.ClientSession):
     return [
         StructuredTool.from_function(
-            coroutine=get_airport,
+            coroutine=await generate_get_airport(client),
             name="Get Airport",
             description="""Use this tool to get info for a specific airport.
                             Do NOT guess an airport id.
@@ -243,7 +198,7 @@ def initialize_tools():
             args_schema=AirportIdInput,
         ),
         StructuredTool.from_function(
-            coroutine=search_airports,
+            coroutine=generate_search_airports,
             name="Search Airport",
             description="""
                         Use this tool to list all airports matching search criteria.
@@ -272,7 +227,7 @@ def initialize_tools():
             args_schema=AirportSearchInput,
         ),
         StructuredTool.from_function(
-            coroutine=get_flight,
+            coroutine=await generate_get_flight(client),
             name="Get Flight",
             description="""
                         Use this tool to get info for a specific flight.
@@ -286,7 +241,7 @@ def initialize_tools():
             args_schema=FlightIdInput,
         ),
         StructuredTool.from_function(
-            coroutine=search_flights_by_number,
+            coroutine=await generate_search_flights_by_number(client),
             name="Search Flights By Flight Number",
             description="""
                         Use this tool to get info for a specific flight. Do NOT use this tool with a flight id.
@@ -299,7 +254,7 @@ def initialize_tools():
             args_schema=FlightNumberInput,
         ),
         StructuredTool.from_function(
-            coroutine=list_flights,
+            coroutine=await generate_list_flights(client),
             name="List Flights",
             description="""
                         Use this tool to list all flights matching search criteria.
@@ -328,7 +283,7 @@ def initialize_tools():
             args_schema=ListFlights,
         ),
         StructuredTool.from_function(
-            coroutine=get_amenity,
+            coroutine=await generate_get_amenity(client),
             name="Get Amenity",
             description="""
                         Use this tool to get info for a specific airport amenity.
@@ -339,7 +294,7 @@ def initialize_tools():
             args_schema=AmenityIdInput,
         ),
         StructuredTool.from_function(
-            coroutine=search_amenities,
+            coroutine=await generate_search_amenities(client),
             name="Search Amenities",
             description="""
                         Use this tool to search amenities by name or to recommended airport amenities at SFO.
@@ -353,7 +308,3 @@ def initialize_tools():
             args_schema=QueryInput,
         ),
     ]
-
-
-# Tools for agent
-tools = initialize_tools()
