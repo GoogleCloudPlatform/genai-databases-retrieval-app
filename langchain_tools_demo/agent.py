@@ -70,20 +70,6 @@ def get_id_token(url: str) -> str:
         )
 
 
-def convert_date(date_string: str) -> str:
-    """Convert date into appropriate date string"""
-    if date_string == "tomorrow":
-        converted = date.today() + timedelta(1)
-    elif date_string == "yesterday":
-        converted = date.today() - timedelta(1)
-    elif date_string != "null" and date_string != "today" and date_string is not None:
-        converted = dparser.parse(date_string, fuzzy=True).date()
-    else:
-        converted = date.today()
-
-    return converted.strftime("%Y-%m-%d")
-
-
 def get_header() -> Optional[dict]:
     if "http://" in BASE_URL:
         return None
@@ -139,8 +125,8 @@ async def init_agent() -> UserAgent:
     format_instructions = FORMAT_INSTRUCTIONS.format(
         tool_names=tool_names,
     )
-    date = convert_date("today")
-    today = f"Today is {date}."
+    today_date = date.today().strftime("%Y-%m-%d")
+    today = f"Today is {today_date}."
     template = "\n\n".join([PREFIX, tool_strings, format_instructions, SUFFIX, today])
     human_message_template = "{input}\n\n{agent_scratchpad}"
     prompt = ChatPromptTemplate.from_messages(
