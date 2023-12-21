@@ -1,0 +1,10 @@
+host: 0.0.0.0
+datastore:
+  # Example for Cloud SQL
+  kind: "cloudsql-postgres"
+  project: "my-project"
+  region: "my-region"
+  instance: "my-instance"
+  database: "my_database"
+  user: "my-user"
+  password: "my-password"
