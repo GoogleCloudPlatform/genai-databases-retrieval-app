@@ -15,22 +15,13 @@
 steps:
   - id: "docker-build"
     name: "gcr.io/cloud-builders/docker"
-    args: ["build", "-t", "${_IMAGE_NAME}", "retrieval_service/sql-proxy/."]
+    dir: retrieval_service
+    args: ["build", "-f", "Dockerfile-cloudsql",  "-t", "${_IMAGE_NAME}", "."]
 
   - id: "docker-push"
     name: "gcr.io/cloud-builders/docker"
+    dir: retrieval_service
     args: ["push", "${_IMAGE_NAME}"]
-
-  - id: "docker-layer"
-    name: "gcr.io/cloud-builders/docker"
-    entrypoint: /bin/bash
-    args:
-      - '-c'
-      - |
-        echo "FROM $_IMAGE_NAME
-        COPY --from=gcr.io/cloud-sql-connectors/cloud-sql-proxy /cloud-sql-proxy /cloudsql/cloud-sql-proxy" > Dockerfile-proxy;
-
-        docker build -f Dockerfile-proxy -t ${_IMAGE_NAME}-proxy .
 
   - id: Install dependencies
     name: python:3.11
@@ -47,12 +38,12 @@ steps:
       ]
 
   - id: Create database
-    name: ${_IMAGE_NAME}-proxy
-    dir: retrieval_service/sql-proxy
+    name: ${_IMAGE_NAME}
+    dir: retrieval_service
     entrypoint: /bin/bash
     secretEnv:
-      - CLOUDSQLUSER # Use built-in env vars for database connection
-      - CLOUDSQLPASSWORD
+      - PGUSER # Use built-in env vars for database connection
+      - PGPASSWORD
     args:
       - "-c"
       - |
@@ -61,56 +52,56 @@ steps:
         psql -h ${_DATABASE_HOST} -d ${_DATABASE_NAME} -c 'CREATE EXTENSION vector;' || echo "Extension 'vector' already exists."
 
   - id: Initialize data
-    name: python:3.11
+    name: ${_IMAGE_NAME}
     dir: retrieval_service
     secretEnv:
-      - CLOUDSQLUSER
-      - CLOUDSQLPASSWORD
+      - PGUSER
+      - PGPASSWORD
     entrypoint: /bin/bash
     args:
       - "-c"
       - |
+        /cloudsql/cloud-sql-proxy --port ${_DATABASE_PORT} ${_INSTANCE_CONNECTION_NAME} & sleep 2;
         # Create config
-        cp example-config.yml config.yml
-        sed -i "/127.0.0.1/d" config.yml
-        sed -i "s/postgres/cloudsql-postgres/g" config.yml
+        cp example-config-cloudsql.yml config.yml
         sed -i "s/my_database/${_DATABASE_NAME}/g" config.yml
-        sed -i "s/my-user/$$CLOUDSQLUSER/g" config.yml
-        sed -i "s/my-password/$$CLOUDSQLPASSWORD/g" config.yml
-        echo -e '\n  project: "'$PROJECT_ID'"' >> config.yml
-        echo '  region: "'${_CLOUDSQL_REGION}'"' >> config.yml
-        echo '  instance: "'${_CLOUDSQL_INSTANCE}'"' >> config.yml
+        sed -i "s/my-user/$$PGUSER/g" config.yml
+        sed -i "s/my-password/$$PGPASSWORD/g" config.yml
+        sed -i "s/my-project/$PROJECT_ID/g" config.yml
+        sed -i "s/my-region/${_CLOUDSQL_REGION}/g" config.yml
+        sed -i "s/my-instance/${_CLOUDSQL_INSTANCE}/g" config.yml
         # Run script
         python run_database_init.py
 
   - id: Run Alloy DB integration tests
-    name: python:3.11
+    name: ${_IMAGE_NAME}
     dir: retrieval_service
     env: # Set env var expected by tests
       - "DB_NAME=${_DATABASE_NAME}"
-      - "DB_HOST=${_DATABASE_HOST}"
       - "DB_PROJECT=$PROJECT_ID"
       - "DB_REGION=${_CLOUDSQL_REGION}"
       - "DB_INSTANCE=${_CLOUDSQL_INSTANCE}"
     secretEnv:
-      - CLOUDSQLUSER
-      - CLOUDSQLPASSWORD
+      - PGUSER
+      - PGPASSWORD
     entrypoint: /bin/bash
     args:
       - "-c"
       - |
+        /cloudsql/cloud-sql-proxy --port ${_DATABASE_PORT} ${_INSTANCE_CONNECTION_NAME} & sleep 2;
         # Set env var expected by tests
-        export DB_USER=$$CLOUDSQLUSER
-        export DB_PASS=$$CLOUDSQLPASSWORD
-        python -m pytest -m ../datastore/providers/cloudsql_postgres.py
+        export DB_USER=$$PGUSER
+        export DB_PASS=$$PGPASSWORD
+        python -m pytest datastore/providers/cloudsql_postgres_test.py
 
   - id: Run database export
-    name: python:3.11
+    name: ${_IMAGE_NAME}
     dir: retrieval_service
     entrypoint: /bin/bash
     args:
       - "-c"
       - |
+        /cloudsql/cloud-sql-proxy --port ${_DATABASE_PORT} ${_INSTANCE_CONNECTION_NAME} & sleep 2;
         # Run script
         python run_database_export.py
         cd ../data
@@ -118,25 +109,16 @@ steps:
         diff --strip-trailing-cr -Z amenity_dataset.csv amenity_dataset.csv.new || (echo "amenity dataset export fail" && exit 1)
         diff --strip-trailing-cr -Z flights_dataset.csv flights_dataset.csv.new || (echo "flight dataset export fail" && exit 1)
 
-  - id: Clean exported files
-    name: python:3.11
-    dir: data
-    entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
-        rm airport_dataset.csv.new amenity_dataset.csv.new flights_dataset.csv.new
-
-
   - id: Clean database
-    name: postgres
+    name: ${_IMAGE_NAME}
     entrypoint: /bin/bash
     secretEnv:
-      - CLOUDSQLUSER
-      - CLOUDSQLPASSWORD
+      - PGUSER
+      - PGPASSWORD
     args:
       - "-c"
       - |
+        /cloudsql/cloud-sql-proxy --port ${_DATABASE_PORT} ${_INSTANCE_CONNECTION_NAME} & sleep 2;
         psql -h ${_DATABASE_HOST} -c "DROP DATABASE IF EXISTS ${_DATABASE_NAME};"
 
 substitutions:
@@ -145,16 +127,16 @@ substitutions:
   _DATABASE_HOST: 127.0.0.1
   _CLOUDSQL_REGION: "us-central1"
   _CLOUDSQL_INSTANCE: "my-cloudsql-instance"
-  _INSTANCE_CONNECTION_NAME: ${PROJECT_ID}:us-central1:myinstance
+  _INSTANCE_CONNECTION_NAME: ${PROJECT_ID}:${_CLOUDSQL_REGION}:${_CLOUDSQL_INSTANCE}
   _DATABASE_PORT: "5432"
-  _IMAGE_NAME: gcr.io/${PROJECT_ID}/sample-sql-proxy
+  _IMAGE_NAME: gcr.io/${PROJECT_ID}/cloudsql-test-proxy
 
 availableSecrets:
   secretManager:
     - versionName: projects/$PROJECT_ID/secrets/cloudsql_pass/versions/latest
-      env: CLOUDSQLPASSWORD
+      env: PGPASSWORD
     - versionName: projects/$PROJECT_ID/secrets/cloudsql_user/versions/latest
-      env: CLOUDSQLUSER
+      env: PGUSER
 
 options:
   substitutionOption: 'ALLOW_LOOSE'
