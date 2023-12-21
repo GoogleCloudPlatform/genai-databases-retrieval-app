@@ -19,14 +19,15 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import Body, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from google.oauth2 import id_token
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
 from agent import init_agent, user_agents
+
+GOOGLE_REDIRECT_URI = "http://localhost:8081"
 
 
 @asynccontextmanager
@@ -74,7 +75,7 @@ async def login_google(
 ):
     request.session.clear()
     form_data = await request.form()
-    user_id_token = form_data.get("credential", "")
+    user_id_token = str(form_data.get("credential", ""))
     # create new request session
     request.session["uuid"] = str(uuid.uuid4())
     request.session["messages"] = BASE_HISTORY
@@ -83,7 +84,11 @@ async def login_google(
 
     # Redirect to source URL
     source_url = request.headers.get("Referer")
-    return RedirectResponse(url=source_url)
+    source_url = request.headers.get("Referer")
+    if source_url:
+        return RedirectResponse(url=source_url)
+    else:
+        return RedirectResponse(url=GOOGLE_REDIRECT_URI)
 
 
 @app.post("/chat", response_class=PlainTextResponse)
