@@ -5,6 +5,6 @@ google-cloud-aiplatform==1.37.0
 langchain==0.0.347
 pgvector==0.2.4
 pydantic==2.5.2
-uvicorn[standard]==0.24.0.post1
+uvicorn[standard]==0.25.0
 cloud-sql-python-connector==1.4.3
 sqlalchemy==2.0.23
