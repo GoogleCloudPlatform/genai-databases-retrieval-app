@@ -54,7 +54,7 @@ async def search_airports(
     city: Optional[str] = None,
     name: Optional[str] = None,
 ):
-    if country == None and city == None and name == None:
+    if country is None and city is None and name is None:
         raise HTTPException(
             status_code=422,
             detail="Request requires at least one query params: country, city, or airport name",
