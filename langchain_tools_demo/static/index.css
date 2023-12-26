@@ -40,6 +40,27 @@ body {
     text-align: center;
 }
 
+#resetButton {
+    position: relative;
+    top: -10px;
+    left: 0;
+    width: 30px;
+    height: 30px;
+    border: none;
+    background-color: transparent;
+    padding: 0;
+    cursor: pointer;
+}
+
+#resetButton img {
+    width: 30px;
+    height: 30px;
+}
+
+#resetButton:hover {
+    background-color:  #c9d4e9;
+}
+
 .chat-wrapper {
     display: flex;
     flex-direction: column;

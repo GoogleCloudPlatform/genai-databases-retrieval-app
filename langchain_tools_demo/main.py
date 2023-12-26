@@ -95,6 +95,16 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
         raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
 
 
+@app.get("/reset", response_class=HTMLResponse)
+def reset(request: Request):
+    """Reset agent."""
+    tasks = []
+    for user_agent in user_agents.values():
+        tasks.add(asyncio.create_task(c.client.close()) for c in user_agents.values())
+        tasks.add(asyncio.create_task(a) for c in user_agents.values())
+    request.session.clear
+
+
 if __name__ == "__main__":
     PORT = int(os.getenv("PORT", default=8081))
     uvicorn.run(app, host="0.0.0.0", port=PORT)
