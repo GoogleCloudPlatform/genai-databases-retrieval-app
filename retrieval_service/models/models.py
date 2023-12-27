@@ -38,6 +38,8 @@ class Amenity(BaseModel):
     terminal: str
     category: str
     hour: str
+    start_hours: list[str]
+    end_hours: list[str]
     content: Optional[str] = None
     embedding: Optional[list[float]] = None
 

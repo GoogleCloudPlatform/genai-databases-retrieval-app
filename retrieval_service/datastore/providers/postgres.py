@@ -105,6 +105,8 @@ class Client(datastore.Client[Config]):
                   terminal TEXT,
                   category TEXT,
                   hour TEXT,
+                  start_hours TEXT[],
+                  end_hours TEXT[],
                   content TEXT NOT NULL,
                   embedding vector(768) NOT NULL
                 )
@@ -122,6 +124,8 @@ class Client(datastore.Client[Config]):
                         a.terminal,
                         a.category,
                         a.hour,
+                        a.start_hours,
+                        a.end_hours,
                         a.content,
                         a.embedding,
                     )
@@ -237,7 +241,7 @@ class Client(datastore.Client[Config]):
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         result = await self.__pool.fetchrow(
             """
-                SELECT id, name, description, location, terminal, category, hour
+                SELECT id, name, description, location, terminal, category, hour, start_hours, end_hours
                 FROM amenities WHERE id=$1
             """,
             id,
@@ -254,9 +258,9 @@ class Client(datastore.Client[Config]):
     ) -> list[models.Amenity]:
         results = await self.__pool.fetch(
             """
-                SELECT id, name, description, location, terminal, category, hour
+                SELECT id, name, description, location, terminal, category, hour, start_hours, end_hours
                 FROM (
-                    SELECT id, name, description, location, terminal, category, hour, 1 - (embedding <=> $1) AS similarity
+                    SELECT id, name, description, location, terminal, category, hour, start_hours, end_hours, 1 - (embedding <=> $1) AS similarity
                     FROM amenities
                     WHERE 1 - (embedding <=> $1) > $2
                     ORDER BY similarity DESC
