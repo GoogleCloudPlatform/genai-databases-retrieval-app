@@ -100,7 +100,7 @@ async def reset(request: Request):
     tasks = []
     for user_agent in user_agents.values():
         tasks.append(asyncio.create_task(user_agent.client.close()))
-        user_agent.agent = None
+        del user_agent.agent
     asyncio.gather(*tasks)
     user_agents.clear()
     request.session.clear()
