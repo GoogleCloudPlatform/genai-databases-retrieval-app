@@ -37,17 +37,17 @@ limitations under the License.
     <div class="container">
         <div class="chat-header">
             <h1>SFO Airport Assistant</h1>
+            <button id="resetButton">
+                <img src="../static/resetButton.png" alt="Reset">
+            </button>
         </div>
-        <button id="resetButton">
-            <img src="../static/resetButton.png" alt="Reset">
-        </button>
+        
         <script>
             document.getElementById('resetButton').addEventListener('click', function() {
                 fetch('/reset', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
+                }).then((res)=>{
+                    window.location.reload()
                 })
             });
         </script>
