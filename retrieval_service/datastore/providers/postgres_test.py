@@ -249,6 +249,8 @@ async def test_get_amenity(ds: postgres.Client):
         terminal="Ed Lee International Main Hall",
         category="restaurant",
         hour="Sunday- Saturday 7:00 am-8:00 pm",
+        start_hours="['7:00', '7:00', '7:00', '7:00', '7:00', '7:00', '7:00']",
+        end_hours="['20:00', '20:00', '20:00', '20:00', '20:00', '20:00', '20:00']",
     )
     assert res == expected
 
@@ -268,6 +270,8 @@ amenities_search_test_data = [
                 terminal="Ed Lee International Main Hall",
                 category="restaurant",
                 hour="Sunday- Saturday 4:00 am-11:00 pm",
+                start_hours="['5:00', '5:00', '5:00', '5:00', '5:00', '5:00', '5:00']",
+                end_hours="['22:30', '22:30', '22:30', '22:30', '22:30', '22:30', '22:30']",
                 content=None,
                 embedding=None,
             ),
@@ -288,6 +292,8 @@ amenities_search_test_data = [
                 terminal="International Terminal A",
                 category="shop",
                 hour="Sunday - Saturday 8:30 am-11:00 pm",
+                start_hours="['8:30', '8:30', '8:30', '8:30', '8:30', '8:30', '8:30']",
+                end_hours="['23:00', '23:00', '23:00', '23:00', '23:00', '23:00', '23:00']",
                 content=None,
                 embedding=None,
             ),
@@ -299,6 +305,8 @@ amenities_search_test_data = [
                 terminal="International Terminal G",
                 category="shop",
                 hour="Sunday - Saturday 7:00 am-11:00 pm",
+                start_hours="['7:00', '7:00', '7:00', '7:00', '7:00', '7:00', '7:00']",
+                end_hours="['23:00', '23:00', '23:00', '23:00', '23:00', '23:00', '23:00']",
                 content=None,
                 embedding=None,
             ),

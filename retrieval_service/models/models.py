@@ -43,6 +43,13 @@ class Amenity(BaseModel):
     content: Optional[str] = None
     embedding: Optional[list[float]] = None
 
+    @field_validator("start_hours", "end_hours", mode="before")
+    def validate_hours(cls, v):
+        if type(v) == str:
+            v = ast.literal_eval(v)
+            v = [str(f) for f in v]
+        return v
+
     @field_validator("embedding", mode="before")
     def validate(cls, v):
         if type(v) == str:

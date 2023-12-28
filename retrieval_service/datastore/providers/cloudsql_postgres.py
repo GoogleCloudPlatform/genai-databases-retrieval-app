@@ -131,6 +131,8 @@ class Client(datastore.Client[Config]):
                       terminal TEXT,
                       category TEXT,
                       hour TEXT,
+                      start_hours TEXT[],
+                      end_hours TEXT[],
                       content TEXT NOT NULL,
                       embedding vector(768) NOT NULL
                     )
@@ -140,7 +142,7 @@ class Client(datastore.Client[Config]):
             # Insert all the data
             await conn.execute(
                 text(
-                    """INSERT INTO amenities VALUES (:id, :name, :description, :location, :terminal, :category, :hour, :content, :embedding)"""
+                    """INSERT INTO amenities VALUES (:id, :name, :description, :location, :terminal, :category, :hour, :start_hours, :end_hours, :content, :embedding)"""
                 ),
                 [
                     {
@@ -151,6 +153,8 @@ class Client(datastore.Client[Config]):
                         "terminal": a.terminal,
                         "category": a.category,
                         "hour": a.hour,
+                        "start_hours": a.start_hours,
+                        "end_hours": a.end_hours,
                         "content": a.content,
                         "embedding": a.embedding,
                     }
@@ -277,7 +281,7 @@ class Client(datastore.Client[Config]):
         async with self.__pool.connect() as conn:
             s = text(
                 """
-                SELECT id, name, description, location, terminal, category, hour
+                SELECT id, name, description, location, terminal, category, hour, start_hours, end_hours
                   FROM amenities WHERE id=:id
                 """
             )
@@ -296,9 +300,9 @@ class Client(datastore.Client[Config]):
         async with self.__pool.connect() as conn:
             s = text(
                 """
-                SELECT id, name, description, location, terminal, category, hour
+                SELECT id, name, description, location, terminal, category, hour, start_hours, end_hours
                   FROM (
-                      SELECT id, name, description, location, terminal, category, hour, 1 - (embedding <=> :query_embedding) AS similarity
+                      SELECT id, name, description, location, terminal, category, hour, start_hours, end_hours, 1 - (embedding <=> :query_embedding) AS similarity
                       FROM amenities
                       WHERE 1 - (embedding <=> :query_embedding) > :similarity_threshold
                       ORDER BY similarity DESC

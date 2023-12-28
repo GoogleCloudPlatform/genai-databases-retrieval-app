@@ -44,6 +44,8 @@ async def main() -> None:
             "terminal",
             "category",
             "hour",
+            "start_hours",
+            "end_hours",
             "content",
             "embedding",
         ]
