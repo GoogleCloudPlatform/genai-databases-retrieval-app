@@ -38,17 +38,42 @@ class Amenity(BaseModel):
     terminal: str
     category: str
     hour: str
-    start_hours: list[str]
-    end_hours: list[str]
+    sunday_start_hour: Optional[datetime.time]
+    sunday_end_hour: Optional[datetime.time]
+    monday_start_hour: Optional[datetime.time]
+    monday_end_hour: Optional[datetime.time]
+    tuesday_start_hour: Optional[datetime.time]
+    tuesday_end_hour: Optional[datetime.time]
+    wednesday_start_hour: Optional[datetime.time]
+    wednesday_end_hour: Optional[datetime.time]
+    thursday_start_hour: Optional[datetime.time]
+    thursday_end_hour: Optional[datetime.time]
+    friday_start_hour: Optional[datetime.time]
+    friday_end_hour: Optional[datetime.time]
+    saturday_start_hour: Optional[datetime.time]
+    saturday_end_hour: Optional[datetime.time]
     content: Optional[str] = None
     embedding: Optional[list[float]] = None
 
-    @field_validator("start_hours", "end_hours", mode="before")
-    def validate_hours(cls, v):
-        if type(v) == str:
-            v = ast.literal_eval(v)
-            v = [str(f) for f in v]
-        return v
+    @field_validator(
+        "sunday_start_hour",
+        "sunday_end_hour",
+        "monday_start_hour",
+        "monday_end_hour",
+        "tuesday_start_hour",
+        "tuesday_end_hour",
+        "wednesday_start_hour",
+        "wednesday_end_hour",
+        "thursday_start_hour",
+        "thursday_end_hour",
+        "friday_start_hour",
+        "friday_end_hour",
+        "saturday_start_hour",
+        "saturday_end_hour",
+        mode="before",
+    )
+    def replace_none(cls, v):
+        return v or None
 
     @field_validator("embedding", mode="before")
     def validate(cls, v):
