@@ -131,8 +131,20 @@ class Client(datastore.Client[Config]):
                       terminal TEXT,
                       category TEXT,
                       hour TEXT,
-                      start_hours TEXT[],
-                      end_hours TEXT[],
+                      sunday_start_hour TIME,
+                      sunday_end_hour TIME,
+                      monday_start_hour TIME,
+                      monday_end_hour TIME,
+                      tuesday_start_hour TIME,
+                      tuesday_end_hour TIME,
+                      wednesday_start_hour TIME,
+                      wednesday_end_hour TIME,
+                      thursday_start_hour TIME,
+                      thursday_end_hour TIME,
+                      friday_start_hour TIME,
+                      friday_end_hour TIME,
+                      saturday_start_hour TIME,
+                      saturday_end_hour TIME,
                       content TEXT NOT NULL,
                       embedding vector(768) NOT NULL
                     )
@@ -142,7 +154,7 @@ class Client(datastore.Client[Config]):
             # Insert all the data
             await conn.execute(
                 text(
-                    """INSERT INTO amenities VALUES (:id, :name, :description, :location, :terminal, :category, :hour, :start_hours, :end_hours, :content, :embedding)"""
+                    """INSERT INTO amenities VALUES (:id, :name, :description, :location, :terminal, :category, :hour, :sunday_start_hour, :sunday_end_hour, :monday_start_hour, :monday_end_hour, :tuesday_start_hour, :tuesday_end_hour, :wednesday_start_hour, :wednesday_end_hour, :thursday_start_hour, :thursday_end_hour, :friday_start_hour, :friday_end_hour, :saturday_start_hour, :saturday_end_hour, :content, :embedding)"""
                 ),
                 [
                     {
@@ -153,8 +165,20 @@ class Client(datastore.Client[Config]):
                         "terminal": a.terminal,
                         "category": a.category,
                         "hour": a.hour,
-                        "start_hours": a.start_hours,
-                        "end_hours": a.end_hours,
+                        "sunday_start_hour": a.sunday_start_hour,
+                        "sunday_end_hour": a.sunday_end_hour,
+                        "monday_start_hour": a.monday_start_hour,
+                        "monday_end_hour": a.monday_end_hour,
+                        "tuesday_start_hour": a.tuesday_start_hour,
+                        "tuesday_end_hour": a.tuesday_end_hour,
+                        "wednesday_start_hour": a.wednesday_start_hour,
+                        "wednesday_end_hour": a.wednesday_end_hour,
+                        "thursday_start_hour": a.thursday_start_hour,
+                        "thursday_end_hour": a.thursday_end_hour,
+                        "friday_start_hour": a.friday_start_hour,
+                        "friday_end_hour": a.friday_end_hour,
+                        "saturday_start_hour": a.saturday_start_hour,
+                        "saturday_end_hour": a.saturday_end_hour,
                         "content": a.content,
                         "embedding": a.embedding,
                     }
@@ -281,7 +305,7 @@ class Client(datastore.Client[Config]):
         async with self.__pool.connect() as conn:
             s = text(
                 """
-                SELECT id, name, description, location, terminal, category, hour, start_hours, end_hours
+                SELECT id, name, description, location, terminal, category, hour, sunday_start_hour, sunday_end_hour, monday_start_hour, monday_end_hour, tuesday_start_hour, tuesday_end_hour, wednesday_start_hour, wednesday_end_hour, thursday_start_hour, thursday_end_hour, friday_start_hour, friday_end_hour, saturday_start_hour, saturday_end_hour
                   FROM amenities WHERE id=:id
                 """
             )
@@ -300,9 +324,9 @@ class Client(datastore.Client[Config]):
         async with self.__pool.connect() as conn:
             s = text(
                 """
-                SELECT id, name, description, location, terminal, category, hour, start_hours, end_hours
+                SELECT id, name, description, location, terminal, category, hour, sunday_start_hour, sunday_end_hour, monday_start_hour, monday_end_hour, tuesday_start_hour, tuesday_end_hour, wednesday_start_hour, wednesday_end_hour, thursday_start_hour, thursday_end_hour, friday_start_hour, friday_end_hour, saturday_start_hour, saturday_end_hour
                   FROM (
-                      SELECT id, name, description, location, terminal, category, hour, start_hours, end_hours, 1 - (embedding <=> :query_embedding) AS similarity
+                      SELECT id, name, description, location, terminal, category, hour, sunday_start_hour, sunday_end_hour, monday_start_hour, monday_end_hour, tuesday_start_hour, tuesday_end_hour, wednesday_start_hour, wednesday_end_hour, thursday_start_hour, thursday_end_hour, friday_start_hour, friday_end_hour, saturday_start_hour, saturday_end_hour, 1 - (embedding <=> :query_embedding) AS similarity
                       FROM amenities
                       WHERE 1 - (embedding <=> :query_embedding) > :similarity_threshold
                       ORDER BY similarity DESC

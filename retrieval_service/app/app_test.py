@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
+from datetime import datetime, time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -31,6 +31,11 @@ def app():
     if app is None:
         raise TypeError("app did not initialize")
     return app
+
+
+@pytest.fixture(scope="module")
+def get_time_mock():
+    return time.fromisoformat("08:00")
 
 
 @patch.object(datastore, "create")
@@ -250,6 +255,20 @@ get_amenity_params = [
             terminal="FOO BAR",
             category="FEE",
             hour="BAZ",
+            sunday_start_hour=get_time_mock(),
+            sunday_end_hour=get_time_mock(),
+            monday_start_hour=get_time_mock(),
+            monday_end_hour=get_time_mock(),
+            tuesday_start_hour=get_time_mock(),
+            tuesday_end_hour=get_time_mock(),
+            wednesday_start_hour=get_time_mock(),
+            wednesday_end_hour=get_time_mock(),
+            thursday_start_hour=get_time_mock(),
+            thursday_end_hour=get_time_mock(),
+            friday_start_hour=get_time_mock(),
+            friday_end_hour=get_time_mock(),
+            saturday_start_hour=get_time_mock(),
+            saturday_end_hour=get_time_mock(),
         ),
         {
             "id": 1,
@@ -259,6 +278,20 @@ get_amenity_params = [
             "terminal": "FOO BAR",
             "category": "FEE",
             "hour": "BAZ",
+            "sunday_start_hour": "08:00:00",
+            "sunday_end_hour": "08:00:00",
+            "monday_start_hour": "08:00:00",
+            "monday_end_hour": "08:00:00",
+            "tuesday_start_hour": "08:00:00",
+            "tuesday_end_hour": "08:00:00",
+            "wednesday_start_hour": "08:00:00",
+            "wednesday_end_hour": "08:00:00",
+            "thursday_start_hour": "08:00:00",
+            "thursday_end_hour": "08:00:00",
+            "friday_start_hour": "08:00:00",
+            "friday_end_hour": "08:00:00",
+            "saturday_start_hour": "08:00:00",
+            "saturday_end_hour": "08:00:00",
             "content": None,
             "embedding": None,
         },
@@ -303,6 +336,20 @@ amenities_search_params = [
                 terminal="FOO BAR",
                 category="FEE",
                 hour="BAZ",
+                sunday_start_hour=get_time_mock(),
+                sunday_end_hour=get_time_mock(),
+                monday_start_hour=get_time_mock(),
+                monday_end_hour=get_time_mock(),
+                tuesday_start_hour=get_time_mock(),
+                tuesday_end_hour=get_time_mock(),
+                wednesday_start_hour=get_time_mock(),
+                wednesday_end_hour=get_time_mock(),
+                thursday_start_hour=get_time_mock(),
+                thursday_end_hour=get_time_mock(),
+                friday_start_hour=get_time_mock(),
+                friday_end_hour=get_time_mock(),
+                saturday_start_hour=get_time_mock(),
+                saturday_end_hour=get_time_mock(),
             ),
             models.Amenity(
                 id=2,
@@ -312,6 +359,20 @@ amenities_search_params = [
                 terminal="FOO BAR",
                 category="FEE",
                 hour="BAZ",
+                sunday_start_hour=get_time_mock(),
+                sunday_end_hour=get_time_mock(),
+                monday_start_hour=get_time_mock(),
+                monday_end_hour=get_time_mock(),
+                tuesday_start_hour=get_time_mock(),
+                tuesday_end_hour=get_time_mock(),
+                wednesday_start_hour=get_time_mock(),
+                wednesday_end_hour=get_time_mock(),
+                thursday_start_hour=get_time_mock(),
+                thursday_end_hour=get_time_mock(),
+                friday_start_hour=get_time_mock(),
+                friday_end_hour=get_time_mock(),
+                saturday_start_hour=get_time_mock(),
+                saturday_end_hour=get_time_mock(),
             ),
         ],
         [
@@ -323,6 +384,20 @@ amenities_search_params = [
                 "terminal": "FOO BAR",
                 "category": "FEE",
                 "hour": "BAZ",
+                "sunday_start_hour": "08:00:00",
+                "sunday_end_hour": "08:00:00",
+                "monday_start_hour": "08:00:00",
+                "monday_end_hour": "08:00:00",
+                "tuesday_start_hour": "08:00:00",
+                "tuesday_end_hour": "08:00:00",
+                "wednesday_start_hour": "08:00:00",
+                "wednesday_end_hour": "08:00:00",
+                "thursday_start_hour": "08:00:00",
+                "thursday_end_hour": "08:00:00",
+                "friday_start_hour": "08:00:00",
+                "friday_end_hour": "08:00:00",
+                "saturday_start_hour": "08:00:00",
+                "saturday_end_hour": "08:00:00",
                 "content": None,
                 "embedding": None,
             },
@@ -334,6 +409,20 @@ amenities_search_params = [
                 "terminal": "FOO BAR",
                 "category": "FEE",
                 "hour": "BAZ",
+                "sunday_start_hour": "08:00:00",
+                "sunday_end_hour": "08:00:00",
+                "monday_start_hour": "08:00:00",
+                "monday_end_hour": "08:00:00",
+                "tuesday_start_hour": "08:00:00",
+                "tuesday_end_hour": "08:00:00",
+                "wednesday_start_hour": "08:00:00",
+                "wednesday_end_hour": "08:00:00",
+                "thursday_start_hour": "08:00:00",
+                "thursday_end_hour": "08:00:00",
+                "friday_start_hour": "08:00:00",
+                "friday_end_hour": "08:00:00",
+                "saturday_start_hour": "08:00:00",
+                "saturday_end_hour": "08:00:00",
                 "content": None,
                 "embedding": None,
             },
