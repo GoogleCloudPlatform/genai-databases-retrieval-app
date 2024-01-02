@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import csv
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, Optional, TypeVar
+from typing import Any, Dict, Generic, List, Optional, TypeVar
+
+import numpy as np
 
 import models
 
@@ -43,6 +46,76 @@ class Client(ABC, Generic[C]):
     @abstractmethod
     async def create(cls, config: C) -> "Client":
         pass
+
+    async def load_dataset(
+        self, airports_ds_path, amenities_ds_path, flights_ds_path
+    ) -> tuple[List[models.Airport], List[models.Amenity], List[models.Flight]]:
+        airports: List[models.Airport] = []
+        with open(airports_ds_path, "r") as f:
+            reader = csv.DictReader(f, delimiter=",")
+            airports = [models.Airport.model_validate(line) for line in reader]
+
+        amenities: list[models.Amenity] = []
+        with open(amenities_ds_path, "r") as f:
+            reader = csv.DictReader(f, delimiter=",")
+            amenities = [models.Amenity.model_validate(line) for line in reader]
+
+        flights: List[models.Flight] = []
+        with open(flights_ds_path, "r") as f:
+            reader = csv.DictReader(f, delimiter=",")
+            flights = [models.Flight.model_validate(line) for line in reader]
+        return airports, amenities, flights
+
+    async def export_dataset(
+        self,
+        airports,
+        amenities,
+        flights,
+        airports_new_path,
+        amenities_new_path,
+        flights_new_path,
+    ) -> None:
+        np.set_printoptions(linewidth=100000)
+        with open(airports_new_path, "w") as f:
+            col_names = ["id", "iata", "name", "city", "country"]
+            writer = csv.DictWriter(f, col_names, delimiter=",")
+            writer.writeheader()
+            for a in airports:
+                writer.writerow(a.model_dump())
+
+        with open(amenities_new_path, "w") as f:
+            col_names = [
+                "id",
+                "name",
+                "description",
+                "location",
+                "terminal",
+                "category",
+                "hour",
+                "content",
+                "embedding",
+            ]
+            writer = csv.DictWriter(f, col_names, delimiter=",")
+            writer.writeheader()
+            for a in amenities:
+                writer.writerow(a.model_dump())
+
+        with open(flights_new_path, "w") as f:
+            col_names = [
+                "id",
+                "airline",
+                "flight_number",
+                "departure_airport",
+                "arrival_airport",
+                "departure_time",
+                "arrival_time",
+                "departure_gate",
+                "arrival_gate",
+            ]
+            writer = csv.DictWriter(f, col_names, delimiter=",")
+            writer.writeheader()
+            for fl in flights:
+                writer.writerow(fl.model_dump())
 
     @abstractmethod
     async def initialize_data(
