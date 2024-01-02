@@ -97,11 +97,14 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
 async def reset(request: Request):
     """Reset agent"""
     global user_agents
-    user_agent = user_agents[request.session["uuid"]]
-    await user_agent.client.close()
-    del user_agent.agent
-    del user_agents[request.session["uuid"]]
+    uuid = request.session["uuid"]
+    if uuid in user_agents.keys():
+        user_agent = user_agents[uuid]
+        await user_agent.client.close()
+        del user_agent.agent
+        del user_agents[request.session["uuid"]]
     request.session.clear()
+    print(user_agents)
 
 
 if __name__ == "__main__":
