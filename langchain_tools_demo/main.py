@@ -97,12 +97,10 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
 async def reset(request: Request):
     """Reset agent"""
     global user_agents
-    tasks = []
-    for user_agent in user_agents.values():
-        tasks.append(asyncio.create_task(user_agent.client.close()))
-        del user_agent.agent
-    asyncio.gather(*tasks)
-    user_agents.clear()
+    user_agent = request.session["uuid"]
+    await user_agent.client.close()
+    del user_agent.agent
+    del user_agents[request.session["uuid"]]
     request.session.clear()
 
 
