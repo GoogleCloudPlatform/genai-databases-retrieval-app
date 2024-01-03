@@ -13,8 +13,6 @@
 # limitations under the License.
 
 import asyncio
-import csv
-from typing import List
 
 import datastore
 import models
@@ -22,23 +20,15 @@ from app import parse_config
 
 
 async def main() -> None:
-    airports: List[models.Airport] = []
-    with open("../data/airport_dataset.csv", "r") as f:
-        reader = csv.DictReader(f, delimiter=",")
-        airports = [models.Airport.model_validate(line) for line in reader]
-    flights: List[models.Flight] = []
-
-    amenities: list[models.Amenity] = []
-    with open("../data/amenity_dataset.csv", "r") as f:
-        reader = csv.DictReader(f, delimiter=",")
-        amenities = [models.Amenity.model_validate(line) for line in reader]
-
-    with open("../data/flights_dataset.csv", "r") as f:
-        reader = csv.DictReader(f, delimiter=",")
-        flights = [models.Flight.model_validate(line) for line in reader]
+    airports_ds_path = "../data/airport_dataset.csv"
+    amenities_ds_path = "../data/amenity_dataset.csv"
+    flights_ds_path = "../data/flights_dataset.csv"
 
     cfg = parse_config("config.yml")
     ds = await datastore.create(cfg.datastore)
+    airports, amenities, flights = await ds.load_dataset(
+        airports_ds_path, amenities_ds_path, flights_ds_path
+    )
     await ds.initialize_data(airports, amenities, flights)
     await ds.close()
 

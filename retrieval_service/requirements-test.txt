@@ -6,3 +6,4 @@ mypy==1.7.1
 pytest-asyncio==0.23.0
 pytest==7.4.4
 types-PyYAML==6.0.12.12
+csv-diff==1.1
