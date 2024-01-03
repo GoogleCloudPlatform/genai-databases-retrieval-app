@@ -99,11 +99,8 @@ async def reset(request: Request):
     global user_agents
     uuid = request.session["uuid"]
     if uuid in user_agents.keys():
-        user_agent = user_agents[uuid]
-        await user_agent.client.close()
-        del user_agent.agent
-        del user_agent.client
-        del user_agent
+        await user_agents[uuid].client.close()
+        del user_agents[uuid]
     request.session.clear()
 
 
