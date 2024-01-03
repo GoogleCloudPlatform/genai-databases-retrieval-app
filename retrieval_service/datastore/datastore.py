@@ -16,8 +16,6 @@ import csv
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-import numpy as np
-
 import models
 
 
@@ -75,7 +73,6 @@ class Client(ABC, Generic[C]):
         amenities_new_path,
         flights_new_path,
     ) -> None:
-        np.set_printoptions(linewidth=100000)
         with open(airports_new_path, "w") as f:
             col_names = ["id", "iata", "name", "city", "country"]
             writer = csv.DictWriter(f, col_names, delimiter=",")
