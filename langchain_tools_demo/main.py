@@ -102,9 +102,9 @@ async def reset(request: Request):
         user_agent = user_agents[uuid]
         await user_agent.client.close()
         del user_agent.agent
-        del user_agents[request.session["uuid"]]
+        del user_agent.client
+        del user_agent
     request.session.clear()
-    print(user_agents)
 
 
 if __name__ == "__main__":
