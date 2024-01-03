@@ -16,6 +16,7 @@ import os
 from typing import Optional
 
 import aiohttp
+import datetime
 from langchain.tools import StructuredTool, tool
 from pydantic.v1 import BaseModel, Field
 
@@ -186,6 +187,50 @@ async def generate_search_amenities(client: aiohttp.ClientSession):
     return search_amenities
 
 
+class TicketInput(BaseModel):
+    airline: str = Field(description="Airline unique 2 letter identifier")
+    flight_number: str = Field(description="1 to 4 digit number")
+    departure_airport: str = Field(
+        description="Departure airport 3-letter code",
+    )
+    arrival_airport: str = Field(description="Arrival airport 3-letter code")
+    departure_time: datetime.datetime = Field(description="Flight departure datetime")
+    arrival_time: datetime.datetime = Field(description="Flight arrival datetime")
+
+
+async def generate_insert_ticket(client: aiohttp.ClientSession):
+    async def insert_ticket(
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        arrival_airport: str,
+        departure_time: datetime.datetime,
+        arrival_time: datetime.datetime,
+    ):
+        """
+        Use this tool to insert a flight ticket into the Ticket table.
+        Takes an id and returns info on the amenity.
+        Do NOT guess an amenity id. Use Search Amenities to search by name.
+        Always use the id from the search_amenities tool.
+        """
+        response = await client.get(
+            url=f"{BASE_URL}/tickets/insert",
+            params={
+                "airline": airline,
+                "flight_number": flight_number,
+                "departure_airport": departure_airport,
+                "arrival_airport": arrival_airport,
+                "departure_time": departure_time,
+                "arrival_time": arrival_time,
+            },
+        )
+
+        response = await response.json()
+        return response
+
+    return insert_ticket
+
+
 # Tools for agent
 async def initialize_tools(client: aiohttp.ClientSession):
     return [
@@ -307,5 +352,19 @@ async def initialize_tools(client: aiohttp.ClientSession):
                         B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
                         """,
             args_schema=QueryInput,
+        ),
+        StructuredTool.from_function(
+            coroutine=await generate_insert_ticket(client),
+            name="Insert Ticket",
+            description="""
+                        Use this tool to search amenities by name or to recommended airport amenities at SFO.
+                        If user provides flight info, use 'Get Flight' and 'Get Flights by Number'
+                        first to get gate info and location.
+                        Only recommend amenities that are returned by this query.
+                        Find amenities close to the user by matching the terminal and then comparing
+                        the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
+                        B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
+                        """,
+            args_schema=TicketInput,
         ),
     ]
