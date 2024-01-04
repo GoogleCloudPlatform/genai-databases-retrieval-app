@@ -94,7 +94,7 @@ async def ds(
     await ds.close()
 
 
-async def test_export_dataset(ds: postgres.Client):
+async def test_export_dataset(ds: cloudsql_postgres.Client):
     airports, amenities, flights = await ds.export_data()
 
     airports_ds_path = "../data/airport_dataset.csv"
