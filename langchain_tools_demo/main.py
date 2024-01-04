@@ -77,7 +77,7 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     # Add user message to chat history
     request.session["messages"] += [{"role": "user", "content": prompt}]
 
-    user_agent = user_agents.get(request.session["uuid"])
+    user_agent = user_agents[(request.session["uuid"])]
     try:
         # Send prompt to LLM
         response = await user_agent.agent.ainvoke({"input": prompt})
