@@ -208,10 +208,7 @@ async def generate_insert_ticket(client: aiohttp.ClientSession):
         arrival_time: datetime.datetime,
     ):
         """
-        Use this tool to insert a flight ticket into the Ticket table.
-        Takes an id and returns info on the amenity.
-        Do NOT guess an amenity id. Use Search Amenities to search by name.
-        Always use the id from the search_amenities tool.
+        Use this tool to insert a user's flight ticket into the database.
         """
         response = await client.get(
             url=f"{BASE_URL}/tickets/insert",
@@ -229,6 +226,22 @@ async def generate_insert_ticket(client: aiohttp.ClientSession):
         return response
 
     return insert_ticket
+
+
+async def generate_list_tickets(client: aiohttp.ClientSession):
+    async def list_tickets():
+        """
+        Use this tool to list a user's flight tickets.
+        Takes no input and returns a list of user's flight tickets.
+        """
+        response = await client.get(
+            url=f"{BASE_URL}/tickets/list",
+        )
+
+        response = await response.json()
+        return response
+
+    return list_tickets
 
 
 # Tools for agent
@@ -357,14 +370,16 @@ async def initialize_tools(client: aiohttp.ClientSession):
             coroutine=await generate_insert_ticket(client),
             name="Insert Ticket",
             description="""
-                        Use this tool to search amenities by name or to recommended airport amenities at SFO.
-                        If user provides flight info, use 'Get Flight' and 'Get Flights by Number'
-                        first to get gate info and location.
-                        Only recommend amenities that are returned by this query.
-                        Find amenities close to the user by matching the terminal and then comparing
-                        the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
-                        B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
+                        Use this tool to insert current user's flight ticket into the database.
                         """,
             args_schema=TicketInput,
+        ),
+        StructuredTool.from_function(
+            coroutine=await generate_list_tickets(client),
+            name="List Tickets",
+            description="""
+                        Use this tool to list a user's flight tickets.
+                        Takes no input and returns a list of current user's flight tickets.
+                        """,
         ),
     ]
