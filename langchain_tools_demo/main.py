@@ -51,11 +51,17 @@ BASE_HISTORY = [{"role": "assistant", "content": "How can I help you?"}]
 
 
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request):
+async def index(request: Request):
     """Render the default template."""
     if "uuid" not in request.session:
         request.session["uuid"] = str(uuid.uuid4())
         request.session["messages"] = BASE_HISTORY
+    # Agent setup
+    if request.session["uuid"] in user_agents:
+        user_agent = user_agents[request.session["uuid"]]
+    else:
+        user_agent = await init_agent()
+        user_agents[request.session["uuid"]] = user_agent
     return templates.TemplateResponse(
         "index.html", {"request": request, "messages": request.session["messages"]}
     )
@@ -68,18 +74,10 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     if not prompt:
         raise HTTPException(status_code=400, detail="Error: No user query")
 
-    if "uuid" not in request.session:
-        request.session["uuid"] = str(uuid.uuid4())
-        request.session["messages"] = BASE_HISTORY
-
     # Add user message to chat history
     request.session["messages"] += [{"role": "user", "content": prompt}]
-    # Agent setup
-    if request.session["uuid"] in user_agents:
-        user_agent = user_agents[request.session["uuid"]]
-    else:
-        user_agent = await init_agent()
-        user_agents[request.session["uuid"]] = user_agent
+
+    user_agent = user_agents.get(request.session["uuid"])
     try:
         # Send prompt to LLM
         response = await user_agent.agent.ainvoke({"input": prompt})
@@ -101,6 +99,8 @@ async def reset(request: Request):
     if uuid in user_agents.keys():
         await user_agents[uuid].client.close()
         del user_agents[uuid]
+    else:
+        raise HTTPException(status_code=500, detail=f"Current agent not found")
     request.session.clear()
 
 
