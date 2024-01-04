@@ -77,7 +77,7 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     # Add user message to chat history
     request.session["messages"] += [{"role": "user", "content": prompt}]
 
-    user_agent = user_agents[(request.session["uuid"])]
+    user_agent = user_agents[request.session["uuid"]]
     try:
         # Send prompt to LLM
         response = await user_agent.agent.ainvoke({"input": prompt})
@@ -96,11 +96,12 @@ async def reset(request: Request):
     """Reset agent"""
     global user_agents
     uuid = request.session["uuid"]
-    if uuid in user_agents.keys():
-        await user_agents[uuid].client.close()
-        del user_agents[uuid]
-    else:
+
+    if uuid not in user_agents.keys():
         raise HTTPException(status_code=500, detail=f"Current agent not found")
+
+    await user_agents[uuid].client.close()
+    del user_agents[uuid]
     request.session.clear()
 
 
