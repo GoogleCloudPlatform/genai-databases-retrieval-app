@@ -26,8 +26,7 @@ COPY --from=gcr.io/cloud-sql-connectors/cloud-sql-proxy /cloud-sql-proxy /clouds
 WORKDIR /app
 
 # Install dependencies.
-COPY ./requirements.txt requirements.txt
-COPY ./requirements-test.txt requirements-test.txt
+COPY ./requirements.txt ./requirements-test.txt ./
 RUN pip install --no-cache-dir -r requirements.txt -r requirements-test.txt
 
 # Copy local code to the container image.
