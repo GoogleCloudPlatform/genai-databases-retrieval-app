@@ -22,8 +22,6 @@ from app import parse_config
 
 
 async def main():
-    np.set_printoptions(linewidth=100000)
-
     cfg = parse_config("config.yml")
     ds = await datastore.create(cfg.datastore)
 
@@ -31,46 +29,18 @@ async def main():
 
     await ds.close()
 
-    with open("../data/airport_dataset.csv.new", "w") as f:
-        col_names = ["id", "iata", "name", "city", "country"]
-        writer = csv.DictWriter(f, col_names, delimiter=",")
-        writer.writeheader()
-        for a in airports:
-            writer.writerow(a.model_dump())
+    airports_new_path = "../data/airport_dataset.csv.new"
+    amenities_new_path = "../data/amenity_dataset.csv.new"
+    flights_new_path = "../data/flights_dataset.csv.new"
 
-    with open("../data/amenity_dataset.csv.new", "w") as f:
-        col_names = [
-            "id",
-            "name",
-            "description",
-            "location",
-            "terminal",
-            "category",
-            "hour",
-            "content",
-            "embedding",
-        ]
-        writer = csv.DictWriter(f, col_names, delimiter=",")
-        writer.writeheader()
-        for a in amenities:
-            writer.writerow(a.model_dump())
-
-    with open("../data/flights_dataset.csv.new", "w") as f:
-        col_names = [
-            "id",
-            "airline",
-            "flight_number",
-            "departure_airport",
-            "arrival_airport",
-            "departure_time",
-            "arrival_time",
-            "departure_gate",
-            "arrival_gate",
-        ]
-        writer = csv.DictWriter(f, col_names, delimiter=",")
-        writer.writeheader()
-        for f in flights:
-            writer.writerow(f.model_dump())
+    await ds.export_dataset(
+        airports,
+        amenities,
+        flights,
+        airports_new_path,
+        amenities_new_path,
+        flights_new_path,
+    )
 
     print("database export done.")
 

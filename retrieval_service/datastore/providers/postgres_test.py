@@ -18,6 +18,7 @@ from typing import Any, AsyncGenerator, List
 
 import pytest
 import pytest_asyncio
+from csv_diff import compare, load_csv  # type: ignore
 
 import models
 
@@ -61,12 +62,68 @@ async def ds(
         host=IPv4Address(db_host),
     )
     ds = await datastore.create(cfg)
+
+    airports_ds_path = "../data/airport_dataset.csv"
+    amenities_ds_path = "../data/amenity_dataset.csv"
+    flights_ds_path = "../data/flights_dataset.csv"
+    airports, amenities, flights = await ds.load_dataset(
+        airports_ds_path, amenities_ds_path, flights_ds_path
+    )
+    await ds.initialize_data(airports, amenities, flights)
+
     if ds is None:
         raise TypeError("datastore creation failure")
     yield ds
-    print("after yield")
     await ds.close()
-    print("closed database")
+
+
+async def test_export_dataset(ds: postgres.Client):
+    airports, amenities, flights = await ds.export_data()
+
+    airports_ds_path = "../data/airport_dataset.csv"
+    amenities_ds_path = "../data/amenity_dataset.csv"
+    flights_ds_path = "../data/flights_dataset.csv"
+
+    airports_new_path = "../data/airport_dataset.csv.new"
+    amenities_new_path = "../data/amenity_dataset.csv.new"
+    flights_new_path = "../data/flights_dataset.csv.new"
+
+    await ds.export_dataset(
+        airports,
+        amenities,
+        flights,
+        airports_new_path,
+        amenities_new_path,
+        flights_new_path,
+    )
+
+    diff_airports = compare(
+        load_csv(open(airports_ds_path), "id"), load_csv(open(airports_new_path), "id")
+    )
+    assert diff_airports["added"] == []
+    assert diff_airports["removed"] == []
+    assert diff_airports["changed"] == []
+    assert diff_airports["columns_added"] == []
+    assert diff_airports["columns_removed"] == []
+
+    diff_amenities = compare(
+        load_csv(open(amenities_ds_path), "id"),
+        load_csv(open(amenities_new_path), "id"),
+    )
+    assert diff_amenities["added"] == []
+    assert diff_amenities["removed"] == []
+    assert diff_amenities["changed"] == []
+    assert diff_amenities["columns_added"] == []
+    assert diff_amenities["columns_removed"] == []
+
+    diff_flights = compare(
+        load_csv(open(flights_ds_path), "id"), load_csv(open(flights_new_path), "id")
+    )
+    assert diff_flights["added"] == []
+    assert diff_flights["removed"] == []
+    assert diff_flights["changed"] == []
+    assert diff_flights["columns_added"] == []
+    assert diff_flights["columns_removed"] == []
 
 
 async def test_get_airport_by_id(ds: postgres.Client):

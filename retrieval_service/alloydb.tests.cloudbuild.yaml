@@ -39,7 +39,7 @@ steps:
         psql -h ${_DATABASE_HOST} -c "CREATE DATABASE ${_DATABASE_NAME};" || echo "Database '${_DATABASE_NAME}' already exists."
         psql -h ${_DATABASE_HOST} -d ${_DATABASE_NAME} -c 'CREATE EXTENSION vector;' || echo "Extension 'vector' already exists."
 
-  - id: Initialize data
+  - id: Update config
     name: python:3.11
     dir: retrieval_service
     secretEnv:
@@ -55,8 +55,6 @@ steps:
         sed -i "s/my_database/${_DATABASE_NAME}/g" config.yml
         sed -i "s/my-user/$$PGUSER/g" config.yml
         sed -i "s/my-password/$$PGPASSWORD/g" config.yml
-        # Run script
-        python run_database_init.py
 
   - id: Run Alloy DB integration tests
     name: python:3.11
@@ -75,20 +73,6 @@ steps:
         export DB_USER=$$PGUSER
         export DB_PASS=$$PGPASSWORD
         python -m pytest datastore/providers/postgres_test.py
-
-  - id: Run database export
-    name: python:3.11
-    dir: retrieval_service
-    entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
-        # Run script
-        python run_database_export.py
-        cd ../data
-        diff --strip-trailing-cr -Z airport_dataset.csv airport_dataset.csv.new || (echo "airport dataset export fail" && exit 1)
-        diff --strip-trailing-cr -Z amenity_dataset.csv amenity_dataset.csv.new || (echo "amenity dataset export fail" && exit 1)
-        diff --strip-trailing-cr -Z flights_dataset.csv flights_dataset.csv.new || (echo "flight dataset export fail" && exit 1)
 
   - id: Clean database
     name: postgres
