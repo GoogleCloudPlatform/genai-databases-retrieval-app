@@ -149,7 +149,7 @@ async def search_flights(
     return flights
 
 
-@routes.post("/ticket")
+@routes.post("/tickets/insert")
 async def insert_ticket(
     request: Request,
     current_user: Annotated[dict, Depends(get_current_user)],
@@ -177,4 +177,19 @@ async def insert_ticket(
         departure_time,
         arrival_time,
     )
+    return results
+
+
+@routes.get("/tickets/list")
+async def list_tickets(
+    request: Request,
+    current_user: Annotated[dict, Depends(get_current_user)],
+):
+    if current_user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="User login required for data insertion",
+        )
+    ds: datastore.Client = request.app.state.datastore
+    results = await ds.list_tickets(current_user.get("user_id"))
     return results

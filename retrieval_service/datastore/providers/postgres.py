@@ -203,11 +203,11 @@ class Client(datastore.Client[Config]):
             )
 
             # If the table already exists, drop it to avoid conflicts
-            await conn.execute("DROP TABLE IF EXISTS flight_tickets CASCADE")
+            await conn.execute("DROP TABLE IF EXISTS tickets CASCADE")
             # Create a new table
             await conn.execute(
                 """
-                CREATE TABLE flight_tickets(
+                CREATE TABLE tickets(
                   user_id TEXT,
                   user_name TEXT,
                   user_email TEXT,
@@ -398,7 +398,7 @@ class Client(datastore.Client[Config]):
     ) -> list[models.Ticket]:
         result = await self.__pool.execute(
             """
-                INSERT INTO flight_tickets (
+                INSERT INTO tickets (
                     user_id,
                     user_name,
                     user_email,
@@ -426,13 +426,13 @@ class Client(datastore.Client[Config]):
         result = models.Ticket.model_validate(dict(result))
         return result
 
-    async def get_ticket(
+    async def list_tickets(
         self,
         user_id: int,
     ) -> list[models.Ticket]:
         results = await self.__pool.fetch(
             """
-                SELECT * FROM flight_tickets
+                SELECT * FROM tickets
                 WHERE user_id == $1
             """,
             user_id,
