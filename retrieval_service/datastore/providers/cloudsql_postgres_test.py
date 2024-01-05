@@ -18,6 +18,7 @@ from typing import Any, AsyncGenerator, List
 
 import pytest
 import pytest_asyncio
+import asyncpg
 from csv_diff import compare, load_csv  # type: ignore
 
 import models
@@ -59,9 +60,27 @@ def db_region() -> str:
 def db_instance() -> str:
     return get_env_var("DB_INSTANCE", "instance for cloud sql")
 
+@pytest.fixture(scope="module")
+async def create_db(db_user: str, db_name: str) -> AsyncGenerator[None, None]:
+    try:
+        conn = await asyncpg.connect(user=db_user, database=db_name)
+    except asyncpg.InvalidCatalogNameError:
+        # Database does not exist, create it.
+        sys_conn = await asyncpg.connect(
+            database='template1',
+            user=db_user,
+        )
+        await sys_conn.execute(f'CREATE DATABASE "{db_name}";')
+        conn = await asyncpg.connect(user=db_user, database=db_name)
+        await conn.execute("CREATE EXTENSION vector;")
+        print("created")
+        await sys_conn.close()
+    yield
+    await conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
 
 @pytest_asyncio.fixture(scope="module")
 async def ds(
+    create_db: None,
     db_user: str,
     db_pass: str,
     db_name: str,
@@ -69,6 +88,7 @@ async def ds(
     db_region: str,
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
+    t = create_db
     cfg = cloudsql_postgres.Config(
         kind="cloudsql-postgres",
         user=db_user,
@@ -78,6 +98,7 @@ async def ds(
         region=db_region,
         instance=db_instance,
     )
+    t = create_db
     ds = await datastore.create(cfg)
 
     airports_ds_path = "../data/airport_dataset.csv"
