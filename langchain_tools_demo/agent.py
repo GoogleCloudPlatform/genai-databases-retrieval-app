@@ -13,7 +13,13 @@
 # limitations under the License.
 
 import os
+from datetime import date, timedelta
+from typing import Dict, Optional
 
+import aiohttp
+import dateutil.parser as dparser
+import google.auth.transport.requests  # type: ignore
+import google.oauth2.id_token  # type: ignore
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent import AgentExecutor
 from langchain.globals import set_verbose  # type: ignore
@@ -21,20 +27,88 @@ from langchain.llms.vertexai import VertexAI
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
 
-from tools import convert_date, tools
+from tools import initialize_tools
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
+BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
+
+# aiohttp context
+connector = None
+
+
+# Class for setting up a dedicated llm agent for each individual user
+class UserAgent:
+    client: aiohttp.ClientSession
+    agent: AgentExecutor
+
+    def __init__(self, client, agent) -> None:
+        self.client = client
+        self.agent = agent
+
+
+user_agents: Dict[str, UserAgent] = {}
+
+
+def get_id_token(url: str) -> str:
+    """Helper method to generate ID tokens for authenticated requests"""
+    # Use Application Default Credentials on Cloud Run
+    if os.getenv("K_SERVICE"):
+        auth_req = google.auth.transport.requests.Request()
+        return google.oauth2.id_token.fetch_id_token(auth_req, url)
+    else:
+        # Use gcloud credentials locally
+        import subprocess
+
+        return (
+            subprocess.run(
+                ["gcloud", "auth", "print-identity-token"],
+                stdout=subprocess.PIPE,
+                check=True,
+            )
+            .stdout.strip()
+            .decode()
+        )
+
+
+def get_header() -> Optional[dict]:
+    if "http://" in BASE_URL:
+        return None
+    else:
+        # Append ID Token to make authenticated requests to Cloud Run services
+        headers = {"Authorization": f"Bearer {get_id_token(BASE_URL)}"}
+        return headers
+
+
+async def get_connector():
+    global connector
+    if connector is None:
+        connector = aiohttp.TCPConnector(limit=100)
+    return connector
+
+
+async def handle_error_response(response):
+    if response.status != 200:
+        return f"Error sending {response.method} request to {str(response.url)}): {await response.text()}"
+
+
+async def create_client_session() -> aiohttp.ClientSession:
+    return aiohttp.ClientSession(
+        connector=await get_connector(),
+        headers=get_header(),
+        raise_for_status=handle_error_response,
+    )
 
 
 # Agent
-def init_agent() -> AgentExecutor:
+async def init_agent() -> UserAgent:
     """Load an agent executor with tools and LLM"""
     print("Initializing agent..")
-    llm = VertexAI(max_output_tokens=512)
+    llm = VertexAI(max_output_tokens=512, model_name="gemini-pro")
     memory = ConversationBufferMemory(
         memory_key="chat_history", input_key="input", output_key="output"
     )
-
+    client = await create_client_session()
+    tools = await initialize_tools(client)
     agent = initialize_agent(
         tools,
         llm,
@@ -51,15 +125,16 @@ def init_agent() -> AgentExecutor:
     format_instructions = FORMAT_INSTRUCTIONS.format(
         tool_names=tool_names,
     )
-    date = convert_date("today")
-    today = f"Today is {date}."
+    today_date = date.today().strftime("%Y-%m-%d")
+    today = f"Today is {today_date}."
     template = "\n\n".join([PREFIX, tool_strings, format_instructions, SUFFIX, today])
     human_message_template = "{input}\n\n{agent_scratchpad}"
     prompt = ChatPromptTemplate.from_messages(
         [("system", template), ("human", human_message_template)]
     )
     agent.agent.llm_chain.prompt = prompt  # type: ignore
-    return agent
+
+    return UserAgent(client, agent)
 
 
 PREFIX = """SFO Airport Assistant helps travelers find their way at the airport.
