@@ -13,16 +13,6 @@
 # limitations under the License.
 
 steps:
-  - id: "docker-build"
-    name: "gcr.io/cloud-builders/docker"
-    dir: retrieval_service
-    args: ["build", "-f", "Dockerfile-cloudsql",  "-t", "${_IMAGE_NAME}", "."]
-
-  - id: "docker-push"
-    name: "gcr.io/cloud-builders/docker"
-    dir: retrieval_service
-    args: ["push", "${_IMAGE_NAME}"]
-
   - id: Install dependencies
     name: python:3.11
     dir: retrieval_service
@@ -36,20 +26,6 @@ steps:
         "requirements-test.txt",
         "--user",
       ]
-
-  - id: Create database
-    name: ${_IMAGE_NAME}
-    dir: retrieval_service
-    entrypoint: /bin/bash
-    secretEnv:
-      - PGUSER # Use built-in env vars for database connection
-      - PGPASSWORD
-    args:
-      - "-c"
-      - |
-        /cloudsql/cloud-sql-proxy --port ${_DATABASE_PORT} ${_INSTANCE_CONNECTION_NAME} & sleep 2;
-        psql -h ${_DATABASE_HOST} -c "CREATE DATABASE ${_DATABASE_NAME};" || echo "Database '${_DATABASE_NAME}' already exists."
-        psql -h ${_DATABASE_HOST} -d ${_DATABASE_NAME} -c 'CREATE EXTENSION vector;' || echo "Extension 'vector' already exists."
 
   - id: Update config
     name: python:3.11
@@ -90,27 +66,12 @@ steps:
         export DB_PASS=$$PGPASSWORD
         python -m pytest datastore/providers/cloudsql_postgres_test.py
 
-  - id: Clean database
-    name: ${_IMAGE_NAME}
-    entrypoint: /bin/bash
-    secretEnv:
-      - PGUSER
-      - PGPASSWORD
-    args:
-      - "-c"
-      - |
-        /cloudsql/cloud-sql-proxy --port ${_DATABASE_PORT} ${_INSTANCE_CONNECTION_NAME} & sleep 2;
-        psql -h ${_DATABASE_HOST} -c "DROP DATABASE IF EXISTS ${_DATABASE_NAME};"
-
 substitutions:
   _DATABASE_NAME: test_${SHORT_SHA}
   _DATABASE_USER: postgres
   _DATABASE_HOST: 127.0.0.1
   _CLOUDSQL_REGION: "us-central1"
   _CLOUDSQL_INSTANCE: "my-cloudsql-instance"
-  _INSTANCE_CONNECTION_NAME: ${PROJECT_ID}:${_CLOUDSQL_REGION}:${_CLOUDSQL_INSTANCE}
-  _DATABASE_PORT: "5432"
-  _IMAGE_NAME: gcr.io/${PROJECT_ID}/cloudsql-test-proxy
 
 availableSecrets:
   secretManager:
