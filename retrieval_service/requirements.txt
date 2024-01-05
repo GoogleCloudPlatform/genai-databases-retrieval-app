@@ -3,6 +3,7 @@ fastapi==0.106.0
 google-cloud-firestore==2.13.1
 google-cloud-aiplatform==1.38.1
 langchain==0.0.354
+langchain-core==0.1.5
 pgvector==0.2.4
 pydantic==2.5.2
 uvicorn[standard]==0.25.0
