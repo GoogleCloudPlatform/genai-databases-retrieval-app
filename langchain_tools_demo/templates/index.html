@@ -37,20 +37,9 @@ limitations under the License.
     <div class="container">
         <div class="chat-header">
             <h1>SFO Airport Assistant</h1>
-            <button id="resetButton">
-                <img src="../static/resetButton.png" alt="Reset">
-            </button>
+            <span class="material-symbols-outlined" id="resetButton">refresh</span>
         </div>
-        
-        <script>
-            document.getElementById('resetButton').addEventListener('click', function() {
-                fetch('/reset', {
-                    method: 'POST',
-                }).then((res)=>{
-                    window.location.reload()
-                })
-            });
-        </script>
+
         <div class="chat-wrapper">
             <div class="chat-content">
                 {# Add Chat history #}

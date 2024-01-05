@@ -74,6 +74,11 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     if not prompt:
         raise HTTPException(status_code=400, detail="Error: No user query")
 
+    if "uuid" not in request.session:
+        raise HTTPException(
+            status_code=400, detail="Error: Invoke index handler before start chatting"
+        )
+
     # Add user message to chat history
     request.session["messages"] += [{"role": "user", "content": prompt}]
 

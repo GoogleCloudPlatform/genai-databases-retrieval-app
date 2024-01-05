@@ -34,10 +34,25 @@ steps:
         export ID_TOKEN=$(gcloud auth print-identity-token --audiences $$URL)
 
         # Test `/` route
-        curl -si --fail --show-error -H "Authorization: Bearer $$ID_TOKEN" $$URL
+        curl -c cookies.txt -si --fail --show-error -H "Authorization: Bearer $$ID_TOKEN" $$URL
 
-        # Test `/chat`` route
-        curl -si --fail --show-error \
+        # Test `/chat` route should fail
+        msg=$(curl -si --show-error \
+          -X POST \
+          -H "Authorization: Bearer $$ID_TOKEN" \
+          -H 'Content-Type: application/json' \
+          -d '{"prompt":"How can you help me?"}' \
+          $$URL/chat)
+        
+        if grep -q "400" <<< "$msg"; then
+          echo "Chat Handler Test: PASSED"
+        else
+          echo "Chat Handler Test: FAILED"
+          echo $msg && exit 1
+        fi
+
+        # Test `/chat` route
+        curl -b cookies.txt -si --fail --show-error \
           -X POST \
           -H "Authorization: Bearer $$ID_TOKEN" \
           -H 'Content-Type: application/json' \

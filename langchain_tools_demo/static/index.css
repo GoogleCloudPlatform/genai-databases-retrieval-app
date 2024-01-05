@@ -41,25 +41,10 @@ body {
     text-align: center;
 }
 
-#resetButton {
+.chat-header span.reset-button {
     position: absolute;
-    top: 47px;
-    right: 30px;
-    width: 30px;
-    height: 30px;
-    border: none;
-    background-color: transparent;
-    padding: 0;
-    cursor: pointer;
-}
-
-#resetButton img {
-    width: 30px;
-    height: 30px;
-}
-
-#resetButton:hover {
-    background-color:  #c9d4e9;
+    margin-right: 0px;
+    font-size: 38px;
 }
 
 .chat-wrapper {
@@ -99,11 +84,16 @@ div.chat-content>span {
     border: none;
 }
 
-.chat-input-container span.btn-group {
-    position: relative;
-    margin: auto;
-    margin-right: 10px;
-    display: flex;
+#resetButton {
+    font-size: 35px;
+    cursor: pointer;
+    position: absolute;
+    top: 47px;
+    right: 40px;
+}
+
+#resetButton:hover {
+    background-color:  #c9d4e9;
 }
 
 .chat-bubble {

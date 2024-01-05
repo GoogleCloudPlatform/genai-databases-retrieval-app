@@ -26,6 +26,11 @@ $(document).on("keypress",async (e) => {
     }
 });
 
+// Reset current user via click
+$('#resetButton').click(async (e) => {
+    await reset();
+});
+
 async function submitMessage() {
     let msg = $('.chat-bar input').val();
     // Add message to UI
@@ -60,6 +65,14 @@ async function askQuestion(prompt) {
         console.error(await response.text())
         return "Sorry, we couldn't answer your question 😢"
     }
+}
+
+async function reset() {
+    await fetch('/reset', {
+        method: 'POST',
+    }).then(()=>{
+        window.location.reload()
+    })
 }
 
 // Helper function to print to chatroom
