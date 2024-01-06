@@ -35,9 +35,16 @@ body {
 
 .chat-header {
     position: relative;
+    min-width: 650px;
     font-size: 16px;
     font-weight: 500;
     text-align: center;
+}
+
+.chat-header span.reset-button {
+    position: absolute;
+    margin-right: 0px;
+    font-size: 38px;
 }
 
 .chat-wrapper {
@@ -77,11 +84,16 @@ div.chat-content>span {
     border: none;
 }
 
-.chat-input-container span.btn-group {
-    position: relative;
-    margin: auto;
-    margin-right: 10px;
-    display: flex;
+#resetButton {
+    font-size: 35px;
+    cursor: pointer;
+    position: absolute;
+    top: 47px;
+    right: 40px;
+}
+
+#resetButton:hover {
+    background-color:  #c9d4e9;
 }
 
 .chat-bubble {
