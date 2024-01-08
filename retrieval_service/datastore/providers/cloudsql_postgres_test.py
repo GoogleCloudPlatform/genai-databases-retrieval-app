@@ -18,6 +18,8 @@ from typing import Any, AsyncGenerator, List
 
 import pytest
 import pytest_asyncio
+import asyncpg
+from csv_diff import compare, load_csv  # type: ignore
 
 import models
 
@@ -53,14 +55,57 @@ def db_project() -> str:
 def db_region() -> str:
     return get_env_var("DB_REGION", "region for cloud sql instance")
 
-
 @pytest.fixture(scope="module")
 def db_instance() -> str:
     return get_env_var("DB_INSTANCE", "instance for cloud sql")
 
+@pytest.fixture(scope="module")
+def db_host() -> str:
+    return get_env_var("DB_IP", "public ip for cloud sql instance")
+
+@pytest.fixture(scope="module")
+async def create_db(db_user: str, db_pass: str, db_name: str, db_host: str) -> AsyncGenerator[None, None]:
+    try:
+        print("actually in the function")
+        conn = await asyncpg.connect(
+            host=db_host,
+            port=5432,
+            user=db_user,
+            password=db_pass,
+            database=db_name,
+            timeout=500,
+        )
+    except asyncpg.InvalidCatalogNameError:
+        print("in the error")
+        # Database does not exist, create it.
+        sys_conn = await asyncpg.connect(
+            host=db_host,
+            port=5432,
+            database='template1',
+            password=db_pass,
+            user=db_user,
+            timeout=500,
+        )
+        await sys_conn.execute(f'CREATE DATABASE "{db_name}";')
+        conn = await asyncpg.connect(
+            host=db_host,
+            port=5432,
+            user=db_user,
+            password=db_pass,
+            database=db_name,
+            timeout=500,
+        )
+        await conn.execute("CREATE EXTENSION vector;")
+        await sys_conn.close()
+    except Exception as error:
+        print("Error while connecting to db: {}".format(error))
+    print("run async generator")
+    yield
+    await conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
 
 @pytest_asyncio.fixture(scope="module")
 async def ds(
+    create_db: None,
     db_user: str,
     db_pass: str,
     db_name: str,
@@ -68,6 +113,9 @@ async def ds(
     db_region: str,
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
+    t = await create_db.__anext__()
+    print("after create_db")
+    print(t)
     cfg = cloudsql_postgres.Config(
         kind="cloudsql-postgres",
         user=db_user,
@@ -77,13 +125,70 @@ async def ds(
         region=db_region,
         instance=db_instance,
     )
+    t = create_db
     ds = await datastore.create(cfg)
+
+    airports_ds_path = "../data/airport_dataset.csv"
+    amenities_ds_path = "../data/amenity_dataset.csv"
+    flights_ds_path = "../data/flights_dataset.csv"
+    airports, amenities, flights = await ds.load_dataset(
+        airports_ds_path, amenities_ds_path, flights_ds_path
+    )
+    await ds.initialize_data(airports, amenities, flights)
+
     if ds is None:
         raise TypeError("datastore creation failure")
     yield ds
-    print("after yield")
     await ds.close()
-    print("closed database")
+
+
+async def test_export_dataset(ds: cloudsql_postgres.Client):
+    airports, amenities, flights = await ds.export_data()
+
+    airports_ds_path = "../data/airport_dataset.csv"
+    amenities_ds_path = "../data/amenity_dataset.csv"
+    flights_ds_path = "../data/flights_dataset.csv"
+
+    airports_new_path = "../data/airport_dataset.csv.new"
+    amenities_new_path = "../data/amenity_dataset.csv.new"
+    flights_new_path = "../data/flights_dataset.csv.new"
+
+    await ds.export_dataset(
+        airports,
+        amenities,
+        flights,
+        airports_new_path,
+        amenities_new_path,
+        flights_new_path,
+    )
+
+    diff_airports = compare(
+        load_csv(open(airports_ds_path), "id"), load_csv(open(airports_new_path), "id")
+    )
+    assert diff_airports["added"] == []
+    assert diff_airports["removed"] == []
+    assert diff_airports["changed"] == []
+    assert diff_airports["columns_added"] == []
+    assert diff_airports["columns_removed"] == []
+
+    diff_amenities = compare(
+        load_csv(open(amenities_ds_path), "id"),
+        load_csv(open(amenities_new_path), "id"),
+    )
+    assert diff_amenities["added"] == []
+    assert diff_amenities["removed"] == []
+    assert diff_amenities["changed"] == []
+    assert diff_amenities["columns_added"] == []
+    assert diff_amenities["columns_removed"] == []
+
+    diff_flights = compare(
+        load_csv(open(flights_ds_path), "id"), load_csv(open(flights_new_path), "id")
+    )
+    assert diff_flights["added"] == []
+    assert diff_flights["removed"] == []
+    assert diff_flights["changed"] == []
+    assert diff_flights["columns_added"] == []
+    assert diff_flights["columns_removed"] == []
 
 
 async def test_get_airport_by_id(ds: cloudsql_postgres.Client):
