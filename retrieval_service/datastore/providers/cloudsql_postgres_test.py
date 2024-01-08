@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 from datetime import datetime
 from ipaddress import IPv4Address
 from typing import Any, AsyncGenerator, List
 
+import asyncpg
 import pytest
 import pytest_asyncio
-import asyncpg
 from csv_diff import compare, load_csv  # type: ignore
+from google.cloud.sql.connector import Connector
 
 import models
 
@@ -42,11 +44,6 @@ def db_pass() -> str:
 
 
 @pytest.fixture(scope="module")
-def db_name() -> str:
-    return get_env_var("DB_NAME", "name of a postgres database")
-
-
-@pytest.fixture(scope="module")
 def db_project() -> str:
     return get_env_var("DB_PROJECT", "project id for google cloud")
 
@@ -60,35 +57,48 @@ def db_region() -> str:
 def db_instance() -> str:
     return get_env_var("DB_INSTANCE", "instance for cloud sql")
 
+
 @pytest.fixture(scope="module")
-async def create_db(db_user: str, db_name: str) -> AsyncGenerator[None, None]:
-    try:
-        conn = await asyncpg.connect(user=db_user, database=db_name)
-    except asyncpg.InvalidCatalogNameError:
-        # Database does not exist, create it.
-        sys_conn = await asyncpg.connect(
-            database='template1',
-            user=db_user,
-        )
-        await sys_conn.execute(f'CREATE DATABASE "{db_name}";')
-        conn = await asyncpg.connect(user=db_user, database=db_name)
-        await conn.execute("CREATE EXTENSION vector;")
-        print("created")
-        await sys_conn.close()
-    yield
+async def create_db(
+    db_user: str, db_pass: str, db_project: str, db_region: str, db_instance: str
+) -> AsyncGenerator[str, None]:
+    db_name = get_env_var("DB_NAME", "name of a postgres database")
+    loop = asyncio.get_running_loop()
+    connector = Connector(loop=loop)
+    # Database does not exist, create it.
+    sys_conn: asyncpg.Connection = await connector.connect_async(
+        f"{db_project}:{db_region}:{db_instance}",
+        "asyncpg",
+        user=f"{db_user}",
+        password=f"{db_pass}",
+        db="postgres",
+    )
+    await sys_conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
+    await sys_conn.execute(f'CREATE DATABASE "{db_name}";')
+    await sys_conn.close()
+    conn: asyncpg.Connection = await connector.connect_async(
+        f"{db_project}:{db_region}:{db_instance}",
+        "asyncpg",
+        user=f"{db_user}",
+        password=f"{db_pass}",
+        db=f"{db_name}",
+    )
+    await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+    yield db_name
     await conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
+    await conn.close()
+
 
 @pytest_asyncio.fixture(scope="module")
 async def ds(
-    create_db: None,
+    create_db: AsyncGenerator[str, None],
     db_user: str,
     db_pass: str,
-    db_name: str,
     db_project: str,
     db_region: str,
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
-    t = create_db
+    db_name = await create_db.__anext__()
     cfg = cloudsql_postgres.Config(
         kind="cloudsql-postgres",
         user=db_user,

@@ -69,7 +69,6 @@ steps:
 substitutions:
   _DATABASE_NAME: test_${SHORT_SHA}
   _DATABASE_USER: postgres
-  _DATABASE_HOST: 127.0.0.1
   _CLOUDSQL_REGION: "us-central1"
   _CLOUDSQL_INSTANCE: "my-cloudsql-instance"
 
