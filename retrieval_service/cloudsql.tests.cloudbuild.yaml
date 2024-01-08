@@ -50,6 +50,7 @@ steps:
     name: python:3.11
     dir: retrieval_service
     env: # Set env var expected by tests
+      - "DB_HOST=${_DATABASE_HOST}"
       - "DB_NAME=${_DATABASE_NAME}"
       - "DB_PROJECT=$PROJECT_ID"
       - "DB_REGION=${_CLOUDSQL_REGION}"
@@ -69,7 +70,7 @@ steps:
 substitutions:
   _DATABASE_NAME: test_${SHORT_SHA}
   _DATABASE_USER: postgres
-  _DATABASE_HOST: 127.0.0.1
+  _DATABASE_HOST: "34.29.26.230"
   _CLOUDSQL_REGION: "us-central1"
   _CLOUDSQL_INSTANCE: "my-cloudsql-instance"
 

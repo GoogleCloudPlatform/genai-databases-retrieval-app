@@ -55,26 +55,51 @@ def db_project() -> str:
 def db_region() -> str:
     return get_env_var("DB_REGION", "region for cloud sql instance")
 
-
 @pytest.fixture(scope="module")
 def db_instance() -> str:
     return get_env_var("DB_INSTANCE", "instance for cloud sql")
 
 @pytest.fixture(scope="module")
-async def create_db(db_user: str, db_name: str) -> AsyncGenerator[None, None]:
+def db_host() -> str:
+    return get_env_var("DB_IP", "public ip for cloud sql instance")
+
+@pytest.fixture(scope="module")
+async def create_db(db_user: str, db_pass: str, db_name: str, db_host: str) -> AsyncGenerator[None, None]:
     try:
-        conn = await asyncpg.connect(user=db_user, database=db_name)
+        print("actually in the function")
+        conn = await asyncpg.connect(
+            host=db_host,
+            port=5432,
+            user=db_user,
+            password=db_pass,
+            database=db_name,
+            timeout=500,
+        )
     except asyncpg.InvalidCatalogNameError:
+        print("in the error")
         # Database does not exist, create it.
         sys_conn = await asyncpg.connect(
+            host=db_host,
+            port=5432,
             database='template1',
+            password=db_pass,
             user=db_user,
+            timeout=500,
         )
         await sys_conn.execute(f'CREATE DATABASE "{db_name}";')
-        conn = await asyncpg.connect(user=db_user, database=db_name)
+        conn = await asyncpg.connect(
+            host=db_host,
+            port=5432,
+            user=db_user,
+            password=db_pass,
+            database=db_name,
+            timeout=500,
+        )
         await conn.execute("CREATE EXTENSION vector;")
-        print("created")
         await sys_conn.close()
+    except Exception as error:
+        print("Error while connecting to db: {}".format(error))
+    print("run async generator")
     yield
     await conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
 
@@ -88,7 +113,9 @@ async def ds(
     db_region: str,
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
-    t = create_db
+    t = await create_db.__anext__()
+    print("after create_db")
+    print(t)
     cfg = cloudsql_postgres.Config(
         kind="cloudsql-postgres",
         user=db_user,
