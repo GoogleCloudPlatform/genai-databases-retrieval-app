@@ -246,8 +246,8 @@ class Client(datastore.Client[Config]):
         date_timestamp = datetime.combine(date_obj, datetime.min.time())
         query = (
             self.__client.collection("flights")
-            .where("departure_time", ">=", date_timestamp - timedelta(days=1))
-            .where("departure_time", "<=", date_timestamp + timedelta(days=1))
+            .where("departure_time", ">=", date_timestamp)
+            .where("departure_time", "<", date_timestamp + timedelta(days=1))
         )
 
         if departure_airport is None:
