@@ -46,7 +46,7 @@ steps:
         sed -i "s/my-region/${_CLOUDSQL_REGION}/g" config.yml
         sed -i "s/my-instance/${_CLOUDSQL_INSTANCE}/g" config.yml
 
-  - id: Run Alloy DB integration tests
+  - id: Run Cloud SQL DB integration tests
     name: python:3.11
     dir: retrieval_service
     env: # Set env var expected by tests
