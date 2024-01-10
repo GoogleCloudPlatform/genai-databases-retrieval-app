@@ -407,7 +407,7 @@ class Client(datastore.Client[Config]):
                 SELECT * FROM flights
                   WHERE (CAST(:departure_airport AS TEXT) IS NULL OR departure_airport ILIKE :departure_airport)
                   AND (CAST(:arrival_airport AS TEXT) IS NULL OR arrival_airport ILIKE :arrival_airport)
-                  AND departure_time > CAST(:datetime AS timestamp) - interval '1 day'
+                  AND departure_time >= CAST(:datetime AS timestamp)
                   AND departure_time < CAST(:datetime AS timestamp) + interval '1 day'
                 """
             )
