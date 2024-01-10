@@ -38,20 +38,20 @@ class Amenity(BaseModel):
     terminal: str
     category: str
     hour: str
-    sunday_start_hour: Optional[datetime.time]
-    sunday_end_hour: Optional[datetime.time]
-    monday_start_hour: Optional[datetime.time]
-    monday_end_hour: Optional[datetime.time]
-    tuesday_start_hour: Optional[datetime.time]
-    tuesday_end_hour: Optional[datetime.time]
-    wednesday_start_hour: Optional[datetime.time]
-    wednesday_end_hour: Optional[datetime.time]
-    thursday_start_hour: Optional[datetime.time]
-    thursday_end_hour: Optional[datetime.time]
-    friday_start_hour: Optional[datetime.time]
-    friday_end_hour: Optional[datetime.time]
-    saturday_start_hour: Optional[datetime.time]
-    saturday_end_hour: Optional[datetime.time]
+    sunday_start_hour: Optional[datetime.time] = None
+    sunday_end_hour: Optional[datetime.time] = None
+    monday_start_hour: Optional[datetime.time] = None
+    monday_end_hour: Optional[datetime.time] = None
+    tuesday_start_hour: Optional[datetime.time] = None
+    tuesday_end_hour: Optional[datetime.time] = None
+    wednesday_start_hour: Optional[datetime.time] = None
+    wednesday_end_hour: Optional[datetime.time] = None
+    thursday_start_hour: Optional[datetime.time] = None
+    thursday_end_hour: Optional[datetime.time] = None
+    friday_start_hour: Optional[datetime.time] = None
+    friday_end_hour: Optional[datetime.time] = None
+    saturday_start_hour: Optional[datetime.time] = None
+    saturday_end_hour: Optional[datetime.time] = None
     content: Optional[str] = None
     embedding: Optional[list[float]] = None
 

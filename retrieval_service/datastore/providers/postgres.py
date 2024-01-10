@@ -272,12 +272,7 @@ class Client(datastore.Client[Config]):
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         result = await self.__pool.fetchrow(
             """
-            SELECT id, name, description, location, terminal,
-              category, hour, sunday_start_hour, sunday_end_hour,
-              monday_start_hour, monday_end_hour, tuesday_start_hour,
-              tuesday_end_hour, wednesday_start_hour, wednesday_end_hour,
-              thursday_start_hour, thursday_end_hour, friday_start_hour,
-              friday_end_hour, saturday_start_hour, saturday_end_hour
+            SELECT id, name, description, location, terminal, category, hour
             FROM amenities WHERE id=$1
             """,
             id,
@@ -294,20 +289,10 @@ class Client(datastore.Client[Config]):
     ) -> list[models.Amenity]:
         results = await self.__pool.fetch(
             """
-            SELECT id, name, description, location, terminal,
-              category, hour, sunday_start_hour, sunday_end_hour,
-              monday_start_hour, monday_end_hour, tuesday_start_hour,
-              tuesday_end_hour, wednesday_start_hour, wednesday_end_hour,
-              thursday_start_hour, thursday_end_hour, friday_start_hour,
-              friday_end_hour, saturday_start_hour, saturday_end_hour
+            SELECT id, name, description, location, terminal, category, hour
             FROM (
                 SELECT id, name, description, location, terminal, category,
-                  hour, sunday_start_hour, sunday_end_hour, monday_start_hour,
-                  monday_end_hour, tuesday_start_hour, tuesday_end_hour,
-                  wednesday_start_hour, wednesday_end_hour, thursday_start_hour,
-                  thursday_end_hour, friday_start_hour, friday_end_hour,
-                  saturday_start_hour, saturday_end_hour,
-                  1 - (embedding <=> $1) AS similarity
+                  hour, 1 - (embedding <=> $1) AS similarity
                 FROM amenities
                 WHERE 1 - (embedding <=> $1) > $2
                 ORDER BY similarity DESC

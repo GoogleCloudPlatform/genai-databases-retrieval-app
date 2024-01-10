@@ -316,11 +316,7 @@ class Client(datastore.Client[Config]):
         async with self.__pool.connect() as conn:
             s = text(
                 """
-                SELECT id, name, description, location, terminal, category, hour,
-                  sunday_start_hour, sunday_end_hour, monday_start_hour, monday_end_hour,
-                  tuesday_start_hour, tuesday_end_hour, wednesday_start_hour, wednesday_end_hour,
-                  thursday_start_hour, thursday_end_hour, friday_start_hour, friday_end_hour,
-                  saturday_start_hour, saturday_end_hour
+                SELECT id, name, description, location, terminal, category, hour
                 FROM amenities WHERE id=:id
                 """
             )
@@ -339,17 +335,10 @@ class Client(datastore.Client[Config]):
         async with self.__pool.connect() as conn:
             s = text(
                 """
-                SELECT id, name, description, location, terminal, category, hour,
-                  sunday_start_hour, sunday_end_hour, monday_start_hour, monday_end_hour,
-                  tuesday_start_hour, tuesday_end_hour, wednesday_start_hour, wednesday_end_hour,
-                  thursday_start_hour, thursday_end_hour, friday_start_hour, friday_end_hour,
-                  saturday_start_hour, saturday_end_hour
+                SELECT id, name, description, location, terminal, category, hour
                   FROM (
                       SELECT id, name, description, location, terminal, category, hour,
-                        sunday_start_hour, sunday_end_hour, monday_start_hour, monday_end_hour,
-                        tuesday_start_hour, tuesday_end_hour, wednesday_start_hour, wednesday_end_hour,
-                        thursday_start_hour, thursday_end_hour, friday_start_hour, friday_end_hour,
-                        saturday_start_hour, saturday_end_hour, 1 - (embedding <=> :query_embedding) AS similarity
+                        1 - (embedding <=> :query_embedding) AS similarity
                       FROM amenities
                       WHERE 1 - (embedding <=> :query_embedding) > :similarity_threshold
                       ORDER BY similarity DESC
