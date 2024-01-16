@@ -22,7 +22,6 @@ from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from langchain.agents.agent import AgentExecutor
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -52,12 +51,17 @@ BASE_HISTORY = [{"role": "assistant", "content": "How can I help you?"}]
 
 
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request):
+async def index(request: Request):
     """Render the default template."""
-    request.session.clear()  # Clear chat history, if needed
     if "uuid" not in request.session:
         request.session["uuid"] = str(uuid.uuid4())
         request.session["messages"] = BASE_HISTORY
+    # Agent setup
+    if request.session["uuid"] in user_agents:
+        user_agent = user_agents[request.session["uuid"]]
+    else:
+        user_agent = await init_agent()
+        user_agents[request.session["uuid"]] = user_agent
     return templates.TemplateResponse(
         "index.html", {"request": request, "messages": request.session["messages"]}
     )
@@ -71,17 +75,14 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
         raise HTTPException(status_code=400, detail="Error: No user query")
 
     if "uuid" not in request.session:
-        request.session["uuid"] = str(uuid.uuid4())
-        request.session["messages"] = BASE_HISTORY
+        raise HTTPException(
+            status_code=400, detail="Error: Invoke index handler before start chatting"
+        )
 
     # Add user message to chat history
     request.session["messages"] += [{"role": "user", "content": prompt}]
-    # Agent setup
-    if request.session["uuid"] in user_agents:
-        user_agent = user_agents[request.session["uuid"]]
-    else:
-        user_agent = await init_agent()
-        user_agents[request.session["uuid"]] = user_agent
+
+    user_agent = user_agents[request.session["uuid"]]
     try:
         # Send prompt to LLM
         response = await user_agent.agent.ainvoke({"input": prompt})
@@ -93,6 +94,20 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     except Exception as err:
         print(err)
         raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
+
+
+@app.post("/reset")
+async def reset(request: Request):
+    """Reset agent"""
+    global user_agents
+    uuid = request.session["uuid"]
+
+    if uuid not in user_agents.keys():
+        raise HTTPException(status_code=500, detail=f"Current agent not found")
+
+    await user_agents[uuid].client.close()
+    del user_agents[uuid]
+    request.session.clear()
 
 
 if __name__ == "__main__":

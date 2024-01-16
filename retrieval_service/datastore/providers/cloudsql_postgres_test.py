@@ -12,12 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 from datetime import datetime
 from ipaddress import IPv4Address
 from typing import Any, AsyncGenerator, List
 
+import asyncpg
 import pytest
 import pytest_asyncio
+from csv_diff import compare, load_csv  # type: ignore
+from google.cloud.sql.connector import Connector
 
 import models
 
@@ -40,11 +44,6 @@ def db_pass() -> str:
 
 
 @pytest.fixture(scope="module")
-def db_name() -> str:
-    return get_env_var("DB_NAME", "name of a postgres database")
-
-
-@pytest.fixture(scope="module")
 def db_project() -> str:
     return get_env_var("DB_PROJECT", "project id for google cloud")
 
@@ -59,15 +58,47 @@ def db_instance() -> str:
     return get_env_var("DB_INSTANCE", "instance for cloud sql")
 
 
+@pytest.fixture(scope="module")
+async def create_db(
+    db_user: str, db_pass: str, db_project: str, db_region: str, db_instance: str
+) -> AsyncGenerator[str, None]:
+    db_name = get_env_var("DB_NAME", "name of a postgres database")
+    loop = asyncio.get_running_loop()
+    connector = Connector(loop=loop)
+    # Database does not exist, create it.
+    sys_conn: asyncpg.Connection = await connector.connect_async(
+        f"{db_project}:{db_region}:{db_instance}",
+        "asyncpg",
+        user=f"{db_user}",
+        password=f"{db_pass}",
+        db="postgres",
+    )
+    await sys_conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
+    await sys_conn.execute(f'CREATE DATABASE "{db_name}";')
+    await sys_conn.close()
+    conn: asyncpg.Connection = await connector.connect_async(
+        f"{db_project}:{db_region}:{db_instance}",
+        "asyncpg",
+        user=f"{db_user}",
+        password=f"{db_pass}",
+        db=f"{db_name}",
+    )
+    await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+    yield db_name
+    await conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
+    await conn.close()
+
+
 @pytest_asyncio.fixture(scope="module")
 async def ds(
+    create_db: AsyncGenerator[str, None],
     db_user: str,
     db_pass: str,
-    db_name: str,
     db_project: str,
     db_region: str,
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
+    db_name = await create_db.__anext__()
     cfg = cloudsql_postgres.Config(
         kind="cloudsql-postgres",
         user=db_user,
@@ -77,13 +108,70 @@ async def ds(
         region=db_region,
         instance=db_instance,
     )
+    t = create_db
     ds = await datastore.create(cfg)
+
+    airports_ds_path = "../data/airport_dataset.csv"
+    amenities_ds_path = "../data/amenity_dataset.csv"
+    flights_ds_path = "../data/flights_dataset.csv"
+    airports, amenities, flights = await ds.load_dataset(
+        airports_ds_path, amenities_ds_path, flights_ds_path
+    )
+    await ds.initialize_data(airports, amenities, flights)
+
     if ds is None:
         raise TypeError("datastore creation failure")
     yield ds
-    print("after yield")
     await ds.close()
-    print("closed database")
+
+
+async def test_export_dataset(ds: cloudsql_postgres.Client):
+    airports, amenities, flights = await ds.export_data()
+
+    airports_ds_path = "../data/airport_dataset.csv"
+    amenities_ds_path = "../data/amenity_dataset.csv"
+    flights_ds_path = "../data/flights_dataset.csv"
+
+    airports_new_path = "../data/airport_dataset.csv.new"
+    amenities_new_path = "../data/amenity_dataset.csv.new"
+    flights_new_path = "../data/flights_dataset.csv.new"
+
+    await ds.export_dataset(
+        airports,
+        amenities,
+        flights,
+        airports_new_path,
+        amenities_new_path,
+        flights_new_path,
+    )
+
+    diff_airports = compare(
+        load_csv(open(airports_ds_path), "id"), load_csv(open(airports_new_path), "id")
+    )
+    assert diff_airports["added"] == []
+    assert diff_airports["removed"] == []
+    assert diff_airports["changed"] == []
+    assert diff_airports["columns_added"] == []
+    assert diff_airports["columns_removed"] == []
+
+    diff_amenities = compare(
+        load_csv(open(amenities_ds_path), "id"),
+        load_csv(open(amenities_new_path), "id"),
+    )
+    assert diff_amenities["added"] == []
+    assert diff_amenities["removed"] == []
+    assert diff_amenities["changed"] == []
+    assert diff_amenities["columns_added"] == []
+    assert diff_amenities["columns_removed"] == []
+
+    diff_flights = compare(
+        load_csv(open(flights_ds_path), "id"), load_csv(open(flights_new_path), "id")
+    )
+    assert diff_flights["added"] == []
+    assert diff_flights["removed"] == []
+    assert diff_flights["changed"] == []
+    assert diff_flights["columns_added"] == []
+    assert diff_flights["columns_removed"] == []
 
 
 async def test_get_airport_by_id(ds: cloudsql_postgres.Client):
@@ -209,6 +297,20 @@ async def test_get_amenity(ds: cloudsql_postgres.Client):
         terminal="Ed Lee International Main Hall",
         category="restaurant",
         hour="Sunday- Saturday 7:00 am-8:00 pm",
+        sunday_start_hour=None,
+        sunday_end_hour=None,
+        monday_start_hour=None,
+        monday_end_hour=None,
+        tuesday_start_hour=None,
+        tuesday_end_hour=None,
+        wednesday_start_hour=None,
+        wednesday_end_hour=None,
+        thursday_start_hour=None,
+        thursday_end_hour=None,
+        friday_start_hour=None,
+        friday_end_hour=None,
+        saturday_start_hour=None,
+        saturday_end_hour=None,
     )
     assert res == expected
 
@@ -228,6 +330,20 @@ amenities_search_test_data = [
                 terminal="Ed Lee International Main Hall",
                 category="restaurant",
                 hour="Sunday- Saturday 4:00 am-11:00 pm",
+                sunday_start_hour=None,
+                sunday_end_hour=None,
+                monday_start_hour=None,
+                monday_end_hour=None,
+                tuesday_start_hour=None,
+                tuesday_end_hour=None,
+                wednesday_start_hour=None,
+                wednesday_end_hour=None,
+                thursday_start_hour=None,
+                thursday_end_hour=None,
+                friday_start_hour=None,
+                friday_end_hour=None,
+                saturday_start_hour=None,
+                saturday_end_hour=None,
                 content=None,
                 embedding=None,
             ),
@@ -248,6 +364,20 @@ amenities_search_test_data = [
                 terminal="International Terminal A",
                 category="shop",
                 hour="Sunday - Saturday 8:30 am-11:00 pm",
+                sunday_start_hour=None,
+                sunday_end_hour=None,
+                monday_start_hour=None,
+                monday_end_hour=None,
+                tuesday_start_hour=None,
+                tuesday_end_hour=None,
+                wednesday_start_hour=None,
+                wednesday_end_hour=None,
+                thursday_start_hour=None,
+                thursday_end_hour=None,
+                friday_start_hour=None,
+                friday_end_hour=None,
+                saturday_start_hour=None,
+                saturday_end_hour=None,
                 content=None,
                 embedding=None,
             ),
@@ -259,6 +389,20 @@ amenities_search_test_data = [
                 terminal="International Terminal G",
                 category="shop",
                 hour="Sunday - Saturday 7:00 am-11:00 pm",
+                sunday_start_hour=None,
+                sunday_end_hour=None,
+                monday_start_hour=None,
+                monday_end_hour=None,
+                tuesday_start_hour=None,
+                tuesday_end_hour=None,
+                wednesday_start_hour=None,
+                wednesday_end_hour=None,
+                thursday_start_hour=None,
+                thursday_end_hour=None,
+                friday_start_hour=None,
+                friday_end_hour=None,
+                saturday_start_hour=None,
+                saturday_end_hour=None,
                 content=None,
                 embedding=None,
             ),

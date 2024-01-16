@@ -105,6 +105,20 @@ class Client(datastore.Client[Config]):
                   terminal TEXT,
                   category TEXT,
                   hour TEXT,
+                  sunday_start_hour TIME,
+                  sunday_end_hour TIME,
+                  monday_start_hour TIME,
+                  monday_end_hour TIME,
+                  tuesday_start_hour TIME,
+                  tuesday_end_hour TIME,
+                  wednesday_start_hour TIME,
+                  wednesday_end_hour TIME,
+                  thursday_start_hour TIME,
+                  thursday_end_hour TIME,
+                  friday_start_hour TIME,
+                  friday_end_hour TIME,
+                  saturday_start_hour TIME,
+                  saturday_end_hour TIME,
                   content TEXT NOT NULL,
                   embedding vector(768) NOT NULL
                 )
@@ -112,7 +126,14 @@ class Client(datastore.Client[Config]):
             )
             # Insert all the data
             await conn.executemany(
-                """INSERT INTO amenities VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)""",
+                """
+                INSERT INTO amenities VALUES (
+                  $1, $2, $3, $4, $5,
+                  $6, $7, $8, $9, $10,
+                  $11, $12, $13, $14, $15,
+                  $16, $17, $18, $19, $20,
+                  $21, $22, $23)
+                """,
                 [
                     (
                         a.id,
@@ -122,6 +143,20 @@ class Client(datastore.Client[Config]):
                         a.terminal,
                         a.category,
                         a.hour,
+                        a.sunday_start_hour,
+                        a.sunday_end_hour,
+                        a.monday_start_hour,
+                        a.monday_end_hour,
+                        a.tuesday_start_hour,
+                        a.tuesday_end_hour,
+                        a.wednesday_start_hour,
+                        a.wednesday_end_hour,
+                        a.thursday_start_hour,
+                        a.thursday_end_hour,
+                        a.friday_start_hour,
+                        a.friday_end_hour,
+                        a.saturday_start_hour,
+                        a.saturday_end_hour,
                         a.content,
                         a.embedding,
                     )
@@ -237,8 +272,8 @@ class Client(datastore.Client[Config]):
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         result = await self.__pool.fetchrow(
             """
-                SELECT id, name, description, location, terminal, category, hour
-                FROM amenities WHERE id=$1
+            SELECT id, name, description, location, terminal, category, hour
+            FROM amenities WHERE id=$1
             """,
             id,
         )
@@ -254,14 +289,15 @@ class Client(datastore.Client[Config]):
     ) -> list[models.Amenity]:
         results = await self.__pool.fetch(
             """
-                SELECT id, name, description, location, terminal, category, hour
-                FROM (
-                    SELECT id, name, description, location, terminal, category, hour, 1 - (embedding <=> $1) AS similarity
-                    FROM amenities
-                    WHERE 1 - (embedding <=> $1) > $2
-                    ORDER BY similarity DESC
-                    LIMIT $3
-                ) AS sorted_amenities
+            SELECT id, name, description, location, terminal, category, hour
+            FROM (
+                SELECT id, name, description, location, terminal, category,
+                  hour, 1 - (embedding <=> $1) AS similarity
+                FROM amenities
+                WHERE 1 - (embedding <=> $1) > $2
+                ORDER BY similarity DESC
+                LIMIT $3
+            ) AS sorted_amenities
             """,
             query_embedding,
             similarity_threshold,
@@ -317,7 +353,7 @@ class Client(datastore.Client[Config]):
                 SELECT * FROM flights
                 WHERE ($1::TEXT IS NULL OR departure_airport ILIKE $1)
                 AND ($2::TEXT IS NULL OR arrival_airport ILIKE $2)
-                AND departure_time > $3::timestamp - interval '1 day'
+                AND departure_time >= $3::timestamp
                 AND departure_time < $3::timestamp + interval '1 day';
             """,
             departure_airport,

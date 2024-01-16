@@ -1,0 +1,84 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+steps:
+  - id: Install dependencies
+    name: python:3.11
+    dir: retrieval_service
+    entrypoint: pip
+    args:
+      [
+        "install",
+        "-r",
+        "requirements.txt",
+        "-r",
+        "requirements-test.txt",
+        "--user",
+      ]
+
+  - id: Update config
+    name: python:3.11
+    dir: retrieval_service
+    secretEnv:
+      - PGUSER
+      - PGPASSWORD
+    entrypoint: /bin/bash
+    args:
+      - "-c"
+      - |
+        # Create config
+        cp example-config-cloudsql.yml config.yml
+        sed -i "s/my_database/${_DATABASE_NAME}/g" config.yml
+        sed -i "s/my-user/$$PGUSER/g" config.yml
+        sed -i "s/my-password/$$PGPASSWORD/g" config.yml
+        sed -i "s/my-project/$PROJECT_ID/g" config.yml
+        sed -i "s/my-region/${_CLOUDSQL_REGION}/g" config.yml
+        sed -i "s/my-instance/${_CLOUDSQL_INSTANCE}/g" config.yml
+
+  - id: Run Cloud SQL DB integration tests
+    name: python:3.11
+    dir: retrieval_service
+    env: # Set env var expected by tests
+      - "DB_NAME=${_DATABASE_NAME}"
+      - "DB_PROJECT=$PROJECT_ID"
+      - "DB_REGION=${_CLOUDSQL_REGION}"
+      - "DB_INSTANCE=${_CLOUDSQL_INSTANCE}"
+    secretEnv:
+      - PGUSER
+      - PGPASSWORD
+    entrypoint: /bin/bash
+    args:
+      - "-c"
+      - |
+        # Set env var expected by tests
+        export DB_USER=$$PGUSER
+        export DB_PASS=$$PGPASSWORD
+        python -m pytest datastore/providers/cloudsql_postgres_test.py
+
+substitutions:
+  _DATABASE_NAME: test_${SHORT_SHA}
+  _DATABASE_USER: postgres
+  _CLOUDSQL_REGION: "us-central1"
+  _CLOUDSQL_INSTANCE: "my-cloudsql-instance"
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/cloudsql_pass/versions/latest
+      env: PGPASSWORD
+    - versionName: projects/$PROJECT_ID/secrets/cloudsql_user/versions/latest
+      env: PGUSER
+
+options:
+  substitutionOption: 'ALLOW_LOOSE'
+  dynamic_substitutions: true
