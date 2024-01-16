@@ -41,20 +41,24 @@ body {
     text-align: center;
 }
 
-.chat-header span.reset-button {
-    position: absolute;
-    margin-right: 0px;
-    font-size: 38px;
-}
-
-
 #g_id_onload,
 .g_id_signin {
     position: absolute;
     top: 20px;
-    right: 20px;
+    right: 30px;
 }
 
+#resetButton {
+    font-size: 28px;
+    cursor: pointer;
+    position: absolute;
+    top: 27px;
+    right: 0px;
+}
+
+#resetButton:hover {
+    background-color:  #c9d4e9;
+}
 
 .chat-wrapper {
     display: flex;
@@ -91,18 +95,6 @@ div.chat-content>span {
     padding: 15px;
     color: #212A3E;
     border: none;
-}
-
-#resetButton {
-    font-size: 35px;
-    cursor: pointer;
-    position: absolute;
-    top: 47px;
-    right: 40px;
-}
-
-#resetButton:hover {
-    background-color:  #c9d4e9;
 }
 
 .chat-bubble {

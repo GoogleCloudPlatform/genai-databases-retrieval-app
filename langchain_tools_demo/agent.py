@@ -70,33 +70,6 @@ def get_id_token(url: str) -> str:
         )
 
 
-def convert_date(date_string: str) -> str:
-    """Convert date into appropriate date string"""
-    if date_string == "tomorrow":
-        converted = date.today() + timedelta(1)
-    elif date_string == "yesterday":
-        converted = date.today() - timedelta(1)
-    elif date_string != "null" and date_string != "today" and date_string is not None:
-        converted = dparser.parse(date_string, fuzzy=True).date()
-    else:
-        converted = date.today()
-
-    return converted.strftime("%Y-%m-%d")
-
-
-def get_header(user_id_token: Optional[str]) -> Optional[dict]:
-    if "http://" in BASE_URL:
-        return None
-    else:
-        # Append ID Token to make authenticated requests to Cloud Run services
-        headers = {
-            "Authorization": f"Bearer {get_id_token(BASE_URL)}",
-        }
-        if user_id_token is not None:
-            headers["User-Id-Token"] = f"Bearer {user_id_token}"
-        return headers
-
-
 async def get_connector():
     global connector
     if connector is None:
@@ -110,6 +83,16 @@ async def handle_error_response(response):
 
 
 async def create_client_session(user_id_token: Optional[str]) -> aiohttp.ClientSession:
+    if "http://" in BASE_URL:
+        headers = None
+    else:
+        # Append ID Token to make authenticated requests to Cloud Run services
+        headers = {
+            "Authorization": f"Bearer {get_id_token(BASE_URL)}",
+        }
+        if user_id_token is not None:
+            headers["User-Id-Token"] = f"Bearer {user_id_token}"
+
     return aiohttp.ClientSession(
         connector=await get_connector(),
         connector_owner=False,  # Prevents connector being closed when closing session

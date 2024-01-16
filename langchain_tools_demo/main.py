@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import Body, FastAPI, HTTPException, Request
-from fastapi.responses import PlainTextResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown import markdown
@@ -52,7 +52,7 @@ templates = Jinja2Templates(directory="templates")
 BASE_HISTORY = [{"role": "assistant", "content": "How can I help you?"}]
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.route("/", methods=["GET", "POST"])
 async def index(request: Request):
     """Render the default template."""
     if "uuid" not in request.session:
@@ -62,7 +62,7 @@ async def index(request: Request):
     if request.session["uuid"] in user_agents:
         user_agent = user_agents[request.session["uuid"]]
     else:
-        user_agent = await init_agent()
+        user_agent = await init_agent(user_id_token=None)
         user_agents[request.session["uuid"]] = user_agent
     return templates.TemplateResponse(
         "index.html", {"request": request, "messages": request.session["messages"]}
@@ -73,17 +73,18 @@ async def index(request: Request):
 async def login_google(
     request: Request,
 ):
-    request.session.clear()
     form_data = await request.form()
-    user_id_token = str(form_data.get("credential", ""))
+    user_id_token = form_data.get("credential")
+    if user_id_token is None:
+        raise HTTPException(status_code=401, detail="No user credentials found")
     # create new request session
     request.session["uuid"] = str(uuid.uuid4())
     request.session["messages"] = BASE_HISTORY
     user_agent = await init_agent(user_id_token)
     user_agents[request.session["uuid"]] = user_agent
+    print("Logged in to Google.")
 
     # Redirect to source URL
-    source_url = request.headers.get("Referer")
     source_url = request.headers.get("Referer")
     if source_url:
         return RedirectResponse(url=source_url)
