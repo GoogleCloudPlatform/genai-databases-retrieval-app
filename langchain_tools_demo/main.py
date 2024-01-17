@@ -119,7 +119,7 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
             return markdown(response["output"])
         except Exception as err:
             # Refresh authorization header
-            if err.errno == 403:
+            if "not authenticated" in str(err):
                 user_agent.client.headers["Authorization"] = f"Bearer {get_id_token()}"
                 attempt += 1
             else:
