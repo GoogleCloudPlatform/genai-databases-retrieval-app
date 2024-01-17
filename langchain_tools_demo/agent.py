@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import os
-from datetime import date, timedelta
-from typing import Dict, Optional
+from datetime import date
+from typing import Any, Dict, Optional
 
 import aiohttp
 import dateutil.parser as dparser
@@ -26,6 +26,7 @@ from langchain.globals import set_verbose  # type: ignore
 from langchain.llms.vertexai import VertexAI
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
+
 
 from tools import initialize_tools
 
@@ -49,12 +50,12 @@ class UserAgent:
 user_agents: Dict[str, UserAgent] = {}
 
 
-def get_id_token(url: str) -> str:
+def get_id_token() -> str:
     """Helper method to generate ID tokens for authenticated requests"""
     # Use Application Default Credentials on Cloud Run
     if os.getenv("K_SERVICE"):
         auth_req = google.auth.transport.requests.Request()
-        return google.oauth2.id_token.fetch_id_token(auth_req, url)
+        return google.oauth2.id_token.fetch_id_token(auth_req, BASE_URL)
     else:
         # Use gcloud credentials locally
         import subprocess
@@ -88,21 +89,21 @@ async def create_client_session(user_id_token: Optional[str]) -> aiohttp.ClientS
     else:
         # Append ID Token to make authenticated requests to Cloud Run services
         headers = {
-            "Authorization": f"Bearer {get_id_token(BASE_URL)}",
+            "Authorization": f"Bearer {get_id_token()}",
         }
         if user_id_token is not None:
             headers["User-Id-Token"] = f"Bearer {user_id_token}"
 
     return aiohttp.ClientSession(
         connector=await get_connector(),
-        connector_owner=False,  # Prevents connector being closed when closing session
-        headers=get_header(),
+        connector_owner=False,
+        headers=headers,
         raise_for_status=handle_error_response,
     )
 
 
 # Agent
-async def init_agent(user_id_token: Optional[str]) -> UserAgent:
+async def init_agent(user_id_token: Optional[Any]) -> UserAgent:
     """Load an agent executor with tools and LLM"""
     print("Initializing agent..")
     llm = VertexAI(max_output_tokens=512, model_name="gemini-pro")
