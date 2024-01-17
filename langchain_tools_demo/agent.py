@@ -17,7 +17,6 @@ from datetime import date
 from typing import Any, Dict, Optional
 
 import aiohttp
-import dateutil.parser as dparser
 import google.auth.transport.requests  # type: ignore
 import google.oauth2.id_token  # type: ignore
 from langchain.agents import AgentType, initialize_agent
@@ -26,7 +25,6 @@ from langchain.globals import set_verbose  # type: ignore
 from langchain.llms.vertexai import VertexAI
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
-
 
 from tools import initialize_tools
 
