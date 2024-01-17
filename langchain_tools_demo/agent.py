@@ -94,7 +94,7 @@ async def handle_error_response(response):
 async def create_client_session() -> aiohttp.ClientSession:
     return aiohttp.ClientSession(
         connector=await get_connector(),
-        connector_owner=False,
+        connector_owner=False,  # Prevents connector being closed when closing session
         headers=get_header(),
         raise_for_status=handle_error_response,
     )
