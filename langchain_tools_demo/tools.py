@@ -27,22 +27,6 @@ def filter_none_values(params: dict) -> dict:
 
 
 # Tools
-class AirportIdInput(BaseModel):
-    id: int = Field(description="Unique identifier")
-
-
-async def generate_get_airport(client: aiohttp.ClientSession):
-    async def get_airport(id: int):
-        response = await client.get(
-            url=f"{BASE_URL}/airports",
-            params={"id": id},
-        )
-
-        return await response.json()
-
-    return get_airport
-
-
 class AirportSearchInput(BaseModel):
     country: Optional[str] = Field(description="Country")
     city: Optional[str] = Field(description="City")
@@ -73,22 +57,6 @@ async def generate_search_airports(client: aiohttp.ClientSession):
             return "\n".join([f"{r}" for r in response_json])
 
     return search_airports
-
-
-class FlightIdInput(BaseModel):
-    id: int = Field(description="Unique identifier")
-
-
-async def generate_get_flight(client: aiohttp.ClientSession):
-    async def get_flight(id: int):
-        response = await client.get(
-            url=f"{BASE_URL}/flights",
-            params={"flight_id": id},
-        )
-
-        return await response.json()
-
-    return get_flight
 
 
 class FlightNumberInput(BaseModel):
@@ -147,19 +115,6 @@ async def generate_list_flights(client: aiohttp.ClientSession):
     return list_flights
 
 
-# Amenities
-class AmenityIdInput(BaseModel):
-    id: int = Field(description="Unique identifier")
-
-
-async def generate_get_amenity(client: aiohttp.ClientSession):
-    async def get_amenity(id: int):
-        response = await client.get(url=f"{BASE_URL}/amenities", params={"id": id})
-        return await response.json()
-
-    return get_amenity
-
-
 class QueryInput(BaseModel):
     query: str = Field(description="Search query")
 
@@ -190,15 +145,6 @@ async def generate_search_amenities(client: aiohttp.ClientSession):
 async def initialize_tools(client: aiohttp.ClientSession):
     return [
         StructuredTool.from_function(
-            coroutine=await generate_get_airport(client),
-            name="Get Airport",
-            description="""Use this tool to get info for a specific airport.
-                            Do NOT guess an airport id.
-                            Takes an id and returns info on the airport.
-                        """,
-            args_schema=AirportIdInput,
-        ),
-        StructuredTool.from_function(
             coroutine=await generate_search_airports(client),
             name="Search Airport",
             description="""
@@ -226,20 +172,6 @@ async def initialize_tools(client: aiohttp.ClientSession):
                         }}
                         """,
             args_schema=AirportSearchInput,
-        ),
-        StructuredTool.from_function(
-            coroutine=await generate_get_flight(client),
-            name="Get Flight",
-            description="""
-                        Use this tool to get info for a specific flight.
-                        Takes an id and returns info on the flight.
-                        A flight number is a code for an airline service consisting of two-character
-                        airline designator and a 1 to 4 digit number ex. OO123, DL 1234, BA 405, AS 34.
-                        A flight id is an integer eg.1234.
-                        Do NOT use this tool if you have a flight number.
-                        Do NOT guess an airline or flight number.
-                        """,
-            args_schema=FlightIdInput,
         ),
         StructuredTool.from_function(
             coroutine=await generate_search_flights_by_number(client),
@@ -282,17 +214,6 @@ async def initialize_tools(client: aiohttp.ClientSession):
                         }}
                         """,
             args_schema=ListFlights,
-        ),
-        StructuredTool.from_function(
-            coroutine=await generate_get_amenity(client),
-            name="Get Amenity",
-            description="""
-                        Use this tool to get info for a specific airport amenity.
-                        Takes an id and returns info on the amenity.
-                        Do NOT guess an amenity id. Use Search Amenities to search by name.
-                        Always use the id from the search_amenities tool.
-                        """,
-            args_schema=AmenityIdInput,
         ),
         StructuredTool.from_function(
             coroutine=await generate_search_amenities(client),
