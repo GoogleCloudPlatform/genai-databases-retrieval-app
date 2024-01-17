@@ -25,7 +25,7 @@ from fastapi.templating import Jinja2Templates
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
-from agent import init_agent, user_agents
+from agent import get_id_token, init_agent, user_agents
 
 GOOGLE_REDIRECT_URI = "http://localhost:8081"
 
@@ -107,16 +107,25 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     request.session["messages"] += [{"role": "user", "content": prompt}]
 
     user_agent = user_agents[request.session["uuid"]]
-    try:
-        # Send prompt to LLM
-        response = await user_agent.agent.ainvoke({"input": prompt})
-        request.session["messages"] += [
-            {"role": "assistant", "content": response["output"]}
-        ]
-        # Return assistant response
-        return markdown(response["output"])
-    except Exception as err:
-        raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
+    attempt = 0
+    while attempt < 2:
+        try:
+            # Send prompt to LLM
+            response = await user_agent.agent.ainvoke({"input": prompt})
+            request.session["messages"] += [
+                {"role": "assistant", "content": response["output"]}
+            ]
+            # Return assistant response
+            return markdown(response["output"])
+        except Exception as err:
+            # Refresh authorization header
+            if err.errno == 403:
+                user_agent.client.headers["Authorization"] = f"Bearer {get_id_token()}"
+                attempt += 1
+            else:
+                raise HTTPException(
+                    status_code=500, detail=f"Error invoking agent: {err}"
+                )
 
 
 @app.post("/reset")
