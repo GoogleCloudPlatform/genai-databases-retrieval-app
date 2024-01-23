@@ -25,9 +25,7 @@ from fastapi.templating import Jinja2Templates
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
-from agent import get_id_token, init_agent, user_agents
-
-GOOGLE_REDIRECT_URI = "http://localhost:8081"
+from agent import init_agent, user_agents
 
 
 @asynccontextmanager
@@ -55,6 +53,7 @@ BASE_HISTORY = [{"role": "assistant", "content": "How can I help you?"}]
 @app.route("/", methods=["GET", "POST"])
 async def index(request: Request):
     """Render the default template."""
+    request.session["client_id"] = os.getenv("CLIENT_ID")
     if "uuid" not in request.session:
         request.session["uuid"] = str(uuid.uuid4())
         request.session["messages"] = BASE_HISTORY
@@ -65,7 +64,12 @@ async def index(request: Request):
         user_agent = await init_agent(user_id_token=None)
         user_agents[request.session["uuid"]] = user_agent
     return templates.TemplateResponse(
-        "index.html", {"request": request, "messages": request.session["messages"]}
+        "index.html",
+        {
+            "request": request,
+            "messages": request.session["messages"],
+            "client_id": request.session["client_id"],
+        },
     )
 
 
@@ -86,10 +90,7 @@ async def login_google(
 
     # Redirect to source URL
     source_url = request.headers.get("Referer")
-    if source_url:
-        return RedirectResponse(url=source_url)
-    else:
-        return RedirectResponse(url=GOOGLE_REDIRECT_URI)
+    return RedirectResponse(url=source_url)
 
 
 @app.post("/chat", response_class=PlainTextResponse)
@@ -105,27 +106,17 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
 
     # Add user message to chat history
     request.session["messages"] += [{"role": "user", "content": prompt}]
-
     user_agent = user_agents[request.session["uuid"]]
-    attempt = 0
-    while attempt < 2:
-        try:
-            # Send prompt to LLM
-            response = await user_agent.agent.ainvoke({"input": prompt})
-            request.session["messages"] += [
-                {"role": "assistant", "content": response["output"]}
-            ]
-            # Return assistant response
-            return markdown(response["output"])
-        except Exception as err:
-            # Refresh authorization header
-            if "not authenticated" in str(err):
-                user_agent.client.headers["Authorization"] = f"Bearer {get_id_token()}"
-                attempt += 1
-            else:
-                raise HTTPException(
-                    status_code=500, detail=f"Error invoking agent: {err}"
-                )
+    try:
+        # Send prompt to LLM
+        response = await user_agent.agent.ainvoke({"input": prompt})
+        request.session["messages"] += [
+            {"role": "assistant", "content": response["output"]}
+        ]
+        # Return assistant response
+        return markdown(response["output"])
+    except Exception as err:
+        raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
 
 
 @app.post("/reset")

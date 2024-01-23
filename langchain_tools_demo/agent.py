@@ -34,6 +34,8 @@ BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 # aiohttp context
 connector = None
 
+CLOUD_RUN_AUTHORIZATION_TOKEN = None
+
 
 # Class for setting up a dedicated llm agent for each individual user
 class UserAgent:
@@ -46,27 +48,6 @@ class UserAgent:
 
 
 user_agents: Dict[str, UserAgent] = {}
-
-
-def get_id_token() -> str:
-    """Helper method to generate ID tokens for authenticated requests"""
-    # Use Application Default Credentials on Cloud Run
-    if os.getenv("K_SERVICE"):
-        auth_req = google.auth.transport.requests.Request()
-        return google.oauth2.id_token.fetch_id_token(auth_req, BASE_URL)
-    else:
-        # Use gcloud credentials locally
-        import subprocess
-
-        return (
-            subprocess.run(
-                ["gcloud", "auth", "print-identity-token"],
-                stdout=subprocess.PIPE,
-                check=True,
-            )
-            .stdout.strip()
-            .decode()
-        )
 
 
 async def get_connector():
@@ -82,15 +63,10 @@ async def handle_error_response(response):
 
 
 async def create_client_session(user_id_token: Optional[str]) -> aiohttp.ClientSession:
-    if "http://" in BASE_URL:
-        headers = None
-    else:
-        # Append ID Token to make authenticated requests to Cloud Run services
-        headers = {
-            "Authorization": f"Bearer {get_id_token()}",
-        }
-        if user_id_token is not None:
-            headers["User-Id-Token"] = f"Bearer {user_id_token}"
+    headers = {}
+    if user_id_token is not None:
+        # user-specific query authentication
+        headers["User-Id-Token"] = user_id_token
 
     return aiohttp.ClientSession(
         connector=await get_connector(),

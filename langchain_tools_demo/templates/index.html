@@ -40,7 +40,6 @@ limitations under the License.
             <span class="material-symbols-outlined" id="resetButton">refresh</span>
         </div>
         <div id="g_id_onload"
-            data-client_id="548341735270-6qu1l8tttfuhmt7nbfb7a4q6j4hso2f7.apps.googleusercontent.com"
             data-context="signin"
             data-ux_mode="popup"
             data-auto_prompt="false">
@@ -83,6 +82,7 @@ limitations under the License.
   crossorigin="anonymous"></script>
 <script src="/static/index.js"></script>
 <script>
+  document.getElementById('g_id_onload').setAttribute('data-client_id', '{{ client_id }}');
   var currentUrl = window.location.href; 
   var loginUri = currentUrl + 'login/google';
   document.getElementById('g_id_onload').setAttribute('data-login_uri', loginUri);

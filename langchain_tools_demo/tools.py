@@ -16,14 +16,56 @@ import os
 from typing import Optional
 
 import aiohttp
+import google.auth.transport.requests  # type: ignore
+import google.oauth2.id_token  # type: ignore
 from langchain.tools import StructuredTool, tool
 from pydantic.v1 import BaseModel, Field
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
+CLOUD_RUN_CREDENTIALS = None
 
 
 def filter_none_values(params: dict) -> dict:
     return {key: value for key, value in params.items() if value is not None}
+
+
+def get_id_token():
+    global CLOUD_RUN_CREDENTIALS
+
+    if os.getenv("K_SERVICE"):
+        auth_req = google.auth.transport.requests.Request()
+
+        if CLOUD_RUN_CREDENTIALS is None:
+            CLOUD_RUN_CREDENTIALS = google.oauth2.id_token.fetch_id_token_credentials(
+                BASE_URL, auth_req
+            )
+
+        if not CLOUD_RUN_CREDENTIALS.valid:
+            CLOUD_RUN_CREDENTIALS.refresh(auth_req)
+    else:
+        # Use gcloud credentials locally
+        import subprocess
+
+        return (
+            subprocess.run(
+                ["gcloud", "auth", "print-identity-token"],
+                stdout=subprocess.PIPE,
+                check=True,
+            )
+            .stdout.strip()
+            .decode()
+        )
+
+    return CLOUD_RUN_CREDENTIALS.token
+
+
+def get_headers(client: aiohttp.ClientSession):
+    """Helper method to generate ID tokens for authenticated requests"""
+    headers = client.headers
+    if not "http://" in BASE_URL:
+        # Append ID Token to make authenticated requests to Cloud Run services
+        headers["Authorization"] = f"Bearer {get_id_token()}"
+    return headers
 
 
 # Tools
@@ -33,7 +75,7 @@ class AirportSearchInput(BaseModel):
     name: Optional[str] = Field(description="Airport name")
 
 
-async def generate_search_airports(client: aiohttp.ClientSession):
+def generate_search_airports(client: aiohttp.ClientSession):
     async def search_airports(country: str, city: str, name: str):
         params = {
             "country": country,
@@ -41,7 +83,9 @@ async def generate_search_airports(client: aiohttp.ClientSession):
             "name": name,
         }
         response = await client.get(
-            url=f"{BASE_URL}/airports/search", params=filter_none_values(params)
+            url=f"{BASE_URL}/airports/search",
+            params=filter_none_values(params),
+            headers=get_headers(client),
         )
 
         num = 2
@@ -64,11 +108,12 @@ class FlightNumberInput(BaseModel):
     flight_number: str = Field(description="1 to 4 digit number")
 
 
-async def generate_search_flights_by_number(client: aiohttp.ClientSession):
+def generate_search_flights_by_number(client: aiohttp.ClientSession):
     async def search_flights_by_number(airline: str, flight_number: str):
         response = await client.get(
             url=f"{BASE_URL}/flights/search",
             params={"airline": airline, "flight_number": flight_number},
+            headers=get_headers(client),
         )
 
         return await response.json()
@@ -84,7 +129,7 @@ class ListFlights(BaseModel):
     date: Optional[str] = Field(description="Date of flight departure")
 
 
-async def generate_list_flights(client: aiohttp.ClientSession):
+def generate_list_flights(client: aiohttp.ClientSession):
     async def list_flights(
         departure_airport: str,
         arrival_airport: str,
@@ -98,6 +143,7 @@ async def generate_list_flights(client: aiohttp.ClientSession):
         response = await client.get(
             url=f"{BASE_URL}/flights/search",
             params=filter_none_values(params),
+            headers=get_headers(client),
         )
 
         num = 2
@@ -119,7 +165,7 @@ class QueryInput(BaseModel):
     query: str = Field(description="Search query")
 
 
-async def generate_search_amenities(client: aiohttp.ClientSession):
+def generate_search_amenities(client: aiohttp.ClientSession):
     async def search_amenities(query: str):
         """
         Use this tool to search amenities by name or to recommended airport amenities at SFO.
@@ -133,6 +179,7 @@ async def generate_search_amenities(client: aiohttp.ClientSession):
         response = await client.get(
             url=f"{BASE_URL}/amenities/search",
             params={"top_k": "5", "query": query},
+            headers=get_headers(client),
         )
 
         response = await response.json()
@@ -187,7 +234,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             args_schema=FlightNumberInput,
         ),
         StructuredTool.from_function(
-            coroutine=await generate_list_flights(client),
+            coroutine=generate_list_flights(client),
             name="List Flights",
             description="""
                         Use this tool to list all flights matching search criteria.
