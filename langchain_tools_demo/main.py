@@ -89,7 +89,7 @@ async def login_google(
     print("Logged in to Google.")
 
     # Redirect to source URL
-    source_url = request.headers.get("Referer")
+    source_url = request.headers["Referer"]
     return RedirectResponse(url=source_url)
 
 
