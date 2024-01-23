@@ -73,7 +73,7 @@ async def index(request: Request):
     )
 
 
-@app.post("/login/google")
+@app.post("/login/google", response_class=RedirectResponse)
 async def login_google(
     request: Request,
 ):
