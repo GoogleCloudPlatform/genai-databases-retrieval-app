@@ -192,7 +192,7 @@ def generate_search_amenities(client: aiohttp.ClientSession):
 async def initialize_tools(client: aiohttp.ClientSession):
     return [
         StructuredTool.from_function(
-            coroutine=await generate_search_airports(client),
+            coroutine=generate_search_airports(client),
             name="Search Airport",
             description="""
                         Use this tool to list all airports matching search criteria.
@@ -221,7 +221,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             args_schema=AirportSearchInput,
         ),
         StructuredTool.from_function(
-            coroutine=await generate_search_flights_by_number(client),
+            coroutine=generate_search_flights_by_number(client),
             name="Search Flights By Flight Number",
             description="""
                         Use this tool to get info for a specific flight. Do NOT use this tool with a flight id.
@@ -263,7 +263,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             args_schema=ListFlights,
         ),
         StructuredTool.from_function(
-            coroutine=await generate_search_amenities(client),
+            coroutine=generate_search_amenities(client),
             name="Search Amenities",
             description="""
                         Use this tool to search amenities by name or to recommended airport amenities at SFO.
