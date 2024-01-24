@@ -16,13 +16,13 @@ import os
 from typing import Optional
 
 import aiohttp
-import google.auth.transport.requests  # type: ignore
+from google.auth.transport.requests import Request  # type: ignore
 import google.oauth2.id_token  # type: ignore
 from langchain.tools import StructuredTool, tool
 from pydantic.v1 import BaseModel, Field
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
-CLOUD_RUN_CREDENTIALS = None
+CREDENTIALS = None
 
 
 def filter_none_values(params: dict) -> dict:
@@ -30,33 +30,12 @@ def filter_none_values(params: dict) -> dict:
 
 
 def get_id_token():
-    global CLOUD_RUN_CREDENTIALS
-
-    if os.getenv("K_SERVICE"):
-        auth_req = google.auth.transport.requests.Request()
-
-        if CLOUD_RUN_CREDENTIALS is None:
-            CLOUD_RUN_CREDENTIALS = google.oauth2.id_token.fetch_id_token_credentials(
-                BASE_URL, auth_req
-            )
-
-        if not CLOUD_RUN_CREDENTIALS.valid:
-            CLOUD_RUN_CREDENTIALS.refresh(auth_req)
-    else:
-        # Use gcloud credentials locally
-        import subprocess
-
-        return (
-            subprocess.run(
-                ["gcloud", "auth", "print-identity-token"],
-                stdout=subprocess.PIPE,
-                check=True,
-            )
-            .stdout.strip()
-            .decode()
-        )
-
-    return CLOUD_RUN_CREDENTIALS.token
+    global CREDENTIALS
+    if CREDENTIALS is None:
+        CREDENTIALS, _ = google.auth.default()
+    if not CREDENTIALS.valid:
+        CREDENTIALS.refresh(Request())
+    return CREDENTIALS.id_token
 
 
 def get_headers(client: aiohttp.ClientSession):
