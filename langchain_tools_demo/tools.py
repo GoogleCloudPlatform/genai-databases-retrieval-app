@@ -16,7 +16,7 @@ import os
 from typing import Optional
 
 import aiohttp
-from langchain.tools import StructuredTool, tool
+from langchain.tools import StructuredTool
 from pydantic.v1 import BaseModel, Field
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")

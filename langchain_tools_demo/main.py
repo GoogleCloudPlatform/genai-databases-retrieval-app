@@ -156,6 +156,5 @@ async def reset(request: Request):
 
 
 if __name__ == "__main__":
-    set_env()
     PORT = int(os.getenv("PORT", default=8081))
     uvicorn.run(app, host="0.0.0.0", port=PORT)
