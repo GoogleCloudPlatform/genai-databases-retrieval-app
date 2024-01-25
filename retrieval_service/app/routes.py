@@ -31,12 +31,11 @@ def _ParseUserIdToken(headers: Mapping[str, Any]) -> Optional[str]:
     # authorization_header = headers.lower()
     user_id_token_header = headers.get("User-Id-Token")
     if not user_id_token_header:
-        print("no user authorization header")
-        return None
+        raise Exception("no user authorization header")
 
     parts = str(user_id_token_header).split(" ")
     if len(parts) != 2 or parts[0] != "Bearer":
-        return None
+        raise Exception("Invalid ID token")
 
     return parts[1]
 

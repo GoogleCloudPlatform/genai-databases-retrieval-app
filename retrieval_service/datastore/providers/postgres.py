@@ -37,7 +37,6 @@ class Config(BaseModel, datastore.AbstractConfig):
     password: str
     database: str
 
-
 class Client(datastore.Client[Config]):
     __pool: asyncpg.Pool
 
@@ -384,6 +383,32 @@ class Client(datastore.Client[Config]):
         results = [models.Flight.model_validate(dict(r)) for r in results]
         return results
 
+    async def validate_ticket(self, airline: str,
+            flight_number: str,
+            departure_airport: str,
+            arrival_airport: str,
+            departure_time: datetime.datetime,
+            arrival_time:datetime.datetime,) -> bool:
+        results = await self.__pool.fetch(
+            """
+                SELECT * FROM flights
+                WHERE ($1::TEXT IS NULL OR departure_airport ILIKE $1)
+                AND ($2::TEXT IS NULL OR arrival_airport ILIKE $2)
+                AND departure_time >= $3::timestamp
+                AND departure_time < $3::timestamp + interval '1 day';
+            """,
+            airline,
+            flight_number,
+            departure_airport,
+            arrival_airport,
+            departure_time,
+            arrival_time
+            timeout=10,
+        )
+        if len(results) == 1:
+            return True
+        return False
+            
     async def insert_ticket(
         self,
         user_id: int,
@@ -396,6 +421,15 @@ class Client(datastore.Client[Config]):
         departure_time: datetime.datetime,
         arrival_time: datetime.datetime,
     ) -> list[models.Ticket]:
+        if not await self.validate_ticket(
+            airline,
+            flight_number,
+            departure_airport,
+            arrival_airport,
+            departure_time,
+            arrival_time,
+        ):
+            raise Exception("Flight information not in database")
         result = await self.__pool.execute(
             """
                 INSERT INTO tickets (
