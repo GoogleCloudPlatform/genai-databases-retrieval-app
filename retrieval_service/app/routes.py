@@ -165,7 +165,7 @@ async def insert_ticket(
             detail="User login required for data insertion",
         )
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.insert_ticket(
+    result = await ds.insert_ticket(
         current_user["user_id"],
         current_user["user_name"],
         current_user["user_email"],
@@ -176,7 +176,7 @@ async def insert_ticket(
         departure_time,
         arrival_time,
     )
-    return results
+    return result
 
 
 @routes.get("/tickets/list")

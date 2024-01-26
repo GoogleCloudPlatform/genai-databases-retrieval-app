@@ -414,7 +414,7 @@ class Client(datastore.Client[Config]):
 
     async def insert_ticket(
         self,
-        user_id: int,
+        user_id: str,
         user_name: str,
         user_email: str,
         airline: str,
@@ -423,7 +423,7 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: datetime.datetime,
         arrival_time: datetime.datetime,
-    ) -> list[models.Ticket]:
+    ) -> models.Ticket:
         if not await self.validate_ticket(
             airline,
             flight_number,
@@ -433,7 +433,7 @@ class Client(datastore.Client[Config]):
             arrival_time,
         ):
             raise Exception("Flight information not in database")
-        result = await self.__pool.execute(
+        results = await self.__pool.execute(
             """
                 INSERT INTO tickets (
                     user_id,
@@ -460,12 +460,14 @@ class Client(datastore.Client[Config]):
             arrival_time,
             timeout=10,
         )
-        result = models.Ticket.model_validate(dict(result))
-        return result
+        results = [models.Ticket.model_validate(dict(r)) for r in results]
+        if len(results) != 1:
+            raise Exception("Ticket Insertion failure")
+        return results[0]
 
     async def list_tickets(
         self,
-        user_id: int,
+        user_id: str,
     ) -> list[models.Ticket]:
         results = await self.__pool.fetch(
             """
