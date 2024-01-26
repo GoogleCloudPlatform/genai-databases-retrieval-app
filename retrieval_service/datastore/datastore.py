@@ -210,7 +210,7 @@ class Client(ABC, Generic[C]):
     @abstractmethod
     async def list_tickets(
         self,
-        current_user: dict,
+        user_id: str,
     ) -> list[models.Ticket]:
         raise NotImplementedError("Subclass should implement this!")
 

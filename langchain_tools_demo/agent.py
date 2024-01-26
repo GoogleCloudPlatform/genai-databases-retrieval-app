@@ -17,7 +17,6 @@ from datetime import date
 from typing import Any, Dict, Optional
 
 import aiohttp
-import google.auth.transport.requests  # type: ignore
 import google.oauth2.id_token  # type: ignore
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent import AgentExecutor
