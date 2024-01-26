@@ -204,7 +204,7 @@ class Client(ABC, Generic[C]):
         arrival_airport: str,
         departure_time: datetime.datetime,
         arrival_time: datetime.datetime,
-    ) -> models.Ticket:
+    ):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod

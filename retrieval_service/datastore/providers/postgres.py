@@ -423,7 +423,7 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: datetime.datetime,
         arrival_time: datetime.datetime,
-    ) -> models.Ticket:
+    ):
         if not await self.validate_ticket(
             airline,
             flight_number,
@@ -447,7 +447,7 @@ class Client(datastore.Client[Config]):
                     arrival_time
                 ) VALUES (
                    $1, $2, $3, $4, $5, $6, $7, $8, $9
-                ) RETURNING *;
+                );
             """,
             user_id,
             user_name,
@@ -460,10 +460,8 @@ class Client(datastore.Client[Config]):
             arrival_time,
             timeout=10,
         )
-        results = [models.Ticket.model_validate(dict(results))]
-        if len(results) != 1:
+        if results == "INSERT 0 1":
             raise Exception("Ticket Insertion failure")
-        return results[0]
 
     async def list_tickets(
         self,

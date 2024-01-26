@@ -190,5 +190,5 @@ async def list_tickets(
             detail="User login required for data insertion",
         )
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.list_tickets(current_user.get("user_id"))
+    results = await ds.list_tickets(current_user["user_id"])
     return results

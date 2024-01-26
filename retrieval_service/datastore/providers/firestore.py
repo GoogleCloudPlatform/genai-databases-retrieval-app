@@ -262,5 +262,25 @@ class Client(datastore.Client[Config]):
             flights.append(models.Flight.model_validate(flight_dict))
         return flights
 
+    async def insert_ticket(
+        self,
+        user_id: str,
+        user_name: str,
+        user_email: str,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        arrival_airport: str,
+        departure_time: datetime.datetime,
+        arrival_time: datetime.datetime,
+    ):
+        raise NotImplementedError("Not Implemented")
+
+    async def list_tickets(
+        self,
+        user_id: str,
+    ) -> list[models.Ticket]:
+        raise NotImplementedError("Not Implemented")
+
     async def close(self):
         self.__client.close()
