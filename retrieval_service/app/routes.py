@@ -23,6 +23,7 @@ from langchain.embeddings.base import Embeddings
 import datastore
 import os
 
+
 routes = APIRouter()
 
 
@@ -44,7 +45,7 @@ async def get_current_user(headers: Mapping[str, Any]):
     token = _ParseUserIdToken(headers)
     try:
         id_info = id_token.verify_oauth2_token(
-            token, requests.Request(), audience=os.getenv("GOOGLE_CLIENT_ID")
+            token, requests.Request(), audience=os.environ["CLIENT_ID"]
         )
 
         return {

@@ -37,6 +37,7 @@ class Config(BaseModel, datastore.AbstractConfig):
     password: str
     database: str
 
+
 class Client(datastore.Client[Config]):
     __pool: asyncpg.Pool
 
@@ -383,12 +384,15 @@ class Client(datastore.Client[Config]):
         results = [models.Flight.model_validate(dict(r)) for r in results]
         return results
 
-    async def validate_ticket(self, airline: str,
-            flight_number: str,
-            departure_airport: str,
-            arrival_airport: str,
-            departure_time: datetime.datetime,
-            arrival_time:datetime.datetime,) -> bool:
+    async def validate_ticket(
+        self,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        arrival_airport: str,
+        departure_time: datetime.datetime,
+        arrival_time: datetime.datetime,
+    ) -> bool:
         results = await self.__pool.fetch(
             """
                 SELECT * FROM flights
@@ -402,13 +406,13 @@ class Client(datastore.Client[Config]):
             departure_airport,
             arrival_airport,
             departure_time,
-            arrival_time
+            arrival_time,
             timeout=10,
         )
         if len(results) == 1:
             return True
         return False
-            
+
     async def insert_ticket(
         self,
         user_id: int,

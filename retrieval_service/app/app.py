@@ -21,6 +21,7 @@ from langchain.embeddings import VertexAIEmbeddings
 from pydantic import BaseModel
 
 import datastore
+import os
 
 from .routes import routes
 
@@ -31,6 +32,7 @@ class AppConfig(BaseModel):
     host: IPv4Address | IPv6Address = IPv4Address("127.0.0.1")
     port: int = 8080
     datastore: datastore.Config
+    clientId: str
 
 
 def parse_config(path: str) -> AppConfig:
@@ -51,6 +53,7 @@ def gen_init(cfg: AppConfig):
 
 
 def init_app(cfg: AppConfig) -> FastAPI:
+    os.environ["CLIENT_ID"] = cfg.clientId
     app = FastAPI(lifespan=gen_init(cfg))
     app.include_router(routes)
     return app

@@ -222,7 +222,7 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
     return insert_ticket
 
 
-async def generate_list_tickets(client: aiohttp.ClientSession):
+def generate_list_tickets(client: aiohttp.ClientSession):
     async def list_tickets():
         """
         Use this tool to list a user's flight tickets.
