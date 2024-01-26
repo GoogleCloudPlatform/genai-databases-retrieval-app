@@ -460,7 +460,7 @@ class Client(datastore.Client[Config]):
             arrival_time,
             timeout=10,
         )
-        results = [models.Ticket.model_validate(dict(r)) for r in results]
+        results = [models.Ticket.model_validate(dict(results))]
         if len(results) != 1:
             raise Exception("Ticket Insertion failure")
         return results[0]

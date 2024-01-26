@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import datetime
 import os
 from typing import Annotated, Any, Mapping, Optional
 
@@ -156,8 +156,8 @@ async def insert_ticket(
     flight_number: str,
     departure_airport: str,
     arrival_airport: str,
-    departure_time: str,
-    arrival_time: str,
+    departure_time: datetime.datetime,
+    arrival_time: datetime.datetime,
 ):
     if current_user is None:
         raise HTTPException(
