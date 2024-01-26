@@ -377,7 +377,7 @@ class Client(datastore.Client[Config]):
             """,
             departure_airport,
             arrival_airport,
-            datetime.strptime(date, "%Y-%m-%d"),
+            datetime.datetime.strptime(date, "%Y-%m-%d"),
             timeout=10,
         )
         results = [models.Flight.model_validate(dict(r)) for r in results]

@@ -15,7 +15,7 @@
 import csv
 import datetime
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Generic, List, Optional, TypeVar
 
 import models
 
@@ -195,7 +195,9 @@ class Client(ABC, Generic[C]):
     @abstractmethod
     async def insert_ticket(
         self,
-        current_user: dict,
+        user_id: str,
+        user_name: str,
+        user_email: str,
         airline: str,
         flight_number: str,
         departure_airport: str,

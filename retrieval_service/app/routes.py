@@ -166,9 +166,9 @@ async def insert_ticket(
         )
     ds: datastore.Client = request.app.state.datastore
     results = await ds.insert_ticket(
-        current_user.get("user_id"),
-        current_user.get("user_name"),
-        current_user.get("user_email"),
+        current_user["user_id"],
+        current_user["user_name"],
+        current_user["user_email"],
         airline,
         flight_number,
         departure_airport,
