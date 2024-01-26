@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import asyncio
+import datetime
 from datetime import datetime
 from ipaddress import IPv4Address, IPv6Address
 from typing import Any, Dict, Literal, Optional
@@ -21,7 +22,6 @@ import asyncpg
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 
-import datetime
 import models
 
 from .. import datastore

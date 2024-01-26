@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from contextlib import asynccontextmanager
 from ipaddress import IPv4Address, IPv6Address
 
@@ -21,7 +22,6 @@ from langchain.embeddings import VertexAIEmbeddings
 from pydantic import BaseModel
 
 import datastore
-import os
 
 from .routes import routes
 

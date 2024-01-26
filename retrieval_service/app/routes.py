@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+import os
 from typing import Annotated, Any, Mapping, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -21,8 +22,6 @@ from google.oauth2 import id_token
 from langchain.embeddings.base import Embeddings
 
 import datastore
-import os
-
 
 routes = APIRouter()
 

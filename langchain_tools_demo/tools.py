@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
 import os
 from typing import Optional
 
 import aiohttp
-import datetime
-from langchain.tools import StructuredTool, tool
 import google.oauth2.id_token  # type: ignore
 from google.auth import compute_engine  # type: ignore
 from google.auth.transport.requests import Request  # type: ignore

@@ -13,10 +13,10 @@
 # limitations under the License.
 
 import csv
+import datetime
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-import datetime
 import models
 
 
