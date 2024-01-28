@@ -27,7 +27,9 @@ from .app import AppConfig
 
 @pytest.fixture(scope="module")
 def app():
-    app = init_app(MagicMock())
+    mock_cfg = MagicMock()
+    mock_cfg.clientId = "fake client id"
+    app = init_app(mock_cfg)
     if app is None:
         raise TypeError("app did not initialize")
     return app
