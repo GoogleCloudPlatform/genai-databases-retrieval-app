@@ -12,17 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from vertexai.preview.generative_models import ChatSession, GenerativeModel, GenerationResponse
+import os
+
+from typing import Dict, Optional
+
+import aiohttp
+from vertexai.preview.generative_models import ChatSession, GenerativeModel, GenerationResponse, Part
 from google.protobuf.json_format import MessageToDict
 from functions import assistant_tool
+import google.oauth2.id_token # type: ignore
+from google.auth.transport.requests import Request # type: ignore
 
 
 MODEL = "gemini-pro"
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
-chat_assistants: Dict[str, ChatAssistant] = {}
+CREDENTIALS = None
 
 # aiohttp context
 connector = None
+
+func_url = { 
+    "airports_search": "airports/search",
+    "flights_search": "flights/search",
+    "list_flights": "flights/search",
+    "amenities_search": "amenities/search",
+}
 
 class ChatAssistant:
     client: aiohttp.ClientSession
@@ -32,34 +46,69 @@ class ChatAssistant:
         self.client = client
         self.chat = chat
 
-    def invoke(self, prompt: str):
+    async def invoke(self, prompt: str):
         model_response = self.request_chat_model(prompt)
-        function_response = self.request_function(model_response)
+        print(f"function call response:\n{model_response}")
+        part_response = model_response.candidates[0].content.parts[0]
+        while "function_call" in part_response._raw_part:
+            function_call = MessageToDict(part_response.function_call._pb)
+            function_response = await self.request_function(function_call)
+            print(f"function response:\n{function_response}")
+            part = Part.from_function_response(
+                    name=function_call['name'],
+                    response={
+                        "content": function_response,
+                }
+            )
+            model_response = self.request_chat_model(part)
+            part_response = model_response.candidates[0].content.parts[0]
+        if "text" in part_response._raw_part:
+            content = part_response.text
+            print(f"output content: {content}")
+            return {"output": content}
+        else:
+            raise HTTPException(status_code=500, detail="Error: Chat model response unknown")
 
-    def request_chat_model(self, prompt: str) -> Union:
+    def request_chat_model(self, prompt: str):
         model_response = self.chat.send_message(prompt)
         return model_response
 
-    async def request_function(self, model_response):
-        function_call = MessageToDict(model_response.candidates[0].content.parts[0].function_call._pb)
-        function_name = function_call['name']
+    async def request_function(self, function_call):
+        function_name = func_url[function_call['name']]
         params = function_call['args']
-        async with aiohttp.ClientSession() as client:
-            response = await client.get(
-                url=f"{BASE_URL}/{function_name}",
-                params=params,
-                headers=get_headers(self.client),
-            }
-            response = await response.json()
-            return response
+        print(f"function name is {function_name}")
+        print(f"params is {params}")
+        response = await self.client.get(
+            url=f"{BASE_URL}/{function_name}",
+            params=params,
+            headers=get_headers(self.client),
+        )
+        response = await response.json()
+        return response
 
+chat_assistants: Dict[str, ChatAssistant] = {}
+
+def get_headers(client: aiohttp.ClientSession):
+    """Helper method to generate ID tokens for authenticated requests"""
+    headers = client.headers
+    if not "http://" in BASE_URL:
+        # Append ID Token to make authenticated requests to Cloud Run services
+        headers["Authorization"] = f"Bearer {get_id_token()}"
+    return headers
+
+def get_id_token():
+    global CREDENTIALS
+    if CREDENTIALS is None:
+        CREDENTIALS, _ = google.auth.default()
+    if not CREDENTIALS.valid:
+        CREDENTIALS.refresh(Request())
+    return CREDENTIALS.id_token
 
 async def get_connector():
     global connector
     if connector is None:
         connector = aiohttp.TCPConnector(limit=100)
     return connector
-
 
 async def handle_error_response(response):
     if response.status != 200:

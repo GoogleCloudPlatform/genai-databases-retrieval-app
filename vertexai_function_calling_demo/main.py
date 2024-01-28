@@ -60,7 +60,7 @@ async def index(request: Request):
     if request.session["uuid"] in chat_assistants:
         chat_assistant = chat_assistants[request.session["uuid"]]
     else:
-        chat_assistant = await init_agent()
+        chat_assistant = await init_chat_assistant(user_id_token=None)
         chat_assistants[request.session["uuid"]] = chat_assistant
     return templates.TemplateResponse(
         "index.html", {"request": request, "messages": request.session["messages"]}
@@ -85,7 +85,7 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     chat_assistant = chat_assistants[request.session["uuid"]]
     try:
         # Send prompt to LLM
-        response = await chat_assistant.chat.invoke(prompt)
+        response = await chat_assistant.invoke(prompt)
         # NEED TO CHECK THE OUTPUT HERE
         request.session["messages"] += [
             {"role": "assistant", "content": response["output"]}

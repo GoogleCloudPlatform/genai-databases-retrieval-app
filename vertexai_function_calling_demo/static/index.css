@@ -55,7 +55,7 @@ body {
 }
 
 .chat-content {
-    overflow-y: scroll;
+    overflow-y: auto;
     margin-bottom: 10px;
 }
 
