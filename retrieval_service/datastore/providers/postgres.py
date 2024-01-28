@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import asyncio
-import datetime
+from datetime import datetime
 from ipaddress import IPv4Address, IPv6Address
 from typing import Literal, Optional
 
@@ -377,7 +377,7 @@ class Client(datastore.Client[Config]):
             """,
             departure_airport,
             arrival_airport,
-            datetime.datetime.strptime(date, "%Y-%m-%d"),
+            datetime.strptime(date, "%Y-%m-%d"),
             timeout=10,
         )
         results = [models.Flight.model_validate(dict(r)) for r in results]
@@ -389,8 +389,8 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         arrival_airport: str,
-        departure_time: datetime.datetime,
-        arrival_time: datetime.datetime,
+        departure_time: datetime,
+        arrival_time: datetime,
     ) -> bool:
         results = await self.__pool.fetch(
             """
@@ -421,8 +421,8 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         arrival_airport: str,
-        departure_time: datetime.datetime,
-        arrival_time: datetime.datetime,
+        departure_time: datetime,
+        arrival_time: datetime,
     ):
         if not await self.validate_ticket(
             airline,

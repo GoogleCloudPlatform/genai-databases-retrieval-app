@@ -431,8 +431,8 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         arrival_airport: str,
-        departure_time: datetime.datetime,
-        arrival_time: datetime.datetime,
+        departure_time: datetime,
+        arrival_time: datetime,
     ):
         raise NotImplementedError("Not Implemented")
 
