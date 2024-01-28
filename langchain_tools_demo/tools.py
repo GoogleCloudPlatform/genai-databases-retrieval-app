@@ -18,6 +18,7 @@ from typing import Optional
 import aiohttp
 import google.oauth2.id_token  # type: ignore
 from google.auth.transport.requests import Request  # type: ignore
+from langchain.agents.agent import ExceptionTool  # type: ignore
 from langchain.tools import StructuredTool
 from pydantic.v1 import BaseModel, Field
 

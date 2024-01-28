@@ -58,7 +58,7 @@ limitations under the License.
                 {# Add Chat history #}
                 {% if messages %}
                     {% for message in messages %}
-                    <span class="chat-bubble {{ message["role"] }}">{{ message["content"] | safe }}</span>
+                    <span class="chat-bubble {{ message["type"] }}">{{ message["data"]["content"] | safe }}</span>
                     {% endfor %}
                 {% endif %}
             </div>
