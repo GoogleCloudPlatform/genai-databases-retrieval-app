@@ -51,7 +51,7 @@ async function submitMessage() {
 
 // Send request to backend
 async function askQuestion(prompt) {
-    const response = await fetch('/chat', {
+    const response = await fetch('chat', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -68,7 +68,7 @@ async function askQuestion(prompt) {
 }
 
 async function reset() {
-    await fetch('/reset', {
+    await fetch('reset', {
         method: 'POST',
     }).then(()=>{
         window.location.reload()
