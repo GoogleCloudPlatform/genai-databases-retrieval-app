@@ -59,6 +59,7 @@ templates = Jinja2Templates(directory="templates")
 BASE_HISTORY: list[BaseMessage] = [
     AIMessage(content="I am an SFO Airport Assistant, ready to assist you.")
 ]
+CLIENT_ID = os.getenv("CLIENT_ID")
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -71,7 +72,7 @@ async def index(request: Request):
         {
             "request": request,
             "messages": request.session["history"],
-            "client_id": os.getenv("CLIENT_ID"),
+            "client_id": CLIENT_ID,
         },
     )
 
