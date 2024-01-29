@@ -426,15 +426,15 @@ class Client(datastore.Client[Config]):
         departure_time: str,
         arrival_time: str,
     ):
-        departure_time = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
-        arrival_time = datetime.strptime(arrival_time, "%Y-%m-%d %H:%M:%S")
+        departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
+        arrival_time_datetime = datetime.strptime(arrival_time, "%Y-%m-%d %H:%M:%S")
         if not await self.validate_ticket(
             airline,
             flight_number,
             departure_airport,
             arrival_airport,
-            departure_time,
-            arrival_time,
+            departure_time_datetime,
+            arrival_time_datetime,
         ):
             raise Exception("Flight information not in database")
         results = await self.__pool.execute(
@@ -460,8 +460,8 @@ class Client(datastore.Client[Config]):
             flight_number,
             departure_airport,
             arrival_airport,
-            departure_time,
-            arrival_time,
+            departure_time_datetime,
+            arrival_time_datetime,
             timeout=10,
         )
         if results != "INSERT 0 1":
