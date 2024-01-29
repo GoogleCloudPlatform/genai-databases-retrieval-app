@@ -202,8 +202,8 @@ class Client(ABC, Generic[C]):
         flight_number: str,
         departure_airport: str,
         arrival_airport: str,
-        departure_time: datetime,
-        arrival_time: datetime,
+        departure_time: str,
+        arrival_time: str,
     ):
         raise NotImplementedError("Subclass should implement this!")
 
