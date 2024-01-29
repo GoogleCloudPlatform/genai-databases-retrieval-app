@@ -66,7 +66,6 @@ async def index(request: Request):
     """Render the default template."""
     # Agent setup
     agent = await get_agent(request.session)
-    print(request.session["history"])
     return templates.TemplateResponse(
         "index.html",
         {
