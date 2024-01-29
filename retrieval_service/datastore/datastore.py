@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import csv
-from datetime import datetime
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Generic, List, Optional, TypeVar
 
 import models
