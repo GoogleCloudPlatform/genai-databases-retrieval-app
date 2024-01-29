@@ -109,6 +109,7 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     request.session["history"].append(message_to_dict(HumanMessage(content=prompt)))
     user_agent = await get_agent(request.session)
     try:
+        print(prompt)
         # Send prompt to LLM
         response = await user_agent.agent.ainvoke({"input": prompt})
         # Return assistant response

@@ -66,7 +66,7 @@ async def create_client_session(user_id_token: Optional[str]) -> aiohttp.ClientS
     headers = {}
     if user_id_token is not None:
         # user-specific query authentication
-        headers["User-Id-Token"] = user_id_token
+        headers["User-Id-Token"] = f"Bearer {user_id_token}"
 
     return aiohttp.ClientSession(
         connector=await get_connector(),

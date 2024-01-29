@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datetime
 import os
-from typing import Annotated, Any, Mapping, Optional
+from typing import Any, Mapping, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from google.auth.transport import requests  # type:ignore
@@ -40,7 +39,7 @@ def _ParseUserIdToken(headers: Mapping[str, Any]) -> Optional[str]:
     return parts[1]
 
 
-async def get_current_user(headers: Mapping[str, Any]):
+async def get_user_info(headers: Mapping[str, Any]):
     token = _ParseUserIdToken(headers)
     try:
         id_info = id_token.verify_oauth2_token(
@@ -49,8 +48,8 @@ async def get_current_user(headers: Mapping[str, Any]):
 
         return {
             "user_id": id_info["sub"],
-            "name": id_info["name"],
-            "email": id_info["email"],
+            "user_name": id_info["name"],
+            "user_email": id_info["email"],
         }
 
     except Exception as e:  # pylint: disable=broad-except
@@ -151,24 +150,24 @@ async def search_flights(
 @routes.post("/tickets/insert")
 async def insert_ticket(
     request: Request,
-    current_user: Annotated[dict, Depends(get_current_user)],
     airline: str,
     flight_number: str,
     departure_airport: str,
     arrival_airport: str,
-    departure_time: datetime.datetime,
-    arrival_time: datetime.datetime,
+    departure_time: str,
+    arrival_time: str,
 ):
-    if current_user is None:
+    user_info = await get_user_info(request.headers)
+    if user_info is None:
         raise HTTPException(
             status_code=401,
             detail="User login required for data insertion",
         )
     ds: datastore.Client = request.app.state.datastore
     result = await ds.insert_ticket(
-        current_user["user_id"],
-        current_user["user_name"],
-        current_user["user_email"],
+        user_info["user_id"],
+        user_info["user_name"],
+        user_info["user_email"],
         airline,
         flight_number,
         departure_airport,
@@ -182,13 +181,13 @@ async def insert_ticket(
 @routes.get("/tickets/list")
 async def list_tickets(
     request: Request,
-    current_user: Annotated[dict, Depends(get_current_user)],
 ):
-    if current_user is None:
+    user_info = await get_user_info(request.headers)
+    if user_info is None:
         raise HTTPException(
             status_code=401,
             detail="User login required for data insertion",
         )
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.list_tickets(current_user["user_id"])
+    results = await ds.list_tickets(user_info["user_id"])
     return results

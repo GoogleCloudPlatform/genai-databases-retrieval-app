@@ -71,6 +71,7 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
     ) -> None:
         async with self.__pool.acquire() as conn:
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
             # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS airports CASCADE")
             # Create a new table
@@ -91,7 +92,6 @@ class Client(datastore.Client[Config]):
                 [(a.id, a.iata, a.name, a.city, a.country) for a in airports],
             )
 
-            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
             # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS amenities CASCADE")
             # Create a new table
@@ -395,10 +395,12 @@ class Client(datastore.Client[Config]):
         results = await self.__pool.fetch(
             """
                 SELECT * FROM flights
-                WHERE ($1::TEXT IS NULL OR departure_airport ILIKE $1)
-                AND ($2::TEXT IS NULL OR arrival_airport ILIKE $2)
-                AND departure_time >= $3::timestamp
-                AND departure_time < $3::timestamp + interval '1 day';
+                WHERE airline ILIKE $1
+                AND flight_number ILIKE $2
+                AND departure_airport ILIKE $3
+                AND arrival_airport ILIKE $4
+                AND departure_time = $5::timestamp
+                AND arrival_time = $6::timestamp;
             """,
             airline,
             flight_number,
@@ -421,9 +423,11 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         arrival_airport: str,
-        departure_time: datetime,
-        arrival_time: datetime,
+        departure_time: str,
+        arrival_time: str,
     ):
+        departure_time = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
+        arrival_time = datetime.strptime(arrival_time, "%Y-%m-%d %H:%M:%S")
         if not await self.validate_ticket(
             airline,
             flight_number,
@@ -460,7 +464,7 @@ class Client(datastore.Client[Config]):
             arrival_time,
             timeout=10,
         )
-        if results == "INSERT 0 1":
+        if results != "INSERT 0 1":
             raise Exception("Ticket Insertion failure")
 
     async def list_tickets(
@@ -470,7 +474,7 @@ class Client(datastore.Client[Config]):
         results = await self.__pool.fetch(
             """
                 SELECT * FROM tickets
-                WHERE user_id == $1
+                WHERE user_id = $1
             """,
             user_id,
             timeout=10,

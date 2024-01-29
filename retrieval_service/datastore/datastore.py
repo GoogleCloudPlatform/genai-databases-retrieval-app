@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import csv
-import datetime
+from datetime import datetime
 from abc import ABC, abstractmethod
 from typing import Generic, List, Optional, TypeVar
 
@@ -202,8 +202,8 @@ class Client(ABC, Generic[C]):
         flight_number: str,
         departure_airport: str,
         arrival_airport: str,
-        departure_time: datetime.datetime,
-        arrival_time: datetime.datetime,
+        departure_time: datetime,
+        arrival_time: datetime,
     ):
         raise NotImplementedError("Subclass should implement this!")
 
