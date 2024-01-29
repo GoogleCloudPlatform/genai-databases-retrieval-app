@@ -108,7 +108,7 @@ div.chat-content>span {
     padding: 0;
 }
 
-div.chat-wrapper div.chat-content span.assistant {
+div.chat-wrapper div.chat-content span.ai {
     position: relative;
     width: 70%;
     height: auto;
@@ -119,7 +119,7 @@ div.chat-wrapper div.chat-content span.assistant {
     border-radius: 2px 15px 15px 15px;
 }
 
-div.chat-wrapper div.chat-content span.user {
+div.chat-wrapper div.chat-content span.human {
     position: relative;
     float: right;
     width: 70%;

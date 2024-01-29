@@ -23,8 +23,9 @@ from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent import AgentExecutor
 from langchain.globals import set_verbose  # type: ignore
 from langchain.llms.vertexai import VertexAI
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ChatMessageHistory, ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
+from langchain_core import messages
 
 from tools import initialize_tools
 
@@ -72,17 +73,22 @@ async def create_client_session(user_id_token: Optional[str]) -> aiohttp.ClientS
         connector=await get_connector(),
         connector_owner=False,
         headers=headers,
-        raise_for_status=handle_error_response,
+        raise_for_status=True,
     )
 
 
 # Agent
-async def init_agent(user_id_token: Optional[Any]) -> UserAgent:
+async def init_agent(
+    user_id_token: Optional[Any], history: list[messages.BaseMessage]
+) -> UserAgent:
     """Load an agent executor with tools and LLM"""
     print("Initializing agent..")
     llm = VertexAI(max_output_tokens=512, model_name="gemini-pro")
     memory = ConversationBufferMemory(
-        memory_key="chat_history", input_key="input", output_key="output"
+        chat_memory=ChatMessageHistory(messages=history),
+        memory_key="chat_history",
+        input_key="input",
+        output_key="output",
     )
     client = await create_client_session(user_id_token)
     tools = await initialize_tools(client)
