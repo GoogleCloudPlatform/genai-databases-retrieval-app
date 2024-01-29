@@ -28,8 +28,8 @@ limitations under the License.
     <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
     <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
-    <link rel="stylesheet" href="/static/index.css">
-
+    <link rel="stylesheet" href="static/index.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -39,13 +39,26 @@ limitations under the License.
             <h1>SFO Airport Assistant</h1>
             <span class="material-symbols-outlined" id="resetButton">refresh</span>
         </div>
-
+        <div id="g_id_onload"
+            data-context="signin"
+            data-ux_mode="popup"
+            data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin"
+            data-type="standard"
+            data-shape="rectangular"
+            data-theme="outline"
+            data-text="signin_with"
+            data-size="large"
+            data-logo_alignment="left"
+            data-onsuccess="onSignIn">
+        </div>
         <div class="chat-wrapper">
             <div class="chat-content">
                 {# Add Chat history #}
                 {% if messages %}
                     {% for message in messages %}
-                    <span class="chat-bubble {{ message["role"] }}">{{ message["content"] | safe }}</span>
+                    <span class="chat-bubble {{ message["type"] }}">{{ message["data"]["content"] | safe }}</span>
                     {% endfor %}
                 {% endif %}
             </div>
@@ -67,6 +80,12 @@ limitations under the License.
   src="https://code.jquery.com/jquery-3.7.1.slim.min.js"
   integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8="
   crossorigin="anonymous"></script>
-<script src="/static/index.js"></script>
+<script src="static/index.js"></script>
+<script>
+  document.getElementById('g_id_onload').setAttribute('data-client_id', '{{ client_id }}');
+  var currentUrl = window.location.href; 
+  var loginUri = currentUrl + 'login/google';
+  document.getElementById('g_id_onload').setAttribute('data-login_uri', loginUri);
+</script>
 
 </html>
