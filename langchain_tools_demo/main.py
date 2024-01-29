@@ -64,7 +64,7 @@ BASE_HISTORY: list[BaseMessage] = [
 @app.route("/", methods=["GET", "POST"])
 async def index(request: Request):
     """Render the default template."""
-    # Agent setup 
+    # Agent setup
     agent = await get_agent(request.session)
     print(request.session["history"])
     return templates.TemplateResponse(
