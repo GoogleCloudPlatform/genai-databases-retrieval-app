@@ -1,4 +1,4 @@
-fastapi==0.108.0
+fastapi==0.109.0
 google-cloud-aiplatform==1.38.1
 google-auth==2.26.2
 itsdangerous==2.1.2
@@ -7,3 +7,4 @@ langchain==0.0.354
 markdown==3.5.2
 types-Markdown==3.5.0.20240106
 uvicorn[standard]==0.25.0
+python-multipart==0.0.6

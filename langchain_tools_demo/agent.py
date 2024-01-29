@@ -13,11 +13,10 @@
 # limitations under the License.
 
 import os
-from datetime import date, timedelta
-from typing import Dict, Optional
+from datetime import date
+from typing import Any, Dict, Optional
 
 import aiohttp
-import dateutil.parser as dparser
 import google.auth.transport.requests  # type: ignore
 import google.oauth2.id_token  # type: ignore
 from langchain.agents import AgentType, initialize_agent
@@ -35,6 +34,8 @@ BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 # aiohttp context
 connector = None
 
+CLOUD_RUN_AUTHORIZATION_TOKEN = None
+
 
 # Class for setting up a dedicated llm agent for each individual user
 class UserAgent:
@@ -49,36 +50,6 @@ class UserAgent:
 user_agents: Dict[str, UserAgent] = {}
 
 
-def get_id_token(url: str) -> str:
-    """Helper method to generate ID tokens for authenticated requests"""
-    # Use Application Default Credentials on Cloud Run
-    if os.getenv("K_SERVICE"):
-        auth_req = google.auth.transport.requests.Request()
-        return google.oauth2.id_token.fetch_id_token(auth_req, url)
-    else:
-        # Use gcloud credentials locally
-        import subprocess
-
-        return (
-            subprocess.run(
-                ["gcloud", "auth", "print-identity-token"],
-                stdout=subprocess.PIPE,
-                check=True,
-            )
-            .stdout.strip()
-            .decode()
-        )
-
-
-def get_header() -> Optional[dict]:
-    if "http://" in BASE_URL:
-        return None
-    else:
-        # Append ID Token to make authenticated requests to Cloud Run services
-        headers = {"Authorization": f"Bearer {get_id_token(BASE_URL)}"}
-        return headers
-
-
 async def get_connector():
     global connector
     if connector is None:
@@ -91,24 +62,29 @@ async def handle_error_response(response):
         return f"Error sending {response.method} request to {str(response.url)}): {await response.text()}"
 
 
-async def create_client_session() -> aiohttp.ClientSession:
+async def create_client_session(user_id_token: Optional[str]) -> aiohttp.ClientSession:
+    headers = {}
+    if user_id_token is not None:
+        # user-specific query authentication
+        headers["User-Id-Token"] = user_id_token
+
     return aiohttp.ClientSession(
         connector=await get_connector(),
-        connector_owner=False,  # Prevents connector being closed when closing session
-        headers=get_header(),
+        connector_owner=False,
+        headers=headers,
         raise_for_status=handle_error_response,
     )
 
 
 # Agent
-async def init_agent() -> UserAgent:
+async def init_agent(user_id_token: Optional[Any]) -> UserAgent:
     """Load an agent executor with tools and LLM"""
     print("Initializing agent..")
     llm = VertexAI(max_output_tokens=512, model_name="gemini-pro")
     memory = ConversationBufferMemory(
         memory_key="chat_history", input_key="input", output_key="output"
     )
-    client = await create_client_session()
+    client = await create_client_session(user_id_token)
     tools = await initialize_tools(client)
     agent = initialize_agent(
         tools,
