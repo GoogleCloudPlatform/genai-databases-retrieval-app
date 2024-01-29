@@ -59,6 +59,7 @@ templates = Jinja2Templates(directory="templates")
 BASE_HISTORY: list[BaseMessage] = [
     AIMessage(content="I am an SFO Airport Assistant, ready to assist you.")
 ]
+CLIENT_ID = os.getenv("CLIENT_ID")
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -66,13 +67,12 @@ async def index(request: Request):
     """Render the default template."""
     # Agent setup
     agent = await get_agent(request.session)
-    print(request.session["history"])
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
             "messages": request.session["history"],
-            "client_id": request.session.get("client_id"),
+            "client_id": CLIENT_ID,
         },
     )
 
