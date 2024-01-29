@@ -32,7 +32,7 @@
     pip install -r requirements.txt
     ```
 
-1. [Create a Client ID](https://support.google.com/cloud/answer/6158849) for your app and save it as an environment variable:
+1. [Optional] If you want to take advantage of the User authentication features, [create a Client ID](https://support.google.com/cloud/answer/6158849) for your app and save it as an environment variable:
     ```bash
     export CLIENT_ID=<Your Client ID>
     ```
