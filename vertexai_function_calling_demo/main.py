@@ -19,11 +19,12 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import Body, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
+from typing import Any
 
 from llm import chat_assistants, init_chat_assistant
 
@@ -47,64 +48,87 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # TODO: set secret_key for production
 app.add_middleware(SessionMiddleware, secret_key="SECRET_KEY")
 templates = Jinja2Templates(directory="templates")
-BASE_HISTORY = [{"role": "assistant", "content": "How can I help you?"}]
+BASE_HISTORY = [{"role": "ai", "content": "I am an SFO Airport Asistant, ready to assist you."}]
+CLIENT_ID = os.getenv("CLIENT_ID")
 
-
-@app.get("/", response_class=HTMLResponse)
+@app.route("/", methods=["GET", "POST"])
 async def index(request: Request):
     """Render the default template."""
-    if "uuid" not in request.session:
-        request.session["uuid"] = str(uuid.uuid4())
-        request.session["messages"] = BASE_HISTORY
     # Agent setup
-    if request.session["uuid"] in chat_assistants:
-        chat_assistant = chat_assistants[request.session["uuid"]]
-    else:
-        chat_assistant = await init_chat_assistant(user_id_token=None)
-        chat_assistants[request.session["uuid"]] = chat_assistant
+    agent = await get_agent(request.session)
     return templates.TemplateResponse(
-        "index.html", {"request": request, "messages": request.session["messages"]}
+        "index.html",
+        {
+            "request": request,
+            "messages": request.session["history"],
+            "client_id": CLIENT_ID,
+        },
     )
 
+@app.post("/login/google", response_class=RedirectResponse)
+async def login_google(
+    request: Request,
+):
+    form_data = await request.form()
+    user_id_token = form_data.get("credential")
+    if user_id_token is None:
+        raise HTTPException(status_code=401, detail="No user credentials found")
+    # create new request session
+    _ = await get_agent(request.session)
+    print("Logged in to Google.")
+
+    # Redirect to source URL
+    source_url = request.headers["Referer"]
+    return RedirectResponse(url=source_url)
 
 @app.post("/chat", response_class=PlainTextResponse)
 async def chat_handler(request: Request, prompt: str = Body(embed=True)):
-    """Handler for LangChain chat requests"""
+    """Handler for chat requests"""
     # Retrieve user prompt
     if not prompt:
         raise HTTPException(status_code=400, detail="Error: No user query")
-
     if "uuid" not in request.session:
         raise HTTPException(
             status_code=400, detail="Error: Invoke index handler before start chatting"
         )
 
     # Add user message to chat history
-    request.session["messages"] += [{"role": "user", "content": prompt}]
-
-    chat_assistant = chat_assistants[request.session["uuid"]]
+    request.session["history"].append({"role": "human", "content": prompt})
+    chat_assistant = await get_agent(request.session)
+    
     try:
         # Send prompt to LLM
         response = await chat_assistant.invoke(prompt)
-        # NEED TO CHECK THE OUTPUT HERE
-        request.session["messages"] += [
-            {"role": "assistant", "content": response["output"]}
-        ]
         # Return assistant response
+        request.session["history"].append(
+            {"role": "ai", "content": response["output"]}
+        )
         return markdown(response["output"])
     except Exception as err:
-        print(err)
         raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
 
+async def get_agent(session: dict[str, Any]):
+    global chat_assistants 
+    if "uuid" not in session:
+        session["uuid"] = str(uuid.uuid4())
+    id = session["uuid"]
+    if "history" not in session:
+        session["history"] = BASE_HISTORY
+    if uuid not in chat_assistants:
+        chat_assistants[id] = await init_chat_assistant(session["uuid"])
+    return chat_assistants[id]
 
 @app.post("/reset")
 async def reset(request: Request):
     """Reset agent"""
-    global chat_assistants
-    uuid = request.session["uuid"]
 
+    if "uuid" not in request.session:
+        raise HTTPException(status_code=400, detail=f"No session to reset.")
+
+    uuid = request.session["uuid"]
+    global chat_assistants
     if uuid not in chat_assistants.keys():
-        raise HTTPException(status_code=500, detail=f"Current agent not found")
+        raise HTTPException(status_code=500, detail=f"Current assistant not found")
 
     await chat_assistants[uuid].client.close()
     del chat_assistants[uuid]

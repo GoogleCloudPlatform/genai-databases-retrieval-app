@@ -14,6 +14,7 @@
 
 import os
 
+from datetime import date
 from typing import Dict, Optional
 
 import aiohttp
@@ -30,6 +31,8 @@ CREDENTIALS = None
 
 # aiohttp context
 connector = None
+
+CLOUD_RUN_AUTHORIZATION_TOKEN = None
 
 func_url = { 
     "airports_search": "airports/search",
@@ -125,7 +128,7 @@ async def create_client_session(user_id_token: Optional[str]) -> aiohttp.ClientS
         connector=await get_connector(),
         connector_owner=False,
         headers=headers,
-        raise_for_status=handle_error_response,
+        raise_for_status=True,
     )
 
 async def init_chat_assistant(user_id_token) -> ChatAssistant:

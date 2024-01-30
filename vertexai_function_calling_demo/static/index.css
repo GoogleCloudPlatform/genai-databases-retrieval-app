@@ -41,10 +41,23 @@ body {
     text-align: center;
 }
 
-.chat-header span.reset-button {
+#g_id_onload,
+.g_id_signin {
     position: absolute;
-    margin-right: 0px;
-    font-size: 38px;
+    top: 20px;
+    right: 30px;
+}
+
+#resetButton {
+    font-size: 28px;
+    cursor: pointer;
+    position: absolute;
+    top: 27px;
+    right: 0px;
+}
+
+#resetButton:hover {
+    background-color:  #c9d4e9;
 }
 
 .chat-wrapper {
@@ -55,7 +68,7 @@ body {
 }
 
 .chat-content {
-    overflow-y: auto;
+    overflow-y: scroll;
     margin-bottom: 10px;
 }
 
@@ -84,18 +97,6 @@ div.chat-content>span {
     border: none;
 }
 
-#resetButton {
-    font-size: 35px;
-    cursor: pointer;
-    position: absolute;
-    top: 47px;
-    right: 40px;
-}
-
-#resetButton:hover {
-    background-color:  #c9d4e9;
-}
-
 .chat-bubble {
     display: block;
     padding: 50px;
@@ -107,7 +108,7 @@ div.chat-content>span {
     padding: 0;
 }
 
-div.chat-wrapper div.chat-content span.assistant {
+div.chat-wrapper div.chat-content span.ai {
     position: relative;
     width: 70%;
     height: auto;
@@ -118,7 +119,7 @@ div.chat-wrapper div.chat-content span.assistant {
     border-radius: 2px 15px 15px 15px;
 }
 
-div.chat-wrapper div.chat-content span.user {
+div.chat-wrapper div.chat-content span.human {
     position: relative;
     float: right;
     width: 70%;
