@@ -40,10 +40,15 @@ def get_id_token():
     if hasattr(CREDENTIALS, "id_token"):
         return CREDENTIALS.id_token
     else:
-        # Use Compute Engine default credential 
-        CREDENTIALS = compute_engine.IDTokenCredentials(request=Request(), target_audience=BASE_URL, use_metadata_identity_endpoint=True)
+        # Use Compute Engine default credential
+        CREDENTIALS = compute_engine.IDTokenCredentials(
+            request=Request(),
+            target_audience=BASE_URL,
+            use_metadata_identity_endpoint=True,
+        )
         CREDENTIALS.refresh(Request())
         return CREDENTIALS.token
+
 
 def get_headers(client: aiohttp.ClientSession):
     """Helper method to generate ID tokens for authenticated requests"""
