@@ -35,18 +35,18 @@ def get_id_token():
     global CREDENTIALS
     if CREDENTIALS is None:
         CREDENTIALS, _ = google.auth.default()
+        if not hasattr(CREDENTIALS, "id_token"):
+            # Use Compute Engine default credential
+            CREDENTIALS = compute_engine.IDTokenCredentials(
+                request=Request(),
+                target_audience=BASE_URL,
+                use_metadata_identity_endpoint=True,
+            )
     if not CREDENTIALS.valid:
         CREDENTIALS.refresh(Request())
     if hasattr(CREDENTIALS, "id_token"):
         return CREDENTIALS.id_token
     else:
-        # Use Compute Engine default credential
-        CREDENTIALS = compute_engine.IDTokenCredentials(
-            request=Request(),
-            target_audience=BASE_URL,
-            use_metadata_identity_endpoint=True,
-        )
-        CREDENTIALS.refresh(Request())
         return CREDENTIALS.token
 
 
