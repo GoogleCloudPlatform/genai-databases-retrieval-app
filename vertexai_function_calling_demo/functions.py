@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+
 from vertexai.preview import generative_models
 
 search_airports_func = generative_models.FunctionDeclaration(
@@ -23,7 +24,10 @@ search_airports_func = generative_models.FunctionDeclaration(
         "properties": {
             "country": {"type": "string", "description": "country"},
             "city": {"type": "string", "description": "city"},
-            "name": {"type": "string", "description": "Full or partial name of an airport"},
+            "name": {
+                "type": "string",
+                "description": "Full or partial name of an airport",
+            },
         },
     },
 )
@@ -35,7 +39,10 @@ search_amenities_func = generative_models.FunctionDeclaration(
         "type": "object",
         "properties": {
             "query": {"type": "string", "description": "Search query"},
-            "top_k": {"type": "integer", "description": "Number of matching amenities to return. Default this value to 5."},
+            "top_k": {
+                "type": "integer",
+                "description": "Number of matching amenities to return. Default this value to 5.",
+            },
         },
     },
 )
@@ -46,8 +53,14 @@ search_flights_by_number_func = generative_models.FunctionDeclaration(
     parameters={
         "type": "object",
         "properties": {
-            "airline": {"type": "string", "description": "A code for an airline service consisting of two-character airline designator."},
-            "flight_number": {"type": "string", "description": "A 1 to 4 digit number of the flight."},
+            "airline": {
+                "type": "string",
+                "description": "A code for an airline service consisting of two-character airline designator.",
+            },
+            "flight_number": {
+                "type": "string",
+                "description": "A 1 to 4 digit number of the flight.",
+            },
         },
     },
 )
@@ -58,14 +71,29 @@ list_flights_func = generative_models.FunctionDeclaration(
     parameters={
         "type": "object",
         "properties": {
-            "departure_airport": {"type": "string", "description": "The iata code for flight departure airport."},
-            "arrival_airport": {"type": "string", "description": "The iata code for flight arrival airport."},
-            "date": {"type": "string", "description": "The date of flight must be in the following format: YYYY-MM-DD."},
+            "departure_airport": {
+                "type": "string",
+                "description": "The iata code for flight departure airport.",
+            },
+            "arrival_airport": {
+                "type": "string",
+                "description": "The iata code for flight arrival airport.",
+            },
+            "date": {
+                "type": "string",
+                "description": "The date of flight must be in the following format: YYYY-MM-DD.",
+            },
         },
     },
 )
 
+
 def assistant_tool():
     return generative_models.Tool(
-        function_declarations=[search_airports_func, search_amenities_func, search_flights_by_number_func, list_flights_func],
+        function_declarations=[
+            search_airports_func,
+            search_amenities_func,
+            search_flights_by_number_func,
+            list_flights_func,
+        ],
     )

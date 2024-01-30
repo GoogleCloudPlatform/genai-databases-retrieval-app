@@ -16,6 +16,7 @@ import asyncio
 import os
 import uuid
 from contextlib import asynccontextmanager
+from typing import Any
 
 import uvicorn
 from fastapi import Body, FastAPI, HTTPException, Request
@@ -24,7 +25,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
-from typing import Any
 
 from llm import chat_assistants, init_chat_assistant
 
@@ -48,8 +48,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # TODO: set secret_key for production
 app.add_middleware(SessionMiddleware, secret_key="SECRET_KEY")
 templates = Jinja2Templates(directory="templates")
-BASE_HISTORY = [{"role": "ai", "content": "I am an SFO Airport Asistant, ready to assist you."}]
+BASE_HISTORY = [
+    {"role": "ai", "content": "I am an SFO Airport Asistant, ready to assist you."}
+]
 CLIENT_ID = os.getenv("CLIENT_ID")
+
 
 @app.route("/", methods=["GET", "POST"])
 async def index(request: Request):
@@ -64,6 +67,7 @@ async def index(request: Request):
             "client_id": CLIENT_ID,
         },
     )
+
 
 @app.post("/login/google", response_class=RedirectResponse)
 async def login_google(
@@ -81,6 +85,7 @@ async def login_google(
     source_url = request.headers["Referer"]
     return RedirectResponse(url=source_url)
 
+
 @app.post("/chat", response_class=PlainTextResponse)
 async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     """Handler for chat requests"""
@@ -95,20 +100,19 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     # Add user message to chat history
     request.session["history"].append({"role": "human", "content": prompt})
     chat_assistant = await get_agent(request.session)
-    
+
     try:
         # Send prompt to LLM
         response = await chat_assistant.invoke(prompt)
         # Return assistant response
-        request.session["history"].append(
-            {"role": "ai", "content": response["output"]}
-        )
+        request.session["history"].append({"role": "ai", "content": response["output"]})
         return markdown(response["output"])
     except Exception as err:
         raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
 
+
 async def get_agent(session: dict[str, Any]):
-    global chat_assistants 
+    global chat_assistants
     if "uuid" not in session:
         session["uuid"] = str(uuid.uuid4())
     id = session["uuid"]
@@ -117,6 +121,7 @@ async def get_agent(session: dict[str, Any]):
     if uuid not in chat_assistants:
         chat_assistants[id] = await init_chat_assistant(session["uuid"])
     return chat_assistants[id]
+
 
 @app.post("/reset")
 async def reset(request: Request):
