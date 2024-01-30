@@ -18,6 +18,7 @@
     ```bash
     gcloud auth application-default login
     ```
+    * Tip: if you are running into `403` error, check to make sure the service account you are using has the `Cloud Run Invoker` IAM in the retrieval service project.
 
 1. Change into the `langchain_tools_demo` directory:
 

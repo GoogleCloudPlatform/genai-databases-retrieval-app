@@ -17,6 +17,7 @@ from typing import Optional
 
 import aiohttp
 import google.oauth2.id_token  # type: ignore
+from google.auth import compute_engine  # type: ignore
 from google.auth.transport.requests import Request  # type: ignore
 from langchain.agents.agent import ExceptionTool  # type: ignore
 from langchain.tools import StructuredTool
@@ -34,9 +35,19 @@ def get_id_token():
     global CREDENTIALS
     if CREDENTIALS is None:
         CREDENTIALS, _ = google.auth.default()
+        if not hasattr(CREDENTIALS, "id_token"):
+            # Use Compute Engine default credential
+            CREDENTIALS = compute_engine.IDTokenCredentials(
+                request=Request(),
+                target_audience=BASE_URL,
+                use_metadata_identity_endpoint=True,
+            )
     if not CREDENTIALS.valid:
         CREDENTIALS.refresh(Request())
-    return CREDENTIALS.id_token
+    if hasattr(CREDENTIALS, "id_token"):
+        return CREDENTIALS.id_token
+    else:
+        return CREDENTIALS.token
 
 
 def get_headers(client: aiohttp.ClientSession):
