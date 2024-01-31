@@ -23,10 +23,9 @@ from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from llm import chat_assistants, init_chat_assistant
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
-
-from llm import chat_assistants, init_chat_assistant
 
 
 @asynccontextmanager
@@ -49,7 +48,10 @@ app.mount("/static", StaticFiles(directory="../static"), name="static")
 app.add_middleware(SessionMiddleware, secret_key="SECRET_KEY")
 templates = Jinja2Templates(directory="../templates")
 BASE_HISTORY = [
-    {"type": "ai", "data": {"content": "I am an SFO Airport Asistant, ready to assist you."}}
+    {
+        "type": "ai",
+        "data": {"content": "I am an SFO Airport Asistant, ready to assist you."},
+    }
 ]
 CLIENT_ID = os.getenv("CLIENT_ID")
 
@@ -105,7 +107,9 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
         # Send prompt to LLM
         response = await chat_assistant.invoke(prompt)
         # Return assistant response
-        request.session["history"].append({"type": "ai", "data": {"content": response["output"]}})
+        request.session["history"].append(
+            {"type": "ai", "data": {"content": response["output"]}}
+        )
         return markdown(response["output"])
     except Exception as err:
         raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")

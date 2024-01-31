@@ -26,7 +26,6 @@ from langchain.llms.vertexai import VertexAI
 from langchain.memory import ChatMessageHistory, ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
 from langchain_core import messages
-
 from tools import initialize_tools
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))

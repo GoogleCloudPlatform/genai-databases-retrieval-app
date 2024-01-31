@@ -19,6 +19,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import uvicorn
+from agent import init_agent, user_agents
 from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -33,8 +34,6 @@ from langchain_core.messages import (
 )
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
-
-from agent import init_agent, user_agents
 
 
 @asynccontextmanager
