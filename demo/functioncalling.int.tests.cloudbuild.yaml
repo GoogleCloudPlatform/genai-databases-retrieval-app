@@ -14,7 +14,7 @@
 steps:
   - id: "Deploy to Cloud Run"
     name: "gcr.io/cloud-builders/gcloud:latest"
-    dir: vertexai_function_calling_demo
+    dir: demo/vertexai_function_calling_demo
     entrypoint: /bin/bash
     args:
       - "-c"
