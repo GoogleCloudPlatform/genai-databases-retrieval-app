@@ -127,7 +127,7 @@ async def get_agent(session: dict[str, Any]):
     id = session["uuid"]
     if "history" not in session:
         session["history"] = messages_to_dict(BASE_HISTORY)
-    if uuid not in user_agents:
+    if id not in user_agents:
         user_agents[id] = await init_agent(
             session["uuid"], messages_from_dict(session["history"])
         )
