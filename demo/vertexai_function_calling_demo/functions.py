@@ -14,7 +14,7 @@
 
 import os
 
-from vertexai.preview import generative_models
+from vertexai.preview import generative_models  # type: ignore
 
 search_airports_func = generative_models.FunctionDeclaration(
     name="airports_search",

@@ -22,7 +22,7 @@ from fastapi import HTTPException
 from functions import assistant_tool
 from google.auth.transport.requests import Request  # type: ignore
 from google.protobuf.json_format import MessageToDict
-from vertexai.preview.generative_models import (
+from vertexai.preview.generative_models import (  # type: ignore
     ChatSession,
     GenerationResponse,
     GenerativeModel,
