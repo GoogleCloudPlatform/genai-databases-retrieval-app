@@ -29,4 +29,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . ./
 
 # Run the web service on container startup.
-CMD exec uvicorn main:app --host 0.0.0.0 --port $PORT
+CMD exec uvicorn run_langchain:app --host 0.0.0.0 --port $PORT

@@ -14,7 +14,7 @@
 steps:
   - id: "Deploy to Cloud Run"
     name: "gcr.io/cloud-builders/gcloud:latest"
-    dir: langchain_tools_demo
+    dir: demo/langchain_tools_demo
     entrypoint: /bin/bash
     args:
       - "-c"
