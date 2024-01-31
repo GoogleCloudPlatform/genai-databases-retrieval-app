@@ -52,7 +52,7 @@ async def lifespan(app: FastAPI):
 
 # FastAPI setup
 app = FastAPI(lifespan=lifespan)
-app.mount("/../static", StaticFiles(directory="../static"), name="static")
+app.mount("/static", StaticFiles(directory="../static"), name="static")
 # TODO: set secret_key for production
 app.add_middleware(SessionMiddleware, secret_key="SECRET_KEY")
 templates = Jinja2Templates(directory="../templates")
