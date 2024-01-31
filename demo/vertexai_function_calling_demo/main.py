@@ -44,12 +44,12 @@ async def lifespan(app: FastAPI):
 
 # FastAPI setup
 app = FastAPI(lifespan=lifespan)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/../static", StaticFiles(directory="../static"), name="static")
 # TODO: set secret_key for production
 app.add_middleware(SessionMiddleware, secret_key="SECRET_KEY")
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory="../templates")
 BASE_HISTORY = [
-    {"role": "ai", "content": "I am an SFO Airport Asistant, ready to assist you."}
+    {"type": "ai", "data": {"content": "I am an SFO Airport Asistant, ready to assist you."}}
 ]
 CLIENT_ID = os.getenv("CLIENT_ID")
 
@@ -98,14 +98,14 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
         )
 
     # Add user message to chat history
-    request.session["history"].append({"role": "human", "content": prompt})
+    request.session["history"].append({"type": "human", "data": {"content": prompt}})
     chat_assistant = await get_agent(request.session)
 
     try:
         # Send prompt to LLM
         response = await chat_assistant.invoke(prompt)
         # Return assistant response
-        request.session["history"].append({"role": "ai", "content": response["output"]})
+        request.session["history"].append({"type": "ai", "data": {"content": response["output"]}})
         return markdown(response["output"])
     except Exception as err:
         raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
