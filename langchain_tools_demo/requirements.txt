@@ -7,4 +7,4 @@ langchain==0.0.354
 markdown==3.5.2
 types-Markdown==3.5.0.20240106
 uvicorn[standard]==0.25.0
-python-multipart==0.0.6
+python-multipart==0.0.7
