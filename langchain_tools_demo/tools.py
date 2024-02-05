@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+from datetime import datetime
 from typing import Optional
 
 import aiohttp
@@ -158,15 +159,6 @@ class QueryInput(BaseModel):
 
 def generate_search_amenities(client: aiohttp.ClientSession):
     async def search_amenities(query: str):
-        """
-        Use this tool to search amenities by name or to recommended airport amenities at SFO.
-        If user provides flight info, use 'Get Flight' and 'Get Flights by Number'
-        first to get gate info and location.
-        Only recommend amenities that are returned by this query.
-        Find amenities close to the user by matching the terminal and then comparing
-        the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
-        B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
-        """
         response = await client.get(
             url=f"{BASE_URL}/amenities/search",
             params={"top_k": "5", "query": query},
@@ -177,6 +169,58 @@ def generate_search_amenities(client: aiohttp.ClientSession):
         return response
 
     return search_amenities
+
+
+class TicketInput(BaseModel):
+    airline: str = Field(description="Airline unique 2 letter identifier")
+    flight_number: str = Field(description="1 to 4 digit number")
+    departure_airport: str = Field(
+        description="Departure airport 3-letter code",
+    )
+    arrival_airport: str = Field(description="Arrival airport 3-letter code")
+    departure_time: datetime = Field(description="Flight departure datetime")
+    arrival_time: datetime = Field(description="Flight arrival datetime")
+
+
+def generate_insert_ticket(client: aiohttp.ClientSession):
+    async def insert_ticket(
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        arrival_airport: str,
+        departure_time: datetime,
+        arrival_time: datetime,
+    ):
+        response = await client.post(
+            url=f"{BASE_URL}/tickets/insert",
+            params={
+                "airline": airline,
+                "flight_number": flight_number,
+                "departure_airport": departure_airport,
+                "arrival_airport": arrival_airport,
+                "departure_time": departure_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "arrival_time": arrival_time.strftime("%Y-%m-%d %H:%M:%S"),
+            },
+            headers=get_headers(client),
+        )
+
+        response = await response.json()
+        return response
+
+    return insert_ticket
+
+
+def generate_list_tickets(client: aiohttp.ClientSession):
+    async def list_tickets():
+        response = await client.get(
+            url=f"{BASE_URL}/tickets/list",
+            headers=get_headers(client),
+        )
+
+        response = await response.json()
+        return response
+
+    return list_tickets
 
 
 # Tools for agent
@@ -266,5 +310,48 @@ async def initialize_tools(client: aiohttp.ClientSession):
                         B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
                         """,
             args_schema=QueryInput,
+        ),
+        StructuredTool.from_function(
+            coroutine=generate_insert_ticket(client),
+            name="Insert Ticket",
+            description="""
+                        Use this tool to book a flight ticket for the user.
+                        Example:
+                        {{
+                            "airline": "AA",
+                            "flight_number": "452",
+                            "departure_airport": "LAX",
+                            "arrival_airport": "SFO",
+                            "departure_time": "2024-01-01 05:50:00",
+                            "arrival_time": "2024-01-01 09:23:00"
+                        }}
+                        Example:
+                        {{
+                            "airline": "UA",
+                            "flight_number": "1532",
+                            "departure_airport": "SFO",
+                            "arrival_airport": "DEN",
+                            "departure_time": "2024-01-08 05:50:00",
+                            "arrival_time": "2024-01-08 09:23:00"
+                        }}
+                        Example:
+                        {{
+                            "airline": "OO",
+                            "flight_number": "6307",
+                            "departure_airport": "SFO",
+                            "arrival_airport": "MSP",
+                            "departure_time": "2024-10-28 20:13:00",
+                            "arrival_time": "2024-10-28 21:07:00"
+                        }}
+                        """,
+            args_schema=TicketInput,
+        ),
+        StructuredTool.from_function(
+            coroutine=generate_list_tickets(client),
+            name="List Tickets",
+            description="""
+                        Use this tool to list a user's flight tickets.
+                        Takes no input and returns a list of current user's flight tickets.
+                        """,
         ),
     ]

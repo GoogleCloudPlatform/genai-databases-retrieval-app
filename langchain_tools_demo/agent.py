@@ -14,10 +14,9 @@
 
 import os
 from datetime import date
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import aiohttp
-import google.auth.transport.requests  # type: ignore
 import google.oauth2.id_token  # type: ignore
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent import AgentExecutor
@@ -63,24 +62,17 @@ async def handle_error_response(response):
         return f"Error sending {response.method} request to {str(response.url)}): {await response.text()}"
 
 
-async def create_client_session(user_id_token: Optional[str]) -> aiohttp.ClientSession:
-    headers = {}
-    if user_id_token is not None:
-        # user-specific query authentication
-        headers["User-Id-Token"] = user_id_token
-
+async def create_client_session() -> aiohttp.ClientSession:
     return aiohttp.ClientSession(
         connector=await get_connector(),
         connector_owner=False,
-        headers=headers,
+        headers={},
         raise_for_status=True,
     )
 
 
 # Agent
-async def init_agent(
-    user_id_token: Optional[Any], history: list[messages.BaseMessage]
-) -> UserAgent:
+async def init_agent(history: list[messages.BaseMessage]) -> UserAgent:
     """Load an agent executor with tools and LLM"""
     print("Initializing agent..")
     llm = VertexAI(max_output_tokens=512, model_name="gemini-pro")
@@ -90,7 +82,7 @@ async def init_agent(
         input_key="input",
         output_key="output",
     )
-    client = await create_client_session(user_id_token)
+    client = await create_client_session()
     tools = await initialize_tools(client)
     agent = initialize_agent(
         tools,

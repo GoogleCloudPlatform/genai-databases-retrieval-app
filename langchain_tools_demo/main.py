@@ -16,7 +16,7 @@ import asyncio
 import os
 import uuid
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Optional
 
 import uvicorn
 from fastapi import Body, FastAPI, HTTPException, Request
@@ -66,7 +66,7 @@ CLIENT_ID = os.getenv("CLIENT_ID")
 async def index(request: Request):
     """Render the default template."""
     # Agent setup
-    agent = await get_agent(request.session)
+    agent = await get_agent(request.session, user_id_token=None)
     return templates.TemplateResponse(
         "index.html",
         {
@@ -86,7 +86,7 @@ async def login_google(
     if user_id_token is None:
         raise HTTPException(status_code=401, detail="No user credentials found")
     # create new request session
-    _ = await get_agent(request.session)
+    _ = await get_agent(request.session, str(user_id_token))
     print("Logged in to Google.")
 
     # Redirect to source URL
@@ -107,8 +107,9 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
 
     # Add user message to chat history
     request.session["history"].append(message_to_dict(HumanMessage(content=prompt)))
-    user_agent = await get_agent(request.session)
+    user_agent = await get_agent(request.session, user_id_token=None)
     try:
+        print(prompt)
         # Send prompt to LLM
         response = await user_agent.agent.ainvoke({"input": prompt})
         # Return assistant response
@@ -120,7 +121,7 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
         raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
 
 
-async def get_agent(session: dict[str, Any]):
+async def get_agent(session: dict[str, Any], user_id_token: Optional[str]):
     global user_agents
     if "uuid" not in session:
         session["uuid"] = str(uuid.uuid4())
@@ -128,8 +129,11 @@ async def get_agent(session: dict[str, Any]):
     if "history" not in session:
         session["history"] = messages_to_dict(BASE_HISTORY)
     if id not in user_agents:
-        user_agents[id] = await init_agent(id, messages_from_dict(session["history"]))
-    return user_agents[id]
+        user_agents[id] = await init_agent(messages_from_dict(session["history"]))
+    user_agent = user_agents[id]
+    if user_id_token is not None:
+        user_agent.client.headers["User-Id-Token"] = f"Bearer {user_id_token}"
+    return user_agent
 
 
 @app.post("/reset")

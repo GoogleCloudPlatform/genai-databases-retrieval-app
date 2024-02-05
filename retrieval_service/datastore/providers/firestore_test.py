@@ -47,7 +47,7 @@ class MockCollection(Dict):
     collection_name: str
     documents = Dict[str, MockDocument]
 
-    def __init(self, collection_name: str):
+    def __init__(self, collection_name: str):
         self.collection_name = collection_name
 
     def where(self, filter: FieldFilter):
@@ -64,7 +64,7 @@ class MockFirestoreClient(firestore.AsyncClient):
 
     collections: Dict[str, MockCollection]
 
-    def __init(self):
+    def __init__(self):
         self.collections = {}
 
     def collection(self, collection_name: str):

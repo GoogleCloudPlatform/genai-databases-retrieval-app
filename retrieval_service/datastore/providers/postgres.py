@@ -15,7 +15,7 @@
 import asyncio
 from datetime import datetime
 from ipaddress import IPv4Address, IPv6Address
-from typing import Any, Dict, Literal, Optional
+from typing import Literal, Optional
 
 import asyncpg
 from pgvector.asyncpg import register_vector
@@ -71,6 +71,7 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
     ) -> None:
         async with self.__pool.acquire() as conn:
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
             # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS airports CASCADE")
             # Create a new table
@@ -91,7 +92,6 @@ class Client(datastore.Client[Config]):
                 [(a.id, a.iata, a.name, a.city, a.country) for a in airports],
             )
 
-            await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
             # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS amenities CASCADE")
             # Create a new table
@@ -199,6 +199,25 @@ class Client(datastore.Client[Config]):
                     )
                     for f in flights
                 ],
+            )
+
+            # If the table already exists, drop it to avoid conflicts
+            await conn.execute("DROP TABLE IF EXISTS tickets CASCADE")
+            # Create a new table
+            await conn.execute(
+                """
+                CREATE TABLE tickets(
+                  user_id TEXT,
+                  user_name TEXT,
+                  user_email TEXT,
+                  airline TEXT,
+                  flight_number TEXT,
+                  departure_airport TEXT,
+                  arrival_airport TEXT,
+                  departure_time TIMESTAMP,
+                  arrival_time TIMESTAMP
+                )
+                """
             )
 
     async def export_data(
@@ -362,6 +381,105 @@ class Client(datastore.Client[Config]):
             timeout=10,
         )
         results = [models.Flight.model_validate(dict(r)) for r in results]
+        return results
+
+    async def validate_ticket(
+        self,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        arrival_airport: str,
+        departure_time: datetime,
+        arrival_time: datetime,
+    ) -> bool:
+        results = await self.__pool.fetch(
+            """
+                SELECT * FROM flights
+                WHERE airline ILIKE $1
+                AND flight_number ILIKE $2
+                AND departure_airport ILIKE $3
+                AND arrival_airport ILIKE $4
+                AND departure_time = $5::timestamp
+                AND arrival_time = $6::timestamp;
+            """,
+            airline,
+            flight_number,
+            departure_airport,
+            arrival_airport,
+            departure_time,
+            arrival_time,
+            timeout=10,
+        )
+        if len(results) == 1:
+            return True
+        return False
+
+    async def insert_ticket(
+        self,
+        user_id: str,
+        user_name: str,
+        user_email: str,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        arrival_airport: str,
+        departure_time: str,
+        arrival_time: str,
+    ):
+        departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
+        arrival_time_datetime = datetime.strptime(arrival_time, "%Y-%m-%d %H:%M:%S")
+        if not await self.validate_ticket(
+            airline,
+            flight_number,
+            departure_airport,
+            arrival_airport,
+            departure_time_datetime,
+            arrival_time_datetime,
+        ):
+            raise Exception("Flight information not in database")
+        results = await self.__pool.execute(
+            """
+                INSERT INTO tickets (
+                    user_id,
+                    user_name,
+                    user_email,
+                    airline,
+                    flight_number,
+                    departure_airport,
+                    arrival_airport,
+                    departure_time,
+                    arrival_time
+                ) VALUES (
+                   $1, $2, $3, $4, $5, $6, $7, $8, $9
+                );
+            """,
+            user_id,
+            user_name,
+            user_email,
+            airline,
+            flight_number,
+            departure_airport,
+            arrival_airport,
+            departure_time_datetime,
+            arrival_time_datetime,
+            timeout=10,
+        )
+        if results != "INSERT 0 1":
+            raise Exception("Ticket Insertion failure")
+
+    async def list_tickets(
+        self,
+        user_id: str,
+    ) -> list[models.Ticket]:
+        results = await self.__pool.fetch(
+            """
+                SELECT * FROM tickets
+                WHERE user_id = $1
+            """,
+            user_id,
+            timeout=10,
+        )
+        results = [models.Ticket.model_validate(dict(r)) for r in results]
         return results
 
     async def close(self):
