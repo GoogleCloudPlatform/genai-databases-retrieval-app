@@ -86,7 +86,7 @@ async def login_google(
     if user_id_token is None:
         raise HTTPException(status_code=401, detail="No user credentials found")
     # create new request session
-    _ = await get_agent(request.session, user_id_token)
+    _ = await get_agent(request.session, str(user_id_token))
     print("Logged in to Google.")
 
     # Redirect to source URL
