@@ -54,6 +54,6 @@ def gen_init(cfg: AppConfig):
 
 def init_app(cfg: AppConfig) -> FastAPI:
     app = FastAPI(lifespan=gen_init(cfg))
-    app.state["CLIENT_ID"] = cfg.clientId
+    app.state.client_id = cfg.clientId
     app.include_router(routes)
     return app
