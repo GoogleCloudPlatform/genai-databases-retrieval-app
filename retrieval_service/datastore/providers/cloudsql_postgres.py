@@ -422,5 +422,25 @@ class Client(datastore.Client[Config]):
         res = [models.Flight.model_validate(r) for r in results]
         return res
 
+    async def insert_ticket(
+        self,
+        user_id: str,
+        user_name: str,
+        user_email: str,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        arrival_airport: str,
+        departure_time: str,
+        arrival_time: str,
+    ):
+        raise NotImplementedError("Not Implemented")
+
+    async def list_tickets(
+        self,
+        user_id: str,
+    ) -> list[models.Ticket]:
+        raise NotImplementedError("Not Implemented")
+
     async def close(self):
         await self.__pool.dispose()
