@@ -39,11 +39,12 @@ def _ParseUserIdToken(headers: Mapping[str, Any]) -> Optional[str]:
     return parts[1]
 
 
-async def get_user_info(headers: Mapping[str, Any]):
+async def get_user_info(request):
+    headers = request.headers
     token = _ParseUserIdToken(headers)
     try:
         id_info = id_token.verify_oauth2_token(
-            token, requests.Request(), audience=os.environ["CLIENT_ID"]
+            token, requests.Request(), audience=request.app.state.client_id
         )
 
         return {
@@ -157,7 +158,7 @@ async def insert_ticket(
     departure_time: str,
     arrival_time: str,
 ):
-    user_info = await get_user_info(request.headers)
+    user_info = await get_user_info(request)
     if user_info is None:
         raise HTTPException(
             status_code=401,
