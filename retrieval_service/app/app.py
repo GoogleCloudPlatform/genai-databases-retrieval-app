@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 from contextlib import asynccontextmanager
 from ipaddress import IPv4Address, IPv6Address
+from typing import Optional
 
 import yaml
 from fastapi import FastAPI
@@ -32,7 +32,7 @@ class AppConfig(BaseModel):
     host: IPv4Address | IPv6Address = IPv4Address("127.0.0.1")
     port: int = 8080
     datastore: datastore.Config
-    clientId: str
+    clientId: Optional[str] = None
 
 
 def parse_config(path: str) -> AppConfig:
@@ -53,7 +53,7 @@ def gen_init(cfg: AppConfig):
 
 
 def init_app(cfg: AppConfig) -> FastAPI:
-    os.environ["CLIENT_ID"] = cfg.clientId
     app = FastAPI(lifespan=gen_init(cfg))
+    app.state.client_id = cfg.clientId
     app.include_router(routes)
     return app
