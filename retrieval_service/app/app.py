@@ -15,7 +15,6 @@
 import os
 from contextlib import asynccontextmanager
 from ipaddress import IPv4Address, IPv6Address
-from typing import Optional
 
 import yaml
 from fastapi import FastAPI
@@ -33,7 +32,7 @@ class AppConfig(BaseModel):
     host: IPv4Address | IPv6Address = IPv4Address("127.0.0.1")
     port: int = 8080
     datastore: datastore.Config
-    clientId: Optional[str] = None
+    clientId: str = "__None__"
 
 
 def parse_config(path: str) -> AppConfig:
