@@ -62,6 +62,7 @@ async def index(request: Request):
     """Render the default template."""
     # Agent setup
     agent = await get_agent(request.session, user_id_token=None)
+    templates = Jinja2Templates(directory="templates")
     return templates.TemplateResponse(
         "index.html",
         {
