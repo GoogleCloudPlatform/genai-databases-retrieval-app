@@ -31,6 +31,12 @@ from orchestrator import BaseOrchestrator, createOrchestrator
 routes = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
+BASE_HISTORY: list[BaseMessage] = [
+    AIMessage(content="I am an SFO Airport Assistant, ready to assist you.")
+]
+CLIENT_ID = os.getenv("CLIENT_ID")
+routes = APIRouter()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
