@@ -16,10 +16,6 @@
 import asyncio
 import os
 import uvicorn
-<<<<<<< HEAD
-=======
-from piny import StrictMatcher, YamlLoader  # type: ignore
->>>>>>> 94c687f (update requirement)
 
 from app import init_app
 
