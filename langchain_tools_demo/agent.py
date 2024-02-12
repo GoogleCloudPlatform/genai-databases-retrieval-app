@@ -14,17 +14,16 @@
 
 import os
 from datetime import date
-from typing import Dict, Optional
+from typing import Dict
 
 import aiohttp
-import google.oauth2.id_token  # type: ignore
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent import AgentExecutor
 from langchain.globals import set_verbose  # type: ignore
-from langchain.llms.vertexai import VertexAI
 from langchain.memory import ChatMessageHistory, ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
 from langchain_core import messages
+from langchain_google_vertexai import VertexAI
 
 from tools import initialize_tools
 

@@ -8,4 +8,4 @@ datastore:
   database: "my_database"
   user: "my-user"
   password: "my-password"
-clientId: "my-clientId"
+  # clientId: "my-clientId"
