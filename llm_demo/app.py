@@ -24,12 +24,28 @@ from fastapi.templating import Jinja2Templates
 from google.auth.transport import requests  # type:ignore
 from google.oauth2 import id_token  # type:ignore
 from markdown import markdown
+from piny import StrictMatcher, YamlLoader  # type: ignore
+from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
 from orchestrator import BaseOrchestrator, createOrchestrator
 
 routes = APIRouter()
 templates = Jinja2Templates(directory="templates")
+
+
+class AppConfig(BaseModel):
+    host: IPv4Address | IPv6Address = IPv4Address("0.0.0.0")
+    port: int = 8081
+    clientId: Optional[str] = None
+    # TODO: Add this at the next PR when Orchestration interface is created
+    # orchestration: orchestration.Config
+
+
+def parse_config(path: str) -> AppConfig:
+    with open(path, "r") as file:
+        config = YamlLoader(path=path, matcher=StrictMatcher).load()
+    return AppConfig(**config)
 
 
 @asynccontextmanager
