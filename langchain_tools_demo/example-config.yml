@@ -1,4 +1,5 @@
 host: 0.0.0.0
 port: 8081
+clientId: ${CLIENT_ID}
 orchestration:
   kind: ${LLM_FRAMEWORK}

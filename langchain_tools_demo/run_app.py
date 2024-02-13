@@ -18,7 +18,7 @@ import os
 
 import uvicorn
 
-from main import init_app
+from main import init_app, parse_config
 
 
 async def main():

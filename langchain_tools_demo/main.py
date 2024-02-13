@@ -16,6 +16,7 @@ import asyncio
 import os
 import uuid
 from contextlib import asynccontextmanager
+from ipaddress import IPv4Address, IPv6Address
 from typing import Any, Optional
 
 import uvicorn
@@ -32,6 +33,8 @@ from langchain_core.messages import (
     messages_to_dict,
 )
 from markdown import markdown
+from piny import StrictMatcher, YamlLoader  # type: ignore
+from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
 from agent import init_agent, user_agents
@@ -41,6 +44,20 @@ BASE_HISTORY: list[BaseMessage] = [
 ]
 routes = APIRouter()
 templates = Jinja2Templates(directory="templates")
+
+
+class AppConfig(BaseModel):
+    host: IPv4Address | IPv6Address = IPv4Address("0.0.0.0")
+    port: int = 8081
+    clientId: Optional[str] = None
+    # TODO: Add this at the next PR when Orchestration interface is created
+    # orchestration: orchestration.Config
+
+
+def parse_config(path: str) -> AppConfig:
+    with open(path, "r") as file:
+        config = YamlLoader(path=path, matcher=StrictMatcher).load()
+    return AppConfig(**config)
 
 
 @asynccontextmanager
