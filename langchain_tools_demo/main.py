@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 from typing import Any, Optional
 
 import uvicorn
-from fastapi import Body, FastAPI, HTTPException, Request
+from fastapi import APIRouter, Body, FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -36,6 +36,12 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from agent import init_agent, user_agents
 
+BASE_HISTORY: list[BaseMessage] = [
+    AIMessage(content="I am an SFO Airport Assistant, ready to assist you.")
+]
+routes = APIRouter()
+templates = Jinja2Templates(directory="templates")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -50,19 +56,8 @@ async def lifespan(app: FastAPI):
     asyncio.gather(*close_client_tasks)
 
 
-# FastAPI setup
-app = FastAPI(lifespan=lifespan)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-# TODO: set secret_key for production
-app.add_middleware(SessionMiddleware, secret_key="SECRET_KEY")
-templates = Jinja2Templates(directory="templates")
-BASE_HISTORY: list[BaseMessage] = [
-    AIMessage(content="I am an SFO Airport Assistant, ready to assist you.")
-]
-CLIENT_ID = os.getenv("CLIENT_ID")
-
-
-@app.route("/", methods=["GET", "POST"])
+@routes.get("/")
+@routes.post("/")
 async def index(request: Request):
     """Render the default template."""
     # Agent setup
@@ -72,12 +67,12 @@ async def index(request: Request):
         {
             "request": request,
             "messages": request.session["history"],
-            "client_id": CLIENT_ID,
+            "client_id": request.app.state.client_id,
         },
     )
 
 
-@app.post("/login/google", response_class=RedirectResponse)
+@routes.post("/login/google", response_class=RedirectResponse)
 async def login_google(
     request: Request,
 ):
@@ -94,7 +89,7 @@ async def login_google(
     return RedirectResponse(url=source_url)
 
 
-@app.post("/chat", response_class=PlainTextResponse)
+@routes.post("/chat", response_class=PlainTextResponse)
 async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     """Handler for LangChain chat requests"""
     # Retrieve user prompt
@@ -136,7 +131,7 @@ async def get_agent(session: dict[str, Any], user_id_token: Optional[str]):
     return user_agent
 
 
-@app.post("/reset")
+@routes.post("/reset")
 async def reset(request: Request):
     """Reset agent"""
 
@@ -153,6 +148,20 @@ async def reset(request: Request):
     request.session.clear()
 
 
+def init_app(client_id: Optional[str], secret_key: Optional[str]) -> FastAPI:
+    # FastAPI setup
+    app = FastAPI(lifespan=lifespan)
+    app.state.client_id = client_id
+    app.include_router(routes)
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+    app.add_middleware(SessionMiddleware, secret_key=secret_key)
+    return app
+
+
 if __name__ == "__main__":
     PORT = int(os.getenv("PORT", default=8081))
-    uvicorn.run(app, host="0.0.0.0", port=PORT)
+    HOST = os.getenv("HOST", default="127.0.0.1")
+    CLIENT_ID = os.getenv("CLIENT_ID")
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    app = init_app(client_id=CLIENT_ID, secret_key=SECRET_KEY)
+    uvicorn.run(app, host=HOST, port=PORT)
