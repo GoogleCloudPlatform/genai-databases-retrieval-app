@@ -24,23 +24,18 @@ from fastapi import APIRouter, Body, FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    message_to_dict,
-    messages_from_dict,
-    messages_to_dict,
-)
 from markdown import markdown
 from piny import StrictMatcher, YamlLoader  # type: ignore
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
-from agent import init_agent, user_agents
+from orchestration import ais, create
 
-BASE_HISTORY: list[BaseMessage] = [
-    AIMessage(content="I am an SFO Airport Assistant, ready to assist you.")
+BASE_HISTORY = [
+    {
+        "type": "ai",
+        "data": {"content": "I am an SFO Airport Assistant, ready to assist you."},
+    }
 ]
 routes = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -50,8 +45,7 @@ class AppConfig(BaseModel):
     host: IPv4Address | IPv6Address = IPv4Address("0.0.0.0")
     port: int = 8081
     clientId: Optional[str] = None
-    # TODO: Add this at the next PR when Orchestration interface is created
-    # orchestration: orchestration.Config
+    orchestration: Optional[str]
 
 
 def parse_config(path: str) -> AppConfig:
@@ -66,9 +60,7 @@ async def lifespan(app: FastAPI):
     print("Loading application...")
     yield
     # FastAPI app shutdown event
-    close_client_tasks = [
-        asyncio.create_task(a.client.close()) for a in user_agents.values()
-    ]
+    close_client_tasks = [asyncio.create_task(a.close()) for a in ais.values()]
 
     asyncio.gather(*close_client_tasks)
 
@@ -78,7 +70,11 @@ async def lifespan(app: FastAPI):
 async def index(request: Request):
     """Render the default template."""
     # Agent setup
-    agent = await get_agent(request.session, user_id_token=None)
+    agent = await get_agent(
+        request.session,
+        user_id_token=None,
+        orchestration=request.app.state.orchestration,
+    )
     templates = Jinja2Templates(directory="templates")
     return templates.TemplateResponse(
         "index.html",
@@ -99,7 +95,7 @@ async def login_google(
     if user_id_token is None:
         raise HTTPException(status_code=401, detail="No user credentials found")
     # create new request session
-    _ = await get_agent(request.session, str(user_id_token))
+    _ = await get_agent(request.session, str(user_id_token), orchestration=None)
     print("Logged in to Google.")
 
     # Redirect to source URL
@@ -119,34 +115,38 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
         )
 
     # Add user message to chat history
-    request.session["history"].append(message_to_dict(HumanMessage(content=prompt)))
-    user_agent = await get_agent(request.session, user_id_token=None)
+    request.session["history"].append({"type": "human", "data": {"content": prompt}})
+    ai = await get_agent(request.session, user_id_token=None, orchestration=None)
     try:
         print(prompt)
         # Send prompt to LLM
-        response = await user_agent.agent.ainvoke({"input": prompt})
+        response = await ai.invoke(prompt)
         # Return assistant response
         request.session["history"].append(
-            message_to_dict(AIMessage(content=response["output"]))
+            {"type": "ai", "data": {"content": response["output"]}}
         )
         return markdown(response["output"])
     except Exception as err:
         raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
 
 
-async def get_agent(session: dict[str, Any], user_id_token: Optional[str]):
-    global user_agents
+async def get_agent(
+    session: dict[str, Any], user_id_token: Optional[str], orchestration: Optional[str]
+):
+    global ais
     if "uuid" not in session:
         session["uuid"] = str(uuid.uuid4())
     id = session["uuid"]
     if "history" not in session:
-        session["history"] = messages_to_dict(BASE_HISTORY)
-    if id not in user_agents:
-        user_agents[id] = await init_agent(messages_from_dict(session["history"]))
-    user_agent = user_agents[id]
+        session["history"] = BASE_HISTORY
+    if id not in ais:
+        if not orchestration:
+            raise HTTPException(status_code=500, detail="orchestration not provided.")
+        ais[id] = await create(orchestration, session["history"])
+    ai = ais[id]
     if user_id_token is not None:
-        user_agent.client.headers["User-Id-Token"] = f"Bearer {user_id_token}"
-    return user_agent
+        ai.client.headers["User-Id-Token"] = f"Bearer {user_id_token}"
+    return ai
 
 
 @routes.post("/reset")
@@ -157,12 +157,12 @@ async def reset(request: Request):
         raise HTTPException(status_code=400, detail=f"No session to reset.")
 
     uuid = request.session["uuid"]
-    global user_agents
-    if uuid not in user_agents.keys():
+    global ais
+    if uuid not in ais.keys():
         raise HTTPException(status_code=500, detail=f"Current agent not found")
 
-    await user_agents[uuid].client.close()
-    del user_agents[uuid]
+    await ais[uuid].client.close()
+    del ais[uuid]
     request.session.clear()
 
 

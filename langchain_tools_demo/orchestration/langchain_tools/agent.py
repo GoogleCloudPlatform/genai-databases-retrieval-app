@@ -14,101 +14,101 @@
 
 import os
 from datetime import date
-from typing import Dict
+from typing import Any, Dict, List
 
 import aiohttp
+from fastapi import HTTPException
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent import AgentExecutor
 from langchain.globals import set_verbose  # type: ignore
 from langchain.memory import ChatMessageHistory, ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
 from langchain_core import messages
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_google_vertexai import VertexAI
 
-from tools import initialize_tools
+from .. import orchestration
+from .tools import initialize_tools
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 
-# aiohttp context
-connector = None
-
 CLOUD_RUN_AUTHORIZATION_TOKEN = None
 
 
-# Class for setting up a dedicated llm agent for each individual user
-class UserAgent:
+class Orchestration(orchestration.Orchestration):
     client: aiohttp.ClientSession
     agent: AgentExecutor
 
-    def __init__(self, client, agent) -> None:
+    @orchestration.classproperty
+    def kind(cls):
+        return "langchain-tools"
+
+    def __init__(self, client: aiohttp.ClientSession, agent: AgentExecutor):
         self.client = client
         self.agent = agent
 
+    @classmethod
+    async def create(cls, base_history: list[Any]) -> "Orchestration":
+        """Load an agent executor with tools and LLM"""
+        print("Initializing agent..")
+        history = Orchestration.parse_messages(base_history)
+        llm = VertexAI(max_output_tokens=512, model_name="gemini-pro")
+        memory = ConversationBufferMemory(
+            chat_memory=ChatMessageHistory(messages=history),
+            memory_key="chat_history",
+            input_key="input",
+            output_key="output",
+        )
+        client = await Orchestration.create_client_session()
+        tools = await initialize_tools(client)
+        agent = initialize_agent(
+            tools,
+            llm,
+            agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+            memory=memory,
+            handle_parsing_errors=True,
+            max_iterations=3,
+            early_stopping_method="generate",
+            return_intermediate_steps=True,
+        )
+        # Create new prompt template
+        tool_strings = "\n".join(
+            [f"> {tool.name}: {tool.description}" for tool in tools]
+        )
+        tool_names = ", ".join([tool.name for tool in tools])
+        format_instructions = FORMAT_INSTRUCTIONS.format(
+            tool_names=tool_names,
+        )
+        today_date = date.today().strftime("%Y-%m-%d")
+        today = f"Today is {today_date}."
+        template = "\n\n".join(
+            [PREFIX, tool_strings, format_instructions, SUFFIX, today]
+        )
+        human_message_template = "{input}\n\n{agent_scratchpad}"
+        prompt = ChatPromptTemplate.from_messages(
+            [("system", template), ("human", human_message_template)]
+        )
+        agent.agent.llm_chain.prompt = prompt  # type: ignore
 
-user_agents: Dict[str, UserAgent] = {}
+        return Orchestration(client, agent)
 
+    async def invoke(self, prompt: str) -> Dict[str, Any]:
+        response = await self.agent.ainvoke({"input": prompt})
+        return response
 
-async def get_connector():
-    global connector
-    if connector is None:
-        connector = aiohttp.TCPConnector(limit=100)
-    return connector
+    @staticmethod
+    def parse_messages(datas: List[Any]) -> List[BaseMessage]:
+        messages: List[BaseMessage] = []
+        for data in datas:
+            if data["type"] == "human":
+                messages.append(HumanMessage(content=data["data"]["content"]))
+            if data["type"] == "ai":
+                messages.append(AIMessage(content=data["data"]["content"]))
+        return messages
 
-
-async def handle_error_response(response):
-    if response.status != 200:
-        return f"Error sending {response.method} request to {str(response.url)}): {await response.text()}"
-
-
-async def create_client_session() -> aiohttp.ClientSession:
-    return aiohttp.ClientSession(
-        connector=await get_connector(),
-        connector_owner=False,
-        headers={},
-        raise_for_status=True,
-    )
-
-
-# Agent
-async def init_agent(history: list[messages.BaseMessage]) -> UserAgent:
-    """Load an agent executor with tools and LLM"""
-    print("Initializing agent..")
-    llm = VertexAI(max_output_tokens=512, model_name="gemini-pro")
-    memory = ConversationBufferMemory(
-        chat_memory=ChatMessageHistory(messages=history),
-        memory_key="chat_history",
-        input_key="input",
-        output_key="output",
-    )
-    client = await create_client_session()
-    tools = await initialize_tools(client)
-    agent = initialize_agent(
-        tools,
-        llm,
-        agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
-        memory=memory,
-        handle_parsing_errors=True,
-        max_iterations=3,
-        early_stopping_method="generate",
-        return_intermediate_steps=True,
-    )
-    # Create new prompt template
-    tool_strings = "\n".join([f"> {tool.name}: {tool.description}" for tool in tools])
-    tool_names = ", ".join([tool.name for tool in tools])
-    format_instructions = FORMAT_INSTRUCTIONS.format(
-        tool_names=tool_names,
-    )
-    today_date = date.today().strftime("%Y-%m-%d")
-    today = f"Today is {today_date}."
-    template = "\n\n".join([PREFIX, tool_strings, format_instructions, SUFFIX, today])
-    human_message_template = "{input}\n\n{agent_scratchpad}"
-    prompt = ChatPromptTemplate.from_messages(
-        [("system", template), ("human", human_message_template)]
-    )
-    agent.agent.llm_chain.prompt = prompt  # type: ignore
-
-    return UserAgent(client, agent)
+    def close(self):
+        self.client.close()
 
 
 PREFIX = """SFO Airport Assistant helps travelers find their way at the airport.
