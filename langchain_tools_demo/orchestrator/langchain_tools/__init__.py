@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import agent
+from .langchain_tools_orchestrator import LangChainToolsOrchestrator
 
-__ALL__ = [agent]
+__ALL__ = [LangChainToolsOrchestrator]

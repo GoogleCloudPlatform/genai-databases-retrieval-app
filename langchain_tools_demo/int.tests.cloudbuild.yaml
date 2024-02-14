@@ -12,16 +12,6 @@
 # limitations under the License.
 
 steps:
-  - id: "Update config"
-    name: python:3.11
-    dir: langchain_tools_demo
-    entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
-        # Create config
-        cp example-config.yml config.yml
-
   - id: "Deploy to Cloud Run"
     name: "gcr.io/cloud-builders/gcloud:latest"
     dir: langchain_tools_demo

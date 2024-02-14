@@ -14,45 +14,41 @@
 
 import os
 from datetime import date
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-import aiohttp
+from aiohttp import ClientSession
 from fastapi import HTTPException
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent import AgentExecutor
 from langchain.globals import set_verbose  # type: ignore
 from langchain.memory import ChatMessageHistory, ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
-from langchain_core import messages
+from langchain.tools import StructuredTool
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_google_vertexai import VertexAI
 
-from .. import orchestration
+from ..orchestrator import BaseOrchestrator, classproperty
 from .tools import initialize_tools
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
-BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
-
-CLOUD_RUN_AUTHORIZATION_TOKEN = None
 
 
-class Orchestration(orchestration.Orchestration):
-    client: aiohttp.ClientSession
+class UserAgent:
+    client: ClientSession
     agent: AgentExecutor
 
-    @orchestration.classproperty
-    def kind(cls):
-        return "langchain-tools"
-
-    def __init__(self, client: aiohttp.ClientSession, agent: AgentExecutor):
+    def __init__(self, client: ClientSession, agent: AgentExecutor):
         self.client = client
         self.agent = agent
 
     @classmethod
-    async def create(cls, base_history: list[Any]) -> "Orchestration":
-        """Load an agent executor with tools and LLM"""
-        print("Initializing agent..")
-        history = Orchestration.parse_messages(base_history)
+    def initialize_agent(
+        cls,
+        client: ClientSession,
+        tools: List[StructuredTool],
+        history: List[BaseMessage],
+        prompt: ChatPromptTemplate,
+    ) -> "UserAgent":
         llm = VertexAI(max_output_tokens=512, model_name="gemini-pro")
         memory = ConversationBufferMemory(
             chat_memory=ChatMessageHistory(messages=history),
@@ -60,8 +56,6 @@ class Orchestration(orchestration.Orchestration):
             input_key="input",
             output_key="output",
         )
-        client = await Orchestration.create_client_session()
-        tools = await initialize_tools(client)
         agent = initialize_agent(
             tools,
             llm,
@@ -72,6 +66,37 @@ class Orchestration(orchestration.Orchestration):
             early_stopping_method="generate",
             return_intermediate_steps=True,
         )
+        agent.agent.llm_chain.prompt = prompt  # type: ignore
+        return UserAgent(client, agent)
+
+    async def close(self):
+        await self.client.close()
+
+    async def invoke(self, prompt: str) -> Dict[str, Any]:
+        response = await self.agent.ainvoke({"input": prompt})
+        return response
+
+
+class LangChainToolsOrchestrator(BaseOrchestrator):
+    ais: Dict[str, UserAgent] = {}
+    # aiohttp context
+    connector = None
+
+    @classproperty
+    def kind(cls):
+        return "langchain-tools"
+
+    async def create_ai(self, base_history: List[Any]) -> UserAgent:
+        """Create and load an agent executor with tools and LLM."""
+        print("Initializing agent..")
+        history = self.parse_messages(base_history)
+        client = await self.create_client_session()
+        tools = await initialize_tools(client)
+        prompt = self.create_prompt_template(tools)
+        agent = UserAgent.initialize_agent(client, tools, history, prompt)
+        return agent
+
+    def create_prompt_template(self, tools: List[StructuredTool]) -> ChatPromptTemplate:
         # Create new prompt template
         tool_strings = "\n".join(
             [f"> {tool.name}: {tool.description}" for tool in tools]
@@ -89,16 +114,9 @@ class Orchestration(orchestration.Orchestration):
         prompt = ChatPromptTemplate.from_messages(
             [("system", template), ("human", human_message_template)]
         )
-        agent.agent.llm_chain.prompt = prompt  # type: ignore
+        return prompt
 
-        return Orchestration(client, agent)
-
-    async def invoke(self, prompt: str) -> Dict[str, Any]:
-        response = await self.agent.ainvoke({"input": prompt})
-        return response
-
-    @staticmethod
-    def parse_messages(datas: List[Any]) -> List[BaseMessage]:
+    def parse_messages(self, datas: List[Any]) -> List[BaseMessage]:
         messages: List[BaseMessage] = []
         for data in datas:
             if data["type"] == "human":
@@ -106,9 +124,6 @@ class Orchestration(orchestration.Orchestration):
             if data["type"] == "ai":
                 messages.append(AIMessage(content=data["data"]["content"]))
         return messages
-
-    def close(self):
-        self.client.close()
 
 
 PREFIX = """SFO Airport Assistant helps travelers find their way at the airport.
