@@ -18,7 +18,11 @@ import uuid
 from datetime import date
 from typing import Any, Dict, List, Optional
 
+<<<<<<<< HEAD:llm_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
 from aiohttp import ClientSession, TCPConnector
+========
+from aiohttp import ClientSession
+>>>>>>>> 6daec6e (update interface and resolve comments):langchain_tools_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
 from fastapi import HTTPException
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent import AgentExecutor
@@ -33,11 +37,14 @@ from ..orchestrator import BaseOrchestrator, classproperty
 from .tools import initialize_tools
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
+<<<<<<<< HEAD:llm_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
 MODEL = "gemini-pro"
 BASE_HISTORY = {
     "type": "ai",
     "data": {"content": "Welcome to Cymbal Air!  How may I assist you?"},
 }
+========
+>>>>>>>> 6daec6e (update interface and resolve comments):langchain_tools_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
 
 
 class UserAgent:
@@ -56,7 +63,11 @@ class UserAgent:
         history: List[BaseMessage],
         prompt: ChatPromptTemplate,
     ) -> "UserAgent":
+<<<<<<<< HEAD:llm_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
         llm = VertexAI(max_output_tokens=512, model_name=MODEL)
+========
+        llm = VertexAI(max_output_tokens=512, model_name="gemini-pro")
+>>>>>>>> 6daec6e (update interface and resolve comments):langchain_tools_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
         memory = ConversationBufferMemory(
             chat_memory=ChatMessageHistory(messages=history),
             memory_key="chat_history",
@@ -80,15 +91,23 @@ class UserAgent:
         await self.client.close()
 
     async def invoke(self, prompt: str) -> Dict[str, Any]:
+<<<<<<<< HEAD:llm_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
         try:
             response = await self.agent.ainvoke({"input": prompt})
         except Exception as err:
             raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
+========
+        response = await self.agent.ainvoke({"input": prompt})
+>>>>>>>> 6daec6e (update interface and resolve comments):langchain_tools_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
         return response
 
 
 class LangChainToolsOrchestrator(BaseOrchestrator):
+<<<<<<<< HEAD:llm_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
     _user_sessions: Dict[str, UserAgent] = {}
+========
+    ais: Dict[str, UserAgent] = {}
+>>>>>>>> 6daec6e (update interface and resolve comments):langchain_tools_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
     # aiohttp context
     connector = None
 
@@ -96,6 +115,7 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
     def kind(cls):
         return "langchain-tools"
 
+<<<<<<<< HEAD:llm_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
     def user_session_exist(self, uuid: str) -> bool:
         return uuid in self._user_sessions
 
@@ -108,10 +128,17 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         if "history" not in session:
             session["history"] = [BASE_HISTORY]
         history = self.parse_messages(session["history"])
+========
+    async def create_ai(self, base_history: List[Any]) -> UserAgent:
+        """Create and load an agent executor with tools and LLM."""
+        print("Initializing agent..")
+        history = self.parse_messages(base_history)
+>>>>>>>> 6daec6e (update interface and resolve comments):langchain_tools_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
         client = await self.create_client_session()
         tools = await initialize_tools(client)
         prompt = self.create_prompt_template(tools)
         agent = UserAgent.initialize_agent(client, tools, history, prompt)
+<<<<<<<< HEAD:llm_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
         self._user_sessions[id] = agent
 
     async def user_session_invoke(self, uuid: str, prompt: str) -> str:
@@ -140,6 +167,9 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
             headers={},
             raise_for_status=True,
         )
+========
+        return agent
+>>>>>>>> 6daec6e (update interface and resolve comments):langchain_tools_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
 
     def create_prompt_template(self, tools: List[StructuredTool]) -> ChatPromptTemplate:
         # Create new prompt template
@@ -172,12 +202,15 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
                 raise Exception("Message type not found.")
         return messages
 
+<<<<<<<< HEAD:llm_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
     def close_clients(self):
         close_client_tasks = [
             asyncio.create_task(a.close()) for a in self._user_sessions.values()
         ]
         asyncio.gather(*close_client_tasks)
 
+========
+>>>>>>>> 6daec6e (update interface and resolve comments):langchain_tools_demo/orchestrator/langchain_tools/langchain_tools_orchestrator.py
 
 PREFIX = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
 

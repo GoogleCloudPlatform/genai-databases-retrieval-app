@@ -24,26 +24,12 @@ from fastapi.templating import Jinja2Templates
 from google.auth.transport import requests  # type:ignore
 from google.oauth2 import id_token  # type:ignore
 from markdown import markdown
-from piny import StrictMatcher, YamlLoader  # type: ignore
-from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
 from orchestrator import BaseOrchestrator, createOrchestrator
+
 routes = APIRouter()
 templates = Jinja2Templates(directory="templates")
-
-
-class AppConfig(BaseModel):
-    host: IPv4Address | IPv6Address = IPv4Address("0.0.0.0")
-    port: int = 8081
-    clientId: Optional[str] = None
-    orchestration: Optional[str]
-
-
-def parse_config(path: str) -> AppConfig:
-    with open(path, "r") as file:
-        config = YamlLoader(path=path, matcher=StrictMatcher).load()
-    return AppConfig(**config)
 
 
 @asynccontextmanager
@@ -52,34 +38,18 @@ async def lifespan(app: FastAPI):
     print("Loading application...")
     yield
     # FastAPI app shutdown event
-<<<<<<< HEAD:llm_demo/app.py
-    app.state.orchestration_type.close_clients()
-=======
-    close_client_tasks = [asyncio.create_task(a.close()) for a in ais.values()]
-
-    asyncio.gather(*close_client_tasks)
->>>>>>> 30d0d92 (add orchestration interface):langchain_tools_demo/main.py
+    app.state.orchestrator.close_clients()
 
 
 @routes.get("/")
 @routes.post("/")
 async def index(request: Request):
     """Render the default template."""
-<<<<<<< HEAD:llm_demo/app.py
     # User session setup
     orchestrator = request.app.state.orchestration_type
     session = request.session
     if "uuid" not in session or not orchestrator.user_session_exist(session["uuid"]):
         await orchestrator.user_session_create(session)
-=======
-    # Agent setup
-    agent = await get_agent(
-        request.session,
-        user_id_token=None,
-        orchestration=request.app.state.orchestration,
-    )
-    templates = Jinja2Templates(directory="templates")
->>>>>>> 30d0d92 (add orchestration interface):langchain_tools_demo/main.py
     return templates.TemplateResponse(
         "index.html",
         {
@@ -105,12 +75,8 @@ async def login_google(
     user_name = get_user_name(str(user_id_token), client_id)
 
     # create new request session
-<<<<<<< HEAD:llm_demo/app.py
     orchestrator = request.app.state.orchestration_type
     orchestrator.set_user_session_header(request.session["uuid"], str(user_id_token))
-=======
-    _ = await get_agent(request.session, str(user_id_token), orchestration=None)
->>>>>>> 30d0d92 (add orchestration interface):langchain_tools_demo/main.py
     print("Logged in to Google.")
 
     welcome_text = f"Welcome to Cymbal Air, {user_name}! How may I assist you?"
@@ -142,45 +108,11 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
 
     # Add user message to chat history
     request.session["history"].append({"type": "human", "data": {"content": prompt}})
-<<<<<<< HEAD:llm_demo/app.py
     orchestrator = request.app.state.orchestration_type
     output = await orchestrator.user_session_invoke(request.session["uuid"], prompt)
     # Return assistant response
     request.session["history"].append({"type": "ai", "data": {"content": output}})
     return markdown(output)
-=======
-    ai = await get_agent(request.session, user_id_token=None, orchestration=None)
-    try:
-        print(prompt)
-        # Send prompt to LLM
-        response = await ai.invoke(prompt)
-        # Return assistant response
-        request.session["history"].append(
-            {"type": "ai", "data": {"content": response["output"]}}
-        )
-        return markdown(response["output"])
-    except Exception as err:
-        raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
-
-
-async def get_agent(
-    session: dict[str, Any], user_id_token: Optional[str], orchestration: Optional[str]
-):
-    global ais
-    if "uuid" not in session:
-        session["uuid"] = str(uuid.uuid4())
-    id = session["uuid"]
-    if "history" not in session:
-        session["history"] = BASE_HISTORY
-    if id not in ais:
-        if not orchestration:
-            raise HTTPException(status_code=500, detail="orchestration not provided.")
-        ais[id] = await create(orchestration, session["history"])
-    ai = ais[id]
-    if user_id_token is not None:
-        ai.client.headers["User-Id-Token"] = f"Bearer {user_id_token}"
-    return ai
->>>>>>> 30d0d92 (add orchestration interface):langchain_tools_demo/main.py
 
 
 @routes.post("/reset")
@@ -191,20 +123,11 @@ async def reset(request: Request):
         raise HTTPException(status_code=400, detail=f"No session to reset.")
 
     uuid = request.session["uuid"]
-<<<<<<< HEAD:llm_demo/app.py
     orchestrator = request.app.state.orchestration_type
     if not orchestrator.user_session_exist(uuid):
         raise HTTPException(status_code=500, detail=f"Current user session not found")
 
     await orchestrator.user_session_reset(uuid)
-=======
-    global ais
-    if uuid not in ais.keys():
-        raise HTTPException(status_code=500, detail=f"Current agent not found")
-
-    await ais[uuid].client.close()
-    del ais[uuid]
->>>>>>> 30d0d92 (add orchestration interface):langchain_tools_demo/main.py
     request.session.clear()
 
 
@@ -225,7 +148,7 @@ def init_app(
         raise HTTPException(status_code=500, detail="Orchestrator not found")
     app = FastAPI(lifespan=lifespan)
     app.state.client_id = client_id
-    app.state.orchestration_type = createOrchestrator(orchestration_type)
+    app.state.orchestrator = BaseOrchestrator.create(orchestrator)
     app.include_router(routes)
     app.mount("/static", StaticFiles(directory="static"), name="static")
     app.add_middleware(SessionMiddleware, secret_key=secret_key)

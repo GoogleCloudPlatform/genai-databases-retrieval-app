@@ -14,4 +14,8 @@
 
 from .langchain_tools_orchestrator import LangChainToolsOrchestrator
 
+<<<<<<<< HEAD:llm_demo/orchestrator/langchain_tools/__init__.py
 __ALL__ = ["LangChainToolsOrchestrator"]
+========
+__ALL__ = [LangChainToolsOrchestrator]
+>>>>>>>> 6daec6e (update interface and resolve comments):langchain_tools_demo/orchestrator/langchain_tools/__init__.py
