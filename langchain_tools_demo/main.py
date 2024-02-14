@@ -160,8 +160,10 @@ def init_app(client_id: Optional[str], secret_key: Optional[str]) -> FastAPI:
 
 if __name__ == "__main__":
     PORT = int(os.getenv("PORT", default=8081))
-    HOST = os.getenv("HOST", default="127.0.0.1")
+    HOST = os.getenv("HOST", default="0.0.0.0")
     CLIENT_ID = os.getenv("CLIENT_ID")
     SECRET_KEY = os.getenv("SECRET_KEY")
     app = init_app(client_id=CLIENT_ID, secret_key=SECRET_KEY)
+    if app is None:
+        raise TypeError("app not instantiated")
     uvicorn.run(app, host=HOST, port=PORT)
