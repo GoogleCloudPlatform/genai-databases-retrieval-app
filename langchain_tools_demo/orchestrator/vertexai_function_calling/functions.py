@@ -14,7 +14,7 @@
 
 import os
 
-from vertexai.preview import generative_models
+from vertexai.preview import generative_models  # type: ignore
 
 search_airports_func = generative_models.FunctionDeclaration(
     name="airports_search",
@@ -86,6 +86,16 @@ list_flights_func = generative_models.FunctionDeclaration(
         },
     },
 )
+
+
+def function_request(function_call_name: str) -> str:
+    functions_url = {
+        "airports_search": "airports/search",
+        "flights_search": "flights/search",
+        "list_flights": "flights/search",
+        "amenities_search": "amenities/search",
+    }
+    return functions_url[function_call_name]
 
 
 def assistant_tool():
