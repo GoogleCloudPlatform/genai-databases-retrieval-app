@@ -13,12 +13,6 @@
 # limitations under the License.
 
 from . import langchain_tools
-<<<<<<<< HEAD:llm_demo/orchestrator/__init__.py
 from .orchestrator import BaseOrchestrator, createOrchestrator
 
 __ALL__ = ["BaseOrchestrator", "createOrchestrator", "langchain_tools"]
-========
-from .orchestrator import BaseOrchestrator
-
-__ALL__ = [BaseOrchestrator, langchain_tools]
->>>>>>>> 6daec6e (update interface and resolve comments):langchain_tools_demo/orchestrator/__init__.py
