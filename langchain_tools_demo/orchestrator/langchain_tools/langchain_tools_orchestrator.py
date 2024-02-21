@@ -32,6 +32,7 @@ from ..orchestrator import BaseOrchestrator, classproperty
 from .tools import initialize_tools
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
+MODEL = "gemini-pro"
 BASE_HISTORY = {
     "type": "ai",
     "data": {"content": "I am an SFO Airport Assistant, ready to assist you."},
@@ -54,7 +55,7 @@ class UserAgent:
         history: List[BaseMessage],
         prompt: ChatPromptTemplate,
     ) -> "UserAgent":
-        llm = VertexAI(max_output_tokens=512, model_name="gemini-pro")
+        llm = VertexAI(max_output_tokens=512, model_name=MODEL)
         memory = ConversationBufferMemory(
             chat_memory=ChatMessageHistory(messages=history),
             memory_key="chat_history",
