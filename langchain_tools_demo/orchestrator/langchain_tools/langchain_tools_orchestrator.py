@@ -121,7 +121,7 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
     async def user_session_reset(self, uuid: str):
         user_session = self.get_user_session(uuid)
         await user_session.close()
-        del self._user_sessions[uuid]
+        del user_session
 
     def get_user_session(self, uuid: str) -> UserAgent:
         return self._user_sessions[uuid]

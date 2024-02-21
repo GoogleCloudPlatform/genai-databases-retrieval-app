@@ -15,4 +15,4 @@
 from . import langchain_tools
 from .orchestrator import BaseOrchestrator, createOrchestrator
 
-__ALL__ = [BaseOrchestrator, createOrchestrator, langchain_tools]
+__ALL__ = ["BaseOrchestrator", "createOrchestrator", "langchain_tools"]

@@ -14,4 +14,4 @@
 
 from .langchain_tools_orchestrator import LangChainToolsOrchestrator
 
-__ALL__ = [LangChainToolsOrchestrator]
+__ALL__ = ["LangChainToolsOrchestrator"]

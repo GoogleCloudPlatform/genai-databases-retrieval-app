@@ -33,18 +33,22 @@ class BaseOrchestrator(ABC):
 
     @abstractmethod
     def user_session_exist(self, uuid: str) -> bool:
+        """Check if user session exist."""
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
     async def user_session_create(self, session: dict[str, Any]):
+        """Create user session for orchestrator."""
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
     async def user_session_invoke(self, uuid: str, prompt: str) -> str:
+        """Invoke user session and return a response from llm orchestrator."""
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
     def user_session_reset(self, uuid: str):
+        """Clear and reset user session."""
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
