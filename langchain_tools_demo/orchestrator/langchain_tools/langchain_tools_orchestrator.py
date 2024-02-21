@@ -13,10 +13,11 @@
 # limitations under the License.
 
 import os
+import uuid
 from datetime import date
 from typing import Any, Dict, List, Optional
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, TCPConnector
 from fastapi import HTTPException
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent import AgentExecutor
@@ -31,6 +32,10 @@ from ..orchestrator import BaseOrchestrator, classproperty
 from .tools import initialize_tools
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
+BASE_HISTORY = {
+    "type": "ai",
+    "data": {"content": "I am an SFO Airport Assistant, ready to assist you."},
+}
 
 
 class UserAgent:
@@ -73,12 +78,15 @@ class UserAgent:
         await self.client.close()
 
     async def invoke(self, prompt: str) -> Dict[str, Any]:
-        response = await self.agent.ainvoke({"input": prompt})
+        try:
+            response = await self.agent.ainvoke({"input": prompt})
+        except Exception as err:
+            raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
         return response
 
 
 class LangChainToolsOrchestrator(BaseOrchestrator):
-    ais: Dict[str, UserAgent] = {}
+    _user_sessions: Dict[str, UserAgent] = {}
     # aiohttp context
     connector = None
 
@@ -86,15 +94,50 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
     def kind(cls):
         return "langchain-tools"
 
-    async def create_ai(self, base_history: List[Any]) -> UserAgent:
+    def user_session_exist(self, uuid: str) -> bool:
+        return uuid in self._user_sessions
+
+    async def user_session_create(self, session: dict[str, Any]):
         """Create and load an agent executor with tools and LLM."""
         print("Initializing agent..")
-        history = self.parse_messages(base_history)
+        if "uuid" not in session:
+            session["uuid"] = str(uuid.uuid4())
+        id = session["uuid"]
+        if "history" not in session:
+            session["history"] = [BASE_HISTORY]
+        history = self.parse_messages(session["history"])
         client = await self.create_client_session()
         tools = await initialize_tools(client)
         prompt = self.create_prompt_template(tools)
         agent = UserAgent.initialize_agent(client, tools, history, prompt)
-        return agent
+        self._user_sessions[id] = agent
+
+    async def user_session_invoke(self, uuid: str, prompt: str) -> str:
+        user_session = self.get_user_session(uuid)
+        # Send prompt to LLM
+        response = await user_session.invoke(prompt)
+        return response["output"]
+
+    async def user_session_reset(self, uuid: str):
+        user_session = self.get_user_session(uuid)
+        await user_session.close()
+        del self._user_sessions[uuid]
+
+    def get_user_session(self, uuid: str) -> UserAgent:
+        return self._user_sessions[uuid]
+
+    async def get_connector(self) -> TCPConnector:
+        if self.connector is None:
+            self.connector = TCPConnector(limit=100)
+        return self.connector
+
+    async def create_client_session(self) -> ClientSession:
+        return ClientSession(
+            connector=await self.get_connector(),
+            connector_owner=False,
+            headers={},
+            raise_for_status=True,
+        )
 
     def create_prompt_template(self, tools: List[StructuredTool]) -> ChatPromptTemplate:
         # Create new prompt template
@@ -124,6 +167,12 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
             if data["type"] == "ai":
                 messages.append(AIMessage(content=data["data"]["content"]))
         return messages
+
+    def close_clients(self):
+        close_client_tasks = [
+            asyncio.create_task(a.close()) for a in self._user_sessions.values()
+        ]
+        asyncio.gather(*close_client_tasks)
 
 
 PREFIX = """SFO Airport Assistant helps travelers find their way at the airport.

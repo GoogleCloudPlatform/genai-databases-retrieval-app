@@ -13,18 +13,8 @@
 # limitations under the License.
 
 import asyncio
-import uuid
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
-
-from aiohttp import ClientSession, TCPConnector
-
-BASE_HISTORY = [
-    {
-        "type": "ai",
-        "data": {"content": "I am an SFO Airport Assistant, ready to assist you."},
-    }
-]
+from typing import Any
 
 
 class classproperty:
@@ -41,51 +31,35 @@ class BaseOrchestrator(ABC):
     def kind(cls):
         pass
 
-    @classmethod
-    def create(cls, orchestrator: str) -> "BaseOrchestrator":
-        for cls in BaseOrchestrator.__subclasses__():
-            s = f"{orchestrator} == {cls.kind}"
-            if orchestrator == cls.kind:
-                return cls()
-        raise TypeError(f"No orchestration of kind {orchestrator}")
-
     @abstractmethod
-    async def create_ai(self, base_history: list[Any]):
-        """Create and load an executor"""
+    def user_session_exist(self, uuid: str) -> bool:
         raise NotImplementedError("Subclass should implement this!")
 
-    async def get_connector(self) -> TCPConnector:
-        if self.connector is None:
-            self.connector = TCPConnector(limit=100)
-        return self.connector
+    @abstractmethod
+    async def user_session_create(self, session: dict[str, Any]):
+        raise NotImplementedError("Subclass should implement this!")
 
-    async def create_client_session(self) -> ClientSession:
-        return ClientSession(
-            connector=await self.get_connector(),
-            connector_owner=False,
-            headers={},
-            raise_for_status=True,
-        )
+    @abstractmethod
+    async def user_session_invoke(self, uuid: str, prompt: str) -> str:
+        raise NotImplementedError("Subclass should implement this!")
 
-    async def get_agent(self, session: dict[str, Any], user_id_token: Optional[str]):
-        if "uuid" not in session:
-            session["uuid"] = str(uuid.uuid4())
-        id = session["uuid"]
-        if "history" not in session:
-            session["history"] = BASE_HISTORY
-        if id not in self.ais:
-            self.ais[id] = await self.create_ai(session["history"])
-        ai = self.ais[id]
-        if user_id_token is not None:
-            ai.client.headers["User-Id-Token"] = f"Bearer {user_id_token}"
-        return ai
+    @abstractmethod
+    def user_session_reset(self, uuid: str):
+        raise NotImplementedError("Subclass should implement this!")
 
-    def close_clients(self):
-        close_client_tasks = [asyncio.create_task(a.close()) for a in self.ais.values()]
-        asyncio.gather(*close_client_tasks)
+    @abstractmethod
+    def get_user_session(self, uuid: str) -> Any:
+        raise NotImplementedError("Subclass should implement this!")
 
-    async def close_client(self, uuid: str):
-        await self.ais[uuid].client.close()
+    def set_user_session_header(self, uuid: str, user_id_token: str):
+        user_session = self.get_user_session(uuid)
+        user_session.client.headers["User-Id-Token"] = f"Bearer {user_id_token}"
 
-    def remove_ai(self, uuid: str):
-        del self.ais[uuid]
+
+def createOrchestrator(orchestrator: str) -> "BaseOrchestrator":
+    for cls in BaseOrchestrator.__subclasses__():
+        s = f"{orchestrator} == {cls.kind}"
+        print(s)
+        if orchestrator == cls.kind:
+            return cls()  # type: ignore
+    raise TypeError(f"No orchestration of kind {orchestrator}")

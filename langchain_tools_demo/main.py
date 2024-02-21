@@ -24,7 +24,7 @@ from fastapi.templating import Jinja2Templates
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
-from orchestrator import BaseOrchestrator
+from orchestrator import BaseOrchestrator, createOrchestrator
 
 routes = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -45,7 +45,7 @@ async def index(request: Request):
     """Render the default template."""
     # Agent setup
     orchestrator = request.app.state.orchestrator
-    agent = await orchestrator.get_agent(request.session, user_id_token=None)
+    await orchestrator.user_session_create(request.session)
     templates = Jinja2Templates(directory="templates")
     return templates.TemplateResponse(
         "index.html",
@@ -67,7 +67,7 @@ async def login_google(
         raise HTTPException(status_code=401, detail="No user credentials found")
     # create new request session
     orchestrator = request.app.state.orchestrator
-    _ = await orchestrator.get_agent(request.session, str(user_id_token))
+    orchestrator.set_user_session_header(request.session["uuid"], str(user_id_token))
     print("Logged in to Google.")
 
     # Redirect to source URL
@@ -89,17 +89,10 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     # Add user message to chat history
     request.session["history"].append({"type": "human", "data": {"content": prompt}})
     orchestrator = request.app.state.orchestrator
-    ai = await orchestrator.get_agent(request.session, user_id_token=None)
-    try:
-        # Send prompt to LLM
-        response = await ai.invoke(prompt)
-        # Return assistant response
-        request.session["history"].append(
-            {"type": "ai", "data": {"content": response["output"]}}
-        )
-        return markdown(response["output"])
-    except Exception as err:
-        raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
+    output = await orchestrator.user_session_invoke(request.session["uuid"], prompt)
+    # Return assistant response
+    request.session["history"].append({"type": "ai", "data": {"content": output}})
+    return markdown(output)
 
 
 @routes.post("/reset")
@@ -111,21 +104,22 @@ async def reset(request: Request):
 
     uuid = request.session["uuid"]
     orchestrator = request.app.state.orchestrator
-    if uuid not in orchestrator.ais.keys():
+    if not orchestrator.user_session_exist(uuid):
         raise HTTPException(status_code=500, detail=f"Current agent not found")
 
-    await orchestrator.close_client(uuid)
-    orchestrator.remove_ai(uuid)
+    await orchestrator.user_session_reset(uuid)
     request.session.clear()
 
 
 def init_app(
-    orchestrator: str, client_id: Optional[str], secret_key: Optional[str]
+    orchestrator: Optional[str], client_id: Optional[str], secret_key: Optional[str]
 ) -> FastAPI:
     # FastAPI setup
+    if orchestrator is None:
+        raise HTTPException(status_code=500, detail="Orchestrator not found")
     app = FastAPI(lifespan=lifespan)
     app.state.client_id = client_id
-    app.state.orchestrator = BaseOrchestrator.create(orchestrator)
+    app.state.orchestrator = createOrchestrator(orchestrator)
     app.include_router(routes)
     app.mount("/static", StaticFiles(directory="static"), name="static")
     app.add_middleware(SessionMiddleware, secret_key=secret_key)
