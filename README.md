@@ -3,6 +3,12 @@
 Note: This project is for demonstration only and is not an officially supported
 Google product.
 
+This fork was updated with following:
+
+- Frontend app deployment to Cloud Run
+- Enabled LangChain LangSmith LLM tracing
+
+![Overview](./arch.png)
 
 ## Introduction
 
