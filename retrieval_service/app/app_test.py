@@ -15,10 +15,11 @@
 from datetime import datetime, time
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import datastore
-import models
 import pytest
 from fastapi.testclient import TestClient
+
+import datastore
+import models
 
 from . import init_app
 from .app import AppConfig

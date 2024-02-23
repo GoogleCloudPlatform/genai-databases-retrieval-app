@@ -16,10 +16,11 @@ from datetime import datetime
 from ipaddress import IPv4Address
 from typing import Any, AsyncGenerator, List
 
-import models
 import pytest
 import pytest_asyncio
 from csv_diff import compare, load_csv  # type: ignore
+
+import models
 
 from .. import datastore
 from . import postgres

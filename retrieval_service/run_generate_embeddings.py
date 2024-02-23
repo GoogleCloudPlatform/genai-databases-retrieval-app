@@ -15,9 +15,10 @@
 import asyncio
 import csv
 
+from langchain.embeddings import VertexAIEmbeddings
+
 import models
 from app import EMBEDDING_MODEL_NAME
-from langchain.embeddings import VertexAIEmbeddings
 
 
 async def main() -> None:

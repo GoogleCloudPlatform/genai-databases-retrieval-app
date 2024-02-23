@@ -15,8 +15,9 @@
 import asyncio
 import csv
 
-import datastore
 import numpy as np
+
+import datastore
 from app import parse_config
 
 
