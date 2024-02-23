@@ -57,7 +57,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(SessionMiddleware, secret_key="SECRET_KEY")
 templates = Jinja2Templates(directory="templates")
 BASE_HISTORY: list[BaseMessage] = [
-    AIMessage(content="I am an SFO Airport Assistant, ready to assist you.")
+    AIMessage(content="I am the Bennie OS Gen AI Assistant, ready to assist you.")
 ]
 CLIENT_ID = os.getenv("CLIENT_ID")
 

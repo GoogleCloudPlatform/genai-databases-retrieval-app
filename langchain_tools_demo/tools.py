@@ -25,6 +25,7 @@ from langchain.tools import StructuredTool
 from pydantic.v1 import BaseModel, Field
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
+JAVA_SERVICE_URL = os.getenv("JAVA_SERVICE_URL", default="http://127.0.0.1:8082")
 CREDENTIALS = None
 
 
@@ -222,6 +223,64 @@ def generate_list_tickets(client: aiohttp.ClientSession):
 
     return list_tickets
 
+class BennieEmployeSearchInput(BaseModel):
+    firstName: Optional[str] = Field(description="First Name of Bennie Employee Name")
+    lastName: Optional[str] = Field(description="Last Name of Bennie Employee Name")
+    role: Optional[str] = Field(description="Role of Bennie Employee Name")
+
+def generate_insert_employee(client: aiohttp.ClientSession):
+    async def insert_employee(
+        firstName: str,
+        lastName: str,
+        role: str,
+    ):
+        headers = get_headers(client)
+        headers["Content-Type"] = "application/json"
+
+        data = {
+            "firstName": firstName,
+            "lastName": lastName,
+            "role": role,
+        }
+        response = await client.post(
+            url=f"{JAVA_SERVICE_URL}/api/langchain-employee-service/employee",
+            json=data,
+            headers=headers,
+        )
+
+        response = await response.json()
+        return response
+
+    return insert_employee
+
+def generate_search_bennie_employees(client: aiohttp.ClientSession):
+    async def search_bennie_employees(firstName: str, lastName: str, role: str):
+        params = {
+            "firstName": firstName,
+            "lastName": lastName,
+            "role": role,
+        }
+
+        print("i want to call java service")
+        response = await client.get(
+            url=f"{JAVA_SERVICE_URL}/api/langchain-employee-service/employee/search",
+            params=filter_none_values(params),
+            headers=get_headers(client),
+        )
+
+        num = 2
+        response_json = await response.json()
+        if len(response_json) < 1:
+            return "There are no bennie employees matching that query. Let the user know there are no results."
+        elif len(response_json) > num:
+            return (
+                f"There are {len(response_json)} bennie employees matching that query. Here are the first {num} results:\n"
+                + " ".join([f"{response_json[i]}" for i in range(num)])
+            )
+        else:
+            return "\n".join([f"{r}" for r in response_json])
+
+    return search_bennie_employees
 
 # Tools for agent
 async def initialize_tools(client: aiohttp.ClientSession):
@@ -353,5 +412,23 @@ async def initialize_tools(client: aiohttp.ClientSession):
                         Use this tool to list a user's flight tickets.
                         Takes no input and returns a list of current user's flight tickets.
                         """,
+        ),
+        StructuredTool.from_function(
+            coroutine=generate_search_bennie_employees(client),
+            name="Search Bennie Employees",
+            description="""
+                        Use this tool to list a bennie employees matching search criteria.
+                        Takes name as input and returns a list of matching employees.
+                        """,
+            args_schema=BennieEmployeSearchInput,
+        ),
+        StructuredTool.from_function(
+            coroutine=generate_insert_employee(client),
+            name="Insert New Bennie Employees",
+            description="""
+                        Use this tool to insert or create a new bennie employees
+                        Takes employee parameters as input and returns saved employee.
+                        """,
+            args_schema=BennieEmployeSearchInput,
         ),
     ]
