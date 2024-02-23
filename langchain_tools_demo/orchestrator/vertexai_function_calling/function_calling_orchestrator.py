@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import uuid
 from datetime import date
 from typing import Any, Dict
@@ -31,10 +32,40 @@ from ..orchestrator import BaseOrchestrator, classproperty
 from .functions import assistant_tool, function_request
 
 MODEL = "gemini-pro"
+BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 BASE_HISTORY = {
     "type": "ai",
     "data": {"content": "I am an SFO Airport Assistant, ready to assist you."},
 }
+CREDENTIALS = None
+
+
+def get_id_token():
+    global CREDENTIALS
+    if CREDENTIALS is None:
+        CREDENTIALS, _ = google.auth.default()
+        if not hasattr(CREDENTIALS, "id_token"):
+            # Use Compute Engine default credential
+            CREDENTIALS = compute_engine.IDTokenCredentials(
+                request=Request(),
+                target_audience=BASE_URL,
+                use_metadata_identity_endpoint=True,
+            )
+    if not CREDENTIALS.valid:
+        CREDENTIALS.refresh(Request())
+    if hasattr(CREDENTIALS, "id_token"):
+        return CREDENTIALS.id_token
+    else:
+        return CREDENTIALS.token
+
+
+def get_headers(client: ClientSession):
+    """Helper method to generate ID tokens for authenticated requests"""
+    headers = client.headers
+    if not "http://" in BASE_URL:
+        # Append ID Token to make authenticated requests to Cloud Run services
+        headers["Authorization"] = f"Bearer {get_id_token()}"
+    return headers
 
 
 class UserChatModel:
@@ -55,7 +86,9 @@ class UserChatModel:
         await self.client.close()
 
     async def invoke(self, prompt: str) -> Dict[str, Any]:
-        model_response = self.request_chat_model(prompt)
+        today_date = date.today().strftime("%Y-%m-%d")
+        today = f"Today is {today_date}."
+        model_response = self.request_chat_model(prompt + today)
         print(f"function call response:\n{model_response}")
         part_response = model_response.candidates[0].content.parts[0]
         while "function_call" in part_response._raw_part:
