@@ -15,10 +15,9 @@
 from datetime import datetime
 from typing import Dict
 
+import models
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
-
-import models
 
 from . import firestore as firestore_provider
 

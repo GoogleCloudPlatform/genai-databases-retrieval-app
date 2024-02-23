@@ -17,7 +17,8 @@ import datetime
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
+from pydantic import (BaseModel, ConfigDict, FieldValidationInfo,
+                      field_validator)
 
 
 class Airport(BaseModel):

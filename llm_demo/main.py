@@ -22,9 +22,8 @@ from fastapi.responses import PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown import markdown
-from starlette.middleware.sessions import SessionMiddleware
-
 from orchestrator import BaseOrchestrator, createOrchestrator
+from starlette.middleware.sessions import SessionMiddleware
 
 routes = APIRouter()
 templates = Jinja2Templates(directory="templates")

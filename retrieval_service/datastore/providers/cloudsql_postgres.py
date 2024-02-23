@@ -17,14 +17,13 @@ from datetime import datetime
 from typing import Any, Dict, Literal, Optional
 
 import asyncpg
+import models
 import sqlalchemy
 from google.cloud.sql.connector import Connector
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-
-import models
 
 from .. import datastore
 

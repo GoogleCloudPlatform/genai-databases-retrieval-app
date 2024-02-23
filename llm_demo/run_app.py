@@ -17,7 +17,6 @@ import asyncio
 import os
 
 import uvicorn
-
 from main import init_app
 
 

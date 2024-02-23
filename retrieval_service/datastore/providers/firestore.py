@@ -16,12 +16,11 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Literal, Optional
 
+import models
 from google.cloud import firestore
 from google.cloud.firestore_v1.async_collection import AsyncCollectionReference
 from google.cloud.firestore_v1.base_query import FieldFilter
 from pydantic import BaseModel
-
-import models
 
 from .. import datastore
 

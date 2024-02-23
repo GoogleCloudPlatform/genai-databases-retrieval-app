@@ -18,10 +18,9 @@ from ipaddress import IPv4Address, IPv6Address
 from typing import Literal, Optional
 
 import asyncpg
+import models
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
-
-import models
 
 from .. import datastore
 
