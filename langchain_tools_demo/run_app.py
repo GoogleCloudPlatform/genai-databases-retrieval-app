@@ -24,10 +24,10 @@ from main import init_app
 async def main():
     PORT = int(os.getenv("PORT", default=8081))
     HOST = os.getenv("HOST", default="0.0.0.0")
-    ORCHESTRATOR = os.getenv("ORCHESTRATOR")
+    ORCHESTRATION_TYPE = os.getenv("ORCHESTRATION_TYPE")
     CLIENT_ID = os.getenv("CLIENT_ID")
     SECRET_KEY = os.getenv("SECRET_KEY")
-    app = init_app(ORCHESTRATOR, client_id=CLIENT_ID, secret_key=SECRET_KEY)
+    app = init_app(ORCHESTRATION_TYPE, client_id=CLIENT_ID, secret_key=SECRET_KEY)
     if app is None:
         raise TypeError("app not instantiated")
     server = uvicorn.Server(uvicorn.Config(app, host=HOST, port=PORT, log_level="info"))

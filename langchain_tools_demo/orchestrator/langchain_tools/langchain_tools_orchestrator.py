@@ -165,8 +165,10 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         for data in datas:
             if data["type"] == "human":
                 messages.append(HumanMessage(content=data["data"]["content"]))
-            if data["type"] == "ai":
+            elif data["type"] == "ai":
                 messages.append(AIMessage(content=data["data"]["content"]))
+            else:
+                raise Exception("Message type not found.")
         return messages
 
     def close_clients(self):

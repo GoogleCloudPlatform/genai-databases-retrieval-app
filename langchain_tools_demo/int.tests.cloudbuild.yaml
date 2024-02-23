@@ -23,7 +23,7 @@ steps:
           --source . \
           --region ${_REGION} \
           --no-allow-unauthenticated \
-          --update-env-vars ORCHESTRATOR=${_ORCHESTRATOR}
+          --update-env-vars ORCHESTRATION_TYPE=${_ORCHESTRATION_TYPE}
 
   - id: "Test Frontend"
     name: "gcr.io/cloud-builders/gcloud:latest"
@@ -34,7 +34,7 @@ steps:
       - |
         export URL=$(gcloud run services describe ${_SERVICE} --region ${_REGION} --format 'value(status.url)')
         export ID_TOKEN=$(gcloud auth print-identity-token --audiences $$URL)
-        export ORCHESTRATOR=${_ORCHESTRATOR}
+        export ORCHESTRATION_TYPE=${_ORCHESTRATION_TYPE}
 
         # Test `/` route
         curl -c cookies.txt -si --fail --show-error -H "Authorization: Bearer $$ID_TOKEN" $$URL
@@ -80,4 +80,4 @@ substitutions:
   _GCR_HOSTNAME: ${_REGION}-docker.pkg.dev
   _SERVICE: demo-service-${BUILD_ID}
   _REGION: us-central1
-  _ORCHESTRATOR: langchain-tools
+  _ORCHESTRATION_TYPE: langchain-tools

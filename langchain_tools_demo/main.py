@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
     print("Loading application...")
     yield
     # FastAPI app shutdown event
-    app.state.orchestrator.close_clients()
+    app.state.orchestration_type.close_clients()
 
 
 @routes.get("/")
@@ -44,9 +44,8 @@ async def lifespan(app: FastAPI):
 async def index(request: Request):
     """Render the default template."""
     # Agent setup
-    orchestrator = request.app.state.orchestrator
+    orchestrator = request.app.state.orchestration_type
     await orchestrator.user_session_create(request.session)
-    templates = Jinja2Templates(directory="templates")
     return templates.TemplateResponse(
         "index.html",
         {
@@ -66,7 +65,7 @@ async def login_google(
     if user_id_token is None:
         raise HTTPException(status_code=401, detail="No user credentials found")
     # create new request session
-    orchestrator = request.app.state.orchestrator
+    orchestrator = request.app.state.orchestration_type
     orchestrator.set_user_session_header(request.session["uuid"], str(user_id_token))
     print("Logged in to Google.")
 
@@ -88,7 +87,7 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
 
     # Add user message to chat history
     request.session["history"].append({"type": "human", "data": {"content": prompt}})
-    orchestrator = request.app.state.orchestrator
+    orchestrator = request.app.state.orchestration_type
     output = await orchestrator.user_session_invoke(request.session["uuid"], prompt)
     # Return assistant response
     request.session["history"].append({"type": "ai", "data": {"content": output}})
@@ -103,23 +102,25 @@ async def reset(request: Request):
         raise HTTPException(status_code=400, detail=f"No session to reset.")
 
     uuid = request.session["uuid"]
-    orchestrator = request.app.state.orchestrator
+    orchestrator = request.app.state.orchestration_type
     if not orchestrator.user_session_exist(uuid):
-        raise HTTPException(status_code=500, detail=f"Current agent not found")
+        raise HTTPException(status_code=500, detail=f"Current user session not found")
 
     await orchestrator.user_session_reset(uuid)
     request.session.clear()
 
 
 def init_app(
-    orchestrator: Optional[str], client_id: Optional[str], secret_key: Optional[str]
+    orchestration_type: Optional[str],
+    client_id: Optional[str],
+    secret_key: Optional[str],
 ) -> FastAPI:
     # FastAPI setup
-    if orchestrator is None:
+    if orchestration_type is None:
         raise HTTPException(status_code=500, detail="Orchestrator not found")
     app = FastAPI(lifespan=lifespan)
     app.state.client_id = client_id
-    app.state.orchestrator = createOrchestrator(orchestrator)
+    app.state.orchestration_type = createOrchestrator(orchestration_type)
     app.include_router(routes)
     app.mount("/static", StaticFiles(directory="static"), name="static")
     app.add_middleware(SessionMiddleware, secret_key=secret_key)
@@ -129,10 +130,10 @@ def init_app(
 if __name__ == "__main__":
     PORT = int(os.getenv("PORT", default=8081))
     HOST = os.getenv("HOST", default="0.0.0.0")
-    ORCHESTRATOR = os.getenv("ORCHESTRATOR")
+    ORCHESTRATION_TYPE = os.getenv("ORCHESTRATION_TYPE")
     CLIENT_ID = os.getenv("CLIENT_ID")
     SECRET_KEY = os.getenv("SECRET_KEY")
-    app = init_app(ORCHESTRATOR, client_id=CLIENT_ID, secret_key=SECRET_KEY)
+    app = init_app(ORCHESTRATION_TYPE, client_id=CLIENT_ID, secret_key=SECRET_KEY)
     if app is None:
         raise TypeError("app not instantiated")
     uvicorn.run(app, host=HOST, port=PORT)

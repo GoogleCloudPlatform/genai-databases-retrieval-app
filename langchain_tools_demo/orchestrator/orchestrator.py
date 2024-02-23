@@ -60,10 +60,9 @@ class BaseOrchestrator(ABC):
         user_session.client.headers["User-Id-Token"] = f"Bearer {user_id_token}"
 
 
-def createOrchestrator(orchestrator: str) -> "BaseOrchestrator":
+def createOrchestrator(orchestration_type: str) -> "BaseOrchestrator":
     for cls in BaseOrchestrator.__subclasses__():
-        s = f"{orchestrator} == {cls.kind}"
-        print(s)
-        if orchestrator == cls.kind:
+        s = f"{orchestration_type} == {cls.kind}"
+        if orchestration_type == cls.kind:
             return cls()  # type: ignore
-    raise TypeError(f"No orchestration of kind {orchestrator}")
+    raise TypeError(f"No orchestration type of kind {orchestration_type}")
