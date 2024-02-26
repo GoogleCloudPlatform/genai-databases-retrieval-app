@@ -47,7 +47,7 @@ async def index(request: Request):
     orchestrator = request.app.state.orchestration_type
     session = request.session
     if "uuid" not in session or not orchestrator.user_session_exist(session["uuid"]):
-        await orchestrator.user_session_create(request.session)
+        await orchestrator.user_session_create(session)
     return templates.TemplateResponse(
         "index.html",
         {
