@@ -45,7 +45,9 @@ async def index(request: Request):
     """Render the default template."""
     # User session setup
     orchestrator = request.app.state.orchestration_type
-    await orchestrator.user_session_create(request.session)
+    session = request.session
+    if "uuid" not in session or not orchestrator.user_session_exist(session["uuid"]):
+        await orchestrator.user_session_create(request.session)
     return templates.TemplateResponse(
         "index.html",
         {
