@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dir: [retrieval_service, langchain_tools_demo]
+        dir: [retrieval_service, llm_demo]
       fail-fast: false
     permissions:
       contents: read

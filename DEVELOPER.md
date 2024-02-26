@@ -10,13 +10,13 @@
 1. Install dependencies. We recommend using a virtualenv:
 
     ```bash
-    pip install -r retrieval_service/requirements.txt -r langchain_tools_demo/requirements.txt
+    pip install -r retrieval_service/requirements.txt -r llm_demo/requirements.txt
     ```
 
 1. Install test dependencies:
 
     ```bash
-    pip install -r retrieval_service/requirements-test.txt -r langchain_tools_demo/requirements-test.txt
+    pip install -r retrieval_service/requirements-test.txt -r llm_demo/requirements-test.txt
     ```
 
 ## Run the app locally
@@ -45,7 +45,7 @@
 1. Change into the demo directory:
 
     ```bash
-    cd langchain_tools_demo
+    cd llm_demo 
     ```
 
 1. To use a live retrieval service on Cloud Run:
@@ -70,10 +70,16 @@
     export DEBUG=True
     ```
 
+1. Set orchestration type environment variable (e.g. langchain-tools):
+
+    ```bash
+    export ORCHESTRATION_TYPE=<orchestration-type>
+    ```
+
 1. To run the app using uvicorn, execute the following:
 
     ```bash
-    python main.py
+    python run_app.py
     ```
 
     Note: for hot reloading of the app use: `uvicorn main:app --host 0.0.0.0 --reload --port 8081`
@@ -149,7 +155,7 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 * Run Demo Service integration test:
 
     ```bash
-    gcloud builds submit --config langchain_tools_demo/int.tests.cloudbuild.yaml
+    gcloud builds submit --config llm_demo/int.tests.cloudbuild.yaml
     ```
 
 * Run retrieval service unit tests:

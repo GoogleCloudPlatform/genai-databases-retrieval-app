@@ -1,4 +1,4 @@
-# Running the LangChain Demo
+# Running the LLM App Demo
 
 ##  Before you begin
 
@@ -20,10 +20,20 @@
     ```
     * Tip: if you are running into `403` error, check to make sure the service account you are using has the `Cloud Run Invoker` IAM in the retrieval service project.
 
-1. Change into the `langchain_tools_demo` directory:
+1. Change into the `llm_demo` directory:
 
     ```bash
-    cd langchain_tools_demo
+    cd llm_demo 
+    ```
+
+1. Set orchestrator environment variable:
+
+    | orchestration-type            | Description                                 |
+    |-------------------------------|---------------------------------------------|
+    | langchain-tools               | LangChain tools orchestrator.               |
+
+    ```bash
+    export ORCHESTRATION_TYPE=<orchestration-type>
     ```
 
 1. Install the dependencies using `pip`. You may wish to do this in a
@@ -34,6 +44,7 @@
     ```
 
 1. [Optional] If you want to take advantage of the user authentication features, [create a Client ID](https://support.google.com/cloud/answer/6158849) for your app and save it as an environment variable:
+
     ```bash
     export CLIENT_ID=<Your Client ID>
     ```
@@ -44,7 +55,7 @@
 1. Start the application with:
 
     ```bash
-    python main.py
+    python run_app.py
     ```
 
     Note: for hot reloading of the app use: `uvicorn main:app --host 0.0.0.0 --reload`
