@@ -183,7 +183,7 @@ async def insert_ticket(
 async def list_tickets(
     request: Request,
 ):
-    user_info = await get_user_info(request.headers)
+    user_info = await get_user_info(request)
     if user_info is None:
         raise HTTPException(
             status_code=401,
