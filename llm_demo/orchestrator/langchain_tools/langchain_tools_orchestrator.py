@@ -107,11 +107,12 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         if "history" not in session:
             session["history"] = [BASE_HISTORY]
         history = self.parse_messages(session["history"])
-        client = await self.create_client_session()
-        tools = await initialize_tools(client)
-        prompt = self.create_prompt_template(tools)
-        agent = UserAgent.initialize_agent(client, tools, history, prompt)
-        self._user_sessions[id] = agent
+        if id not in self._user_sessions:
+            client = await self.create_client_session()
+            tools = await initialize_tools(client)
+            prompt = self.create_prompt_template(tools)
+            agent = UserAgent.initialize_agent(client, tools, history, prompt)
+            self._user_sessions[id] = agent
 
     async def user_session_invoke(self, uuid: str, prompt: str) -> str:
         user_session = self.get_user_session(uuid)

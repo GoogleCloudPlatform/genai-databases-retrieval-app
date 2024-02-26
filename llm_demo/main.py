@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
 @routes.post("/")
 async def index(request: Request):
     """Render the default template."""
-    # Agent setup
+    # User session setup
     orchestrator = request.app.state.orchestration_type
     await orchestrator.user_session_create(request.session)
     return templates.TemplateResponse(
@@ -96,7 +96,7 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
 
 @routes.post("/reset")
 async def reset(request: Request):
-    """Reset agent"""
+    """Reset user session"""
 
     if "uuid" not in request.session:
         raise HTTPException(status_code=400, detail=f"No session to reset.")
