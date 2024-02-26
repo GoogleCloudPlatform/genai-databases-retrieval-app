@@ -240,15 +240,15 @@ async def test_search_airports(
 
 
 async def test_get_amenity(ds: postgres.Client):
-    res = await ds.get_amenity(1)
+    res = await ds.get_amenity(0)
     expected = models.Amenity(
-        id=1,
-        name="24th & Mission Taco House",
-        description="Fresh made-to-order Mexican entrees with beer & wine",
-        location="Marketplace G (near entrance to G Gates)",
-        terminal="Ed Lee International Main Hall",
+        id=0,
+        name="Coffee Shop 732",
+        description="Serving American cuisine.",
+        location="Near Gate B12",
+        terminal="Terminal 3",
         category="restaurant",
-        hour="Sunday- Saturday 7:00 am-8:00 pm",
+        hour="Daily 7:00 am - 10:00 pm",
         sunday_start_hour=None,
         sunday_end_hour=None,
         monday_start_hour=None,
@@ -271,17 +271,17 @@ amenities_search_test_data = [
     pytest.param(
         # "Where can I get coffee near gate A6?"
         query_embedding1,
-        0.7,
+        0.65,
         1,
         [
             models.Amenity(
-                id=27,
-                name="Green Beans Coffee",
-                description="A third wave coffee concept serving handcrafted coffee creations exclusively for travelers in airports across America. For over 25 years Green Beans Coffee has been roasted in the USA, and loved around with world.",
-                location="near the entrance to G Gates",
-                terminal="Ed Lee International Main Hall",
+                id=0,
+                name="Coffee Shop 732",
+                description="Serving American cuisine.",
+                location="Near Gate B12",
+                terminal="Terminal 3",
                 category="restaurant",
-                hour="Sunday- Saturday 4:00 am-11:00 pm",
+                hour="Daily 7:00 am - 10:00 pm",
                 sunday_start_hour=None,
                 sunday_end_hour=None,
                 monday_start_hour=None,
@@ -309,13 +309,13 @@ amenities_search_test_data = [
         2,
         [
             models.Amenity(
-                id=90,
-                name="DFS Duty Free Galleria",
-                description="Liquor, tobacco, cosmetics, fragrances and designer boutiques–duty free",
-                location="Gates, near Gate A3",
+                id=63,
+                name="Gucci Duty Free",
+                description="Luxury brand duty-free shop offering designer clothing, accessories, and fragrances.",
+                location="Gate E9",
                 terminal="International Terminal A",
                 category="shop",
-                hour="Sunday - Saturday 8:30 am-11:00 pm",
+                hour="Daily 7:00 am-10:00 pm",
                 sunday_start_hour=None,
                 sunday_end_hour=None,
                 monday_start_hour=None,
@@ -334,13 +334,13 @@ amenities_search_test_data = [
                 embedding=None,
             ),
             models.Amenity(
-                id=100,
-                name="Gucci",
-                description="Luxury apparel, handbags and accessories-duty free",
-                location="Gates, near Gate G2",
-                terminal="International Terminal G",
+                id=40,
+                name="Dufry Duty Free",
+                description="Duty-free shop offering a large selection of luxury goods, including perfumes, cosmetics, and liquor.",
+                location="Gate E2",
+                terminal="International Terminal A",
                 category="shop",
-                hour="Sunday - Saturday 7:00 am-11:00 pm",
+                hour="Daily 7:00 am-10:00 pm",
                 sunday_start_hour=None,
                 sunday_end_hour=None,
                 monday_start_hour=None,
