@@ -132,7 +132,7 @@ of any of the database's listed below to set up and initialize your database:
 
 ### Running the LLM-based Application
 
-[Instructions for running app locally](./docs/run_langchain_demo.md)
+[Instructions for running app locally](./docs/run_llm_demo.md)
 
 ### Clean up Resources
 
