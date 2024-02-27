@@ -36,7 +36,7 @@ set_verbose(bool(os.getenv("DEBUG", default=False)))
 MODEL = "gemini-pro"
 BASE_HISTORY = {
     "type": "ai",
-    "data": {"content": "I am an SFO Airport Assistant, ready to assist you."},
+    "data": {"content": "Welcome to Cymbal Air!  How may I assist you?"},
 }
 
 
