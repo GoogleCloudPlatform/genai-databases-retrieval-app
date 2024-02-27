@@ -10,9 +10,12 @@ This project demonstrates production-quality practices for using techniques like
 [Retrieval Augmented Generation (RAG)][rag] and [ReACT][react] to extend your
 Gen AI application with information from Cloud Databases. 
 
-This demo showcases an "SFO Airport Assistant": a San Francisco Airport-based
-AI assistant that has access to information about airports, flights, and
-amenities. It can help answer users questions like:
+This demo showcases the Cymbal Air customer service assistant. Cymbal Air is a
+fictional passenger airline. The assistant is an AI chatbot that helps
+travellers manager flights and look up information about Cymbal Air's hub
+at San Francisco International Airport (SFO).
+
+It can help answer users questions like:
 * Are there any luxury shops?
 * Where can I get coffee near gate A6?
 * Where can I find a gift?
