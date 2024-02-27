@@ -69,7 +69,7 @@ async def login_google(
     if user_id_token is None:
         raise HTTPException(status_code=401, detail="No user credentials found")
 
-    user_name = get_user_name(user_id_token, request.app.state.client_id)
+    user_name = get_user_name(str(user_id_token), request.app.state.client_id)
     # create new request session
     orchestrator = request.app.state.orchestration_type
     orchestrator.set_user_session_header(request.session["uuid"], str(user_id_token))
