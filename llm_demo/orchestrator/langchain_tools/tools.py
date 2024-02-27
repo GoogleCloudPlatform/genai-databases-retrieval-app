@@ -352,7 +352,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             description="""
                         Use this tool to list a user's flight tickets.
                         Takes no input and returns a list of current user's flight tickets.
-                        Input is always empty JSON blob.
+                        Input is always empty JSON blob. Example: {{}}
                         """,
         ),
     ]
