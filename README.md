@@ -11,7 +11,7 @@ This project demonstrates production-quality practices for using techniques like
 Gen AI application with information from Cloud Databases. 
 
 This demo showcases the Cymbal Air customer service assistant. Cymbal Air is a
-fictional passenger airline.  The assistant is an AI chatbot that helps
+fictional passenger airline. The assistant is an AI chatbot that helps
 travellers manager flights and look up information about Cymbal Air's hub
 at San Francisco International Airport (SFO).
 
