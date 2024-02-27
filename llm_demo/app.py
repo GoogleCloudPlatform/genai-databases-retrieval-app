@@ -23,6 +23,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
+from google.oauth2 import id_token  # type:ignore
+from google.auth.transport import requests  # type:ignore
 
 from orchestrator import BaseOrchestrator, createOrchestrator
 
@@ -66,10 +68,14 @@ async def login_google(
     user_id_token = form_data.get("credential")
     if user_id_token is None:
         raise HTTPException(status_code=401, detail="No user credentials found")
+
+    user_name = get_user_name(user_id_token, request.app.state.client_id)
     # create new request session
     orchestrator = request.app.state.orchestration_type
     orchestrator.set_user_session_header(request.session["uuid"], str(user_id_token))
     print("Logged in to Google.")
+    
+    request.session["history"][0] = {"type": "ai", "data": {"content": f"Welcome to Cymbal Air, {user_name}! How may I assist you?"}}
 
     # Redirect to source URL
     source_url = request.headers["Referer"]
@@ -111,6 +117,9 @@ async def reset(request: Request):
     await orchestrator.user_session_reset(uuid)
     request.session.clear()
 
+def get_user_name(user_token_id: str, client_id: str) -> str:
+    id_info = id_token.verify_oauth2_token(user_token_id, requests.Request(), audience=client_id)
+    return id_info['name']
 
 def init_app(
     orchestration_type: Optional[str],
