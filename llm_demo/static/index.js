@@ -77,7 +77,9 @@ async function reset() {
 
 // Helper function to print to chatroom
 function log(name, msg) {
-    let message = `<span class="chat-bubble ${name}">${msg}</span>`;
+    let message = `<div class="chat-bubble ${name}">
+        <div class="sender-icon"><img src="static/logo.png"></div>
+        <span>${msg}</span></div>`;
     $('.chat-content').append(message);
     $('.chat-content').scrollTop($('.chat-content').prop("scrollHeight"));
 }

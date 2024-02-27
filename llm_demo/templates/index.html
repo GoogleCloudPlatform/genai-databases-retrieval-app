@@ -33,7 +33,7 @@ limitations under the License.
 </head>
 
 <body>
-    
+
     <div class="container">
         <div class="chat-header">
             <h1>Cymbal Air Customer Service Assistant</h1>
@@ -58,7 +58,7 @@ limitations under the License.
                 {# Add Chat history #}
                 {% if messages %}
                     {% for message in messages %}
-                    <span class="chat-bubble {{ message["type"] }}">{{ message["data"]["content"] | safe }}</span>
+                    <div class="chat-bubble {{ message["type"] }}"><div class="sender-icon"><img src="static/logo.png"></div><span>{{ message["data"]["content"] | safe }}</span></div>
                     {% endfor %}
                 {% endif %}
             </div>
@@ -83,7 +83,7 @@ limitations under the License.
 <script src="static/index.js"></script>
 <script>
   document.getElementById('g_id_onload').setAttribute('data-client_id', '{{ client_id }}');
-  var currentUrl = window.location.href; 
+  var currentUrl = window.location.href;
   var loginUri = currentUrl + 'login/google';
   document.getElementById('g_id_onload').setAttribute('data-login_uri', loginUri);
 </script>
