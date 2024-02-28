@@ -12,60 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import os
 import uuid
 from datetime import date
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 from aiohttp import ClientSession, TCPConnector
 from fastapi import HTTPException
-from google.auth.transport.requests import Request  # type: ignore
-from google.protobuf.json_format import MessageToDict
-from vertexai.preview.generative_models import (  # type: ignore
-    ChatSession,
-    GenerationResponse,
-    GenerativeModel,
-    Part,
-)
+from langchain.agents import AgentType, initialize_agent
+from langchain.agents.agent import AgentExecutor
+from langchain.globals import set_verbose  # type: ignore
+from langchain.memory import ChatMessageHistory, ConversationBufferMemory
+from langchain.prompts.chat import ChatPromptTemplate
+from langchain.tools import StructuredTool
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_google_vertexai import VertexAI
 
 from ..orchestrator import BaseOrchestrator, classproperty
-from .functions import assistant_tool, function_request
+from .tools import initialize_tools
 
+set_verbose(bool(os.getenv("DEBUG", default=False)))
 MODEL = "gemini-pro"
-BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 BASE_HISTORY = {
     "type": "ai",
-    "data": {"content": "I am an SFO Airport Assistant, ready to assist you."},
+    "data": {"content": "Welcome to Cymbal Air!  How may I assist you?"},
 }
-CREDENTIALS = None
-
-
-def get_id_token():
-    global CREDENTIALS
-    if CREDENTIALS is None:
-        CREDENTIALS, _ = google.auth.default()
-        if not hasattr(CREDENTIALS, "id_token"):
-            # Use Compute Engine default credential
-            CREDENTIALS = compute_engine.IDTokenCredentials(
-                request=Request(),
-                target_audience=BASE_URL,
-                use_metadata_identity_endpoint=True,
-            )
-    if not CREDENTIALS.valid:
-        CREDENTIALS.refresh(Request())
-    if hasattr(CREDENTIALS, "id_token"):
-        return CREDENTIALS.id_token
-    else:
-        return CREDENTIALS.token
-
-
-def get_headers(client: ClientSession):
-    """Helper method to generate ID tokens for authenticated requests"""
-    headers = client.headers
-    if not "http://" in BASE_URL:
-        # Append ID Token to make authenticated requests to Cloud Run services
-        headers["Authorization"] = f"Bearer {get_id_token()}"
-    return headers
 
 
 class UserChatModel:

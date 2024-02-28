@@ -24,22 +24,12 @@ from fastapi.templating import Jinja2Templates
 from google.auth.transport import requests  # type:ignore
 from google.oauth2 import id_token  # type:ignore
 from markdown import markdown
-from piny import StrictMatcher, YamlLoader  # type: ignore
 from starlette.middleware.sessions import SessionMiddleware
 
 from orchestrator import BaseOrchestrator, createOrchestrator
 
 routes = APIRouter()
 templates = Jinja2Templates(directory="templates")
-
-BASE_HISTORY = [
-    {
-        "type": "ai",
-        "data": {"content": "I am an SFO Airport Assistant, ready to assist you."},
-    }
-]
-CLIENT_ID = os.getenv("CLIENT_ID")
-routes = APIRouter()
 
 
 @asynccontextmanager
@@ -55,18 +45,11 @@ async def lifespan(app: FastAPI):
 @routes.post("/")
 async def index(request: Request):
     """Render the default template."""
-<<<<<<< HEAD:llm_demo/app.py
     # User session setup
-    orchestrator = request.app.state.orchestration_type
+    orchestrator = request.app.state.orchestrator
     session = request.session
     if "uuid" not in session or not orchestrator.user_session_exist(session["uuid"]):
         await orchestrator.user_session_create(session)
-=======
-    # Agent setup
-    orchestrator = request.app.state.orchestrator
-    await orchestrator.user_session_create(request.session)
-    templates = Jinja2Templates(directory="templates")
->>>>>>> 493e7c5 (update interface):langchain_tools_demo/main.py
     return templates.TemplateResponse(
         "index.html",
         {
@@ -92,11 +75,7 @@ async def login_google(
     user_name = get_user_name(str(user_id_token), client_id)
 
     # create new request session
-<<<<<<< HEAD:llm_demo/app.py
-    orchestrator = request.app.state.orchestration_type
-=======
     orchestrator = request.app.state.orchestrator
->>>>>>> 493e7c5 (update interface):langchain_tools_demo/main.py
     orchestrator.set_user_session_header(request.session["uuid"], str(user_id_token))
     print("Logged in to Google.")
 
@@ -129,11 +108,7 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
 
     # Add user message to chat history
     request.session["history"].append({"type": "human", "data": {"content": prompt}})
-<<<<<<< HEAD:llm_demo/app.py
-    orchestrator = request.app.state.orchestration_type
-=======
     orchestrator = request.app.state.orchestrator
->>>>>>> 493e7c5 (update interface):langchain_tools_demo/main.py
     output = await orchestrator.user_session_invoke(request.session["uuid"], prompt)
     # Return assistant response
     request.session["history"].append({"type": "ai", "data": {"content": output}})
@@ -148,15 +123,9 @@ async def reset(request: Request):
         raise HTTPException(status_code=400, detail=f"No session to reset.")
 
     uuid = request.session["uuid"]
-<<<<<<< HEAD:llm_demo/app.py
-    orchestrator = request.app.state.orchestration_type
-    if not orchestrator.user_session_exist(uuid):
-        raise HTTPException(status_code=500, detail=f"Current user session not found")
-=======
     orchestrator = request.app.state.orchestrator
     if not orchestrator.user_session_exist(uuid):
-        raise HTTPException(status_code=500, detail=f"Current agent not found")
->>>>>>> 493e7c5 (update interface):langchain_tools_demo/main.py
+        raise HTTPException(status_code=500, detail=f"Current user session not found")
 
     await orchestrator.user_session_reset(uuid)
     request.session.clear()
@@ -170,23 +139,16 @@ def get_user_name(user_token_id: str, client_id: str) -> str:
 
 
 def init_app(
-<<<<<<< HEAD:llm_demo/app.py
     orchestration_type: Optional[str],
     client_id: Optional[str],
     secret_key: Optional[str],
 ) -> FastAPI:
     # FastAPI setup
     if orchestration_type is None:
-=======
-    orchestrator: Optional[str], client_id: Optional[str], secret_key: Optional[str]
-) -> FastAPI:
-    # FastAPI setup
-    if orchestrator is None:
->>>>>>> 493e7c5 (update interface):langchain_tools_demo/main.py
         raise HTTPException(status_code=500, detail="Orchestrator not found")
     app = FastAPI(lifespan=lifespan)
     app.state.client_id = client_id
-    app.state.orchestrator = createOrchestrator(orchestrator)
+    app.state.orchestrator = createOrchestrator(orchestration_type)
     app.include_router(routes)
     app.mount("/static", StaticFiles(directory="static"), name="static")
     app.add_middleware(SessionMiddleware, secret_key=secret_key)

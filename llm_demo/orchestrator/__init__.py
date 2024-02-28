@@ -16,4 +16,4 @@ from . import langchain_tools
 from . import vertexai_function_calling
 from .orchestrator import BaseOrchestrator, createOrchestrator
 
-__ALL__ = ["BaseOrchestrator", "createOrchestrator", "langchain_tools"]
+__ALL__ = ["BaseOrchestrator", "createOrchestrator", "langchain_tools", "vertexai_function_calling"]
