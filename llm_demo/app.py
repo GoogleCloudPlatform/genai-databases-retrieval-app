@@ -69,18 +69,26 @@ async def login_google(
     if user_id_token is None:
         raise HTTPException(status_code=401, detail="No user credentials found")
 
-    user_name = get_user_name(str(user_id_token), request.app.state.client_id)
+    client_id = request.app.state.client_id
+    if not client_id:
+        raise HTTPException(status_code=400, detail="Client id not found")
+    user_name = get_user_name(str(user_id_token), client_id)
+
     # create new request session
     orchestrator = request.app.state.orchestration_type
     orchestrator.set_user_session_header(request.session["uuid"], str(user_id_token))
     print("Logged in to Google.")
 
-    request.session["history"][0] = {
-        "type": "ai",
-        "data": {
-            "content": f"Welcome to Cymbal Air, {user_name}! How may I assist you?"
-        },
-    }
+    welcome_text = f"Welcome to Cymbal Air, {user_name}! How may I assist you?"
+    if len(request.session["history"]) == 1:
+        request.session["history"][0] = {
+            "type": "ai",
+            "data": {"content": welcome_text},
+        }
+    else:
+        request.session["history"].append(
+            {"type": "ai", "data": {"content": welcome_text}}
+        )
 
     # Redirect to source URL
     source_url = request.headers["Referer"]
