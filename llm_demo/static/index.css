@@ -51,8 +51,8 @@ body {
 #g_id_onload,
 .g_id_signin {
     position: absolute;
-    top: 20px;
-    right: 30px;
+    top: 8px;
+    right: 10px;
 }
 
 #menuButton {
@@ -61,7 +61,10 @@ body {
 }
 
 #resetButton {
-    float: right;
+    position: fixed;
+    top: 65px;
+    right: 15px;
+    color: #181a23;
     cursor: pointer;
 }
 
@@ -183,4 +186,9 @@ div.chat-wrapper div.chat-content div .sender-icon img {
 
 .mdl-progress.mdl-progress__indeterminate>.bar1 {
     background-color: #394867
+}
+
+.send-button {
+    margin-top: 12px;
+    margin-right: 12px;
 }
