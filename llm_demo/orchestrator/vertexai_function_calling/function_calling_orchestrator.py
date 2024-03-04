@@ -16,24 +16,23 @@ import asyncio
 import os
 import uuid
 from datetime import date
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from aiohttp import ClientSession, TCPConnector
 from fastapi import HTTPException
-from langchain.agents import AgentType, initialize_agent
-from langchain.agents.agent import AgentExecutor
-from langchain.globals import set_verbose  # type: ignore
-from langchain.memory import ChatMessageHistory, ConversationBufferMemory
-from langchain.prompts.chat import ChatPromptTemplate
-from langchain.tools import StructuredTool
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
-from langchain_google_vertexai import VertexAI
+from google.auth.transport.requests import Request  # type: ignore
+from google.protobuf.json_format import MessageToDict
+from vertexai.preview.generative_models import (
+    ChatSession,
+    GenerationResponse,
+    GenerativeModel,
+    Part,
+)
 
 from ..orchestrator import BaseOrchestrator, classproperty
-from .tools import initialize_tools
+from .functions import assistant_tool
 
-set_verbose(bool(os.getenv("DEBUG", default=False)))
-MODEL = "gemini-pro"
+DEBUG = os.getenv("DEBUG", default=False)
 BASE_HISTORY = {
     "type": "ai",
     "data": {"content": "Welcome to Cymbal Air!  How may I assist you?"},
@@ -49,24 +48,26 @@ class UserChatModel:
         self.chat = chat
 
     @classmethod
-    def initialize_chat_model(cls, client: ClientSession) -> "UserChatModel":
-        model = GenerativeModel(MODEL, tools=[assistant_tool()])
-        function_calling_session = model.start_chat()
+    def initialize_chat_model(
+        cls, client: ClientSession, model: str
+    ) -> "UserChatModel":
+        chat_model = GenerativeModel(model, tools=[assistant_tool()])
+        function_calling_session = chat_model.start_chat()
         return UserChatModel(client, function_calling_session)
 
     async def close(self):
         await self.client.close()
 
-    async def invoke(self, prompt: str) -> Dict[str, Any]:
-        today_date = date.today().strftime("%Y-%m-%d")
-        today = f"Today is {today_date}."
-        model_response = self.request_chat_model(prompt + today)
-        print(f"function call response:\n{model_response}")
+    async def invoke(self, input_prompt: str) -> Dict[str, Any]:
+        prompt = self.get_prompt()
+        model_response = self.request_chat_model(prompt + input_prompt)
+        self.debug_log(f"Prompt:\n{prompt}.\nQuestion: {input_prompt}.")
+        self.debug_log(f"Function call response:\n{model_response}")
         part_response = model_response.candidates[0].content.parts[0]
         while "function_call" in part_response._raw_part:
             function_call = MessageToDict(part_response.function_call._pb)
             function_response = await self.request_function(function_call)
-            print(f"function response:\n{function_response}")
+            self.debug_log(f"Function response:\n{function_response}")
             part = Part.from_function_response(
                 name=function_call["name"],
                 response={
@@ -77,12 +78,21 @@ class UserChatModel:
             part_response = model_response.candidates[0].content.parts[0]
         if "text" in part_response._raw_part:
             content = part_response.text
-            print(f"output content: {content}")
+            self.debug_log(f"Output content: {content}")
             return {"output": content}
         else:
             raise HTTPException(
                 status_code=500, detail="Error: Chat model response unknown"
             )
+
+    def get_prompt(self) -> str:
+        today_date = date.today().strftime("%Y-%m-%d")
+        prompt = f"{PREFIX}. Today is {today_date}."
+        return prompt
+
+    def debug_log(self, output: str) -> None:
+        if DEBUG:
+            print(output)
 
     def request_chat_model(self, prompt: str):
         try:
@@ -94,8 +104,7 @@ class UserChatModel:
     async def request_function(self, function_call):
         url = function_request(function_call["name"])
         params = function_call["args"]
-        print(f"function url is {url}")
-        print(f"params is {params}")
+        self.debug_log(f"Function url is {url}.\nParams is {params}.")
         response = await self.client.get(
             url=f"{BASE_URL}/{url}",
             params=params,
@@ -106,9 +115,12 @@ class UserChatModel:
 
 
 class FunctionCallingOrchestrator(BaseOrchestrator):
-    _user_sessions: Dict[str, UserChatModel] = {}
+    _user_sessions: Dict[str, UserChatModel]
     # aiohttp context
     connector = None
+
+    def __init__():
+        self._user_sessions = {}
 
     @classproperty
     def kind(cls):
@@ -126,7 +138,7 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
         if "history" not in session:
             session["history"] = [BASE_HISTORY]
         client = await self.create_client_session()
-        chat = UserChatModel.initialize_chat_model(client)
+        chat = UserChatModel.initialize_chat_model(client, self.MODEL)
         self._user_sessions[id] = chat
 
     async def user_session_invoke(self, uuid: str, prompt: str) -> str:
@@ -161,3 +173,20 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
             asyncio.create_task(a.close()) for a in self._user_sessions.values()
         ]
         asyncio.gather(*close_client_tasks)
+
+
+PREFIX = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
+
+Cymbal Air is a passenger airline offering convenient flights to many cities around the world from its 
+hub in San Francisco. Cymbal Air takes pride in using the latest technology to offer the best customer
+service!
+
+Cymbal Air Customer Service Assistant (or just "Assistant" for short) is designed to assist 
+with a wide range of tasks, from answering simple questions to complex multi-query questions that 
+require passing results from one query to another. Using the latest AI models, Assistant is able to 
+generate human-like text based on the input it receives, allowing it to engage in natural-sounding
+conversations and provide responses that are coherent and relevant to the topic at hand.
+
+Assistant is a powerful tool that can help answer a wide range of questions pertaining to travel on Cymbal Air
+as well as ammenities of San Francisco Airport. 
+"""

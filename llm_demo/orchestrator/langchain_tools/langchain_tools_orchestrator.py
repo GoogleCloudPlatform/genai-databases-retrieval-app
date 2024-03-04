@@ -33,7 +33,6 @@ from ..orchestrator import BaseOrchestrator, classproperty
 from .tools import initialize_tools
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
-MODEL = "gemini-pro"
 BASE_HISTORY = {
     "type": "ai",
     "data": {"content": "Welcome to Cymbal Air!  How may I assist you?"},
@@ -55,8 +54,9 @@ class UserAgent:
         tools: List[StructuredTool],
         history: List[BaseMessage],
         prompt: ChatPromptTemplate,
+        model: str
     ) -> "UserAgent":
-        llm = VertexAI(max_output_tokens=512, model_name=MODEL)
+        llm = VertexAI(max_output_tokens=512, model_name=model)
         memory = ConversationBufferMemory(
             chat_memory=ChatMessageHistory(messages=history),
             memory_key="chat_history",
@@ -88,9 +88,12 @@ class UserAgent:
 
 
 class LangChainToolsOrchestrator(BaseOrchestrator):
-    _user_sessions: Dict[str, UserAgent] = {}
+    _user_sessions: Dict[str, UserAgent]
     # aiohttp context
     connector = None
+
+    def __init__():
+        self._user_sessions = {}
 
     @classproperty
     def kind(cls):
@@ -111,7 +114,7 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         client = await self.create_client_session()
         tools = await initialize_tools(client)
         prompt = self.create_prompt_template(tools)
-        agent = UserAgent.initialize_agent(client, tools, history, prompt)
+        agent = UserAgent.initialize_agent(client, tools, history, prompt, self.MODEL)
         self._user_sessions[id] = agent
 
     async def user_session_invoke(self, uuid: str, prompt: str) -> str:
