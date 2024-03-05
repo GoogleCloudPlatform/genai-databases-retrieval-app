@@ -78,7 +78,7 @@ class UserChatModel:
             )
             model_response = self.request_chat_model(part)
             part_response = model_response.candidates[0].content.parts[0]
-            
+
         if "text" in part_response._raw_part:
             content = part_response.text
             self.debug_log(f"Output content: {content}")

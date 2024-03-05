@@ -91,6 +91,48 @@ list_flights_func = generative_models.FunctionDeclaration(
     },
 )
 
+insert_ticket_func = generative_models.FunctionDeclaration(
+    name="insert_ticket",
+    description="Use this tool to book a flight ticket for the user.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "airline": {
+                "type": "string",
+                "description": "A code for an airline service consisting of two-character airline designator.",
+            },
+            "flight_number": {
+                "type": "string",
+                "description": "A 1 to 4 digit number of the flight.",
+            },
+            "departure_airport": {
+                "type": "string",
+                "description": "The iata code for flight departure airport.",
+            },
+            "arrival_airport": {
+                "type": "string",
+                "description": "The iata code for flight arrival airport.",
+            },
+            "departure_time": {
+                "type": "string",
+                "description": "The departure time for flight.",
+            },
+            "arrival_time": {
+                "type": "string",
+                "description": "The arrival time for flight.",
+            },
+        },
+    },
+)
+
+""" TODO: Remove this comment once the issue is solved (https://github.com/googleapis/python-aiplatform/issues/3405)
+list_tickets_func = generative_models.FunctionDeclaration(
+    name="list_tickets",
+    description="Use this tool to list a user's flight tickets. This tool takes no input parameters and returns a list of current user's flight tickets.",
+    parameters=None,
+)
+"""
+
 
 def get_id_token():
     global CREDENTIALS
@@ -126,6 +168,8 @@ def function_request(function_call_name: str) -> str:
         "flights_search": "flights/search",
         "list_flights": "flights/search",
         "amenities_search": "amenities/search",
+        "insert_ticket": "tickets/insert",
+        # "list_tickets": "tickets/list",
     }
     return functions_url[function_call_name]
 
@@ -137,5 +181,7 @@ def assistant_tool():
             search_amenities_func,
             search_flights_by_number_func,
             list_flights_func,
+            insert_ticket_func,
+            # list_tickets_func,
         ],
     )
