@@ -14,7 +14,11 @@
 
 import os
 
+import aiohttp
 from vertexai.preview import generative_models  # type: ignore
+
+BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
+CREDENTIALS = None
 
 search_airports_func = generative_models.FunctionDeclaration(
     name="airports_search",
@@ -86,6 +90,34 @@ list_flights_func = generative_models.FunctionDeclaration(
         },
     },
 )
+
+
+def get_id_token():
+    global CREDENTIALS
+    if CREDENTIALS is None:
+        CREDENTIALS, _ = google.auth.default()
+        if not hasattr(CREDENTIALS, "id_token"):
+            # Use Compute Engine default credential
+            CREDENTIALS = compute_engine.IDTokenCredentials(
+                request=Request(),
+                target_audience=BASE_URL,
+                use_metadata_identity_endpoint=True,
+            )
+    if not CREDENTIALS.valid:
+        CREDENTIALS.refresh(Request())
+    if hasattr(CREDENTIALS, "id_token"):
+        return CREDENTIALS.id_token
+    else:
+        return CREDENTIALS.token
+
+
+def get_headers(client: aiohttp.ClientSession):
+    """Helper method to generate ID tokens for authenticated requests"""
+    headers = client.headers
+    if not "http://" in BASE_URL:
+        # Append ID Token to make authenticated requests to Cloud Run services
+        headers["Authorization"] = f"Bearer {get_id_token()}"
+    return headers
 
 
 def function_request(function_call_name: str) -> str:

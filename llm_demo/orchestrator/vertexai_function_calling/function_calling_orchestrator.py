@@ -30,9 +30,8 @@ from vertexai.preview.generative_models import (  # type: ignore
 )
 
 from ..orchestrator import BaseOrchestrator, classproperty
-from .functions import assistant_tool, function_request
+from .functions import BASE_URL, assistant_tool, function_request, get_headers
 
-BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 DEBUG = os.getenv("DEBUG", default=False)
 BASE_HISTORY = {
     "type": "ai",
@@ -79,6 +78,7 @@ class UserChatModel:
             )
             model_response = self.request_chat_model(part)
             part_response = model_response.candidates[0].content.parts[0]
+            
         if "text" in part_response._raw_part:
             content = part_response.text
             self.debug_log(f"Output content: {content}")
