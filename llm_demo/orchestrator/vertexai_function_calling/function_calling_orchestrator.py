@@ -22,7 +22,7 @@ from aiohttp import ClientSession, TCPConnector
 from fastapi import HTTPException
 from google.auth.transport.requests import Request  # type: ignore
 from google.protobuf.json_format import MessageToDict
-from vertexai.preview.generative_models import (
+from vertexai.preview.generative_models import (  # type: ignore
     ChatSession,
     GenerationResponse,
     GenerativeModel,
@@ -30,8 +30,9 @@ from vertexai.preview.generative_models import (
 )
 
 from ..orchestrator import BaseOrchestrator, classproperty
-from .functions import assistant_tool
+from .functions import assistant_tool, function_request
 
+BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 DEBUG = os.getenv("DEBUG", default=False)
 BASE_HISTORY = {
     "type": "ai",
@@ -64,6 +65,8 @@ class UserChatModel:
         self.debug_log(f"Prompt:\n{prompt}.\nQuestion: {input_prompt}.")
         self.debug_log(f"Function call response:\n{model_response}")
         part_response = model_response.candidates[0].content.parts[0]
+
+        # implement multi turn chat with while loop
         while "function_call" in part_response._raw_part:
             function_call = MessageToDict(part_response.function_call._pb)
             function_response = await self.request_function(function_call)
@@ -119,7 +122,7 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
     # aiohttp context
     connector = None
 
-    def __init__():
+    def __init__(self):
         self._user_sessions = {}
 
     @classproperty

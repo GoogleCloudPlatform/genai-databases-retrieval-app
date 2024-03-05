@@ -54,7 +54,7 @@ class UserAgent:
         tools: List[StructuredTool],
         history: List[BaseMessage],
         prompt: ChatPromptTemplate,
-        model: str
+        model: str,
     ) -> "UserAgent":
         llm = VertexAI(max_output_tokens=512, model_name=model)
         memory = ConversationBufferMemory(
@@ -92,7 +92,7 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
     # aiohttp context
     connector = None
 
-    def __init__():
+    def __init__(self):
         self._user_sessions = {}
 
     @classproperty
