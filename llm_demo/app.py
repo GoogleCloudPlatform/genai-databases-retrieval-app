@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
     print("Loading application...")
     yield
     # FastAPI app shutdown event
-    app.state.orchestration_type.close_clients()
+    app.state.orchestrator.close_clients()
 
 
 @routes.get("/")
@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
 async def index(request: Request):
     """Render the default template."""
     # User session setup
-    orchestrator = request.app.state.orchestration_type
+    orchestrator = request.app.state.orchestrator
     session = request.session
     if "uuid" not in session or not orchestrator.user_session_exist(session["uuid"]):
         await orchestrator.user_session_create(session)
@@ -75,7 +75,7 @@ async def login_google(
     user_name = get_user_name(str(user_id_token), client_id)
 
     # create new request session
-    orchestrator = request.app.state.orchestration_type
+    orchestrator = request.app.state.orchestrator
     orchestrator.set_user_session_header(request.session["uuid"], str(user_id_token))
     print("Logged in to Google.")
 
@@ -108,7 +108,7 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
 
     # Add user message to chat history
     request.session["history"].append({"type": "human", "data": {"content": prompt}})
-    orchestrator = request.app.state.orchestration_type
+    orchestrator = request.app.state.orchestrator
     output = await orchestrator.user_session_invoke(request.session["uuid"], prompt)
     # Return assistant response
     request.session["history"].append({"type": "ai", "data": {"content": output}})
@@ -123,7 +123,7 @@ async def reset(request: Request):
         raise HTTPException(status_code=400, detail=f"No session to reset.")
 
     uuid = request.session["uuid"]
-    orchestrator = request.app.state.orchestration_type
+    orchestrator = request.app.state.orchestrator
     if not orchestrator.user_session_exist(uuid):
         raise HTTPException(status_code=500, detail=f"Current user session not found")
 
@@ -148,7 +148,7 @@ def init_app(
         raise HTTPException(status_code=500, detail="Orchestrator not found")
     app = FastAPI(lifespan=lifespan)
     app.state.client_id = client_id
-    app.state.orchestration_type = createOrchestrator(orchestration_type)
+    app.state.orchestrator = createOrchestrator(orchestration_type)
     app.include_router(routes)
     app.mount("/static", StaticFiles(directory="static"), name="static")
     app.add_middleware(SessionMiddleware, secret_key=secret_key)

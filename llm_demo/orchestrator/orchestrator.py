@@ -26,6 +26,8 @@ class classproperty:
 
 
 class BaseOrchestrator(ABC):
+    MODEL = "gemini-pro"
+
     @classproperty
     @abstractmethod
     def kind(cls):
