@@ -125,13 +125,13 @@ insert_ticket_func = generative_models.FunctionDeclaration(
     },
 )
 
-""" TODO: Remove this comment once the issue is solved (https://github.com/googleapis/python-aiplatform/issues/3405)
 list_tickets_func = generative_models.FunctionDeclaration(
     name="list_tickets",
     description="Use this tool to list a user's flight tickets. This tool takes no input parameters and returns a list of current user's flight tickets.",
-    parameters=None,
+    parameters={
+        "type": "object",
+    },
 )
-"""
 
 
 def get_id_token():
@@ -169,7 +169,7 @@ def function_request(function_call_name: str) -> str:
         "list_flights": "flights/search",
         "amenities_search": "amenities/search",
         "insert_ticket": "tickets/insert",
-        # "list_tickets": "tickets/list",
+        "list_tickets": "tickets/list",
     }
     return functions_url[function_call_name]
 
@@ -182,6 +182,6 @@ def assistant_tool():
             search_flights_by_number_func,
             list_flights_func,
             insert_ticket_func,
-            # list_tickets_func,
+            list_tickets_func,
         ],
     )
