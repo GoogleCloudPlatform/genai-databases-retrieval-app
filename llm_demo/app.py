@@ -52,7 +52,7 @@ async def index(request: Request):
     if "uuid" not in session or not orchestrator.user_session_exist(session["uuid"]):
         await orchestrator.user_session_create(session)
 
-    # recheck if token is still valid
+    # recheck if token and user info is still valid
     user_id_token = orchestrator.get_user_id_token(session["uuid"])
     if user_id_token:
         if not get_user_info(user_id_token, request.app.state.client_id):
@@ -66,9 +66,11 @@ async def index(request: Request):
             "request": request,
             "messages": request.session["history"],
             "client_id": request.app.state.client_id,
-            "user_img": request.session["user_info"]["user_img"]
-            if "user_info" in request.session
-            else None,
+            "user_img": (
+                request.session["user_info"]["user_img"]
+                if "user_info" in request.session
+                else None
+            ),
         },
     )
 
@@ -95,16 +97,16 @@ async def login_google(
     orchestrator.set_user_session_header(session["uuid"], str(user_id_token))
     print("Logged in to Google.")
 
-    welcome_text = f"Welcome to Cymbal Air, {session['user_info']['name']}! How may I assist you?"
+    welcome_text = (
+        f"Welcome to Cymbal Air, {session['user_info']['name']}! How may I assist you?"
+    )
     if len(request.session["history"]) == 1:
         session["history"][0] = {
             "type": "ai",
             "data": {"content": welcome_text},
         }
     else:
-        session["history"].append(
-            {"type": "ai", "data": {"content": welcome_text}}
-        )
+        session["history"].append({"type": "ai", "data": {"content": welcome_text}})
 
     # Redirect to source URL
     source_url = request.headers["Referer"]
