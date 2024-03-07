@@ -45,8 +45,8 @@ limitations under the License.
             data-auto_prompt="false">
         {% if user_img %}
             <div class="chat-user-state">
-                <img class="chat-user-image" src="{{ user_img }}" alt="signed in user image">
-                <button type="button" class="btn btn-default chat-signout-btn" id="signoutButton" onclick="reset()">Sign out</button>
+                <img class="chat-user-image" src="{{ user_img }}" alt="user image"></img>
+                <button type="button" class="btn btn-default chat-signout-btn" id="signoutButton" onclick="signout()">Sign out</button>
             </div>
         {% else %}
             <div class="g_id_signin"

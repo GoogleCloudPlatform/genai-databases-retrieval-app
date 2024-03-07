@@ -49,8 +49,8 @@ class BaseOrchestrator(ABC):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
-    def user_session_reset(self, uuid: str):
-        """Clear and reset user session."""
+    def user_session_reset(self, session: dict[str, Any], uuid: str):
+        """Reset and clear history from user session."""
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
@@ -66,9 +66,16 @@ class BaseOrchestrator(ABC):
         if user_session.client and "User-Id-Token" in user_session.client.headers:
             token = user_session.client.headers["User-Id-Token"]
             parts = str(token).split(" ")
-            if len(parts) == 2:
-                return parts[1]
+            if len(parts) != 2 or parts[0] != "Bearer":
+                raise Exception("Invalid ID token")
+            return parts[1]
         return None
+
+    async def user_session_signout(self, uuid: str):
+        """Sign out from user session. Clear and restart session."""
+        user_session = self.get_user_session(uuid)
+        await user_session.close()
+        del user_session
 
 
 def createOrchestrator(orchestration_type: str) -> "BaseOrchestrator":

@@ -55,7 +55,10 @@ async def index(request: Request):
     # recheck if token is still valid
     user_id_token = orchestrator.get_user_id_token(session["uuid"])
     if user_id_token:
-        check_user_info_validity(session, user_id_token, request.app.state.client_id)
+        if not get_user_info(user_id_token, request.app.state.client_id):
+            clear_user_info(session)
+    elif not user_id_token and "user_info" in session:
+        clear_user_info(session)
 
     return templates.TemplateResponse(
         "index.html",
@@ -89,23 +92,40 @@ async def login_google(
 
     # create new request session
     orchestrator = request.app.state.orchestrator
-    orchestrator.set_user_session_header(request.session["uuid"], str(user_id_token))
+    orchestrator.set_user_session_header(session["uuid"], str(user_id_token))
     print("Logged in to Google.")
 
-    welcome_text = f"Welcome to Cymbal Air, {request.session['user_info']['name']}! How may I assist you?"
+    welcome_text = f"Welcome to Cymbal Air, {session['user_info']['name']}! How may I assist you?"
     if len(request.session["history"]) == 1:
-        request.session["history"][0] = {
+        session["history"][0] = {
             "type": "ai",
             "data": {"content": welcome_text},
         }
     else:
-        request.session["history"].append(
+        session["history"].append(
             {"type": "ai", "data": {"content": welcome_text}}
         )
 
     # Redirect to source URL
     source_url = request.headers["Referer"]
     return RedirectResponse(url=source_url)
+
+
+@routes.post("/logout/google")
+async def logout_google(
+    request: Request,
+):
+    """Logout google account from user session and clear user session"""
+    if "uuid" not in request.session:
+        raise HTTPException(status_code=400, detail=f"No session to reset.")
+
+    uuid = request.session["uuid"]
+    orchestrator = request.app.state.orchestrator
+    if not orchestrator.user_session_exist(uuid):
+        raise HTTPException(status_code=500, detail=f"Current user session not found")
+
+    orchestrator.user_session_signout(uuid)
+    request.session.clear()
 
 
 @routes.post("/chat", response_class=PlainTextResponse)
@@ -129,7 +149,7 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
 
 
 @routes.post("/reset")
-async def reset(request: Request):
+def reset(request: Request):
     """Reset user session"""
 
     if "uuid" not in request.session:
@@ -140,8 +160,7 @@ async def reset(request: Request):
     if not orchestrator.user_session_exist(uuid):
         raise HTTPException(status_code=500, detail=f"Current user session not found")
 
-    await orchestrator.user_session_reset(uuid)
-    request.session.clear()
+    orchestrator.user_session_reset(request.session, uuid)
 
 
 def get_user_info(user_id_token: str, client_id: str) -> dict[str, str]:
@@ -157,9 +176,8 @@ def get_user_info(user_id_token: str, client_id: str) -> dict[str, str]:
         return {}
 
 
-def check_user_info_validity(session: dict[str, Any], user_id_token: str, client_id: str):
-    if not get_user_info(user_id_token, client_id):
-        del session["user_info"]
+def clear_user_info(session: dict[str, Any]):
+    del session["user_info"]
 
 
 def init_app(

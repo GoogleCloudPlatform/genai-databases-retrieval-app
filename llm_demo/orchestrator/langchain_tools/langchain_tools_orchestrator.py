@@ -43,9 +43,15 @@ class UserAgent:
     client: ClientSession
     agent: AgentExecutor
 
-    def __init__(self, client: ClientSession, agent: AgentExecutor):
+    def __init__(
+        self,
+        client: ClientSession,
+        agent: AgentExecutor,
+        memory: ConversationBufferMemory,
+    ):
         self.client = client
         self.agent = agent
+        self.memory = memory
 
     @classmethod
     def initialize_agent(
@@ -74,7 +80,7 @@ class UserAgent:
             return_intermediate_steps=True,
         )
         agent.agent.llm_chain.prompt = prompt  # type: ignore
-        return UserAgent(client, agent)
+        return UserAgent(client, agent, memory)
 
     async def close(self):
         await self.client.close()
@@ -85,6 +91,10 @@ class UserAgent:
         except Exception as err:
             raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
         return response
+
+    def reset_memory(self, base_message: List[BaseMessage]):
+        self.memory.clear()
+        self.memory.chat_memory = ChatMessageHistory(messages=base_message)
 
 
 class LangChainToolsOrchestrator(BaseOrchestrator):
@@ -123,10 +133,13 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         response = await user_session.invoke(prompt)
         return response["output"]
 
-    async def user_session_reset(self, uuid: str):
+    def user_session_reset(self, session: dict[str, Any], uuid: str):
         user_session = self.get_user_session(uuid)
-        await user_session.close()
-        del user_session
+        del session["history"]
+        base_history = self.get_base_history(session)
+        session["history"] = [base_history]
+        history = self.parse_messages(session["history"])
+        user_session.reset_memory(history)
 
     def get_user_session(self, uuid: str) -> UserAgent:
         return self._user_sessions[uuid]
@@ -174,6 +187,17 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
             else:
                 raise Exception("Message type not found.")
         return messages
+
+    def get_base_history(self, session: dict[str, Any]):
+        if "user_info" in session:
+            base_history = {
+                "type": "ai",
+                "data": {
+                    "content": f"Welcome to Cymbal Air, {session['user_info']['name']}!  How may I assist you?"
+                },
+            }
+            return base_history
+        return BASE_HISTORY
 
     def close_clients(self):
         close_client_tasks = [

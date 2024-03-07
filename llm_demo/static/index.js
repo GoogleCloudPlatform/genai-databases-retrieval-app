@@ -75,6 +75,14 @@ async function reset() {
     })
 }
 
+async function signout() {
+    await fetch('logout/google', {
+        method: 'POST',
+    }).then(()=>{
+        window.location.reload()
+    })
+}
+
 // Helper function to print to chatroom
 function log(name, msg) {
     let message = `<div class="chat-bubble ${name}">
