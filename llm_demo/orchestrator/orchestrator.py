@@ -14,7 +14,7 @@
 
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Optional
 
 
 class classproperty:
@@ -60,6 +60,15 @@ class BaseOrchestrator(ABC):
     def set_user_session_header(self, uuid: str, user_id_token: str):
         user_session = self.get_user_session(uuid)
         user_session.client.headers["User-Id-Token"] = f"Bearer {user_id_token}"
+
+    def get_user_id_token(self, uuid: str) -> Optional[str]:
+        user_session = self.get_user_session(uuid)
+        if user_session.client and "User-Id-Token" in user_session.client.headers:
+            token = user_session.client.headers["User-Id-Token"]
+            parts = str(token).split(" ")
+            if len(parts) == 2:
+                return parts[1]
+        return None
 
 
 def createOrchestrator(orchestration_type: str) -> "BaseOrchestrator":

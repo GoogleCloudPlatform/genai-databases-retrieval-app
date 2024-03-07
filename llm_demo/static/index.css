@@ -51,8 +51,23 @@ body {
 #g_id_onload,
 .g_id_signin {
     position: absolute;
-    top: 8px;
+    top: 6px;
     right: 10px;
+    .chat-user-state {
+        top: 6px;
+        position: relative;
+        .chat-user-image {
+            border-radius: 50%;
+            height: 36px;
+            width: 36px;
+        }
+        .chat-signout-btn {
+            border-radius: 5px;
+            margin-left: 10px;
+            height: 32px;
+            font-family: "Roboto";
+        }
+    }
 }
 
 #menuButton {

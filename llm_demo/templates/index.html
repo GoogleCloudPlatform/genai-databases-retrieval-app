@@ -33,7 +33,6 @@ limitations under the License.
 </head>
 
 <body>
-
     <div class="container">
         <div class="chat-header">
             <span class="material-symbols-outlined" id="menuButton">menu</span>
@@ -44,15 +43,21 @@ limitations under the License.
             data-context="signin"
             data-ux_mode="popup"
             data-auto_prompt="false">
-        </div>
-        <div class="g_id_signin"
-            data-type="standard"
-            data-shape="rectangular"
-            data-theme="outline"
-            data-text="signin_with"
-            data-size="large"
-            data-logo_alignment="left"
-            data-onsuccess="onSignIn">
+        {% if user_img %}
+            <div class="chat-user-state">
+                <img class="chat-user-image" src="{{ user_img }}" alt="signed in user image">
+                <button type="button" class="btn btn-default chat-signout-btn" id="signoutButton" onclick="reset()">Sign out</button>
+            </div>
+        {% else %}
+            <div class="g_id_signin"
+                data-type="standard"
+                data-shape="rectangular"
+                data-theme="outline"
+                data-text="signin"
+                data-size="medium"
+                data-logo_alignment="left">
+            </div>
+        {% endif %}
         </div>
         <div class="chat-wrapper">
             <div class="chat-content">

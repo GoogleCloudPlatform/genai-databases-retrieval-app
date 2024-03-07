@@ -14,7 +14,7 @@
 
 import os
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Any, Optional
 
 import uvicorn
 from fastapi import APIRouter, Body, FastAPI, HTTPException, Request
@@ -48,14 +48,24 @@ async def index(request: Request):
     # User session setup
     orchestrator = request.app.state.orchestrator
     session = request.session
+
     if "uuid" not in session or not orchestrator.user_session_exist(session["uuid"]):
         await orchestrator.user_session_create(session)
+
+    # recheck if token is still valid
+    user_id_token = orchestrator.get_user_id_token(session["uuid"])
+    if user_id_token:
+        check_user_info_validity(session, user_id_token, request.app.state.client_id)
+
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
             "messages": request.session["history"],
             "client_id": request.app.state.client_id,
+            "user_img": request.session["user_info"]["user_img"]
+            if "user_info" in request.session
+            else None,
         },
     )
 
@@ -72,14 +82,17 @@ async def login_google(
     client_id = request.app.state.client_id
     if not client_id:
         raise HTTPException(status_code=400, detail="Client id not found")
-    user_name = get_user_name(str(user_id_token), client_id)
+
+    session = request.session
+    user_info = get_user_info(str(user_id_token), client_id)
+    session["user_info"] = user_info
 
     # create new request session
     orchestrator = request.app.state.orchestrator
     orchestrator.set_user_session_header(request.session["uuid"], str(user_id_token))
     print("Logged in to Google.")
 
-    welcome_text = f"Welcome to Cymbal Air, {user_name}! How may I assist you?"
+    welcome_text = f"Welcome to Cymbal Air, {request.session['user_info']['name']}! How may I assist you?"
     if len(request.session["history"]) == 1:
         request.session["history"][0] = {
             "type": "ai",
@@ -131,11 +144,22 @@ async def reset(request: Request):
     request.session.clear()
 
 
-def get_user_name(user_token_id: str, client_id: str) -> str:
-    id_info = id_token.verify_oauth2_token(
-        user_token_id, requests.Request(), audience=client_id
-    )
-    return id_info["name"]
+def get_user_info(user_id_token: str, client_id: str) -> dict[str, str]:
+    try:
+        id_info = id_token.verify_oauth2_token(
+            user_id_token, requests.Request(), audience=client_id
+        )
+        return {
+            "user_img": id_info["picture"],
+            "name": id_info["name"],
+        }
+    except ValueError as err:
+        return {}
+
+
+def check_user_info_validity(session: dict[str, Any], user_id_token: str, client_id: str):
+    if not get_user_info(user_id_token, client_id):
+        del session["user_info"]
 
 
 def init_app(
