@@ -24,6 +24,7 @@ from google.auth.transport.requests import Request  # type: ignore
 from google.protobuf.json_format import MessageToDict
 from vertexai.preview.generative_models import (  # type: ignore
     ChatSession,
+    Content,
     GenerationResponse,
     GenerativeModel,
     Part,
@@ -116,6 +117,12 @@ class UserChatModel:
         response = await response.json()
         return response
 
+    def reset_memory(self, model: str):
+        """reinitiate chat model to reset memory."""
+        del self.chat
+        chat_model = GenerativeModel(model, tools=[assistant_tool()])
+        self.chat = chat_model.start_chat()
+
 
 class FunctionCallingOrchestrator(BaseOrchestrator):
     _user_sessions: Dict[str, UserChatModel]
@@ -150,10 +157,12 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
         response = await user_session.invoke(prompt)
         return response["output"]
 
-    async def user_session_reset(self, uuid: str):
+    def user_session_reset(self, session: dict[str, Any], uuid: str):
         user_session = self.get_user_session(uuid)
-        await user_session.close()
-        del user_session
+        del session["history"]
+        base_history = self.get_base_history(session)
+        session["history"] = [base_history]
+        user_session.reset_memory(self.MODEL)
 
     def get_user_session(self, uuid: str) -> UserChatModel:
         return self._user_sessions[uuid]
@@ -170,6 +179,17 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
             headers={},
             raise_for_status=True,
         )
+
+    def get_base_history(self, session: dict[str, Any]):
+        if "user_info" in session:
+            base_history = {
+                "type": "ai",
+                "data": {
+                    "content": f"Welcome to Cymbal Air, {session['user_info']['name']}!  How may I assist you?"
+                },
+            }
+            return base_history
+        return BASE_HISTORY
 
     def close_clients(self):
         close_client_tasks = [
