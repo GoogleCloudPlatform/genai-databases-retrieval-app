@@ -166,7 +166,7 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         format_instructions = FORMAT_INSTRUCTIONS.format(
             tool_names=tool_names,
         )
-        current_datetime = "Today date and current time is {cur_datetime}"
+        current_datetime = "Today's date and current time is {cur_datetime}."
         template = "\n\n".join(
             [PREFIX, tool_strings, format_instructions, SUFFIX, current_datetime]
         )

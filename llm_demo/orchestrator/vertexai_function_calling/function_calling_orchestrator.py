@@ -15,7 +15,7 @@
 import asyncio
 import os
 import uuid
-from datetime import date
+from datetime import datetime
 from typing import Any, Dict
 
 from aiohttp import ClientSession, TCPConnector
@@ -62,8 +62,8 @@ class UserChatModel:
     async def invoke(self, input_prompt: str) -> Dict[str, Any]:
         prompt = self.get_prompt()
         model_response = self.request_chat_model(prompt + input_prompt)
-        self.debug_log(f"Prompt:\n{prompt}.\nQuestion: {input_prompt}.")
-        self.debug_log(f"Function call response:\n{model_response}")
+        self.debug_log(f"Prompt:\n{prompt}\n\nQuestion: {input_prompt}.")
+        self.debug_log(f"\nFunction call response:\n{model_response}")
         part_response = model_response.candidates[0].content.parts[0]
 
         # implement multi turn chat with while loop
@@ -90,8 +90,8 @@ class UserChatModel:
             )
 
     def get_prompt(self) -> str:
-        today_date = date.today().strftime("%Y-%m-%d")
-        prompt = f"{PREFIX}. Today is {today_date}."
+        now = datetime.now().strftime("%A, %m/%d/%Y, %H:%M:%S")
+        prompt = f"{PREFIX}. Today's date and current time is {now}."
         return prompt
 
     def debug_log(self, output: str) -> None:
