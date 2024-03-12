@@ -22,6 +22,7 @@ from aiohttp import ClientSession, TCPConnector
 from fastapi import HTTPException
 from google.auth.transport.requests import Request  # type: ignore
 from google.protobuf.json_format import MessageToDict
+from pytz import timezone
 from vertexai.preview.generative_models import (  # type: ignore
     ChatSession,
     Content,
@@ -90,7 +91,8 @@ class UserChatModel:
             )
 
     def get_prompt(self) -> str:
-        now = datetime.now().strftime("%A, %m/%d/%Y, %H:%M:%S")
+        formatter = "%A, %m/%d/%Y, %H:%M:%S"
+        now = datetime.now(timezone("US/Pacific")).strftime("%A, %m/%d/%Y, %H:%M:%S")
         prompt = f"{PREFIX}. Today's date and current time is {now}."
         return prompt
 

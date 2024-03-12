@@ -28,6 +28,7 @@ from langchain.prompts.chat import ChatPromptTemplate
 from langchain.tools import StructuredTool
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_google_vertexai import VertexAI
+from pytz import timezone
 
 from ..orchestrator import BaseOrchestrator, classproperty
 from .tools import initialize_tools
@@ -179,8 +180,9 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         return prompt
 
     def get_datetime(self):
-        now = datetime.now()
-        return now.strftime("%A, %m/%d/%Y, %H:%M:%S")
+        formatter = "%A, %m/%d/%Y, %H:%M:%S"
+        now = datetime.now(timezone("US/Pacific"))
+        return now.strftime(formatter)
 
     def parse_messages(self, datas: List[Any]) -> List[BaseMessage]:
         messages: List[BaseMessage] = []
