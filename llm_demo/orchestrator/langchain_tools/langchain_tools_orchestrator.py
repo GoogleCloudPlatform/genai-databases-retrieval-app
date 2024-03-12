@@ -15,7 +15,7 @@
 import asyncio
 import os
 import uuid
-from datetime import date
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from aiohttp import ClientSession, TCPConnector
@@ -28,6 +28,7 @@ from langchain.prompts.chat import ChatPromptTemplate
 from langchain.tools import StructuredTool
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_google_vertexai import VertexAI
+from pytz import timezone
 
 from ..orchestrator import BaseOrchestrator, classproperty
 from .tools import initialize_tools
@@ -166,16 +167,22 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         format_instructions = FORMAT_INSTRUCTIONS.format(
             tool_names=tool_names,
         )
-        today_date = date.today().strftime("%Y-%m-%d")
-        today = f"Today is {today_date}."
+        current_datetime = "Today's date and current time is {cur_datetime}."
         template = "\n\n".join(
-            [PREFIX, tool_strings, format_instructions, SUFFIX, today]
+            [PREFIX, tool_strings, format_instructions, SUFFIX, current_datetime]
         )
         human_message_template = "{input}\n\n{agent_scratchpad}"
+
         prompt = ChatPromptTemplate.from_messages(
             [("system", template), ("human", human_message_template)]
         )
+        prompt = prompt.partial(cur_datetime=self.get_datetime)
         return prompt
+
+    def get_datetime(self):
+        formatter = "%A, %m/%d/%Y, %H:%M:%S"
+        now = datetime.now(timezone("US/Pacific"))
+        return now.strftime(formatter)
 
     def parse_messages(self, datas: List[Any]) -> List[BaseMessage]:
         messages: List[BaseMessage] = []
