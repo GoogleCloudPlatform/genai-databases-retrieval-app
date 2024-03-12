@@ -208,7 +208,7 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
 
 PREFIX = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
 
-Cymbal Air is a passenger airline offering convenient flights to many cities around the world from its 
+Cymbal Air (airline unique two letter identifier as CY) is a passenger airline offering convenient flights to many cities around the world from its 
 hub in San Francisco. Cymbal Air takes pride in using the latest technology to offer the best customer
 service!
 
