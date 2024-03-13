@@ -15,7 +15,7 @@
 from datetime import datetime
 from typing import Dict
 
-from google.cloud import firestore
+from google.cloud.firestore import AsyncClient, Client
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 import models
@@ -57,7 +57,7 @@ class MockCollection(Dict):
         return self.documents
 
 
-class MockFirestoreClient(firestore.AsyncClient):
+class MockFirestoreClient(AsyncClient):
     """
     Mock firestore client.
     """
@@ -71,7 +71,7 @@ class MockFirestoreClient(firestore.AsyncClient):
         return self.collections[collection_name]
 
 
-async def mock_client(mock_firestore_client: MockFirestoreClient) -> firestore.Client:
+async def mock_client(mock_firestore_client: MockFirestoreClient) -> Client:
     return firestore_provider.Client(mock_firestore_client)
 
 

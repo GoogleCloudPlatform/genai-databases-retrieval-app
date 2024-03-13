@@ -16,7 +16,7 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Literal, Optional
 
-from google.cloud import firestore
+from google.cloud.firestore import AsyncClient  # type: ignore
 from google.cloud.firestore_v1.async_collection import AsyncCollectionReference
 from google.cloud.firestore_v1.base_query import FieldFilter
 from pydantic import BaseModel
@@ -32,18 +32,18 @@ class Config(BaseModel, datastore.AbstractConfig):
 
 
 class Client(datastore.Client[Config]):
-    __client: firestore.AsyncClient
+    __client: AsyncClient
 
     @datastore.classproperty
     def kind(cls):
         return "firestore"
 
-    def __init__(self, client: firestore.AsyncClient):
+    def __init__(self, client: AsyncClient):
         self.__client = client
 
     @classmethod
     async def create(cls, config: Config) -> "Client":
-        return cls(firestore.AsyncClient(project=config.projectId))
+        return cls(AsyncClient(project=config.projectId))
 
     async def initialize_data(
         self,
