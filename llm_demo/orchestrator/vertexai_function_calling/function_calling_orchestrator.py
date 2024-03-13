@@ -111,7 +111,11 @@ class UserChatModel:
     def get_prompt(self) -> str:
         formatter = "%A, %m/%d/%Y, %H:%M:%S"
         now = datetime.now(timezone("US/Pacific")).strftime("%A, %m/%d/%Y, %H:%M:%S")
+<<<<<<< HEAD
         prompt = f"{PREFIX}\nToday's date and current time is {now}."
+=======
+        prompt = f"{PREFIX} {POLICY} Today's date and current time is {now}."
+>>>>>>> 3cb7e2c (add flight policy)
         return prompt
 
     def debug_log(self, output: str) -> None:
