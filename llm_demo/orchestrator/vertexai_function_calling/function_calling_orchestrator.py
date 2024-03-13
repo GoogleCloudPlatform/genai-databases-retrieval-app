@@ -31,8 +31,8 @@ from vertexai.preview.generative_models import (  # type: ignore
     Part,
 )
 
-from ..orchestrator import BaseOrchestrator, classproperty
 from ..cymbalair_policy import POLICY
+from ..orchestrator import BaseOrchestrator, classproperty
 from .functions import BASE_URL, assistant_tool, function_request, get_headers
 
 DEBUG = os.getenv("DEBUG", default=False)

@@ -236,7 +236,7 @@ conversations and provide responses that are coherent and relevant to the topic 
 Assistant is a powerful tool that can help answer a wide range of questions pertaining to travel on Cymbal Air
 as well as ammenities of San Francisco Airport."""
 
-TOOLS_PREFIX="""
+TOOLS_PREFIX = """
 TOOLS:
 ------
 
