@@ -32,6 +32,7 @@ from vertexai.preview.generative_models import (  # type: ignore
 )
 
 from ..orchestrator import BaseOrchestrator, classproperty
+<<<<<<< HEAD
 from .functions import (
     BASE_URL,
     assistant_tool,
@@ -40,6 +41,10 @@ from .functions import (
     get_headers,
     insert_ticket,
 )
+=======
+from ..cymbalair_policy import POLICY
+from .functions import BASE_URL, assistant_tool, function_request, get_headers
+>>>>>>> dbdabf3 (add flight policy)
 
 DEBUG = os.getenv("DEBUG", default=False)
 BASE_HISTORY = {
