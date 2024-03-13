@@ -15,7 +15,7 @@
 from datetime import datetime
 from typing import Dict
 
-from google.cloud.firestore import AsyncClient, Client
+from google.cloud.firestore import AsyncClient, Client  # type: ignore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 import models
