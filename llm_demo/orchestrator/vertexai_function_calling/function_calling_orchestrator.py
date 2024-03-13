@@ -32,6 +32,7 @@ from vertexai.preview.generative_models import (  # type: ignore
 )
 
 from ..orchestrator import BaseOrchestrator, classproperty
+from ..cymbalair_policy import POLICY
 from .functions import BASE_URL, assistant_tool, function_request, get_headers
 
 DEBUG = os.getenv("DEBUG", default=False)
@@ -93,7 +94,7 @@ class UserChatModel:
     def get_prompt(self) -> str:
         formatter = "%A, %m/%d/%Y, %H:%M:%S"
         now = datetime.now(timezone("US/Pacific")).strftime("%A, %m/%d/%Y, %H:%M:%S")
-        prompt = f"{PREFIX}. Today's date and current time is {now}."
+        prompt = f"{PREFIX} {POLICY} Today's date and current time is {now}."
         return prompt
 
     def debug_log(self, output: str) -> None:
