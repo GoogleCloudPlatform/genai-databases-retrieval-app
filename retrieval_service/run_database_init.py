@@ -36,6 +36,7 @@ async def main() -> None:
         flights_blob_path,
         tickets_blob_path,
         seats_blob_path,
+        False,
     )
     await ds.initialize_data(airports, amenities, flights, tickets, seats)
     await ds.close()

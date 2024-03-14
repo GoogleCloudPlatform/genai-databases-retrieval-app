@@ -8,3 +8,11 @@ warn_unused_configs = true
 [[tool.mypy.overrides]]
 module = ["pgvector.asyncpg"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["google.cloud.storage"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["google.cloud.firestore"]
+ignore_missing_imports = true

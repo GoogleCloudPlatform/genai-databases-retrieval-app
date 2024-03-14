@@ -16,7 +16,8 @@ import csv
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Generic, List, Optional, TypeVar
-from google.cloud import storage
+
+from google.cloud.storage import Client as StorageClient
 
 import models
 
@@ -55,9 +56,16 @@ class Client(ABC, Generic[C]):
         flights_ds_path,
         tickets_ds_path,
         seats_ds_path,
-    ) -> tuple[List[models.Airport], List[models.Amenity], List[models.Flight]]:
+        only_load_for_test=False,
+    ) -> tuple[
+        List[models.Airport],
+        List[models.Amenity],
+        List[models.Flight],
+        List[models.Ticket],
+        List[models.Seat],
+    ]:
 
-        storage_client = storage.Client.create_anonymous_client()
+        storage_client = StorageClient.create_anonymous_client()
         bucket = storage_client.bucket(bucket_path)
 
         airports: List[models.Airport] = []
@@ -77,13 +85,31 @@ class Client(ABC, Generic[C]):
 
         tickets: List[models.Ticket] = []
         with bucket.blob(tickets_ds_path).open("rt", encoding="utf-8") as f:
-            reader = csv.DictReader(f, delimiter=",")
-            tickets = [models.Ticket.model_validate(line) for line in reader]
+            if only_load_for_test:
+                reader = csv.DictReader(f, delimiter=",")
+                limited_rows = []
+                for i, row in enumerate(reader):
+                    limited_rows.append(row)
+                    if i == 999:
+                        break
+                tickets = [models.Ticket.model_validate(line) for line in limited_rows]
+            else:
+                reader = csv.DictReader(f, delimiter=",")
+                tickets = [models.Ticket.model_validate(line) for line in reader]
 
         seats: List[models.Seat] = []
         with bucket.blob(seats_ds_path).open("rt", encoding="utf-8") as f:
-            reader = csv.DictReader(f, delimiter=",")
-            seats = [models.Seat.model_validate(line) for line in reader]
+            if only_load_for_test:
+                reader = csv.DictReader(f, delimiter=",")
+                limited_rows = []
+                for i, row in enumerate(reader):
+                    limited_rows.append(row)
+                    if i == 999:
+                        break
+                seats = [models.Seat.model_validate(line) for line in limited_rows]
+            else:
+                reader = csv.DictReader(f, delimiter=",")
+                seats = [models.Seat.model_validate(line) for line in reader]
         return airports, amenities, flights, tickets, seats
 
     async def export_dataset(
@@ -91,9 +117,13 @@ class Client(ABC, Generic[C]):
         airports,
         amenities,
         flights,
+        tickets,
+        seats,
         airports_new_path,
         amenities_new_path,
         flights_new_path,
+        tickets_new_path,
+        seats_new_path,
     ) -> None:
         with open(airports_new_path, "w") as f:
             col_names = ["id", "iata", "name", "city", "country"]
@@ -150,6 +180,41 @@ class Client(ABC, Generic[C]):
             for fl in flights:
                 writer.writerow(fl.model_dump())
 
+        with open(tickets_new_path, "w") as t:
+            col_names = [
+                "id",
+                "user_id",
+                "user_name",
+                "user_email",
+                "airline",
+                "flight_number",
+                "departure_airport",
+                "arrival_airport",
+                "departure_time",
+                "arrival_time",
+                "seat_row",
+                "seat_letter",
+            ]
+            writer = csv.DictWriter(t, col_names, delimiter=",")
+            writer.writeheader()
+            for ti in tickets:
+                writer.writerow(ti.model_dump())
+
+        with open(seats_new_path, "w") as s:
+            col_names = [
+                "flight_id",
+                "seat_row",
+                "seat_letter",
+                "seat_type",
+                "seat_class",
+                "is_reserved",
+                "ticket_id",
+            ]
+            writer = csv.DictWriter(s, col_names, delimiter=",")
+            writer.writeheader()
+            for se in seats:
+                writer.writerow(se.model_dump())
+
     @abstractmethod
     async def initialize_data(
         self,
@@ -164,7 +229,13 @@ class Client(ABC, Generic[C]):
     @abstractmethod
     async def export_data(
         self,
-    ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
+    ) -> tuple[
+        list[models.Airport],
+        list[models.Amenity],
+        list[models.Flight],
+        list[models.Ticket],
+        list[models.Seat],
+    ]:
         pass
 
     @abstractmethod
@@ -227,6 +298,8 @@ class Client(ABC, Generic[C]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
+        seat_row: int | None = None,
+        seat_letter: str | None = None,
     ):
         raise NotImplementedError("Subclass should implement this!")
 

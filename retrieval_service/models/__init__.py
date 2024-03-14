@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .models import Airport, Amenity, Flight, Ticket, Seat
+from .models import Airport, Amenity, Flight, Seat, Ticket
