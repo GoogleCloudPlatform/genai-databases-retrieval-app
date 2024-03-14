@@ -169,7 +169,7 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         )
         current_datetime = "Today's date and current time is {cur_datetime}."
         template = "\n\n".join(
-            [PREFIX, tool_strings, format_instructions, SUFFIX, current_datetime]
+            [PREFIX, current_datetime, TOOLS_PREFIX, tool_strings, format_instructions, SUFFIX]
         )
         human_message_template = "{input}\n\n{agent_scratchpad}"
 
@@ -227,8 +227,9 @@ conversations and provide responses that are coherent and relevant to the topic 
 
 Assistant is a powerful tool that can help answer a wide range of questions pertaining to travel on Cymbal Air
 as well as ammenities of San Francisco Airport. 
+"""
 
-TOOLS:
+TOOLS_PREFIX = """TOOLS:
 ------
 
 Assistant has access to the following tools:"""

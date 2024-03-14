@@ -118,7 +118,7 @@ class ListFlights(BaseModel):
         description="Departure airport 3-letter code",
     )
     arrival_airport: Optional[str] = Field(description="Arrival airport 3-letter code")
-    date: Optional[str] = Field(description="Date of flight departure")
+    date: str = Field(description="Date of flight departure")
 
 
 def generate_list_flights(client: aiohttp.ClientSession):
@@ -338,13 +338,15 @@ async def initialize_tools(client: aiohttp.ClientSession):
             description="""
                         Use this tool to list all flights matching search criteria.
                         Takes an arrival airport, a departure airport, or both, filters by date and returns all matching flights.
+                        If 3-letter iata code is not provided for departure_airport or arrival_airport, use search airport tools to get iata code information.
+                        Do NOT guess a date, ask user for date input if it is not given.
                         The agent can decide to return the results directly to the user.
                         Input of this tool must be in JSON format and include all three inputs - arrival_airport, departure_airport, and date.
                         Example:
                         {{
                             "departure_airport": "SFO",
                             "arrival_airport": null,
-                            "date": null
+                            "date": 2023-10-30"
                         }}
                         Example:
                         {{
