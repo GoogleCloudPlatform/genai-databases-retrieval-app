@@ -16,6 +16,7 @@ import csv
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Generic, List, Optional, TypeVar
+from google.cloud import storage
 
 import models
 
@@ -47,23 +48,43 @@ class Client(ABC, Generic[C]):
         pass
 
     async def load_dataset(
-        self, airports_ds_path, amenities_ds_path, flights_ds_path
+        self,
+        bucket_path,
+        airports_blob_path,
+        amenities_ds_path,
+        flights_ds_path,
+        tickets_ds_path,
+        seats_ds_path,
     ) -> tuple[List[models.Airport], List[models.Amenity], List[models.Flight]]:
+
+        storage_client = storage.Client.create_anonymous_client()
+        bucket = storage_client.bucket(bucket_path)
+
         airports: List[models.Airport] = []
-        with open(airports_ds_path, "r") as f:
+        with bucket.blob(airports_blob_path).open("rt", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter=",")
-            airports = [models.Airport.model_validate(line) for line in reader]
+            airports.extend([models.Airport.model_validate(line) for line in reader])
 
         amenities: list[models.Amenity] = []
-        with open(amenities_ds_path, "r") as f:
+        with bucket.blob(amenities_ds_path).open("rt", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter=",")
             amenities = [models.Amenity.model_validate(line) for line in reader]
 
         flights: List[models.Flight] = []
-        with open(flights_ds_path, "r") as f:
+        with bucket.blob(flights_ds_path).open("rt", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter=",")
             flights = [models.Flight.model_validate(line) for line in reader]
-        return airports, amenities, flights
+
+        tickets: List[models.Ticket] = []
+        with bucket.blob(tickets_ds_path).open("rt", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter=",")
+            tickets = [models.Ticket.model_validate(line) for line in reader]
+
+        seats: List[models.Seat] = []
+        with bucket.blob(seats_ds_path).open("rt", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter=",")
+            seats = [models.Seat.model_validate(line) for line in reader]
+        return airports, amenities, flights, tickets, seats
 
     async def export_dataset(
         self,
@@ -135,6 +156,8 @@ class Client(ABC, Generic[C]):
         airports: list[models.Airport],
         amenities: list[models.Amenity],
         flights: list[models.Flight],
+        tickets: list[models.Ticket],
+        seats: list[models.Seat],
     ) -> None:
         pass
 

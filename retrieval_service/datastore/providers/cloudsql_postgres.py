@@ -81,6 +81,8 @@ class Client(datastore.Client[Config]):
         airports: list[models.Airport],
         amenities: list[models.Amenity],
         flights: list[models.Flight],
+        tickets: list[models.Ticket],
+        seats: list[models.Seat],
     ) -> None:
         async with self.__pool.connect() as conn:
             # If the table already exists, drop it to avoid conflicts

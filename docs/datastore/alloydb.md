@@ -236,7 +236,7 @@ Private IP.
       password: "my-alloydb-pass"
     ```
 
-1. Populate data into database:
+1. Populate data into database. Note: This make take up to 5 minutes.
 
     ```bash
     python run_database_init.py

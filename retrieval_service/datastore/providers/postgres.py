@@ -69,6 +69,8 @@ class Client(datastore.Client[Config]):
         airports: list[models.Airport],
         amenities: list[models.Amenity],
         flights: list[models.Flight],
+        tickets: list[models.Ticket],
+        seats: list[models.Seat],
     ) -> None:
         async with self.__pool.acquire() as conn:
             await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
@@ -207,6 +209,7 @@ class Client(datastore.Client[Config]):
             await conn.execute(
                 """
                 CREATE TABLE tickets(
+                  id INTEGER PRIMARY KEY,
                   user_id TEXT,
                   user_name TEXT,
                   user_email TEXT,
@@ -218,6 +221,58 @@ class Client(datastore.Client[Config]):
                   arrival_time TIMESTAMP
                 )
                 """
+            )
+            # Insert all the data
+            await conn.executemany(
+                """INSERT INTO tickets VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)""",
+                [
+                    (
+                        t.id,
+                        t.user_id,
+                        t.user_name,
+                        t.user_email,
+                        t.airline,
+                        t.flight_number,
+                        t.departure_airport,
+                        t.arrival_airport,
+                        t.departure_time,
+                        t.arrival_time,
+                    )
+                    for t in tickets
+                ],
+            )
+
+            # If the table already exists, drop it to avoid conflicts
+            await conn.execute("DROP TABLE IF EXISTS seats CASCADE")
+            # Create a new table
+            await conn.execute(
+                """
+                CREATE TABLE seats(
+                  flight_id INTEGER,
+                  seat_row INTEGER,
+                  seat_letter TEXT,
+                  seat_type TEXT,
+                  seat_class TEXT,
+                  is_reserved BOOL,
+                  ticket_id INTEGER
+                )
+                """
+            )
+            # Insert all the data
+            await conn.executemany(
+                """INSERT INTO seats VALUES ($1, $2, $3, $4, $5, $6, $7)""",
+                [
+                    (
+                        s.flight_id,
+                        s.seat_row,
+                        s.seat_letter,
+                        s.seat_type,
+                        s.seat_class,
+                        s.is_reserved,
+                        None if s.ticket_id == -1 else s.ticket_id,
+                    )
+                    for s in seats
+                ],
             )
 
     async def export_data(
@@ -440,6 +495,7 @@ class Client(datastore.Client[Config]):
         results = await self.__pool.execute(
             """
                 INSERT INTO tickets (
+                    id,
                     user_id,
                     user_name,
                     user_email,
@@ -450,7 +506,7 @@ class Client(datastore.Client[Config]):
                     departure_time,
                     arrival_time
                 ) VALUES (
-                   $1, $2, $3, $4, $5, $6, $7, $8, $9
+                  (SELECT COALESCE(MAX(id), 0) + 1 FROM tickets), $1, $2, $3, $4, $5, $6, $7, $8, $9
                 );
             """,
             user_id,
