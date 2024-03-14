@@ -223,6 +223,38 @@ def generate_list_tickets(client: aiohttp.ClientSession):
     return list_tickets
 
 
+def generate_list_seats(client: aiohttp.ClientSession):
+    async def list_seats(
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        departure_time: datetime,
+        seat_row: str | None = None,
+        seat_letter: str | None = None,
+        seat_class: str | None = None,
+        seat_type: str | None = None,
+    ):
+        response = await client.get(
+            url=f"{BASE_URL}/seats/search",
+            params={
+                "airline": airline,
+                "flight_number": flight_number,
+                "departure_airport": departure_airport,
+                "departure_time": departure_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "seat_row": seat_row or "",
+                "seat_letter": seat_letter or "",
+                "seat_class": seat_class or "",
+                "seat_type": seat_type or "",
+            },
+            headers=get_headers(client),
+        )
+
+        response = await response.json()
+        return response
+
+    return list_seats
+
+
 # Tools for agent
 async def initialize_tools(client: aiohttp.ClientSession):
     return [
@@ -353,6 +385,52 @@ async def initialize_tools(client: aiohttp.ClientSession):
                         Use this tool to list a user's flight tickets.
                         Takes no input and returns a list of current user's flight tickets.
                         Input is always empty JSON blob. Example: {{}}
+                        """,
+        ),
+        StructuredTool.from_function(
+            coroutine=generate_list_seats(client),
+            name="Find Seats",
+            description="""
+                        Use this tool to find available seats for the user on a flight.
+                        User preference could include any of seat row, letter, class and type or none at all.
+                        Seat rows are are a number
+                        Seat letters can be a letter between A to F
+                        Seat type can be null for no preference, 'A' for aisle, 'W' for window and 'M' for middle.
+                        Seat class can be null for no preference, 'F' for first, 'B' for business, 'P' for premium, and 'E' for economy.
+                        The response format should be seat row and seat number. i.e. Seat 11B, 32A, ..
+                        Example:
+                        {{
+                            "airline": "AA",
+                            "flight_number": "452",
+                            "departure_airport": "LAX",
+                            "departure_time": "2024-01-01 05:50:00",
+                             "seat_row": null,
+                            "seat_letter": null,
+                            "seat_class": "P",
+                            "seat_type": null,
+                        }}
+                        Example:
+                        {{
+                            "airline": "UA",
+                            "flight_number": "1532",
+                            "departure_airport": "SFO",
+                            "departure_time": "2024-01-08 05:50:00",
+                            "seat_row": null,
+                            "seat_letter": null,
+                            "seat_class": "E",
+                            "seat_type": "W",
+                        }}
+                        Example:
+                        {{
+                            "airline": "OO",
+                            "flight_number": "6307",
+                            "departure_airport": "SFO",
+                            "departure_time": "2024-10-28 20:13:00",
+                            "seat_row": 25,
+                            "seat_letter": "B",
+                            "seat_class": null,
+                            "seat_type": null,
+                        }}
                         """,
         ),
     ]

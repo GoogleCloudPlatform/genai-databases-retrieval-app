@@ -436,6 +436,56 @@ class Client(datastore.Client[Config]):
         results = [models.Flight.model_validate(dict(r)) for r in results]
         return results
 
+    async def search_flight_seats(
+        self,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        departure_time: str,
+        seat_row: str | None,
+        seat_letter: str | None,
+        seat_class: str | None,
+        seat_type: str | None,
+    ) -> list[models.Seat]:
+        departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
+        results = await self.__pool.fetch(
+            """
+                SELECT
+                  *
+                FROM
+                  seats
+                WHERE
+                  is_reserved = FALSE
+                  AND flight_id = (
+                  SELECT
+                    id
+                  FROM
+                    flights
+                  WHERE
+                    airline = $1
+                    AND flight_number = $2
+                    AND departure_airport = $3
+                    AND departure_time = $4::timestamp
+                  LIMIT
+                    1)
+                  AND (CAST(seat_row AS VARCHAR) = $5 OR '' = $5)
+                  AND (seat_letter = $6 OR '' = $6)
+                  AND (seat_class = $7 OR '' = $7)
+                  AND (seat_type = $8 OR '' = $8)
+            """,
+            airline,
+            flight_number,
+            departure_airport,
+            departure_time_datetime,
+            seat_row,
+            seat_letter,
+            seat_class,
+            seat_type,
+            timeout=10,
+        )
+        results = [models.Seat.model_validate(dict(r)) for r in results]
+        return results
+
     async def search_flights_by_airports(
         self,
         date: str,

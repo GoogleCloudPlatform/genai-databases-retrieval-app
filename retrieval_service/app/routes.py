@@ -15,12 +15,11 @@
 import os
 from typing import Any, Mapping, Optional
 
+import datastore
 from fastapi import APIRouter, Depends, HTTPException, Request
 from google.auth.transport import requests  # type:ignore
 from google.oauth2 import id_token  # type:ignore
 from langchain.embeddings.base import Embeddings
-
-import datastore
 
 routes = APIRouter()
 
@@ -146,6 +145,32 @@ async def search_flights(
             detail="Request requires query params: arrival_airport, departure_airport, date, or both airline and flight_number",
         )
     return flights
+
+
+@routes.get("/seats/search")
+async def search_seats(
+    request: Request,
+    airline: str,
+    flight_number: str,
+    departure_airport: str,
+    departure_time: str,
+    seat_row: Optional[str] = None,
+    seat_letter: Optional[str] = None,
+    seat_class: Optional[str] = None,
+    seat_type: Optional[str] = None,
+):
+    ds: datastore.Client = request.app.state.datastore
+    seats = await ds.search_flight_seats(
+        airline,
+        flight_number,
+        departure_airport,
+        departure_time,
+        seat_row,
+        seat_letter,
+        seat_class,
+        seat_type,
+    )
+    return seats
 
 
 @routes.post("/tickets/insert")
