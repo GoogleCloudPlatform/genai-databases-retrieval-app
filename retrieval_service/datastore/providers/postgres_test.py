@@ -608,3 +608,59 @@ async def test_search_flights_by_airports(
 ):
     res = await ds.search_flights_by_airports(date, departure_airport, arrival_airport)
     assert res == expected
+
+
+async def test_insert_ticket_failure(ds: postgres.Client):
+    with pytest.raises(Exception, match="No seat on this flight."):
+        await ds.insert_ticket(
+            user_id="123",
+            user_name="Alan Turing",
+            user_email="aturing@gmail.com",
+            airline="UA",
+            flight_number="1187",
+            departure_airport="SFO",
+            arrival_airport="ORD",
+            departure_time="2024-03-15 00:22:00",
+            arrival_time="2024-03-15 06:16:00",
+            seat_row=None,
+            seat_letter=None,
+        )
+
+
+async def test_insert_ticket_success(ds: postgres.Client):
+    res = await ds.insert_ticket(
+        user_id="123123123",
+        user_name="Alan Turing",
+        user_email="aturing@gmail.com",
+        airline="UA",
+        flight_number="1532",
+        departure_airport="SFO",
+        arrival_airport="DEN",
+        departure_time="2024-01-01 05:50:00",
+        arrival_time="2024-01-01 09:23:00",
+        seat_row=None,
+        seat_letter=None,
+    )
+    expected = models.Ticket(
+        id=1000,
+        user_id="123123123",
+        user_name="Alan Turing",
+        user_email="aturing@gmail.com",
+        airline="UA",
+        flight_number="1532",
+        departure_airport="SFO",
+        arrival_airport="DEN",
+        departure_time=datetime.strptime("2024-01-01 05:50:00", "%Y-%m-%d %H:%M:%S"),
+        arrival_time=datetime.strptime("2024-01-01 09:23:00", "%Y-%m-%d %H:%M:%S"),
+        seat_row=8,
+        seat_letter="B",
+    )
+    await confirm_tickets_by_userid(ds, "123123123", expected)
+
+
+async def confirm_tickets_by_userid(
+    ds: postgres.Client, user_id: str, expected: models.Ticket
+):
+    res = await ds.list_tickets(user_id)
+    assert len(res) == 1
+    assert res[0] == expected
