@@ -15,11 +15,12 @@
 import os
 from typing import Any, Mapping, Optional
 
-import datastore
 from fastapi import APIRouter, Depends, HTTPException, Request
 from google.auth.transport import requests  # type:ignore
 from google.oauth2 import id_token  # type:ignore
 from langchain.embeddings.base import Embeddings
+
+import datastore
 
 routes = APIRouter()
 
