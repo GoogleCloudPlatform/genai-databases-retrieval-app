@@ -151,7 +151,14 @@ insert_ticket_func = generative_models.FunctionDeclaration(
                 "description": "The arrival time for flight.",
             },
         },
-        "required": ["airline", "flight_number", "departure_airport", "arrival_airport", "departure_time", "arrival_time"],
+        "required": [
+            "airline",
+            "flight_number",
+            "departure_airport",
+            "arrival_airport",
+            "departure_time",
+            "arrival_time",
+        ],
     },
 )
 

@@ -169,7 +169,14 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         )
         current_datetime = "Today's date and current time is {cur_datetime}."
         template = "\n\n".join(
-            [PREFIX, current_datetime, TOOLS_PREFIX, tool_strings, format_instructions, SUFFIX]
+            [
+                PREFIX,
+                current_datetime,
+                TOOLS_PREFIX,
+                tool_strings,
+                format_instructions,
+                SUFFIX,
+            ]
         )
         human_message_template = "{input}\n\n{agent_scratchpad}"
 
