@@ -174,6 +174,7 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
                 current_datetime,
                 TOOLS_PREFIX,
                 tool_strings,
+                MULTITURN_PROMPT,
                 format_instructions,
                 SUFFIX,
             ]
@@ -273,6 +274,14 @@ Action:
   "action_input": "Final response to human"
 }}}}
 ```"""
+
+MULTITURN_PROMPT = """Assistant will judge if multiple action need to be taken before returning final response to human.
+For example, if user ask 'Where can I get a snack near the gate for flight CY 123?'
+Actions that will be taken by the assistant is as below:
+First, assistant will first complete action for "Search Flights By Flight Number".
+Next, assistant will complete action for "Search Amenities" based on the gate for that flight.
+Lastly, assistant will return final response to human.
+"""
 
 SUFFIX = """Begin! Use tools if necessary. Respond directly if appropriate.
 If using a tool, reminder to ALWAYS respond with a valid json blob of a single action.

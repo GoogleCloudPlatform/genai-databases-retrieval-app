@@ -323,12 +323,24 @@ async def initialize_tools(client: aiohttp.ClientSession):
             coroutine=generate_search_flights_by_number(client),
             name="Search Flights By Flight Number",
             description="""
-                        Use this tool to get info for a specific flight. Do NOT use this tool with a flight id.
-                        Takes an airline and flight number and returns info on the flight.
-                        Do NOT guess an airline or flight number.
-                        A flight number is a code for an airline service consisting of two-character
-                        airline designator and a 1 to 4 digit number ex. OO123, DL 1234, BA 405, AS 3452.
+                        Use this tool to get information for a specific flight.
+                        Takes an airline code and flight number and returns info on the flight.
+                        Do NOT use this tool with a flight id. Do NOT guess an airline code or flight number.
+                        A airline code is a code for an airline service consisting of two-character
+                        airline designator and followed by flight number, which is 1 to 4 digit number.
+                        For example, if given CY 0123, the airline is "CY", and flight_number is "123".
+                        Another example for this is DL 1234, the airline is "DL", and flight_number is "1234".
                         If the tool returns more than one option choose the date closes to today.
+                        Example:
+                        {{
+                            "airline": "CY",
+                            "flight_number": "888",
+                        }}
+                        Example:
+                        {{
+                            "airline": "DL",
+                            "flight_number": "1234",
+                        }}
                         """,
             args_schema=FlightNumberInput,
         ),
@@ -336,10 +348,10 @@ async def initialize_tools(client: aiohttp.ClientSession):
             coroutine=generate_list_flights(client),
             name="List Flights",
             description="""
-                        Use this tool to list all flights matching search criteria.
+                        Use this tool to list flights information matching search criteria.
                         Takes an arrival airport, a departure airport, or both, filters by date and returns all matching flights.
                         If 3-letter iata code is not provided for departure_airport or arrival_airport, use search airport tools to get iata code information.
-                        Do NOT guess a date, ask user for date input if it is not given.
+                        Do NOT guess a date, ask user for date input if it is not given. Date must be in the following format: YYYY-MM-DD.
                         The agent can decide to return the results directly to the user.
                         Input of this tool must be in JSON format and include all three inputs - arrival_airport, departure_airport, and date.
                         Example:
@@ -368,7 +380,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             name="Search Amenities",
             description="""
                         Use this tool to search amenities by name or to recommended airport amenities at SFO.
-                        If user provides flight info, use 'Get Flight' and 'Get Flights by Number'
+                        If user provides flight info, use 'Search Flights by Flight Number'
                         first to get gate info and location.
                         Only recommend amenities that are returned by this query.
                         Find amenities close to the user by matching the terminal and then comparing
