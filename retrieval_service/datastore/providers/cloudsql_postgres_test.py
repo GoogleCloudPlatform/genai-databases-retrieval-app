@@ -114,10 +114,14 @@ async def ds(
     airports_ds_path = "../data/airport_dataset.csv"
     amenities_ds_path = "../data/amenity_dataset.csv"
     flights_ds_path = "../data/flights_dataset.csv"
-    airports, amenities, flights = await ds.load_dataset(
-        airports_ds_path, amenities_ds_path, flights_ds_path
+    policies_ds_path = "../data/cymbalair_policy.csv"
+    airports, amenities, flights, policies = await ds.load_dataset(
+        airports_ds_path,
+        amenities_ds_path,
+        flights_ds_path,
+        policies_ds_path,
     )
-    await ds.initialize_data(airports, amenities, flights)
+    await ds.initialize_data(airports, amenities, flights, policies)
 
     if ds is None:
         raise TypeError("datastore creation failure")
@@ -126,23 +130,27 @@ async def ds(
 
 
 async def test_export_dataset(ds: cloudsql_postgres.Client):
-    airports, amenities, flights = await ds.export_data()
+    airports, amenities, flights, policies = await ds.export_data()
 
     airports_ds_path = "../data/airport_dataset.csv"
     amenities_ds_path = "../data/amenity_dataset.csv"
     flights_ds_path = "../data/flights_dataset.csv"
+    policies_ds_path = "../data/cymbalair_policy.csv"
 
     airports_new_path = "../data/airport_dataset.csv.new"
     amenities_new_path = "../data/amenity_dataset.csv.new"
     flights_new_path = "../data/flights_dataset.csv.new"
+    policies_new_path = "../data/cymbalair_policy.csv.new"
 
     await ds.export_dataset(
         airports,
         amenities,
         flights,
+        policies,
         airports_new_path,
         amenities_new_path,
         flights_new_path,
+        policies_new_path,
     )
 
     diff_airports = compare(
@@ -173,6 +181,15 @@ async def test_export_dataset(ds: cloudsql_postgres.Client):
     assert diff_flights["columns_added"] == []
     assert diff_flights["columns_removed"] == []
 
+    diff_policies = compare(
+        load_csv(open(policies_ds_path), "langchain_id"),
+        load_csv(open(policies_new_path), "langchain_id"),
+    )
+    assert diff_policies["added"] == []
+    assert diff_policies["removed"] == []
+    assert diff_policies["changed"] == []
+    assert diff_policies["columns_added"] == []
+    assert diff_policies["columns_removed"] == []
 
 async def test_get_airport_by_id(ds: cloudsql_postgres.Client):
     res = await ds.get_airport_by_id(1)

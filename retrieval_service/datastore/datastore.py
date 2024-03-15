@@ -47,8 +47,13 @@ class Client(ABC, Generic[C]):
         pass
 
     async def load_dataset(
-        self, airports_ds_path, amenities_ds_path, flights_ds_path
-    ) -> tuple[List[models.Airport], List[models.Amenity], List[models.Flight]]:
+        self, airports_ds_path, amenities_ds_path, flights_ds_path, policies_ds_path
+    ) -> tuple[
+        List[models.Airport],
+        List[models.Amenity],
+        List[models.Flight],
+        List[models.Policy],
+    ]:
         airports: List[models.Airport] = []
         with open(airports_ds_path, "r") as f:
             reader = csv.DictReader(f, delimiter=",")
@@ -63,16 +68,23 @@ class Client(ABC, Generic[C]):
         with open(flights_ds_path, "r") as f:
             reader = csv.DictReader(f, delimiter=",")
             flights = [models.Flight.model_validate(line) for line in reader]
-        return airports, amenities, flights
+    
+        policies: List[models.Policy] = []
+        with open(policies_ds_path, "r") as f:
+            reader = csv.DictReader(f, delimiter=",")
+            policies = [models.Policy.model_validate(line) for line in reader]
+        return airports, amenities, flights, policies
 
     async def export_dataset(
         self,
         airports,
         amenities,
         flights,
+        policies,
         airports_new_path,
         amenities_new_path,
         flights_new_path,
+        policies_new_path,
     ) -> None:
         with open(airports_new_path, "w") as f:
             col_names = ["id", "iata", "name", "city", "country"]
@@ -129,19 +141,36 @@ class Client(ABC, Generic[C]):
             for fl in flights:
                 writer.writerow(fl.model_dump())
 
+        with open(policies_new_path, "w") as f:
+            col_names = [
+                "langchain_id",
+                "content",
+                "metadata",
+                "embedding",
+            ]
+            writer = csv.DictWriter(f, col_names, delimiter=",")
+            writer.writeheader()
+            for p in policies:
+                writer.writerow(p.model_dump())
+
     @abstractmethod
     async def initialize_data(
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
         flights: list[models.Flight],
+        policies: list[models.Policy],
     ) -> None:
         pass
 
     @abstractmethod
     async def export_data(
         self,
-    ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
+        list[models.Airport],
+        list[models.Amenity],
+        list[models.Flight],
+        list[models.Policy],
+    ]:
         pass
 
     @abstractmethod

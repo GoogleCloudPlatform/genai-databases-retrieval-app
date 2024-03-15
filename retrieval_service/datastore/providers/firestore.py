@@ -50,6 +50,7 @@ class Client(datastore.Client[Config]):
         airports: list[models.Airport],
         amenities: list[models.Amenity],
         flights: list[models.Flight],
+        policies: list[models.Policy],
     ) -> None:
         async def delete_collections(collection_list: list[AsyncCollectionReference]):
             # Checks if colelction exists and deletes all documents
@@ -68,7 +69,10 @@ class Client(datastore.Client[Config]):
         airports_ref = self.__client.collection("airports")
         amenities_ref = self.__client.collection("amenities")
         flights_ref = self.__client.collection("flights")
-        await delete_collections([airports_ref, amenities_ref, flights_ref])
+        policies_ref = self.__client.collection("policies")
+        await delete_collections(
+            [airports_ref, amenities_ref, flights_ref, policies_ref]
+        )
 
         # initialize collections
         create_airports_tasks = []
@@ -128,13 +132,32 @@ class Client(datastore.Client[Config]):
                 await asyncio.gather(*create_flights_tasks)
                 create_flights_tasks.clear()
         await asyncio.gather(*create_flights_tasks)
+        create_policies_tasks = []
+        for policy in policies:
+            create_policies_tasks.append(
+                self.__client.collection("policies")
+                .document(str(policy.langchain_id))
+                .set(
+                    {
+                        "content": policy.content,
+                        "metadata": policy.metadata,
+                        "embedding": policy.embedding,
+                    }
+                )
+            )
+        await asyncio.gather(*create_policies_tasks)
 
     async def export_data(
         self,
-    ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
+        list[models.Airport],
+        list[models.Amenity],
+        list[models.Flight],
+        list[models.Policy],
+    ]:
         airport_docs = self.__client.collection("airports").stream()
         amenities_docs = self.__client.collection("amenities").stream()
         flights_docs = self.__client.collection("flights").stream()
+        policies_docs = self.__client.collection("policies").stream()
 
         airports = []
 
@@ -155,7 +178,12 @@ class Client(datastore.Client[Config]):
             flight_dict["id"] = doc.id
             flights.append(models.Flight.model_validate(flight_dict))
 
-        return airports, amenities, flights
+        policies = []
+        async for doc in policies_docs:
+            policy_dict = doc.to_dict()
+            policy_dict["langchain_id"] = doc.langchain_id
+            policies.append(models.Policy.model_validate(policy_dict))
+        return airports, amenities, flights, policies
 
     async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
         query = self.__client.collection("airports").where(
