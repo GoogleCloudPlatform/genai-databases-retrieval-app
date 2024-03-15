@@ -160,7 +160,6 @@ class Client(datastore.Client[Config]):
         policies_docs = self.__client.collection("policies").stream()
 
         airports = []
-
         async for doc in airport_docs:
             airport_dict = doc.to_dict()
             airport_dict["id"] = doc.id

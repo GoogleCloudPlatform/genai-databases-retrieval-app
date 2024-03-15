@@ -240,6 +240,27 @@ class Client(datastore.Client[Config]):
             )
 
             # If the table already exists, drop it to avoid conflicts
+            await conn.execute(text("DROP TABLE IF EXISTS tickets CASCADE"))
+            # Create a new table
+            await conn.execute(
+                text(
+                    """
+                    CREATE TABLE tickets(
+                        user_id TEXT,
+                        user_name TEXT,
+                        user_email TEXT,
+                        airline TEXT,
+                        flight_number TEXT,
+                        departure_airport TEXT,
+                        arrival_airport TEXT,
+                        departure_time TIMESTAMP,
+                        arrival_time TIMESTAMP,
+                    )
+                    """
+                )
+            )
+
+            # If the table already exists, drop it to avoid conflicts
             await conn.execute(text("DROP TABLE IF EXISTS policies CASCADE"))
             # Create a new table
             await conn.execute(
@@ -289,6 +310,9 @@ class Client(datastore.Client[Config]):
             )
             flights_task = asyncio.create_task(
                 conn.execute(text("""SELECT * FROM flights"""))
+            )
+            policy_task = asyncio.create_task(
+                conn.execute(text("""SELECT * FROM policies"""))
             )
             policy_task = asyncio.create_task(
                 conn.execute(text("""SELECT * FROM policies"""))
