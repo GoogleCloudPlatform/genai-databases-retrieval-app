@@ -106,8 +106,8 @@ class Ticket(BaseModel):
     arrival_airport: str
     departure_time: datetime.datetime
     arrival_time: datetime.datetime
-    seat_row: int
-    seat_letter: str
+    seat_row: Optional[int] = None
+    seat_letter: Optional[str] = None
 
 
 class Seat(BaseModel):

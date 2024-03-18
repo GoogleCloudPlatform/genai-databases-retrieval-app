@@ -555,7 +555,7 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         departure_time: str,
-        seat_row: str | None,
+        seat_row: int | None,
         seat_letter: str | None,
         seat_class: str | None,
         seat_type: str | None,

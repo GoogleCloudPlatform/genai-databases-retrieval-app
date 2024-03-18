@@ -180,6 +180,12 @@ class TicketInput(BaseModel):
     arrival_airport: str = Field(description="Arrival airport 3-letter code")
     departure_time: datetime = Field(description="Flight departure datetime")
     arrival_time: datetime = Field(description="Flight arrival datetime")
+    seat_row: Optional[int] = Field(
+        description="A number between 1 to 33 for the seat row",
+    )
+    seat_letter: Optional[str] = Field(
+        description="A single letter between A, B, C, D, E and F",
+    )
 
 
 def generate_insert_ticket(client: aiohttp.ClientSession):
@@ -190,6 +196,8 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
         arrival_airport: str,
         departure_time: datetime,
         arrival_time: datetime,
+        seat_row: int,
+        seat_letter: str,
     ):
         response = await client.post(
             url=f"{BASE_URL}/tickets/insert",
@@ -200,6 +208,8 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
                 "arrival_airport": arrival_airport,
                 "departure_time": departure_time.strftime("%Y-%m-%d %H:%M:%S"),
                 "arrival_time": arrival_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "seat_row": seat_row,
+                "seat_letter": seat_letter,
             },
             headers=get_headers(client),
         )
@@ -223,29 +233,51 @@ def generate_list_tickets(client: aiohttp.ClientSession):
     return list_tickets
 
 
+class SeatInput(BaseModel):
+    airline: str = Field(description="Airline unique 2 letter identifier")
+    flight_number: str = Field(description="1 to 4 digit number")
+    departure_airport: str = Field(
+        description="Departure airport 3-letter code",
+    )
+    departure_time: datetime = Field(description="Flight departure datetime")
+    seat_row: Optional[int] = Field(
+        description="A number between 1 to 33 for the seat row",
+    )
+    seat_letter: Optional[str] = Field(
+        description="A single letter between A, B, C, D, E and F",
+    )
+    seat_class: Optional[str] = Field(
+        description="Can be null for no preference. 'F' for first, 'B' for business, 'P' for premium economy, and 'E' for economy.",
+    )
+    seat_type: Optional[str] = Field(
+        description="Can be null for no preference, 'A' for aisle, 'W' for window and 'M' for middle.",
+    )
+
+
 def generate_list_seats(client: aiohttp.ClientSession):
     async def list_seats(
         airline: str,
         flight_number: str,
         departure_airport: str,
         departure_time: datetime,
-        seat_row: str | None = None,
-        seat_letter: str | None = None,
-        seat_class: str | None = None,
-        seat_type: str | None = None,
+        seat_row: int,
+        seat_letter: str,
+        seat_class: str,
+        seat_type: str,
     ):
+        params = {
+            "airline": airline,
+            "flight_number": flight_number,
+            "departure_airport": departure_airport,
+            "departure_time": departure_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "seat_row": seat_row,
+            "seat_letter": seat_letter,
+            "seat_class": seat_class,
+            "seat_type": seat_type,
+        }
         response = await client.get(
             url=f"{BASE_URL}/seats/search",
-            params={
-                "airline": airline,
-                "flight_number": flight_number,
-                "departure_airport": departure_airport,
-                "departure_time": departure_time.strftime("%Y-%m-%d %H:%M:%S"),
-                "seat_row": seat_row or "",
-                "seat_letter": seat_letter or "",
-                "seat_class": seat_class or "",
-                "seat_type": seat_type or "",
-            },
+            params=filter_none_values(params),
             headers=get_headers(client),
         )
 
@@ -355,7 +387,9 @@ async def initialize_tools(client: aiohttp.ClientSession):
                             "departure_airport": "LAX",
                             "arrival_airport": "SFO",
                             "departure_time": "2024-01-01 05:50:00",
-                            "arrival_time": "2024-01-01 09:23:00"
+                            "arrival_time": "2024-01-01 09:23:00",
+                            "seat_row": null,
+                            "seat_letter": null
                         }}
                         Example:
                         {{
@@ -364,7 +398,9 @@ async def initialize_tools(client: aiohttp.ClientSession):
                             "departure_airport": "SFO",
                             "arrival_airport": "DEN",
                             "departure_time": "2024-01-08 05:50:00",
-                            "arrival_time": "2024-01-08 09:23:00"
+                            "arrival_time": "2024-01-08 09:23:00",
+                            "seat_row": null,
+                            "seat_letter": null,
                         }}
                         Example:
                         {{
@@ -373,7 +409,20 @@ async def initialize_tools(client: aiohttp.ClientSession):
                             "departure_airport": "SFO",
                             "arrival_airport": "MSP",
                             "departure_time": "2024-10-28 20:13:00",
-                            "arrival_time": "2024-10-28 21:07:00"
+                            "arrival_time": "2024-10-28 21:07:00",
+                            "seat_row": null,
+                            "seat_letter": null,
+                        }}
+                        Example with user requesting to book seat 24B:
+                        {{
+                            "airline": "AA",
+                            "flight_number": "452",
+                            "departure_airport": "LAX",
+                            "arrival_airport": "SFO",
+                            "departure_time": "2024-01-01 05:50:00",
+                            "arrival_time": "2024-01-01 09:23:00",
+                            "seat_row": "24",
+                            "seat_letter": "B",
                         }}
                         """,
             args_schema=TicketInput,
@@ -392,24 +441,29 @@ async def initialize_tools(client: aiohttp.ClientSession):
             name="Find Seats",
             description="""
                         Use this tool to find available seats for the user on a flight.
-                        User preference could include any of seat row, letter, class and type or none at all.
-                        Seat rows are are a number
-                        Seat letters can be a letter between A to F
-                        Seat type can be null for no preference, 'A' for aisle, 'W' for window and 'M' for middle.
-                        Seat class can be null for no preference, 'F' for first, 'B' for business, 'P' for premium, and 'E' for economy.
-                        The response format should be seat row and seat number. i.e. Seat 11B, 32A, ..
-                        Example:
+                        Example for searching for a Business class seat on the flight AA 452:
                         {{
                             "airline": "AA",
                             "flight_number": "452",
                             "departure_airport": "LAX",
                             "departure_time": "2024-01-01 05:50:00",
-                             "seat_row": null,
+                            "seat_row": null,
+                            "seat_letter": null,
+                            "seat_class": "B",
+                            "seat_type": null,
+                        }}
+                        Example for searching for a Premium Economy seat on the flight AA 452:
+                        {{
+                            "airline": "AA",
+                            "flight_number": "452",
+                            "departure_airport": "LAX",
+                            "departure_time": "2024-01-01 05:50:00",
+                            "seat_row": null,
                             "seat_letter": null,
                             "seat_class": "P",
                             "seat_type": null,
                         }}
-                        Example:
+                        Example for searching for a Window seat in Economy on the flight UA 1532:
                         {{
                             "airline": "UA",
                             "flight_number": "1532",
@@ -420,7 +474,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
                             "seat_class": "E",
                             "seat_type": "W",
                         }}
-                        Example:
+                        Example for booking seat 25B on the flight OO 6307:
                         {{
                             "airline": "OO",
                             "flight_number": "6307",
@@ -432,5 +486,6 @@ async def initialize_tools(client: aiohttp.ClientSession):
                             "seat_type": null,
                         }}
                         """,
+            args_schema=SeatInput,
         ),
     ]

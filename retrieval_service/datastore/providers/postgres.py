@@ -442,7 +442,7 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         departure_time: str,
-        seat_row: str | None,
+        seat_row: int | None,
         seat_letter: str | None,
         seat_class: str | None,
         seat_type: str | None,
@@ -465,10 +465,10 @@ class Client(datastore.Client[Config]):
                     airline = $1
                     AND flight_number = $2
                     AND departure_airport = $3
-                    AND departure_time = $4::timestamp
+                    AND departure_time = $4
                   LIMIT
                     1)
-                  AND (CAST(seat_row AS VARCHAR) = $5 OR '' = $5)
+                  AND (seat_row = $5 OR -1 = $5)
                   AND (seat_letter = $6 OR '' = $6)
                   AND (seat_class = $7 OR '' = $7)
                   AND (seat_type = $8 OR '' = $8)
@@ -477,10 +477,10 @@ class Client(datastore.Client[Config]):
             flight_number,
             departure_airport,
             departure_time_datetime,
-            seat_row,
-            seat_letter,
-            seat_class,
-            seat_type,
+            seat_row or -1,
+            seat_letter or "",
+            seat_class or "",
+            seat_type or "",
             timeout=10,
         )
         results = [models.Seat.model_validate(dict(r)) for r in results]
@@ -566,6 +566,37 @@ class Client(datastore.Client[Config]):
             raise Exception("Flight information not in database")
         async with self.__pool.acquire() as conn:
             async with conn.transaction():
+                # If a seat is pre-selected, ensure it is not already booked
+                if seat_row is not None or seat_letter is not None:
+                    open_seat = await conn.fetchrow(
+                        """
+                            SELECT seat_row, seat_letter
+                            FROM seats
+                            WHERE flight_id = (
+                                SELECT id
+                                FROM flights
+                                WHERE flight_number = $1 AND
+                                        airline = $2 AND
+                                        departure_airport = $3 AND
+                                        departure_time = $4)
+                                    AND is_reserved = FALSE
+                                    AND seat_row = $5
+                                    AND seat_letter = $6
+                        """,
+                        flight_number,
+                        airline,
+                        departure_airport,
+                        departure_time_datetime,
+                        seat_row,
+                        seat_letter,
+                        timeout=10,
+                    )
+                    if not open_seat:
+                        raise Exception("This seat is already booked on this flight.")
+                    seat_row, seat_letter = (
+                        open_seat["seat_row"],
+                        open_seat["seat_letter"],
+                    )
                 # If no seat is pre-selected, find the first seat on this flight
                 if seat_row is None or seat_letter is None:
                     open_seat = await conn.fetchrow(

@@ -155,7 +155,7 @@ async def search_seats(
     flight_number: str,
     departure_airport: str,
     departure_time: str,
-    seat_row: Optional[str] = None,
+    seat_row: Optional[int] = None,
     seat_letter: Optional[str] = None,
     seat_class: Optional[str] = None,
     seat_type: Optional[str] = None,
@@ -183,6 +183,8 @@ async def insert_ticket(
     arrival_airport: str,
     departure_time: str,
     arrival_time: str,
+    seat_row: Optional[int] = None,
+    seat_letter: Optional[str] = None,
 ):
     user_info = await get_user_info(request)
     if user_info is None:
@@ -201,6 +203,8 @@ async def insert_ticket(
         arrival_airport,
         departure_time,
         arrival_time,
+        seat_row,
+        seat_letter,
     )
     return result
 
