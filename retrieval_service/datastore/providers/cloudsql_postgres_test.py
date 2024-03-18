@@ -112,16 +112,17 @@ async def ds(
     ds = await datastore.create(cfg)
 
     bucket_path = "cloud-samples-data"
-    airports_blob_path = "databases-golden-demo/airport_dataset.csv"
-    amenities_blob_path = "databases-golden-demo/amenity_dataset.csv"
     flights_blob_path = "databases-golden-demo/flights_dataset.csv"
     tickets_blob_path = "databases-golden-demo/tickets_dataset.csv"
     seats_blob_path = "databases-golden-demo/seats_dataset.csv"
 
+    airports_ds_path = "../data/airport_dataset.csv"
+    amenities_ds_path = "../data/amenity_dataset.csv"
+
     airports, amenities, flights, tickets, seats = await ds.load_dataset(
         bucket_path,
-        airports_blob_path,
-        amenities_blob_path,
+        airports_ds_path,
+        amenities_ds_path,
         flights_blob_path,
         tickets_blob_path,
         seats_blob_path,
