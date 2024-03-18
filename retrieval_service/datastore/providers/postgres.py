@@ -252,6 +252,7 @@ class Client(datastore.Client[Config]):
 
     async def export_data(
         self,
+    ) -> tuple[
         list[models.Airport],
         list[models.Amenity],
         list[models.Flight],

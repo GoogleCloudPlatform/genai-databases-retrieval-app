@@ -191,6 +191,7 @@ async def test_export_dataset(ds: cloudsql_postgres.Client):
     assert diff_policies["columns_added"] == []
     assert diff_policies["columns_removed"] == []
 
+
 async def test_get_airport_by_id(ds: cloudsql_postgres.Client):
     res = await ds.get_airport_by_id(1)
     expected = models.Airport(

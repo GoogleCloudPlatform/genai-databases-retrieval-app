@@ -143,6 +143,7 @@ async def test_export_dataset(ds: postgres.Client):
     assert diff_policies["columns_added"] == []
     assert diff_policies["columns_removed"] == []
 
+
 async def test_get_airport_by_id(ds: postgres.Client):
     res = await ds.get_airport_by_id(1)
     expected = models.Airport(

@@ -241,122 +241,6 @@ class Client(datastore.Client[Config]):
             )
 
             # If the table already exists, drop it to avoid conflicts
-            await conn.execute(text("DROP TABLE IF EXISTS tickets CASCADE"))
-            # Create a new table
-            await conn.execute(
-                text(
-                    """
-                    CREATE TABLE tickets(
-                        id INTEGER PRIMARY KEY,
-                        user_id TEXT,
-                        user_name TEXT,
-                        user_email TEXT,
-                        airline TEXT,
-                        flight_number TEXT,
-                        departure_airport TEXT,
-                        arrival_airport TEXT,
-                        departure_time TIMESTAMP,
-                        arrival_time TIMESTAMP,
-                        seat_row INTEGER,
-                        seat_letter TEXT
-                    )
-                    """
-                )
-            )
-            # Insert all the data
-            await conn.execute(
-                text(
-                    """
-                    INSERT INTO tickets VALUES (:id, :user_id, :user_name,
-                      :user_email, :airline, :flight_number,
-                      :departure_airport, :arrival_airport, :departure_time,
-                      :arrival_time, :seat_row, :seat_letter)
-                    """
-                ),
-                [
-                    {
-                        "id": t.id,
-                        "user_id": t.user_id,
-                        "user_name": t.user_name,
-                        "user_email": t.user_email,
-                        "airline": t.airline,
-                        "flight_number": t.flight_number,
-                        "departure_airport": t.departure_airport,
-                        "arrival_airport": t.arrival_airport,
-                        "departure_time": t.departure_time,
-                        "arrival_time": t.arrival_time,
-                        "seat_row": t.seat_row,
-                        "seat_letter": t.seat_letter,
-                    }
-                    for t in tickets
-                ],
-            )
-            await conn.commit()
-
-            # If the table already exists, drop it to avoid conflicts
-            await conn.execute(text("DROP TABLE IF EXISTS seats CASCADE"))
-            # Create a new table
-            await conn.execute(
-                text(
-                    """
-                    CREATE TABLE seats(
-                        flight_id INTEGER,
-                        seat_row INTEGER,
-                        seat_letter TEXT,
-                        seat_type TEXT,
-                        seat_class TEXT,
-                        is_reserved BOOL,
-                        ticket_id INTEGER
-                    )
-                    """
-                )
-            )
-            # Insert all the data
-            await conn.execute(
-                text(
-                    """
-                    INSERT INTO seats VALUES (:flight_id, :seat_row, :seat_letter,
-                      :seat_type, :seat_class, :is_reserved, :ticket_id)
-                    """
-                ),
-                [
-                    {
-                        "flight_id": s.flight_id,
-                        "seat_row": s.seat_row,
-                        "seat_letter": s.seat_letter,
-                        "seat_type": s.seat_type,
-                        "seat_class": s.seat_class,
-                        "is_reserved": s.is_reserved,
-                        "ticket_id": s.ticket_id,
-                    }
-                    for s in seats
-                ],
-            )
-            await conn.commit()
-
-            # If the table already exists, drop it to avoid conflicts
-            await conn.execute(text("DROP TABLE IF EXISTS tickets CASCADE"))
-            # Create a new table
-            await conn.execute(
-                text(
-                    """
-                    CREATE TABLE tickets(
-                        id INTEGER PRIMARY KEY,
-                        user_id TEXT,
-                        user_name TEXT,
-                        user_email TEXT,
-                        airline TEXT,
-                        flight_number TEXT,
-                        departure_airport TEXT,
-                        arrival_airport TEXT,
-                        departure_time TIMESTAMP,
-                        arrival_time TIMESTAMP,
-                    )
-                    """
-                )
-            )
-
-            # If the table already exists, drop it to avoid conflicts
             await conn.execute(text("DROP TABLE IF EXISTS policies CASCADE"))
             # Create a new table
             await conn.execute(
@@ -390,9 +274,9 @@ class Client(datastore.Client[Config]):
             )
             await conn.commit()
 
-
     async def export_data(
         self,
+    ) -> tuple[
         list[models.Airport],
         list[models.Amenity],
         list[models.Flight],
@@ -410,7 +294,7 @@ class Client(datastore.Client[Config]):
                 conn.execute(text("""SELECT * FROM flights"""))
             )
             policy_task = asyncio.create_task(
-                conn6.execute(text("""SELECT * FROM policies"""))
+                conn.execute(text("""SELECT * FROM policies"""))
             )
 
             airport_results = (await airport_task).mappings().fetchall()

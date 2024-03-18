@@ -166,6 +166,7 @@ class Client(ABC, Generic[C]):
     @abstractmethod
     async def export_data(
         self,
+    ) -> tuple[
         list[models.Airport],
         list[models.Amenity],
         list[models.Flight],
