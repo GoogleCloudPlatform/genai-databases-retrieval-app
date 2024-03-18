@@ -254,7 +254,7 @@ class Client(datastore.Client[Config]):
                         departure_airport TEXT,
                         arrival_airport TEXT,
                         departure_time TIMESTAMP,
-                        arrival_time TIMESTAMP,
+                        arrival_time TIMESTAMP
                     )
                     """
                 )
@@ -315,7 +315,7 @@ class Client(datastore.Client[Config]):
                 conn.execute(text("""SELECT * FROM policies"""))
             )
             policy_task = asyncio.create_task(
-                conn6.execute(text("""SELECT * FROM policies"""))
+                conn.execute(text("""SELECT * FROM policies"""))
             )
 
             airport_results = (await airport_task).mappings().fetchall()
@@ -508,6 +508,32 @@ class Client(datastore.Client[Config]):
         user_id: str,
     ) -> list[models.Ticket]:
         raise NotImplementedError("Not Implemented")
+
+    async def policies_search(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> list[models.Policy]:
+        async with self.__pool.connect() as conn:
+            s = text(
+                """
+                SELECT id, content
+                  FROM (
+                      SELECT id, content, 1 - (embedding <=> :query_embedding) AS similarity
+                      FROM policies 
+                      WHERE 1 - (embedding <=> :query_embedding) > :similarity_threshold
+                      ORDER BY similarity DESC
+                      LIMIT :top_k
+                  ) AS sorted_policies
+                """
+            )
+            params = {
+                "query_embedding": query_embedding,
+                "similarity_threshold": similarity_threshold,
+                "top_k": top_k,
+            }
+            results = (await conn.execute(s, params)).mappings().fetchall()
+
+        res = [models.Policy.model_validate(r) for r in results]
+        return res
 
     async def close(self):
         await self.__pool.dispose()

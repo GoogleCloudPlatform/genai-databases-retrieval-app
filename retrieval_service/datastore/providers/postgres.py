@@ -248,35 +248,6 @@ class Client(datastore.Client[Config]):
                 ],
             )
 
-            # If the table already exists, drop it to avoid conflicts
-            await conn.execute("DROP TABLE IF EXISTS policies CASCADE")
-            # Create a new table
-            await conn.execute(
-                """
-                CREATE TABLE policies(
-                  langchain_id INT PRIMARY KEY,
-                  content TEXT NOT NULL,
-                  metadata JSON,
-                  embedding vector(768) NOT NULL
-                )
-                """
-            )
-            # Insert all the data
-            await conn.executemany(
-                """
-                INSERT INTO policies VALUES ($1, $2, $3, $4)
-                """,
-                [
-                    (
-                        p.langchain_id,
-                        p.content,
-                        p.metadata,
-                        p.embedding,
-                    )
-                    for p in policies
-                ],
-            )
-
     async def export_data(
         self,
     ) -> tuple[
@@ -546,6 +517,29 @@ class Client(datastore.Client[Config]):
             timeout=10,
         )
         results = [models.Ticket.model_validate(dict(r)) for r in results]
+        return results
+
+    async def policies_search(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> list[models.Policy]:
+        results = await self.__pool.fetch(
+            """
+            SELECT id, content
+            FROM (
+                SELECT id, content, 1 - (embedding <=> $1) AS similarity
+                FROM policies
+                WHERE 1 - (embedding <=> $1) > $2
+                ORDER BY similarity DESC
+                LIMIT $3
+            ) AS sorted_policies
+            """,
+            query_embedding,
+            similarity_threshold,
+            top_k,
+            timeout=10,
+        )
+
+        results = [models.Policy.model_validate(dict(r)) for r in results]
         return results
 
     async def close(self):

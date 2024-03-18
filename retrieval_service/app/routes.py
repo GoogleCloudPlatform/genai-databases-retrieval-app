@@ -192,3 +192,14 @@ async def list_tickets(
     ds: datastore.Client = request.app.state.datastore
     results = await ds.list_tickets(user_info["user_id"])
     return results
+
+
+@routes.get("/policies/search")
+async def policies_search(query: str, top_k: int, request: Request):
+    ds: datastore.Client = request.app.state.datastore
+
+    embed_service: Embeddings = request.app.state.embed_service
+    query_embedding = embed_service.embed_query(query)
+
+    results = await ds.policies_search(query_embedding, 0.5, top_k)
+    return results

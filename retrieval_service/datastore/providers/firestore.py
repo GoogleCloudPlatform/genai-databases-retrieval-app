@@ -309,5 +309,10 @@ class Client(datastore.Client[Config]):
     ) -> list[models.Ticket]:
         raise NotImplementedError("Not Implemented")
 
+    async def policies_search(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> list[models.Policy]:
+        raise NotImplementedError("Semantic search not yet supported in Firestore.")
+
     async def close(self):
         self.__client.close()
