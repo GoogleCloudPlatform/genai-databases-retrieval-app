@@ -51,11 +51,11 @@ class Client(ABC, Generic[C]):
     async def load_dataset(
         self,
         bucket_path,
-        airports_blob_path,
+        airports_ds_path,
         amenities_ds_path,
-        flights_ds_path,
-        tickets_ds_path,
-        seats_ds_path,
+        flights_blob_path,
+        tickets_blob_path,
+        seats_blob_path,
         only_load_for_test=False,
     ) -> tuple[
         List[models.Airport],
@@ -69,22 +69,22 @@ class Client(ABC, Generic[C]):
         bucket = storage_client.bucket(bucket_path)
 
         airports: List[models.Airport] = []
-        with bucket.blob(airports_blob_path).open("rt", encoding="utf-8") as f:
+        with open(airports_ds_path, "r") as f:
             reader = csv.DictReader(f, delimiter=",")
-            airports.extend([models.Airport.model_validate(line) for line in reader])
+            airports = [models.Airport.model_validate(line) for line in reader]
 
         amenities: list[models.Amenity] = []
-        with bucket.blob(amenities_ds_path).open("rt", encoding="utf-8") as f:
+        with open(amenities_ds_path, "r") as f:
             reader = csv.DictReader(f, delimiter=",")
             amenities = [models.Amenity.model_validate(line) for line in reader]
 
         flights: List[models.Flight] = []
-        with bucket.blob(flights_ds_path).open("rt", encoding="utf-8") as f:
+        with bucket.blob(flights_blob_path).open("rt", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter=",")
             flights = [models.Flight.model_validate(line) for line in reader]
 
         tickets: List[models.Ticket] = []
-        with bucket.blob(tickets_ds_path).open("rt", encoding="utf-8") as f:
+        with bucket.blob(tickets_blob_path).open("rt", encoding="utf-8") as f:
             if only_load_for_test:
                 reader = csv.DictReader(f, delimiter=",")
                 limited_rows = []
@@ -98,7 +98,7 @@ class Client(ABC, Generic[C]):
                 tickets = [models.Ticket.model_validate(line) for line in reader]
 
         seats: List[models.Seat] = []
-        with bucket.blob(seats_ds_path).open("rt", encoding="utf-8") as f:
+        with bucket.blob(seats_blob_path).open("rt", encoding="utf-8") as f:
             if only_load_for_test:
                 reader = csv.DictReader(f, delimiter=",")
                 limited_rows = []
