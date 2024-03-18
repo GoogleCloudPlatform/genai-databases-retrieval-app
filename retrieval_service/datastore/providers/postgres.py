@@ -69,6 +69,8 @@ class Client(datastore.Client[Config]):
         airports: list[models.Airport],
         amenities: list[models.Amenity],
         flights: list[models.Flight],
+        tickets: list[models.Ticket],
+        seats: list[models.Seat],
     ) -> None:
         async with self.__pool.acquire() as conn:
             await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
@@ -207,6 +209,7 @@ class Client(datastore.Client[Config]):
             await conn.execute(
                 """
                 CREATE TABLE tickets(
+                  id INTEGER PRIMARY KEY,
                   user_id TEXT,
                   user_name TEXT,
                   user_email TEXT,
@@ -215,14 +218,76 @@ class Client(datastore.Client[Config]):
                   departure_airport TEXT,
                   arrival_airport TEXT,
                   departure_time TIMESTAMP,
-                  arrival_time TIMESTAMP
+                  arrival_time TIMESTAMP,
+                  seat_row INTEGER,
+                  seat_letter TEXT
                 )
                 """
+            )
+            # Insert all the data
+            await conn.executemany(
+                """INSERT INTO tickets VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)""",
+                [
+                    (
+                        t.id,
+                        t.user_id,
+                        t.user_name,
+                        t.user_email,
+                        t.airline,
+                        t.flight_number,
+                        t.departure_airport,
+                        t.arrival_airport,
+                        t.departure_time,
+                        t.arrival_time,
+                        t.seat_row,
+                        t.seat_letter,
+                    )
+                    for t in tickets
+                ],
+            )
+
+            # If the table already exists, drop it to avoid conflicts
+            await conn.execute("DROP TABLE IF EXISTS seats CASCADE")
+            # Create a new table
+            await conn.execute(
+                """
+                CREATE TABLE seats(
+                  flight_id INTEGER,
+                  seat_row INTEGER,
+                  seat_letter TEXT,
+                  seat_type TEXT,
+                  seat_class TEXT,
+                  is_reserved BOOL,
+                  ticket_id INTEGER
+                )
+                """
+            )
+            # Insert all the data
+            await conn.executemany(
+                """INSERT INTO seats VALUES ($1, $2, $3, $4, $5, $6, $7)""",
+                [
+                    (
+                        s.flight_id,
+                        s.seat_row,
+                        s.seat_letter,
+                        s.seat_type,
+                        s.seat_class,
+                        s.is_reserved,
+                        None if s.ticket_id == -1 else s.ticket_id,
+                    )
+                    for s in seats
+                ],
             )
 
     async def export_data(
         self,
-    ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
+    ) -> tuple[
+        list[models.Airport],
+        list[models.Amenity],
+        list[models.Flight],
+        list[models.Ticket],
+        list[models.Seat],
+    ]:
         airport_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM airports ORDER BY id ASC""")
         )
@@ -232,11 +297,21 @@ class Client(datastore.Client[Config]):
         flight_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM flights ORDER BY id ASC""")
         )
+        tickets_task = asyncio.create_task(
+            self.__pool.fetch("""SELECT * FROM tickets ORDER BY id ASC LIMIT 1000""")
+        )
+        seats_task = asyncio.create_task(
+            self.__pool.fetch(
+                """SELECT * FROM seats ORDER BY flight_id ASC LIMIT 1000"""
+            )
+        )
 
         airports = [models.Airport.model_validate(dict(a)) for a in await airport_task]
         amenities = [models.Amenity.model_validate(dict(a)) for a in await amenity_task]
         flights = [models.Flight.model_validate(dict(f)) for f in await flight_task]
-        return airports, amenities, flights
+        tickets = [models.Ticket.model_validate(dict(t)) for t in await tickets_task]
+        seats = [models.Seat.model_validate(dict(s)) for s in await seats_task]
+        return airports, amenities, flights, tickets, seats
 
     async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
         result = await self.__pool.fetchrow(
@@ -361,6 +436,56 @@ class Client(datastore.Client[Config]):
         results = [models.Flight.model_validate(dict(r)) for r in results]
         return results
 
+    async def search_flight_seats(
+        self,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        departure_time: str,
+        seat_row: int | None,
+        seat_letter: str | None,
+        seat_class: str | None,
+        seat_type: str | None,
+    ) -> list[models.Seat]:
+        departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
+        results = await self.__pool.fetch(
+            """
+                SELECT
+                  *
+                FROM
+                  seats
+                WHERE
+                  is_reserved = FALSE
+                  AND flight_id = (
+                  SELECT
+                    id
+                  FROM
+                    flights
+                  WHERE
+                    airline = $1
+                    AND flight_number = $2
+                    AND departure_airport = $3
+                    AND departure_time = $4
+                  LIMIT
+                    1)
+                  AND (seat_row = $5 OR -1 = $5)
+                  AND (seat_letter = $6 OR '' = $6)
+                  AND (seat_class = $7 OR '' = $7)
+                  AND (seat_type = $8 OR '' = $8)
+            """,
+            airline,
+            flight_number,
+            departure_airport,
+            departure_time_datetime,
+            seat_row or -1,
+            seat_letter or "",
+            seat_class or "",
+            seat_type or "",
+            timeout=10,
+        )
+        results = [models.Seat.model_validate(dict(r)) for r in results]
+        return results
+
     async def search_flights_by_airports(
         self,
         date: str,
@@ -425,6 +550,8 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
+        seat_row: int | None = None,
+        seat_letter: str | None = None,
     ):
         departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
         arrival_time_datetime = datetime.strptime(arrival_time, "%Y-%m-%d %H:%M:%S")
@@ -437,9 +564,87 @@ class Client(datastore.Client[Config]):
             arrival_time_datetime,
         ):
             raise Exception("Flight information not in database")
-        results = await self.__pool.execute(
-            """
-                INSERT INTO tickets (
+        async with self.__pool.acquire() as conn:
+            async with conn.transaction():
+                # If a seat is pre-selected, ensure it is not already booked
+                if seat_row is not None or seat_letter is not None:
+                    open_seat = await conn.fetchrow(
+                        """
+                            SELECT seat_row, seat_letter
+                            FROM seats
+                            WHERE flight_id = (
+                                SELECT id
+                                FROM flights
+                                WHERE flight_number = $1 AND
+                                        airline = $2 AND
+                                        departure_airport = $3 AND
+                                        departure_time = $4)
+                                    AND is_reserved = FALSE
+                                    AND seat_row = $5
+                                    AND seat_letter = $6
+                        """,
+                        flight_number,
+                        airline,
+                        departure_airport,
+                        departure_time_datetime,
+                        seat_row,
+                        seat_letter,
+                        timeout=10,
+                    )
+                    if not open_seat:
+                        raise Exception("This seat is already booked on this flight.")
+                    seat_row, seat_letter = (
+                        open_seat["seat_row"],
+                        open_seat["seat_letter"],
+                    )
+                # If no seat is pre-selected, find the first seat on this flight
+                if seat_row is None or seat_letter is None:
+                    open_seat = await conn.fetchrow(
+                        """
+                            SELECT seat_row, seat_letter
+                            FROM seats
+                            WHERE flight_id = (
+                                SELECT id
+                                FROM flights
+                                WHERE flight_number = $1 AND
+                                        airline = $2 AND
+                                        departure_airport = $3 AND
+                                        departure_time = $4)
+                                    AND is_reserved = FALSE;
+                        """,
+                        flight_number,
+                        airline,
+                        departure_airport,
+                        departure_time_datetime,
+                        timeout=10,
+                    )
+                    if not open_seat:
+                        raise Exception("No seat on this flight.")
+                    seat_row, seat_letter = (
+                        open_seat["seat_row"],
+                        open_seat["seat_letter"],
+                    )
+                # Book the ticket
+                ticket_id = None
+                ticket_booking_result = await conn.fetchrow(
+                    """
+                        INSERT INTO tickets (
+                            id,
+                            user_id,
+                            user_name,
+                            user_email,
+                            airline,
+                            flight_number,
+                            departure_airport,
+                            arrival_airport,
+                            departure_time,
+                            arrival_time,
+                            seat_row,
+                            seat_letter
+                        ) VALUES (
+                        (SELECT COALESCE(MAX(id), 0) + 1 FROM tickets), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+                        ) RETURNING id;
+                    """,
                     user_id,
                     user_name,
                     user_email,
@@ -447,25 +652,42 @@ class Client(datastore.Client[Config]):
                     flight_number,
                     departure_airport,
                     arrival_airport,
-                    departure_time,
-                    arrival_time
-                ) VALUES (
-                   $1, $2, $3, $4, $5, $6, $7, $8, $9
-                );
-            """,
-            user_id,
-            user_name,
-            user_email,
-            airline,
-            flight_number,
-            departure_airport,
-            arrival_airport,
-            departure_time_datetime,
-            arrival_time_datetime,
-            timeout=10,
-        )
-        if results != "INSERT 0 1":
-            raise Exception("Ticket Insertion failure")
+                    departure_time_datetime,
+                    arrival_time_datetime,
+                    seat_row,
+                    seat_letter,
+                    timeout=10,
+                )
+                if ticket_booking_result:
+                    ticket_id = ticket_booking_result["id"]
+                else:
+                    raise Exception("Ticket Insertion failure")
+                # Book the seat in the same transaction
+                seat_booking_result = await conn.execute(
+                    """
+                        UPDATE seats
+                        SET is_reserved = TRUE, ticket_id = $1
+                        WHERE flight_id = (
+                            SELECT id
+                            FROM flights
+                            WHERE flight_number = $2 AND
+                                    airline = $3 AND
+                                    departure_airport = $4 AND
+                                    departure_time = $5)
+                                AND seat_row = $6
+                                AND seat_letter = $7
+                    """,
+                    ticket_id,
+                    flight_number,
+                    airline,
+                    departure_airport,
+                    departure_time_datetime,
+                    seat_row,
+                    seat_letter,
+                    timeout=10,
+                )
+                if seat_booking_result != "UPDATE 1":
+                    raise Exception("Ticket - Seat Update failure")
 
     async def list_tickets(
         self,
