@@ -292,6 +292,7 @@ class Client(datastore.Client[Config]):
             )
             await conn.commit()
 
+
     async def export_data(
         self,
     ) -> tuple[
@@ -315,7 +316,7 @@ class Client(datastore.Client[Config]):
                 conn.execute(text("""SELECT * FROM policies"""))
             )
             policy_task = asyncio.create_task(
-                conn.execute(text("""SELECT * FROM policies"""))
+                conn6.execute(text("""SELECT * FROM policies"""))
             )
 
             airport_results = (await airport_task).mappings().fetchall()
