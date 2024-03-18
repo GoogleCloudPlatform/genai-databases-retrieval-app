@@ -141,7 +141,7 @@
       password: "my-cloudsql-pass"
     ```
 
-1. Populate data into database:
+1. Populate data into database. Note: This may take up to 5 minutes.
 
     ```bash
     python run_database_init.py
