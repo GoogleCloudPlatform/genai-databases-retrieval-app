@@ -106,22 +106,6 @@ class Ticket(BaseModel):
     arrival_airport: str
     departure_time: datetime.datetime
     arrival_time: datetime.datetime
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-    seat_row: Optional[int] = None
-    seat_letter: Optional[str] = None
-
-
-class Seat(BaseModel):
-    flight_id: int
-    seat_row: int
-    seat_letter: str
-    seat_type: str
-    seat_class: str
-    is_reserved: bool
-    ticket_id: int | None
-=======
 
 
 class Policy(BaseModel):
@@ -143,5 +127,3 @@ class Policy(BaseModel):
             return json.loads(v)
         except:
             return json.dumps(v)
->>>>>>> 5129879 (add policy to vector store)
->>>>>>> 07736b2 (add policy to vector store)

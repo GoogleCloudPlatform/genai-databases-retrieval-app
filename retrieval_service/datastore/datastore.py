@@ -68,7 +68,7 @@ class Client(ABC, Generic[C]):
         with open(flights_ds_path, "r") as f:
             reader = csv.DictReader(f, delimiter=",")
             flights = [models.Flight.model_validate(line) for line in reader]
-    
+
         policies: List[models.Policy] = []
         with open(policies_ds_path, "r") as f:
             reader = csv.DictReader(f, delimiter=",")
