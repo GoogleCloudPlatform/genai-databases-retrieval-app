@@ -44,7 +44,7 @@ search_amenities_func = generative_models.FunctionDeclaration(
     name="amenities_search",
     description="""
                 Use this tool to search amenities by name or to recommended airport amenities at SFO.
-                If user provides flight info, use 'Get Flight' and 'Get Flights by Number'
+                If user provides flight info, use 'search_flights_by_number'
                 first to get gate info and location.
                 Only recommend amenities that are returned by this query.
                 Find amenities close to the user by matching the terminal and then comparing
@@ -66,7 +66,7 @@ search_amenities_func = generative_models.FunctionDeclaration(
 )
 
 search_flights_by_number_func = generative_models.FunctionDeclaration(
-    name="flights_search",
+    name="search_flights_by_number",
     description="""
                 Use this tool to get info for a specific flight. Do NOT use this tool with a flight id.
                 Takes an airline and flight number and returns info on the flight.
@@ -92,7 +92,7 @@ search_flights_by_number_func = generative_models.FunctionDeclaration(
 )
 
 list_flights_func = generative_models.FunctionDeclaration(
-    name="flights_search",
+    name="list_flights",
     description="""
                 Use this tool to list all flights matching search criteria.
                 Takes an arrival airport, a departure airport, or both, filters by date and returns all matching flights.
@@ -202,7 +202,7 @@ def get_headers(client: aiohttp.ClientSession):
 def function_request(function_call_name: str) -> str:
     functions_url = {
         "airports_search": "airports/search",
-        "flights_search": "flights/search",
+        "search_flights_by_number": "flights/search",
         "list_flights": "flights/search",
         "amenities_search": "amenities/search",
         "insert_ticket": "tickets/insert",
