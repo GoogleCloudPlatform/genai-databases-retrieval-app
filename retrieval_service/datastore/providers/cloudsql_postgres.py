@@ -292,7 +292,6 @@ class Client(datastore.Client[Config]):
             )
             await conn.commit()
 
-
     async def export_data(
         self,
     ) -> tuple[
