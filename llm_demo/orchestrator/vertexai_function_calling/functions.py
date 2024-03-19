@@ -22,7 +22,11 @@ CREDENTIALS = None
 
 search_airports_func = generative_models.FunctionDeclaration(
     name="airports_search",
-    description="Use this tool to list all airports matching search criteria. Takes at least one of country, city, name, or all of the above criteria. This function could also be used to search for airport information such as iata code.",
+    description="""
+                Use this tool to list all airports matching search criteria.
+                Takes at least one of country, city, name, or all and returns all matching airports.
+                This function could also be used to serach for airport information such as iata code.
+                """,
     parameters={
         "type": "object",
         "properties": {
@@ -38,7 +42,16 @@ search_airports_func = generative_models.FunctionDeclaration(
 
 search_amenities_func = generative_models.FunctionDeclaration(
     name="amenities_search",
-    description="Use this tool to search amenities by name or to recommend airport amenities at SFO. If top_k is not specified, default to 5",
+    description="""
+                Use this tool to search amenities by name or to recommended airport amenities at SFO.
+                If user provides flight info, use 'search_flights_by_number'
+                first to get gate info and location.
+                Only recommend amenities that are returned by this query.
+                Find amenities close to the user by matching the terminal and then comparing
+                the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
+                B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
+                top_k value is defaulted to 5.
+                """,
     parameters={
         "type": "object",
         "properties": {
@@ -48,12 +61,20 @@ search_amenities_func = generative_models.FunctionDeclaration(
                 "description": "Number of matching amenities to return. Default this value to 5.",
             },
         },
+        "required": ["query", "top_k"],
     },
 )
 
 search_flights_by_number_func = generative_models.FunctionDeclaration(
-    name="flights_search",
-    description="Use this tool to get info for a specific flight. This function takes an airline and flight number and returns info on the flight.",
+    name="search_flights_by_number",
+    description="""
+                Use this tool to get info for a specific flight. Do NOT use this tool with a flight id.
+                Takes an airline and flight number and returns info on the flight.
+                Do NOT guess an airline or flight number.
+                A flight number is a code for an airline service consisting of two-character
+                airline designator and a 1 to 4 digit number ex. OO123, DL 1234, BA 405, AS 3452.
+                If the tool returns more than one option choose the date closes to today.
+                """,
     parameters={
         "type": "object",
         "properties": {
@@ -66,28 +87,36 @@ search_flights_by_number_func = generative_models.FunctionDeclaration(
                 "description": "A 1 to 4 digit number of the flight.",
             },
         },
+        "required": ["airline", "flight_number"],
     },
 )
 
 list_flights_func = generative_models.FunctionDeclaration(
-    name="flights_search",
-    description="Use this tool to list all flights matching search criteria. This function takes an arrival airport, a departure airport, or both, filters by date and returns all matching flight. The format of date must be YYYY-MM-DD. Convert terms like today or yesterday to a valid date format.",
+    name="list_flights",
+    description="""
+                Use this tool to list all flights matching search criteria.
+                Takes an arrival airport, a departure airport, or both, filters by date and returns all matching flights.
+                Date must be provided, prompt user if it is not given.
+                The format of date must be YYYY-MM-DD. Convert terms like 'today' or 'yesterday' to a valid date format.
+                If iata code is not provided for departure_airport or arrival_airport, use airports_search function to get iata code.
+                """,
     parameters={
         "type": "object",
         "properties": {
             "departure_airport": {
                 "type": "string",
-                "description": "The iata code for flight departure airport.",
+                "description": "The iata code for flight departure airport. Example: 'SFO', 'DEN'.",
             },
             "arrival_airport": {
                 "type": "string",
-                "description": "The iata code for flight arrival airport.",
+                "description": "The iata code for flight arrival airport. Example: 'SFO', 'DEN'.",
             },
             "date": {
                 "type": "string",
                 "description": "The date of flight must be in the following format: YYYY-MM-DD.",
             },
         },
+        "required": ["date"],
     },
 )
 
@@ -122,6 +151,14 @@ insert_ticket_func = generative_models.FunctionDeclaration(
                 "description": "The arrival time for flight.",
             },
         },
+        "required": [
+            "airline",
+            "flight_number",
+            "departure_airport",
+            "arrival_airport",
+            "departure_time",
+            "arrival_time",
+        ],
     },
 )
 
@@ -165,7 +202,7 @@ def get_headers(client: aiohttp.ClientSession):
 def function_request(function_call_name: str) -> str:
     functions_url = {
         "airports_search": "airports/search",
-        "flights_search": "flights/search",
+        "search_flights_by_number": "flights/search",
         "list_flights": "flights/search",
         "amenities_search": "amenities/search",
         "insert_ticket": "tickets/insert",
