@@ -167,7 +167,12 @@ class Client(ABC, Generic[C]):
 
     @abstractmethod
     async def amenities_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        filter_time: Optional[str],
+        filter_day: Optional[str],
     ) -> list[models.Amenity]:
         raise NotImplementedError("Subclass should implement this!")
 

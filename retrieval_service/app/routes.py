@@ -107,13 +107,27 @@ async def get_amenity(id: int, request: Request):
 
 
 @routes.get("/amenities/search")
-async def amenities_search(query: str, top_k: int, request: Request):
+async def amenities_search(
+    request: Request,
+    query: str,
+    top_k: int,
+    filter_time: Optional[str] = None,
+    filter_day: Optional[str] = None,
+):
     ds: datastore.Client = request.app.state.datastore
+
+    if (filter_time and not filter_day) or (filter_day and not filter_time):
+        raise HTTPException(
+            status_code=422,
+            detail="Request requires query params: provide none or both of filter_time and filter_day",
+        )
 
     embed_service: Embeddings = request.app.state.embed_service
     query_embedding = embed_service.embed_query(query)
 
-    results = await ds.amenities_search(query_embedding, 0.5, top_k)
+    results = await ds.amenities_search(
+        query_embedding, 0.5, top_k, filter_time, filter_day
+    )
     return results
 
 

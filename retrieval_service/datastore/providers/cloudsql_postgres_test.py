@@ -321,6 +321,8 @@ amenities_search_test_data = [
         query_embedding1,
         0.65,
         1,
+        "10:00:00",
+        "wednesday",
         [
             models.Amenity(
                 id=0,
@@ -355,6 +357,8 @@ amenities_search_test_data = [
         query_embedding2,
         0.65,
         2,
+        "17:00:00",
+        "thursday",
         [
             models.Amenity(
                 id=63,
@@ -414,6 +418,8 @@ amenities_search_test_data = [
         query_embedding3,
         0.9,
         1,
+        "12:00:00",
+        "friday",
         [],
         id="no_results",
     ),
@@ -421,16 +427,21 @@ amenities_search_test_data = [
 
 
 @pytest.mark.parametrize(
-    "query_embedding, similarity_threshold, top_k, expected", amenities_search_test_data
+    "query_embedding, similarity_threshold, top_k, filter_time, filter_day, expected",
+    amenities_search_test_data,
 )
 async def test_amenities_search(
     ds: cloudsql_postgres.Client,
     query_embedding: List[float],
     similarity_threshold: float,
     top_k: int,
+    filter_time: str,
+    filter_day: str,
     expected: List[models.Amenity],
 ):
-    res = await ds.amenities_search(query_embedding, similarity_threshold, top_k)
+    res = await ds.amenities_search(
+        query_embedding, similarity_threshold, top_k, filter_time, filter_day
+    )
     assert res == expected
 
 

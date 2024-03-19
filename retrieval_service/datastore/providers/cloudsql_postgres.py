@@ -330,17 +330,34 @@ class Client(datastore.Client[Config]):
         return res
 
     async def amenities_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        filter_time: Optional[str],
+        filter_day: Optional[str],
     ) -> list[models.Amenity]:
+
+        filter_time_datetime = None
+        filter_query = "WHERE "
+        if filter_time and filter_day:
+            start_hour = filter_day + "_start_hour"
+            end_hour = filter_day + "_end_hour"
+            filter_time_datetime = datetime.strptime(filter_time, "%H:%M:%S").time()
+            filter_query += f""" {start_hour} <= CAST(:filter_time AS TIME)
+                      AND {end_hour} > CAST(:filter_time AS TIME)
+                      AND
+                """
+        filter_query += " 1 - (embedding <=> :query_embedding) > :similarity_threshold"
+
         async with self.__pool.connect() as conn:
             s = text(
-                """
+                f"""
                 SELECT id, name, description, location, terminal, category, hour
                   FROM (
-                      SELECT id, name, description, location, terminal, category, hour,
-                        1 - (embedding <=> :query_embedding) AS similarity
+                      SELECT *, 1 - (embedding <=> :query_embedding) AS similarity
                       FROM amenities
-                      WHERE 1 - (embedding <=> :query_embedding) > :similarity_threshold
+                      {filter_query}
                       ORDER BY similarity DESC
                       LIMIT :top_k
                   ) AS sorted_amenities
@@ -350,6 +367,7 @@ class Client(datastore.Client[Config]):
                 "query_embedding": query_embedding,
                 "similarity_threshold": similarity_threshold,
                 "top_k": top_k,
+                "filter_time": filter_time_datetime,
             }
             results = (await conn.execute(s, params)).mappings().fetchall()
 
