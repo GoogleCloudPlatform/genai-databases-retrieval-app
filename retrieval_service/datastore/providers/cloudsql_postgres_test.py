@@ -111,23 +111,13 @@ async def ds(
     t = create_db
     ds = await datastore.create(cfg)
 
-    bucket_path = "cloud-samples-data"
-    airports_blob_path = "databases-golden-demo/airport_dataset.csv"
-    amenities_blob_path = "databases-golden-demo/amenity_dataset.csv"
-    flights_blob_path = "databases-golden-demo/flights_dataset.csv"
-    tickets_blob_path = "databases-golden-demo/tickets_dataset.csv"
-    seats_blob_path = "databases-golden-demo/seats_dataset.csv"
-
-    airports, amenities, flights, tickets, seats = await ds.load_dataset(
-        bucket_path,
-        airports_blob_path,
-        amenities_blob_path,
-        flights_blob_path,
-        tickets_blob_path,
-        seats_blob_path,
-        True,
+    airports_ds_path = "../data/airport_dataset.csv"
+    amenities_ds_path = "../data/amenity_dataset.csv"
+    flights_ds_path = "../data/flights_dataset.csv"
+    airports, amenities, flights = await ds.load_dataset(
+        airports_ds_path, amenities_ds_path, flights_ds_path
     )
-    await ds.initialize_data(airports, amenities, flights, tickets, seats)
+    await ds.initialize_data(airports, amenities, flights)
 
     if ds is None:
         raise TypeError("datastore creation failure")
@@ -136,31 +126,23 @@ async def ds(
 
 
 async def test_export_dataset(ds: cloudsql_postgres.Client):
-    airports, amenities, flights, tickets, seats = await ds.export_data()
+    airports, amenities, flights = await ds.export_data()
 
     airports_ds_path = "../data/airport_dataset.csv"
     amenities_ds_path = "../data/amenity_dataset.csv"
     flights_ds_path = "../data/flights_dataset.csv"
-    tickets_ds_path = "../data/tickets_dataset.csv"
-    seats_ds_path = "../data/seats_dataset.csv"
 
     airports_new_path = "../data/airport_dataset.csv.new"
     amenities_new_path = "../data/amenity_dataset.csv.new"
     flights_new_path = "../data/flights_dataset.csv.new"
-    tickets_new_path = "../data/tickets_dataset.csv.new"
-    seats_new_path = "../data/seats_dataset.csv.new"
 
     await ds.export_dataset(
         airports,
         amenities,
         flights,
-        tickets,
-        seats,
         airports_new_path,
         amenities_new_path,
         flights_new_path,
-        tickets_new_path,
-        seats_new_path,
     )
 
     diff_airports = compare(
@@ -190,15 +172,6 @@ async def test_export_dataset(ds: cloudsql_postgres.Client):
     assert diff_flights["changed"] == []
     assert diff_flights["columns_added"] == []
     assert diff_flights["columns_removed"] == []
-
-    diff_tickets = compare(
-        load_csv(open(tickets_ds_path), "id"), load_csv(open(tickets_new_path), "id")
-    )
-    assert diff_tickets["added"] == []
-    assert diff_tickets["removed"] == []
-    assert diff_tickets["changed"] == []
-    assert diff_tickets["columns_added"] == []
-    assert diff_tickets["columns_removed"] == []
 
 
 async def test_get_airport_by_id(ds: cloudsql_postgres.Client):

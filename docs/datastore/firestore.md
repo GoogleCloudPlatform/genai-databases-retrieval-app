@@ -33,7 +33,7 @@
     cd retrieval_service
     ```
 
-1. Populate your Firestore database with the command below. Note: This may take up to 10 minutes.
+1. Populate your Firestore database with the command below. It will take several minutes to run:
 
     ```bash
     python run_database_init.py
