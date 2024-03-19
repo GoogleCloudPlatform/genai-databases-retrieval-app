@@ -148,32 +148,6 @@ async def search_flights(
     return flights
 
 
-@routes.get("/seats/search")
-async def search_seats(
-    request: Request,
-    airline: str,
-    flight_number: str,
-    departure_airport: str,
-    departure_time: str,
-    seat_row: Optional[int] = None,
-    seat_letter: Optional[str] = None,
-    seat_class: Optional[str] = None,
-    seat_type: Optional[str] = None,
-):
-    ds: datastore.Client = request.app.state.datastore
-    seats = await ds.search_flight_seats(
-        airline,
-        flight_number,
-        departure_airport,
-        departure_time,
-        seat_row,
-        seat_letter,
-        seat_class,
-        seat_type,
-    )
-    return seats
-
-
 @routes.post("/tickets/insert")
 async def insert_ticket(
     request: Request,
@@ -183,8 +157,6 @@ async def insert_ticket(
     arrival_airport: str,
     departure_time: str,
     arrival_time: str,
-    seat_row: Optional[int] = None,
-    seat_letter: Optional[str] = None,
 ):
     user_info = await get_user_info(request)
     if user_info is None:
@@ -203,8 +175,6 @@ async def insert_ticket(
         arrival_airport,
         departure_time,
         arrival_time,
-        seat_row,
-        seat_letter,
     )
     return result
 

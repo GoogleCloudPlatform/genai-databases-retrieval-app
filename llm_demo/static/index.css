@@ -66,6 +66,8 @@ body {
             margin-left: 10px;
             height: 32px;
             font-family: "Roboto";
+            fill: "none";
+            outline: 1px;
         }
     }
 }
@@ -99,6 +101,8 @@ body {
 .chat-content {
     overflow-y: scroll;
     margin-bottom: 10px;
+    width: 100%;
+    height: 100%;
 }
 
 div.chat-content>span {
@@ -158,8 +162,8 @@ div.chat-wrapper div.chat-content div.human span {
     height: auto;
     display: inline-block;
     padding: 10px 12px;
-    background: #2a3ee5;
-    color: #F1F6F9;
+    background: #D2E3FC;
+    color: #000;
     border-radius: 10px;
 }
 

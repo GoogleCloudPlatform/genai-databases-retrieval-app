@@ -17,8 +17,6 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Generic, List, Optional, TypeVar
 
-from google.cloud.storage import Client as StorageClient
-
 import models
 
 
@@ -49,81 +47,32 @@ class Client(ABC, Generic[C]):
         pass
 
     async def load_dataset(
-        self,
-        bucket_path,
-        airports_blob_path,
-        amenities_ds_path,
-        flights_ds_path,
-        tickets_ds_path,
-        seats_ds_path,
-        only_load_for_test=False,
-    ) -> tuple[
-        List[models.Airport],
-        List[models.Amenity],
-        List[models.Flight],
-        List[models.Ticket],
-        List[models.Seat],
-    ]:
-
-        storage_client = StorageClient.create_anonymous_client()
-        bucket = storage_client.bucket(bucket_path)
-
+        self, airports_ds_path, amenities_ds_path, flights_ds_path
+    ) -> tuple[List[models.Airport], List[models.Amenity], List[models.Flight]]:
         airports: List[models.Airport] = []
-        with bucket.blob(airports_blob_path).open("rt", encoding="utf-8") as f:
+        with open(airports_ds_path, "r") as f:
             reader = csv.DictReader(f, delimiter=",")
-            airports.extend([models.Airport.model_validate(line) for line in reader])
+            airports = [models.Airport.model_validate(line) for line in reader]
 
         amenities: list[models.Amenity] = []
-        with bucket.blob(amenities_ds_path).open("rt", encoding="utf-8") as f:
+        with open(amenities_ds_path, "r") as f:
             reader = csv.DictReader(f, delimiter=",")
             amenities = [models.Amenity.model_validate(line) for line in reader]
 
         flights: List[models.Flight] = []
-        with bucket.blob(flights_ds_path).open("rt", encoding="utf-8") as f:
+        with open(flights_ds_path, "r") as f:
             reader = csv.DictReader(f, delimiter=",")
             flights = [models.Flight.model_validate(line) for line in reader]
-
-        tickets: List[models.Ticket] = []
-        with bucket.blob(tickets_ds_path).open("rt", encoding="utf-8") as f:
-            if only_load_for_test:
-                reader = csv.DictReader(f, delimiter=",")
-                limited_rows = []
-                for i, row in enumerate(reader):
-                    limited_rows.append(row)
-                    if i == 999:
-                        break
-                tickets = [models.Ticket.model_validate(line) for line in limited_rows]
-            else:
-                reader = csv.DictReader(f, delimiter=",")
-                tickets = [models.Ticket.model_validate(line) for line in reader]
-
-        seats: List[models.Seat] = []
-        with bucket.blob(seats_ds_path).open("rt", encoding="utf-8") as f:
-            if only_load_for_test:
-                reader = csv.DictReader(f, delimiter=",")
-                limited_rows = []
-                for i, row in enumerate(reader):
-                    limited_rows.append(row)
-                    if i == 999:
-                        break
-                seats = [models.Seat.model_validate(line) for line in limited_rows]
-            else:
-                reader = csv.DictReader(f, delimiter=",")
-                seats = [models.Seat.model_validate(line) for line in reader]
-        return airports, amenities, flights, tickets, seats
+        return airports, amenities, flights
 
     async def export_dataset(
         self,
         airports,
         amenities,
         flights,
-        tickets,
-        seats,
         airports_new_path,
         amenities_new_path,
         flights_new_path,
-        tickets_new_path,
-        seats_new_path,
     ) -> None:
         with open(airports_new_path, "w") as f:
             col_names = ["id", "iata", "name", "city", "country"]
@@ -180,62 +129,19 @@ class Client(ABC, Generic[C]):
             for fl in flights:
                 writer.writerow(fl.model_dump())
 
-        with open(tickets_new_path, "w") as t:
-            col_names = [
-                "id",
-                "user_id",
-                "user_name",
-                "user_email",
-                "airline",
-                "flight_number",
-                "departure_airport",
-                "arrival_airport",
-                "departure_time",
-                "arrival_time",
-                "seat_row",
-                "seat_letter",
-            ]
-            writer = csv.DictWriter(t, col_names, delimiter=",")
-            writer.writeheader()
-            for ti in tickets:
-                writer.writerow(ti.model_dump())
-
-        with open(seats_new_path, "w") as s:
-            col_names = [
-                "flight_id",
-                "seat_row",
-                "seat_letter",
-                "seat_type",
-                "seat_class",
-                "is_reserved",
-                "ticket_id",
-            ]
-            writer = csv.DictWriter(s, col_names, delimiter=",")
-            writer.writeheader()
-            for se in seats:
-                writer.writerow(se.model_dump())
-
     @abstractmethod
     async def initialize_data(
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
         flights: list[models.Flight],
-        tickets: list[models.Ticket],
-        seats: list[models.Seat],
     ) -> None:
         pass
 
     @abstractmethod
     async def export_data(
         self,
-    ) -> tuple[
-        list[models.Airport],
-        list[models.Amenity],
-        list[models.Flight],
-        list[models.Ticket],
-        list[models.Seat],
-    ]:
+    ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
         pass
 
     @abstractmethod
@@ -287,20 +193,6 @@ class Client(ABC, Generic[C]):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
-    async def search_flight_seats(
-        self,
-        airline: str,
-        flight_number: str,
-        departure_airport: str,
-        departure_time: str,
-        seat_row: int | None,
-        seat_letter: str | None,
-        seat_class: str | None,
-        seat_type: str | None,
-    ) -> list[models.Seat]:
-        raise NotImplementedError("Subclass should implement this!")
-
-    @abstractmethod
     async def insert_ticket(
         self,
         user_id: str,
@@ -312,8 +204,6 @@ class Client(ABC, Generic[C]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
-        seat_row: int | None = None,
-        seat_letter: str | None = None,
     ):
         raise NotImplementedError("Subclass should implement this!")
 

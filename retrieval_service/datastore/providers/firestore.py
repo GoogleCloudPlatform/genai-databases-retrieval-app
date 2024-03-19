@@ -16,7 +16,7 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Literal, Optional
 
-from google.cloud.firestore import AsyncClient as FirestoreAsyncClient
+from google.cloud.firestore import AsyncClient  # type: ignore
 from google.cloud.firestore_v1.async_collection import AsyncCollectionReference
 from google.cloud.firestore_v1.base_query import FieldFilter
 from pydantic import BaseModel
@@ -32,26 +32,24 @@ class Config(BaseModel, datastore.AbstractConfig):
 
 
 class Client(datastore.Client[Config]):
-    __client: FirestoreAsyncClient
+    __client: AsyncClient
 
     @datastore.classproperty
     def kind(cls):
         return "firestore"
 
-    def __init__(self, client: FirestoreAsyncClient):
+    def __init__(self, client: AsyncClient):
         self.__client = client
 
     @classmethod
     async def create(cls, config: Config) -> "Client":
-        return cls(FirestoreAsyncClient(project=config.projectId))
+        return cls(AsyncClient(project=config.projectId))
 
     async def initialize_data(
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
         flights: list[models.Flight],
-        tickets: list[models.Ticket],
-        seats: list[models.Seat],
     ) -> None:
         async def delete_collections(collection_list: list[AsyncCollectionReference]):
             # Checks if colelction exists and deletes all documents
@@ -133,20 +131,13 @@ class Client(datastore.Client[Config]):
 
     async def export_data(
         self,
-    ) -> tuple[
-        list[models.Airport],
-        list[models.Amenity],
-        list[models.Flight],
-        list[models.Ticket],
-        list[models.Seat],
-    ]:
+    ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
         airport_docs = self.__client.collection("airports").stream()
         amenities_docs = self.__client.collection("amenities").stream()
         flights_docs = self.__client.collection("flights").stream()
-        tickets_docs = self.__client.collection("tickets").limit(1000).stream()
-        seats_docs = self.__client.collection("seats").limit(1000).stream()
 
         airports = []
+
         async for doc in airport_docs:
             airport_dict = doc.to_dict()
             airport_dict["id"] = doc.id
@@ -164,19 +155,7 @@ class Client(datastore.Client[Config]):
             flight_dict["id"] = doc.id
             flights.append(models.Flight.model_validate(flight_dict))
 
-        tickets = []
-        async for doc in tickets_docs:
-            ticket_dict = doc.to_dict()
-            ticket_dict["id"] = doc.id
-            tickets.append(models.Ticket.model_validate(ticket_dict))
-
-        seats = []
-        async for doc in seats_docs:
-            seat_dict = doc.to_dict()
-            seat_dict["id"] = doc.id
-            seats.append(models.Seat.model_validate(seat_dict))
-
-        return airports, amenities, flights, tickets, seats
+        return airports, amenities, flights
 
     async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
         query = self.__client.collection("airports").where(
@@ -294,22 +273,7 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
-        seat_row: int | None = None,
-        seat_letter: str | None = None,
     ):
-        raise NotImplementedError("Not Implemented")
-
-    async def search_flight_seats(
-        self,
-        airline: str,
-        flight_number: str,
-        departure_airport: str,
-        departure_time: str,
-        seat_row: int | None,
-        seat_letter: str | None,
-        seat_class: str | None,
-        seat_type: str | None,
-    ) -> list[models.Seat]:
         raise NotImplementedError("Not Implemented")
 
     async def list_tickets(
