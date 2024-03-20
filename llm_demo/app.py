@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 from contextlib import asynccontextmanager
 from typing import Any, Optional
@@ -27,6 +28,7 @@ from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
 from orchestrator import BaseOrchestrator, createOrchestrator
+from orchestrator.langchain_tools.tools import insert_ticket
 
 routes = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -68,6 +70,11 @@ async def index(request: Request):
             "client_id": request.app.state.client_id,
             "user_img": (
                 request.session["user_info"]["user_img"]
+                if "user_info" in request.session
+                else None
+            ),
+            "user_name": (
+                request.session["user_info"]["name"]
                 if "user_info" in request.session
                 else None
             ),
@@ -144,10 +151,49 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     # Add user message to chat history
     request.session["history"].append({"type": "human", "data": {"content": prompt}})
     orchestrator = request.app.state.orchestrator
-    output = await orchestrator.user_session_invoke(request.session["uuid"], prompt)
+    response = await orchestrator.user_session_invoke(request.session["uuid"], prompt)
+    output = response.get("output")
+    confirmation = response.get("confirmation")
     # Return assistant response
-    request.session["history"].append({"type": "ai", "data": {"content": output}})
-    return markdown(output)
+    if confirmation:
+        return json.dumps({"type": "confirmation", "content": confirmation})
+    else:
+        request.session["history"].append({"type": "ai", "data": {"content": output}})
+        return json.dumps({"type": "message", "content": markdown(output)})
+
+
+@routes.post("/book/flight", response_class=PlainTextResponse)
+async def book_flight(request: Request, params: str = Body(embed=True)):
+    """Handler for LangChain chat requests"""
+    # Retrieve the params for the booking
+    if not params:
+        raise HTTPException(status_code=400, detail="Error: No booking params")
+    if "uuid" not in request.session:
+        raise HTTPException(
+            status_code=400, detail="Error: Invoke index handler before start chatting"
+        )
+    orchestrator = request.app.state.orchestrator
+    client = orchestrator.get_client()
+    response = await insert_ticket(client, params)
+    # Note in the history, that the ticket has been successfully booked
+    request.session["history"].append(
+        {"type": "ai", "data": {"content": "I have booked your ticket."}}
+    )
+    return response
+
+
+@routes.post("/book/flight/decline", response_class=PlainTextResponse)
+async def decline_flight(request: Request):
+    """Handler for LangChain chat requests"""
+    # Note in the history, that the ticket was not booked
+    # This is helpful in case of reloads so there doesn't seem to be a break in communication.
+    request.session["history"].append(
+        {"type": "ai", "data": {"content": "Please confirm if you would like to book."}}
+    )
+    request.session["history"].append(
+        {"type": "human", "data": {"content": "I changed my mind."}}
+    )
+    return None
 
 
 @routes.post("/reset")

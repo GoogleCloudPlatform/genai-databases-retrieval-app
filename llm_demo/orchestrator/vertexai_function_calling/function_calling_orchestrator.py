@@ -144,6 +144,9 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
     def user_session_exist(self, uuid: str) -> bool:
         return uuid in self._user_sessions
 
+    def get_client(self) -> ClientSession:
+        return self.client
+
     async def user_session_create(self, session: dict[str, Any]):
         """Create and load an agent executor with tools and LLM."""
         print("Initializing agent..")
@@ -155,12 +158,16 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
         client = await self.create_client_session()
         chat = UserChatModel.initialize_chat_model(client, self.MODEL)
         self._user_sessions[id] = chat
+        self.client = client
 
-    async def user_session_invoke(self, uuid: str, prompt: str) -> str:
+    async def user_session_invoke(self, uuid: str, prompt: str) -> dict[str, Any]:
         user_session = self.get_user_session(uuid)
         # Send prompt to LLM
-        response = await user_session.invoke(prompt)
-        return response["output"]
+        agent_response = await user_session.invoke(prompt)
+        # Build final response
+        response = {}
+        response["output"] = agent_response.get("output")
+        return response
 
     def user_session_reset(self, session: dict[str, Any], uuid: str):
         user_session = self.get_user_session(uuid)
@@ -205,16 +212,16 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
 
 PREFIX = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
 
-Cymbal Air (airline unique two letter identifier as CY) is a passenger airline offering convenient flights to many cities around the world from its 
+Cymbal Air (airline unique two letter identifier as CY) is a passenger airline offering convenient flights to many cities around the world from its
 hub in San Francisco. Cymbal Air takes pride in using the latest technology to offer the best customer
 service!
 
-Cymbal Air Customer Service Assistant (or just "Assistant" for short) is designed to assist 
-with a wide range of tasks, from answering simple questions to complex multi-query questions that 
-require passing results from one query to another. Using the latest AI models, Assistant is able to 
+Cymbal Air Customer Service Assistant (or just "Assistant" for short) is designed to assist
+with a wide range of tasks, from answering simple questions to complex multi-query questions that
+require passing results from one query to another. Using the latest AI models, Assistant is able to
 generate human-like text based on the input it receives, allowing it to engage in natural-sounding
 conversations and provide responses that are coherent and relevant to the topic at hand.
 
 Assistant is a powerful tool that can help answer a wide range of questions pertaining to travel on Cymbal Air
-as well as ammenities of San Francisco Airport. 
+as well as ammenities of San Francisco Airport.
 """
