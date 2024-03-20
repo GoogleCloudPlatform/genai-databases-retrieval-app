@@ -211,3 +211,33 @@ div.chat-wrapper div.chat-content div .sender-icon img {
     margin-top: 12px;
     margin-right: 12px;
 }
+
+div.chat-wrapper div.chat-content div#loader-container span {
+    position: relative;
+    height: auto;
+    display: inline-block;
+    padding: 10px 12px;
+    background: #efefef;
+    color: #212A3E;
+    border-radius: 10px;
+    width: 50px;
+    padding-left: 25px;
+}
+
+.loader {
+    width: 30px;
+    aspect-ratio: 2;
+    --_g: no-repeat radial-gradient(circle closest-side,#000 90%,#0000);
+    background:
+      var(--_g) 0%   50%,
+      var(--_g) 50%  50%,
+      var(--_g) 100% 50%;
+    background-size: calc(100%/3) 50%;
+    animation: l3 1s infinite linear;
+  }
+  @keyframes l3 {
+      20%{background-position:0%   0%, 50%  50%,100%  50%}
+      40%{background-position:0% 100%, 50%   0%,100%  50%}
+      60%{background-position:0%  50%, 50% 100%,100%   0%}
+      80%{background-position:0%  50%, 50%  50%,100% 100%}
+  }
