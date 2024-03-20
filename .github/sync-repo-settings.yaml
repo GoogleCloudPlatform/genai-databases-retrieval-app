@@ -47,6 +47,9 @@ branchProtectionRules:
       - "llm_demo"
       - "retrieval-service-app-pr (extension-demo-testing)"
       - "retrieval-service-alloydb-pr (extension-demo-testing)"
+      - "retrieval-service-cloudsql-pr (extension-demo-testing)"
+      - "llm-demo-langchain-tools-pr (extension-demo-testing)"
+      - "llm-demo-vertexai-fc-pr (extension-demo-testing)"
 # Set team access
 permissionRules:
   - team: senseai-eco
