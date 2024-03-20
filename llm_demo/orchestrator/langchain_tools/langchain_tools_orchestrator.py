@@ -63,7 +63,7 @@ class UserAgent:
         prompt: ChatPromptTemplate,
         model: str,
     ) -> "UserAgent":
-        llm = VertexAI(max_output_tokens=512, model_name=model)
+        llm = VertexAI(max_output_tokens=512, model_name=model, temperature=0.0)
         memory = ConversationBufferMemory(
             chat_memory=ChatMessageHistory(messages=history),
             memory_key="chat_history",

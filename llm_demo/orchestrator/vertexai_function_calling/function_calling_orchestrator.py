@@ -102,7 +102,10 @@ class UserChatModel:
 
     def request_chat_model(self, prompt: str):
         try:
-            model_response = self.chat.send_message(prompt)
+            model_response = self.chat.send_message(
+                prompt,
+                generation_config={"temperature": 0},
+            )
         except Exception as err:
             raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
         return model_response
