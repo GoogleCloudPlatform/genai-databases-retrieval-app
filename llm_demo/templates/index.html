@@ -36,7 +36,7 @@ limitations under the License.
     <div class="container">
         <div class="chat-header">
             <span class="material-symbols-outlined" id="menuButton">menu</span>
-            <span>Cymbal Air Customer Service Assistant</span>
+            <span>Cymbal Air</span>
             <span class="material-symbols-outlined" id="resetButton">refresh</span>
         </div>
         <div id="g_id_onload"
@@ -61,12 +61,20 @@ limitations under the License.
         </div>
         <div class="chat-wrapper">
             <div class="chat-content">
+                <div class="inner-content">
                 {# Add Chat history #}
                 {% if messages %}
                     {% for message in messages %}
                     <div class="chat-bubble {{ message["type"] }}"><div class="sender-icon"><img src="static/logo.png"></div><span>{{ message["data"]["content"] | safe }}</span></div>
                     {% endfor %}
                 {% endif %}
+                </div>
+                <div id="loader-container" style="display:none;" class="chat-bubble ai">
+                    <div class="sender-icon"><img src="static/logo.png"></div>
+                    <span>
+                        <div class="loader"></div>
+                    </span>
+                </div>
             </div>
             <div class="chat-bar">
                 <div class="mdl-progress mdl-js-progress mdl-progress__indeterminate"></div>

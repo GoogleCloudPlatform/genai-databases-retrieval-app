@@ -37,11 +37,11 @@ async function submitMessage() {
     log("human", msg)
     // Clear message
     $('.chat-bar input').val('');
-    $('.mdl-progress').show()
+    window.setTimeout(()=>{$('#loader-container').show()},400);
     try {
         // Prompt LLM
         let answer = await askQuestion(msg);
-        $('.mdl-progress').hide();
+        $('#loader-container').hide();
         // Add response to UI
         log("ai", answer)
     } catch (err) {
@@ -86,8 +86,8 @@ async function signout() {
 // Helper function to print to chatroom
 function log(name, msg) {
     let message = `<div class="chat-bubble ${name}">
-        <div class="sender-icon"><img src="static/logo.png"></div>
-        <span>${msg}</span></div>`;
-    $('.chat-content').append(message);
+    <div class="sender-icon"><img src="static/logo.png"></div>
+    <span>${msg}</span></div>`;
+    $('.inner-content').append(message);
     $('.chat-content').scrollTop($('.chat-content').prop("scrollHeight"));
 }
