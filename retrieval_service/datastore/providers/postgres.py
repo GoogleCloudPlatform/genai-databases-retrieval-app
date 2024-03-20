@@ -308,17 +308,17 @@ class Client(datastore.Client[Config]):
         query_embedding: list[float],
         similarity_threshold: float,
         top_k: int,
-        filter_time: Optional[str],
-        filter_day: Optional[str],
+        open_time: Optional[str],
+        open_day: Optional[str],
     ) -> list[models.Amenity]:
-        filter_time_datetime = None
+        open_time_datetime = None
         filter_query = "WHERE "
-        if filter_time and filter_day:
-            start_hour = filter_day + "_start_hour"
-            end_hour = filter_day + "_end_hour"
-            filter_time_datetime = datetime.strptime(filter_time, "%H:%M:%S").time()
-            filter_query += f""" {start_hour} <= $4::time
-                AND {end_hour} > $4::time
+        if open_time and open_day:
+            start_hour = open_day + "_start_hour"
+            end_hour = open_day + "_end_hour"
+            open_time_datetime = datetime.strptime(open_time, "%H:%M:%S").time()
+            filter_query += f""" {start_hour} <= $4
+                AND {end_hour} > $4
                 AND
                 """
         filter_query += " 1 - (embedding <=> $1) > $2"
@@ -337,7 +337,7 @@ class Client(datastore.Client[Config]):
             query_embedding,
             similarity_threshold,
             top_k,
-            filter_time_datetime,
+            open_time_datetime,
             timeout=10,
         )
 

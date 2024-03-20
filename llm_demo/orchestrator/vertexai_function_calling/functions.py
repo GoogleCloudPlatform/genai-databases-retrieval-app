@@ -60,13 +60,13 @@ search_amenities_func = generative_models.FunctionDeclaration(
         "type": "object",
         "properties": {
             "query": {"type": "string", "description": "Search query"},
-            "filter_time": {
+            "open_time": {
                 "type": "string",
-                "description": "Time for filtering opening hours of amenities. Provided in the format HH:MM:SS",
+                "description": "Time for filtering amenities by operating hours. Provided in the format HH:MM:SS",
             },
-            "filter_day": {
+            "open_day": {
                 "type": "string",
-                "description": "Day of the week for filtering opening hours of amenities.",
+                "description": "Day of the week for filtering amenities by operating hours.",
             },
             "top_k": {
                 "type": "integer",

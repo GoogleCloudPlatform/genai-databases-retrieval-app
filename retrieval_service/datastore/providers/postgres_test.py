@@ -379,7 +379,7 @@ amenities_search_test_data = [
 
 
 @pytest.mark.parametrize(
-    "query_embedding, similarity_threshold, top_k, filter_time, filter_day, expected",
+    "query_embedding, similarity_threshold, top_k, open_time, open_day, expected",
     amenities_search_test_data,
 )
 async def test_amenities_search(
@@ -387,12 +387,12 @@ async def test_amenities_search(
     query_embedding: List[float],
     similarity_threshold: float,
     top_k: int,
-    filter_time: str,
-    filter_day: str,
+    open_time: str,
+    open_day: str,
     expected: List[models.Amenity],
 ):
     res = await ds.amenities_search(
-        query_embedding, similarity_threshold, top_k, filter_time, filter_day
+        query_embedding, similarity_threshold, top_k, open_time, open_day
     )
     assert res == expected
 

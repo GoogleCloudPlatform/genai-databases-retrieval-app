@@ -210,8 +210,8 @@ class Client(datastore.Client[Config]):
         query_embedding: list[float],
         similarity_threshold: float,
         top_k: int,
-        filter_time: Optional[str],
-        filter_day: Optional[str],
+        open_time: Optional[str],
+        open_day: Optional[str],
     ) -> list[models.Amenity]:
         raise NotImplementedError("Semantic search not yet supported in Firestore.")
 

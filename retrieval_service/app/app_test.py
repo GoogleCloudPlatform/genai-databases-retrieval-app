@@ -309,8 +309,8 @@ amenities_search_params = [
         {
             "query": "A place to get food.",
             "top_k": 2,
-            "filter_time": "10:00:00",
-            "filter_day": "wednesday",
+            "open_time": "10:00:00",
+            "open_day": "wednesday",
         },
         [
             models.Amenity(
@@ -460,17 +460,26 @@ amenities_search_bad_params = [
         {
             "query": "A place to get food.",
             "top_k": 2,
-            "filter_time": "10:00:00",
+            "open_time": "10:00:00",
         },
-        id="filter_time_only",
+        id="open_time_only",
     ),
     pytest.param(
         {
             "query": "A place to get food.",
             "top_k": 2,
-            "filter_day": "wednesday",
+            "open_day": "wednesday",
         },
-        id="filter_day_only",
+        id="open_day_only",
+    ),
+    pytest.param(
+        {
+            "query": "A place to get food.",
+            "top_k": 2,
+            "open_time": "10:00:00",
+            "open_day": "foobar",
+        },
+        id="incorrect_open_day",
     ),
 ]
 

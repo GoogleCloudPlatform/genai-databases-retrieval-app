@@ -155,23 +155,25 @@ def generate_list_flights(client: aiohttp.ClientSession):
 
 class QueryInput(BaseModel):
     query: str = Field(description="Search query")
-    filter_time: str = Field(description="Time for filtering amenities operating hours")
-    filter_day: str = Field(
-        description="Day of the week for filtering amenities operating hours"
+    open_time: str = Field(
+        description="Time for filtering amenities by operating hours."
+    )
+    open_day: str = Field(
+        description="Day of the week for filtering amenities by operating hours."
     )
 
 
 def generate_search_amenities(client: aiohttp.ClientSession):
     async def search_amenities(
-        query: str, filter_time: Optional[str], filter_day: Optional[str]
+        query: str, open_time: Optional[str], open_day: Optional[str]
     ):
         response = await client.get(
             url=f"{BASE_URL}/amenities/search",
             params={
                 "top_k": "5",
                 "query": query,
-                "filter_time": filter_time,
-                "filter_day": filter_day,
+                "open_time": open_time,
+                "open_day": open_day,
             },
             headers=get_headers(client),
         )
@@ -295,7 +297,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             coroutine=generate_list_flights(client),
             name="List Flights",
             description="""
-                        Use this tool to list flights information matching search criteria.
+                        Use this tool to list flight information matching search criteria.
                         Takes an arrival airport, a departure airport, or both, filters by date and returns all matching flights.
                         If 3-letter iata code is not provided for departure_airport or arrival_airport, use search airport tools to get iata code information.
                         Do NOT guess a date, ask user for date input if it is not given. Date must be in the following format: YYYY-MM-DD.
@@ -343,14 +345,14 @@ async def initialize_tools(client: aiohttp.ClientSession):
                         Example:
                         {{
                             "query": "A burger place",
-                            "filter_time": null,
-                            "filter_day": null,
+                            "open_time": null,
+                            "open_day": null,
                         }}
                         Example:
                         {{
                             "query": "Shop for luxury goods",
-                            "filter_time": "10:00:00",
-                            "filter_day": "wednesday",
+                            "open_time": "10:00:00",
+                            "open_day": "wednesday",
                         }}
                         """,
             args_schema=QueryInput,

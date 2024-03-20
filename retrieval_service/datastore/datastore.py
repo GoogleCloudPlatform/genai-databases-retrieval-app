@@ -171,8 +171,8 @@ class Client(ABC, Generic[C]):
         query_embedding: list[float],
         similarity_threshold: float,
         top_k: int,
-        filter_time: Optional[str],
-        filter_day: Optional[str],
+        open_time: Optional[str],
+        open_day: Optional[str],
     ) -> list[models.Amenity]:
         raise NotImplementedError("Subclass should implement this!")
 
