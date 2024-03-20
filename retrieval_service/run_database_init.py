@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import asyncio
 
 import datastore
@@ -19,7 +20,7 @@ import models
 from app import parse_config
 
 
-async def main() -> None:
+async def main(load_all_data: bool = False) -> None:
     bucket_path = "cloud-samples-data"
     flights_blob_path = "databases-golden-demo/flights_dataset.csv"
     tickets_blob_path = "databases-golden-demo/tickets_dataset.csv"
@@ -30,20 +31,31 @@ async def main() -> None:
 
     cfg = parse_config("config.yml")
     ds = await datastore.create(cfg.datastore)
-    airports, amenities, flights, tickets, seats = await ds.load_dataset(
-        bucket_path,
-        airports_ds_path,
-        amenities_ds_path,
-        flights_blob_path,
-        tickets_blob_path,
-        seats_blob_path,
-        False,
+    airports, amenities, flights_streamer, tickets_streamer, seats_streamer = (
+        await ds.load_dataset(
+            bucket_path,
+            airports_ds_path,
+            amenities_ds_path,
+            flights_blob_path,
+            tickets_blob_path,
+            seats_blob_path,
+            load_all_data,
+        )
     )
-    await ds.initialize_data(airports, amenities, flights, tickets, seats)
+    await ds.initialize_data(
+        airports, amenities, flights_streamer, tickets_streamer, seats_streamer
+    )
     await ds.close()
 
     print("database init done.")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--load-all-data",
+        action="store_true",
+        help="Whether or not to load all the data from GCS. This may take a long time.",
+    )
+    args = parser.parse_args()
+    asyncio.run(main(args.load_all_data))

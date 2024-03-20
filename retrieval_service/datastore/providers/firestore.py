@@ -49,9 +49,9 @@ class Client(datastore.Client[Config]):
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
-        flights: list[models.Flight],
-        tickets: list[models.Ticket],
-        seats: list[models.Seat],
+        flights_streamer: datastore.CSVStreamer[models.Flight],
+        tickets_streamer: datastore.CSVStreamer[models.Ticket],
+        seats_streamer: datastore.CSVStreamer[models.Seat],
     ) -> None:
         async def delete_collections(collection_list: list[AsyncCollectionReference]):
             # Checks if colelction exists and deletes all documents
@@ -107,29 +107,32 @@ class Client(datastore.Client[Config]):
                 )
             )
         await asyncio.gather(*create_amenities_tasks)
-        create_flights_tasks = []
-        for flight in flights:
-            create_flights_tasks.append(
-                self.__client.collection("flights")
-                .document(str(flight.id))
-                .set(
-                    {
-                        "airline": flight.airline,
-                        "flight_number": flight.flight_number,
-                        "departure_airport": flight.departure_airport,
-                        "arrival_airport": flight.arrival_airport,
-                        "departure_time": flight.departure_time,
-                        "arrival_time": flight.arrival_time,
-                        "departure_gate": flight.departure_gate,
-                        "arrival_gate": flight.arrival_gate,
-                    }
+
+        while not flights_streamer.is_done():
+            create_flights_tasks = []
+            flights = flights_streamer.read_next_n(10000)
+            for flight in flights:
+                create_flights_tasks.append(
+                    self.__client.collection("flights")
+                    .document(str(flight.id))
+                    .set(
+                        {
+                            "airline": flight.airline,
+                            "flight_number": flight.flight_number,
+                            "departure_airport": flight.departure_airport,
+                            "arrival_airport": flight.arrival_airport,
+                            "departure_time": flight.departure_time,
+                            "arrival_time": flight.arrival_time,
+                            "departure_gate": flight.departure_gate,
+                            "arrival_gate": flight.arrival_gate,
+                        }
+                    )
                 )
-            )
-            if len(create_flights_tasks) % 10000 == 0:
-                # avoid gRPC batch write timeout error
-                await asyncio.gather(*create_flights_tasks)
-                create_flights_tasks.clear()
-        await asyncio.gather(*create_flights_tasks)
+                if len(create_flights_tasks) % 10000 == 0:
+                    # avoid gRPC batch write timeout error
+                    await asyncio.gather(*create_flights_tasks)
+                    create_flights_tasks.clear()
+            await asyncio.gather(*create_flights_tasks)
 
     async def export_data(
         self,

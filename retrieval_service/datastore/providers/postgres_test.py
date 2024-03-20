@@ -78,7 +78,7 @@ async def ds(
         flights_blob_path,
         tickets_blob_path,
         seats_blob_path,
-        True,
+        False,
     )
     await ds.initialize_data(airports, amenities, flights, tickets, seats)
 

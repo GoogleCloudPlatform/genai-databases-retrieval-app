@@ -33,11 +33,21 @@
     cd retrieval_service
     ```
 
-1. Populate your Firestore database with the command below. Note: This may take up to 10 minutes.
+1. Populate your Firestore database with the command below.
 
-    ```bash
-    python run_database_init.py
-    ```
+    * To populate only some rows into database quickly, run:
+
+        ```bash
+        python run_database_init.py
+        ```
+
+    * To load all the data for a complete experience, run:
+
+        ```bash
+        python run_database_init.py --load-all-data
+        ```
+
+        Note: This may take up to 5-10 min and will result in a higher DB write cost
 
 ## Clean up resources
 
