@@ -198,30 +198,6 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
     return insert_ticket
 
 
-async def insert_ticket(client: aiohttp.ClientSession, params: str):
-    ticket_info = json.loads(params)
-    airline = ticket_info.get("airline")
-    flight_number = ticket_info.get("flight_number")
-    departure_airport = ticket_info.get("departure_airport")
-    arrival_airport = ticket_info.get("arrival_airport")
-    departure_time = ticket_info.get("departure_time")
-    arrival_time = ticket_info.get("arrival_time")
-    response = await client.post(
-        url=f"{BASE_URL}/tickets/insert",
-        params={
-            "airline": airline,
-            "flight_number": flight_number,
-            "departure_airport": departure_airport,
-            "arrival_airport": arrival_airport,
-            "departure_time": departure_time.replace("T", " "),
-            "arrival_time": arrival_time.replace("T", " "),
-        },
-        headers=get_headers(client),
-    )
-    response = await response.json()
-    return response
-
-
 def generate_list_tickets(client: aiohttp.ClientSession):
     async def list_tickets():
         response = await client.get(

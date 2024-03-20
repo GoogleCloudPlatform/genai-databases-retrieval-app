@@ -31,7 +31,12 @@ from langchain_google_vertexai import VertexAI
 from pytz import timezone
 
 from ..orchestrator import BaseOrchestrator, classproperty
-from .tools import get_confirmation_needing_tools, initialize_tools
+from .tools import (
+    BASE_URL,
+    get_confirmation_needing_tools,
+    get_headers,
+    initialize_tools,
+)
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
 BASE_HISTORY = {
@@ -113,8 +118,14 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
     def user_session_exist(self, uuid: str) -> bool:
         return uuid in self._user_sessions
 
-    def get_client(self) -> ClientSession:
-        return self.client
+    async def post_with_client(self, url: str, params: Dict[str, str]) -> Any:
+        response = await self.client.post(
+            url=f"{BASE_URL}{url}",
+            params=params,
+            headers=get_headers(self.client),
+        )
+        response = await response.json()
+        return response
 
     def check_and_add_confirmations(cls, response: Dict[str, Any]):
         for step in response.get("intermediate_steps") or []:

@@ -32,7 +32,13 @@ from vertexai.preview.generative_models import (  # type: ignore
 )
 
 from ..orchestrator import BaseOrchestrator, classproperty
-from .functions import BASE_URL, assistant_tool, function_request, get_headers
+from .functions import (
+    BASE_URL,
+    assistant_tool,
+    function_request,
+    get_confirmation_needing_tools,
+    get_headers,
+)
 
 DEBUG = os.getenv("DEBUG", default=False)
 BASE_HISTORY = {
@@ -66,11 +72,22 @@ class UserChatModel:
         self.debug_log(f"Prompt:\n{prompt}\n\nQuestion: {input_prompt}.")
         self.debug_log(f"\nFunction call response:\n{model_response}")
         part_response = model_response.candidates[0].content.parts[0]
+        confirmation = None
 
         # implement multi turn chat with while loop
         while "function_call" in part_response._raw_part:
             function_call = MessageToDict(part_response.function_call._pb)
-            function_response = await self.request_function(function_call)
+            function_name = function_call.get("name")
+            if function_name in get_confirmation_needing_tools():
+                function_response = self.confirmation_response(
+                    function_name, function_call.get("args")
+                )
+                confirmation = {
+                    "tool": function_name,
+                    "params": function_call.get("args"),
+                }
+            else:
+                function_response = await self.request_function(function_call)
             self.debug_log(f"Function response:\n{function_response}")
             part = Part.from_function_response(
                 name=function_call["name"],
@@ -84,7 +101,7 @@ class UserChatModel:
         if "text" in part_response._raw_part:
             content = part_response.text
             self.debug_log(f"Output content: {content}")
-            return {"output": content}
+            return {"output": content, "confirmation": confirmation}
         else:
             raise HTTPException(
                 status_code=500, detail="Error: Chat model response unknown"
@@ -109,6 +126,11 @@ class UserChatModel:
         except Exception as err:
             raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
         return model_response
+
+    def confirmation_response(self, function_name, function_params):
+        if function_name == "insert_ticket":
+            return f"Booking ticket on {function_params.get('airline')} {function_params.get('flight_number')}"
+        return ""
 
     async def request_function(self, function_call):
         url = function_request(function_call["name"])
@@ -144,8 +166,14 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
     def user_session_exist(self, uuid: str) -> bool:
         return uuid in self._user_sessions
 
-    def get_client(self) -> ClientSession:
-        return self.client
+    async def post_with_client(self, url: str, params: Dict[str, str]) -> Any:
+        response = await self.client.post(
+            url=f"{BASE_URL}{url}",
+            params=params,
+            headers=get_headers(self.client),
+        )
+        response = await response.json()
+        return response
 
     async def user_session_create(self, session: dict[str, Any]):
         """Create and load an agent executor with tools and LLM."""
@@ -163,10 +191,7 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
     async def user_session_invoke(self, uuid: str, prompt: str) -> dict[str, Any]:
         user_session = self.get_user_session(uuid)
         # Send prompt to LLM
-        agent_response = await user_session.invoke(prompt)
-        # Build final response
-        response = {}
-        response["output"] = agent_response.get("output")
+        response = await user_session.invoke(prompt)
         return response
 
     def user_session_reset(self, session: dict[str, Any], uuid: str):

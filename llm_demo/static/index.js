@@ -105,7 +105,7 @@ function logMessage(name, msg) {
 }
 
 function buildConfirmation(confirmation, messageId) {
-    if (confirmation.tool === "Insert Ticket") {
+    if (["Insert Ticket","insert_ticket"].includes(confirmation.tool)) {
         params = confirmation.params;
         confirmations[messageId] = params
         from = params.departure_airport;

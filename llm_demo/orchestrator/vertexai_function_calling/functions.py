@@ -222,3 +222,7 @@ def assistant_tool():
             list_tickets_func,
         ],
     )
+
+
+def get_confirmation_needing_tools():
+    return ["insert_ticket"]
