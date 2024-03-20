@@ -31,12 +31,7 @@ from langchain_google_vertexai import VertexAI
 from pytz import timezone
 
 from ..orchestrator import BaseOrchestrator, classproperty
-from .tools import (
-    BASE_URL,
-    get_confirmation_needing_tools,
-    get_headers,
-    initialize_tools,
-)
+from .tools import get_confirmation_needing_tools, initialize_tools, insert_ticket
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
 BASE_HISTORY = {
@@ -98,6 +93,9 @@ class UserAgent:
             raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
         return response
 
+    async def insert_ticket(self, params: str):
+        return await insert_ticket(self.client, params)
+
     def reset_memory(self, base_message: List[BaseMessage]):
         self.memory.clear()
         self.memory.chat_memory = ChatMessageHistory(messages=base_message)
@@ -118,13 +116,9 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
     def user_session_exist(self, uuid: str) -> bool:
         return uuid in self._user_sessions
 
-    async def post_with_client(self, url: str, params: Dict[str, str]) -> Any:
-        response = await self.client.post(
-            url=f"{BASE_URL}{url}",
-            params=params,
-            headers=get_headers(self.client),
-        )
-        response = await response.json()
+    async def user_session_insert_ticket(self, uuid: str, params: str) -> Any:
+        user_session = self.get_user_session(uuid)
+        response = await user_session.insert_ticket(params)
         return response
 
     def check_and_add_confirmations(cls, response: Dict[str, Any]):

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 
 import aiohttp
@@ -169,6 +170,24 @@ list_tickets_func = generative_models.FunctionDeclaration(
         "type": "object",
     },
 )
+
+
+async def insert_ticket(client: aiohttp.ClientSession, params: str):
+    ticket_info = json.loads(params)
+    response = await client.post(
+        url=f"{BASE_URL}/tickets/insert",
+        params={
+            "airline": ticket_info.get("airline"),
+            "flight_number": ticket_info.get("flight_number"),
+            "departure_airport": ticket_info.get("departure_airport"),
+            "arrival_airport": ticket_info.get("arrival_airport"),
+            "departure_time": ticket_info.get("departure_time").replace("T", " "),
+            "arrival_time": ticket_info.get("arrival_time").replace("T", " "),
+        },
+        headers=get_headers(client),
+    )
+    response = await response.json()
+    return response
 
 
 def get_id_token():

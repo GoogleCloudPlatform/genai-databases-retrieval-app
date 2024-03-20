@@ -172,7 +172,9 @@ async def book_flight(request: Request, params: str = Body(embed=True)):
             status_code=400, detail="Error: Invoke index handler before start chatting"
         )
     orchestrator = request.app.state.orchestrator
-    response = await insert_ticket(orchestrator, params)
+    response = await orchestrator.user_session_insert_ticket(
+        request.session["uuid"], params
+    )
     # Note in the history, that the ticket has been successfully booked
     request.session["history"].append(
         {"type": "ai", "data": {"content": "I have booked your ticket."}}
@@ -192,23 +194,6 @@ async def decline_flight(request: Request):
         {"type": "human", "data": {"content": "I changed my mind."}}
     )
     return None
-
-
-async def insert_ticket(orchestrator: BaseOrchestrator, params: str):
-    ticket_info = json.loads(params)
-    response = await orchestrator.post_with_client(
-        url="/tickets/insert",
-        params={
-            "airline": ticket_info.get("airline"),
-            "flight_number": ticket_info.get("flight_number"),
-            "departure_airport": ticket_info.get("departure_airport"),
-            "arrival_airport": ticket_info.get("arrival_airport"),
-            "departure_time": ticket_info.get("departure_time").replace("T", " "),
-            "arrival_time": ticket_info.get("arrival_time").replace("T", " "),
-        },
-    )
-
-    return response
 
 
 @routes.post("/reset")

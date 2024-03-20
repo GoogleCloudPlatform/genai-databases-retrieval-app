@@ -38,6 +38,7 @@ from .functions import (
     function_request,
     get_confirmation_needing_tools,
     get_headers,
+    insert_ticket,
 )
 
 DEBUG = os.getenv("DEBUG", default=False)
@@ -144,6 +145,9 @@ class UserChatModel:
         response = await response.json()
         return response
 
+    async def insert_ticket(self, params: str):
+        return await insert_ticket(self.client, params)
+
     def reset_memory(self, model: str):
         """reinitiate chat model to reset memory."""
         del self.chat
@@ -166,13 +170,9 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
     def user_session_exist(self, uuid: str) -> bool:
         return uuid in self._user_sessions
 
-    async def post_with_client(self, url: str, params: Dict[str, str]) -> Any:
-        response = await self.client.post(
-            url=f"{BASE_URL}{url}",
-            params=params,
-            headers=get_headers(self.client),
-        )
-        response = await response.json()
+    async def user_session_insert_ticket(self, uuid: str, params: str) -> Any:
+        user_session = self.get_user_session(uuid)
+        response = await user_session.insert_ticket(params)
         return response
 
     async def user_session_create(self, session: dict[str, Any]):

@@ -58,7 +58,7 @@ class BaseOrchestrator(ABC):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
-    async def post_with_client(self, url: str, params: dict[str, str]) -> Any:
+    async def user_session_insert_ticket(self, uuid: str, params: str) -> Any:
         raise NotImplementedError("Subclass should implement this!")
 
     def set_user_session_header(self, uuid: str, user_id_token: str):
