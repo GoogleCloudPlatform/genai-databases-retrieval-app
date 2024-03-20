@@ -68,9 +68,9 @@ class Client(datastore.Client[Config]):
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
-        flights: list[models.Flight],
-        tickets: list[models.Ticket],
-        seats: list[models.Seat],
+        flights_streamer: datastore.CSVStreamer[models.Flight],
+        tickets_streamer: datastore.CSVStreamer[models.Ticket],
+        seats_streamer: datastore.CSVStreamer[models.Seat],
     ) -> None:
         async with self.__pool.acquire() as conn:
             await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
@@ -184,24 +184,27 @@ class Client(datastore.Client[Config]):
                 )
                 """
             )
-            # Insert all the data
-            await conn.executemany(
-                """INSERT INTO flights VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)""",
-                [
-                    (
-                        f.id,
-                        f.airline,
-                        f.flight_number,
-                        f.departure_airport,
-                        f.arrival_airport,
-                        f.departure_time,
-                        f.arrival_time,
-                        f.departure_gate,
-                        f.arrival_gate,
-                    )
-                    for f in flights
-                ],
-            )
+
+            while not flights_streamer.is_done():
+                flights = flights_streamer.read_next_n(10000)
+                # Insert all the data
+                await conn.executemany(
+                    """INSERT INTO flights VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)""",
+                    [
+                        (
+                            f.id,
+                            f.airline,
+                            f.flight_number,
+                            f.departure_airport,
+                            f.arrival_airport,
+                            f.departure_time,
+                            f.arrival_time,
+                            f.departure_gate,
+                            f.arrival_gate,
+                        )
+                        for f in flights
+                    ],
+                )
 
             # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS tickets CASCADE")
@@ -224,27 +227,31 @@ class Client(datastore.Client[Config]):
                 )
                 """
             )
-            # Insert all the data
-            await conn.executemany(
-                """INSERT INTO tickets VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)""",
-                [
-                    (
-                        t.id,
-                        t.user_id,
-                        t.user_name,
-                        t.user_email,
-                        t.airline,
-                        t.flight_number,
-                        t.departure_airport,
-                        t.arrival_airport,
-                        t.departure_time,
-                        t.arrival_time,
-                        t.seat_row,
-                        t.seat_letter,
-                    )
-                    for t in tickets
-                ],
-            )
+
+            while not tickets_streamer.is_done():
+                tickets = tickets_streamer.read_next_n(10000)
+                print("reading next ", len(tickets))
+                # Insert all the data
+                await conn.executemany(
+                    """INSERT INTO tickets VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)""",
+                    [
+                        (
+                            t.id,
+                            t.user_id,
+                            t.user_name,
+                            t.user_email,
+                            t.airline,
+                            t.flight_number,
+                            t.departure_airport,
+                            t.arrival_airport,
+                            t.departure_time,
+                            t.arrival_time,
+                            t.seat_row,
+                            t.seat_letter,
+                        )
+                        for t in tickets
+                    ],
+                )
 
             # If the table already exists, drop it to avoid conflicts
             await conn.execute("DROP TABLE IF EXISTS seats CASCADE")
@@ -262,22 +269,25 @@ class Client(datastore.Client[Config]):
                 )
                 """
             )
-            # Insert all the data
-            await conn.executemany(
-                """INSERT INTO seats VALUES ($1, $2, $3, $4, $5, $6, $7)""",
-                [
-                    (
-                        s.flight_id,
-                        s.seat_row,
-                        s.seat_letter,
-                        s.seat_type,
-                        s.seat_class,
-                        s.is_reserved,
-                        None if s.ticket_id == -1 else s.ticket_id,
-                    )
-                    for s in seats
-                ],
-            )
+
+            while not seats_streamer.is_done():
+                seats = seats_streamer.read_next_n(10000)
+                # Insert all the data
+                await conn.executemany(
+                    """INSERT INTO seats VALUES ($1, $2, $3, $4, $5, $6, $7)""",
+                    [
+                        (
+                            s.flight_id,
+                            s.seat_row,
+                            s.seat_letter,
+                            s.seat_type,
+                            s.seat_class,
+                            s.is_reserved,
+                            None if s.ticket_id == -1 else s.ticket_id,
+                        )
+                        for s in seats
+                    ],
+                )
 
     async def export_data(
         self,

@@ -80,9 +80,9 @@ class Client(datastore.Client[Config]):
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
-        flights: list[models.Flight],
-        tickets: list[models.Ticket],
-        seats: list[models.Seat],
+        flights_streamer: datastore.CSVStreamer[models.Flight],
+        tickets_streamer: datastore.CSVStreamer[models.Ticket],
+        seats_streamer: datastore.CSVStreamer[models.Seat],
     ) -> None:
         async with self.__pool.connect() as conn:
             # If the table already exists, drop it to avoid conflicts
@@ -215,31 +215,34 @@ class Client(datastore.Client[Config]):
                     """
                 )
             )
-            # Insert all the data
-            await conn.execute(
-                text(
-                    """
-                    INSERT INTO flights VALUES (:id, :airline, :flight_number,
-                      :departure_airport, :arrival_airport, :departure_time,
-                      :arrival_time, :departure_gate, :arrival_gate)
-                    """
-                ),
-                [
-                    {
-                        "id": f.id,
-                        "airline": f.airline,
-                        "flight_number": f.flight_number,
-                        "departure_airport": f.departure_airport,
-                        "arrival_airport": f.arrival_airport,
-                        "departure_time": f.departure_time,
-                        "arrival_time": f.arrival_time,
-                        "departure_gate": f.departure_gate,
-                        "arrival_gate": f.arrival_gate,
-                    }
-                    for f in flights
-                ],
-            )
-            await conn.commit()
+
+            while not flights_streamer.is_done():
+                flights = flights_streamer.read_next_n(10000)
+                # Insert all the data
+                await conn.execute(
+                    text(
+                        """
+                        INSERT INTO flights VALUES (:id, :airline, :flight_number,
+                        :departure_airport, :arrival_airport, :departure_time,
+                        :arrival_time, :departure_gate, :arrival_gate)
+                        """
+                    ),
+                    [
+                        {
+                            "id": f.id,
+                            "airline": f.airline,
+                            "flight_number": f.flight_number,
+                            "departure_airport": f.departure_airport,
+                            "arrival_airport": f.arrival_airport,
+                            "departure_time": f.departure_time,
+                            "arrival_time": f.arrival_time,
+                            "departure_gate": f.departure_gate,
+                            "arrival_gate": f.arrival_gate,
+                        }
+                        for f in flights
+                    ],
+                )
+                await conn.commit()
 
             # If the table already exists, drop it to avoid conflicts
             await conn.execute(text("DROP TABLE IF EXISTS tickets CASCADE"))
@@ -265,34 +268,36 @@ class Client(datastore.Client[Config]):
                 )
             )
             # Insert all the data
-            await conn.execute(
-                text(
-                    """
-                    INSERT INTO tickets VALUES (:id, :user_id, :user_name,
-                      :user_email, :airline, :flight_number,
-                      :departure_airport, :arrival_airport, :departure_time,
-                      :arrival_time, :seat_row, :seat_letter)
-                    """
-                ),
-                [
-                    {
-                        "id": t.id,
-                        "user_id": t.user_id,
-                        "user_name": t.user_name,
-                        "user_email": t.user_email,
-                        "airline": t.airline,
-                        "flight_number": t.flight_number,
-                        "departure_airport": t.departure_airport,
-                        "arrival_airport": t.arrival_airport,
-                        "departure_time": t.departure_time,
-                        "arrival_time": t.arrival_time,
-                        "seat_row": t.seat_row,
-                        "seat_letter": t.seat_letter,
-                    }
-                    for t in tickets
-                ],
-            )
-            await conn.commit()
+            while not tickets_streamer.is_done():
+                tickets = tickets_streamer.read_next_n(10000)
+                await conn.execute(
+                    text(
+                        """
+                        INSERT INTO tickets VALUES (:id, :user_id, :user_name,
+                        :user_email, :airline, :flight_number,
+                        :departure_airport, :arrival_airport, :departure_time,
+                        :arrival_time, :seat_row, :seat_letter)
+                        """
+                    ),
+                    [
+                        {
+                            "id": t.id,
+                            "user_id": t.user_id,
+                            "user_name": t.user_name,
+                            "user_email": t.user_email,
+                            "airline": t.airline,
+                            "flight_number": t.flight_number,
+                            "departure_airport": t.departure_airport,
+                            "arrival_airport": t.arrival_airport,
+                            "departure_time": t.departure_time,
+                            "arrival_time": t.arrival_time,
+                            "seat_row": t.seat_row,
+                            "seat_letter": t.seat_letter,
+                        }
+                        for t in tickets
+                    ],
+                )
+                await conn.commit()
 
             # If the table already exists, drop it to avoid conflicts
             await conn.execute(text("DROP TABLE IF EXISTS seats CASCADE"))
@@ -313,27 +318,29 @@ class Client(datastore.Client[Config]):
                 )
             )
             # Insert all the data
-            await conn.execute(
-                text(
-                    """
-                    INSERT INTO seats VALUES (:flight_id, :seat_row, :seat_letter,
-                      :seat_type, :seat_class, :is_reserved, :ticket_id)
-                    """
-                ),
-                [
-                    {
-                        "flight_id": s.flight_id,
-                        "seat_row": s.seat_row,
-                        "seat_letter": s.seat_letter,
-                        "seat_type": s.seat_type,
-                        "seat_class": s.seat_class,
-                        "is_reserved": s.is_reserved,
-                        "ticket_id": s.ticket_id,
-                    }
-                    for s in seats
-                ],
-            )
-            await conn.commit()
+            while not seats_streamer.is_done():
+                seats = seats_streamer.read_next_n(10000)
+                await conn.execute(
+                    text(
+                        """
+                        INSERT INTO seats VALUES (:flight_id, :seat_row, :seat_letter,
+                        :seat_type, :seat_class, :is_reserved, :ticket_id)
+                        """
+                    ),
+                    [
+                        {
+                            "flight_id": s.flight_id,
+                            "seat_row": s.seat_row,
+                            "seat_letter": s.seat_letter,
+                            "seat_type": s.seat_type,
+                            "seat_class": s.seat_class,
+                            "is_reserved": s.is_reserved,
+                            "ticket_id": s.ticket_id,
+                        }
+                        for s in seats
+                    ],
+                )
+                await conn.commit()
 
     async def export_data(
         self,

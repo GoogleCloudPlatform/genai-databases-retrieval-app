@@ -18,6 +18,7 @@ from datetime import datetime
 from typing import Generic, List, Optional, TypeVar
 
 from google.cloud.storage import Client as StorageClient
+from pydantic import BaseModel
 
 import models
 
@@ -27,6 +28,7 @@ class AbstractConfig(ABC):
 
 
 C = TypeVar("C", bound=AbstractConfig)
+T = TypeVar("T", bound=BaseModel)
 
 
 class classproperty:
@@ -35,6 +37,42 @@ class classproperty:
 
     def __get__(self, instance, owner):
         return self.fget(owner)
+
+
+class CSVStreamer(Generic[T]):
+    read = 0
+    done_reading = False
+
+    def __init__(self, bucket, blob_path, max_rows, validator):
+        self.file = bucket.blob(blob_path).open("rt", encoding="utf-8")
+        self.csv_reader = csv.DictReader(self.file, delimiter=",")
+        self.validator = validator
+        self.max_rows = max_rows
+
+    def read_next_n(self, n: int) -> List[T]:
+        rows = []
+        # If max rows is set, default, only fetch up to that
+        fetch_count = (
+            min(self.max_rows - self.read, n) if self.max_rows is not None else n
+        )
+        try:
+            for _ in range(fetch_count):
+                rows.append(next(self.csv_reader))
+        except StopIteration:
+            # End of file on GCS
+            self.done_reading = True
+            pass
+        self.read = self.read + len(rows)
+        # Only read up to max rows
+        if self.max_rows is not None and self.read >= self.max_rows:
+            self.done_reading = True
+        return [self.validator(row) for row in rows]
+
+    def is_done(self):
+        return self.done_reading
+
+    def close(self):
+        self.file.close()
 
 
 class Client(ABC, Generic[C]):
@@ -56,13 +94,13 @@ class Client(ABC, Generic[C]):
         flights_blob_path,
         tickets_blob_path,
         seats_blob_path,
-        only_load_for_test=False,
+        load_all_data=False,
     ) -> tuple[
         List[models.Airport],
         List[models.Amenity],
-        List[models.Flight],
-        List[models.Ticket],
-        List[models.Seat],
+        CSVStreamer[models.Flight],
+        CSVStreamer[models.Ticket],
+        CSVStreamer[models.Seat],
     ]:
 
         storage_client = StorageClient.create_anonymous_client()
@@ -78,39 +116,26 @@ class Client(ABC, Generic[C]):
             reader = csv.DictReader(f, delimiter=",")
             amenities = [models.Amenity.model_validate(line) for line in reader]
 
-        flights: List[models.Flight] = []
-        with bucket.blob(flights_blob_path).open("rt", encoding="utf-8") as f:
-            reader = csv.DictReader(f, delimiter=",")
-            flights = [models.Flight.model_validate(line) for line in reader]
+        flights_streamer = CSVStreamer[models.Flight](
+            bucket,
+            flights_blob_path,
+            None if load_all_data else 70000,
+            models.Flight.model_validate,
+        )
+        ticket_streamer = CSVStreamer[models.Ticket](
+            bucket,
+            tickets_blob_path,
+            None if load_all_data else 1000,
+            models.Ticket.model_validate,
+        )
+        seats_streamer = CSVStreamer[models.Seat](
+            bucket,
+            seats_blob_path,
+            None if load_all_data else 1000,
+            models.Seat.model_validate,
+        )
 
-        tickets: List[models.Ticket] = []
-        with bucket.blob(tickets_blob_path).open("rt", encoding="utf-8") as f:
-            if only_load_for_test:
-                reader = csv.DictReader(f, delimiter=",")
-                limited_rows = []
-                for i, row in enumerate(reader):
-                    limited_rows.append(row)
-                    if i == 999:
-                        break
-                tickets = [models.Ticket.model_validate(line) for line in limited_rows]
-            else:
-                reader = csv.DictReader(f, delimiter=",")
-                tickets = [models.Ticket.model_validate(line) for line in reader]
-
-        seats: List[models.Seat] = []
-        with bucket.blob(seats_blob_path).open("rt", encoding="utf-8") as f:
-            if only_load_for_test:
-                reader = csv.DictReader(f, delimiter=",")
-                limited_rows = []
-                for i, row in enumerate(reader):
-                    limited_rows.append(row)
-                    if i == 999:
-                        break
-                seats = [models.Seat.model_validate(line) for line in limited_rows]
-            else:
-                reader = csv.DictReader(f, delimiter=",")
-                seats = [models.Seat.model_validate(line) for line in reader]
-        return airports, amenities, flights, tickets, seats
+        return airports, amenities, flights_streamer, ticket_streamer, seats_streamer
 
     async def export_dataset(
         self,
@@ -220,9 +245,9 @@ class Client(ABC, Generic[C]):
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
-        flights: list[models.Flight],
-        tickets: list[models.Ticket],
-        seats: list[models.Seat],
+        flights_streamer: CSVStreamer[models.Flight],
+        tickets_streamer: CSVStreamer[models.Ticket],
+        seats_streamer: CSVStreamer[models.Seat],
     ) -> None:
         pass
 

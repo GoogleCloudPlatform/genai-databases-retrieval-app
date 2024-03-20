@@ -141,11 +141,21 @@
       password: "my-cloudsql-pass"
     ```
 
-1. Populate data into database. Note: This may take up to 5 minutes.
+1. Populate data into database.
 
-    ```bash
-    python run_database_init.py
-    ```
+    * To populate only some rows into database quickly, run:
+
+        ```bash
+        python run_database_init.py
+        ```
+
+    * To load all the data for a complete experience, run:
+
+        ```bash
+        python run_database_init.py --load-all-data
+        ```
+
+        Note: This may take up to 5-10 min and will result in a higher DB write cost
 
 [pgvector]: https://github.com/pgvector/pgvector
 
