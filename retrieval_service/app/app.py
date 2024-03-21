@@ -18,7 +18,7 @@ from typing import Optional
 
 import yaml
 from fastapi import FastAPI
-from langchain.embeddings import VertexAIEmbeddings
+from langchain_google_vertexai import VertexAIEmbeddings
 from pydantic import BaseModel
 
 import datastore
