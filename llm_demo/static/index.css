@@ -155,6 +155,69 @@ div.chat-wrapper div.chat-content div.ai span {
     border-radius: 10px;
 }
 
+div.chat-wrapper div.chat-content div.ai div.ticket-confirmation {
+    position: relative;
+    width: 70%;
+    max-width: 400px;
+    height: 430px;
+    display: inline-block;
+    padding: 10px 12px;
+    background: #efefef;
+    color: #212A3E;
+    border-radius: 10px;
+}
+
+div.chat-wrapper div.chat-content div.ai div.ticket-confirmation div.ticket {
+    background: white;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 10px;
+    height: 270px;
+    box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
+}
+
+div.chat-wrapper div.chat-content div.ai div.ticket-confirmation div.ticket-header {
+    top: 40px;
+    border-radius: 5px 5px 0px 0px;
+    border-bottom: 1px dashed #dfdfdf;
+    position: absolute;
+    background: #f8f8f8;
+    width: calc(100% - 24px);
+    left: 12px;
+    height: 77px;
+}
+
+div.chat-wrapper div.chat-content div.ai div.ticket-confirmation div.ticket div.from {
+    position: absolute;
+    height: 36px;
+    font-size: 35px;
+    left: 20px;
+    padding: 10px;
+    padding-top: 20px;
+    font-weight: 900;
+    text-align: left;
+    border-bottom: 1px solid #d2e2fc
+}
+
+div.chat-wrapper div.chat-content div.ai div.ticket-confirmation div.ticket div.plane {
+    position: absolute;
+    left: calc(50% - 20px);
+    font-size: 40px;
+    top: 60px;
+}
+
+div.chat-wrapper div.chat-content div.ai div.ticket-confirmation div.ticket div.to {
+    position: absolute;
+    height: 36px;
+    font-size: 35px;
+    right: 20px;
+    padding: 10px;
+    padding-top: 20px;
+    font-weight: 900;
+    text-align: right;
+    border-bottom: 1px solid #d2e2fc
+}
+
 div.chat-wrapper div.chat-content div.human span {
     position: relative;
     float: right;
@@ -211,3 +274,33 @@ div.chat-wrapper div.chat-content div .sender-icon img {
     margin-top: 12px;
     margin-right: 12px;
 }
+
+div.chat-wrapper div.chat-content div#loader-container span {
+    position: relative;
+    height: auto;
+    display: inline-block;
+    padding: 10px 12px;
+    background: #efefef;
+    color: #212A3E;
+    border-radius: 10px;
+    width: 50px;
+    padding-left: 25px;
+}
+
+.loader {
+    width: 30px;
+    aspect-ratio: 2;
+    --_g: no-repeat radial-gradient(circle closest-side,#000 90%,#0000);
+    background:
+      var(--_g) 0%   50%,
+      var(--_g) 50%  50%,
+      var(--_g) 100% 50%;
+    background-size: calc(100%/3) 50%;
+    animation: l3 1s infinite linear;
+  }
+  @keyframes l3 {
+      20%{background-position:0%   0%, 50%  50%,100%  50%}
+      40%{background-position:0% 100%, 50%   0%,100%  50%}
+      60%{background-position:0%  50%, 50% 100%,100%   0%}
+      80%{background-position:0%  50%, 50%  50%,100% 100%}
+  }

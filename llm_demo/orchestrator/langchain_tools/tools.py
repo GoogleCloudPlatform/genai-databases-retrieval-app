@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 from datetime import datetime
-from typing import Optional
+from typing import Dict, Optional
 
 import aiohttp
 import google.oauth2.id_token  # type: ignore
@@ -191,23 +192,27 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
         departure_time: datetime,
         arrival_time: datetime,
     ):
-        response = await client.post(
-            url=f"{BASE_URL}/tickets/insert",
-            params={
-                "airline": airline,
-                "flight_number": flight_number,
-                "departure_airport": departure_airport,
-                "arrival_airport": arrival_airport,
-                "departure_time": departure_time.strftime("%Y-%m-%d %H:%M:%S"),
-                "arrival_time": arrival_time.strftime("%Y-%m-%d %H:%M:%S"),
-            },
-            headers=get_headers(client),
-        )
-
-        response = await response.json()
-        return response
+        return f"Booking ticket on {airline} {flight_number}"
 
     return insert_ticket
+
+
+async def insert_ticket(client: aiohttp.ClientSession, params: str):
+    ticket_info = json.loads(params)
+    response = await client.post(
+        url=f"{BASE_URL}/tickets/insert",
+        params={
+            "airline": ticket_info.get("airline"),
+            "flight_number": ticket_info.get("flight_number"),
+            "departure_airport": ticket_info.get("departure_airport"),
+            "arrival_airport": ticket_info.get("arrival_airport"),
+            "departure_time": ticket_info.get("departure_time").replace("T", " "),
+            "arrival_time": ticket_info.get("arrival_time").replace("T", " "),
+        },
+        headers=get_headers(client),
+    )
+    response = await response.json()
+    return response
 
 
 def generate_list_tickets(client: aiohttp.ClientSession):
@@ -370,3 +375,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
                         """,
         ),
     ]
+
+
+def get_confirmation_needing_tools():
+    return ["Insert Ticket"]

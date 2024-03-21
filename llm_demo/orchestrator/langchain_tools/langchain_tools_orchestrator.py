@@ -31,7 +31,7 @@ from langchain_google_vertexai import VertexAI
 from pytz import timezone
 
 from ..orchestrator import BaseOrchestrator, classproperty
-from .tools import initialize_tools
+from .tools import get_confirmation_needing_tools, initialize_tools, insert_ticket
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
 BASE_HISTORY = {
@@ -93,6 +93,9 @@ class UserAgent:
             raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
         return response
 
+    async def insert_ticket(self, params: str):
+        return await insert_ticket(self.client, params)
+
     def reset_memory(self, base_message: List[BaseMessage]):
         self.memory.clear()
         self.memory.chat_memory = ChatMessageHistory(messages=base_message)
@@ -113,6 +116,22 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
     def user_session_exist(self, uuid: str) -> bool:
         return uuid in self._user_sessions
 
+    async def user_session_insert_ticket(self, uuid: str, params: str) -> Any:
+        user_session = self.get_user_session(uuid)
+        response = await user_session.insert_ticket(params)
+        return response
+
+    def check_and_add_confirmations(cls, response: Dict[str, Any]):
+        for step in response.get("intermediate_steps") or []:
+            if len(step) > 0:
+                # Find the called tool in the step
+                called_tool = step[0]
+                # Check to see if the agent has made a decision to call Prepare Insert Ticket
+                # This tool is a no-op and requires user confirmation before continuing
+                if called_tool.tool in cls.confirmation_needing_tools:
+                    return {"tool": called_tool.tool, "params": called_tool.tool_input}
+        return None
+
     async def user_session_create(self, session: dict[str, Any]):
         """Create and load an agent executor with tools and LLM."""
         print("Initializing agent..")
@@ -127,12 +146,21 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         prompt = self.create_prompt_template(tools)
         agent = UserAgent.initialize_agent(client, tools, history, prompt, self.MODEL)
         self._user_sessions[id] = agent
+        self.confirmation_needing_tools = get_confirmation_needing_tools()
+        self.client = client
 
-    async def user_session_invoke(self, uuid: str, prompt: str) -> str:
+    async def user_session_invoke(self, uuid: str, prompt: str) -> dict[str, Any]:
         user_session = self.get_user_session(uuid)
         # Send prompt to LLM
-        response = await user_session.invoke(prompt)
-        return response["output"]
+        agent_response = await user_session.invoke(prompt)
+        # Check for calls that may require confirmation to proceed
+        confirmation = self.check_and_add_confirmations(agent_response)
+        # Build final response
+        response = {}
+        response["output"] = agent_response.get("output")
+        if confirmation:
+            response["confirmation"] = confirmation
+        return response
 
     def user_session_reset(self, session: dict[str, Any], uuid: str):
         user_session = self.get_user_session(uuid)
@@ -223,17 +251,18 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
 
 PREFIX = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
 
-Cymbal Air (airline unique two letter identifier as CY) is a passenger airline offering convenient flights to many cities around the world from its 
+Cymbal Air (airline unique two letter identifier as CY) is a passenger airline offering convenient flights to many cities around the world from its
 hub in San Francisco. Cymbal Air takes pride in using the latest technology to offer the best customer
 service!
 
-Cymbal Air Customer Service Assistant (or just "Assistant" for short) is designed to assist 
-with a wide range of tasks, from answering simple questions to complex multi-query questions that 
-require passing results from one query to another. Using the latest AI models, Assistant is able to 
+Cymbal Air Customer Service Assistant (or just "Assistant" for short) is designed to assist
+with a wide range of tasks, from answering simple questions to complex multi-query questions that
+require passing results from one query to another. Using the latest AI models, Assistant is able to
 generate human-like text based on the input it receives, allowing it to engage in natural-sounding
 conversations and provide responses that are coherent and relevant to the topic at hand.
 
 Assistant is a powerful tool that can help answer a wide range of questions pertaining to travel on Cymbal Air
+
 as well as ammenities of San Francisco Airport."""
 
 TOOLS_PREFIX = """
