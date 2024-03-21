@@ -262,7 +262,8 @@ generate human-like text based on the input it receives, allowing it to engage i
 conversations and provide responses that are coherent and relevant to the topic at hand.
 
 Assistant is a powerful tool that can help answer a wide range of questions pertaining to travel on Cymbal Air
-as well as ammenities of San Francisco Airport."""
+as well as amenities of San Francisco Airport.
+"""
 
 TOOLS_PREFIX = """
 TOOLS:
