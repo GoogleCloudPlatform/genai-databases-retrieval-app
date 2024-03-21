@@ -309,6 +309,8 @@ amenities_search_params = [
         {
             "query": "A place to get food.",
             "top_k": 2,
+            "open_time": "10:00:00",
+            "open_day": "wednesday",
         },
         [
             models.Amenity(
@@ -382,7 +384,54 @@ amenities_search_params = [
                 "embedding": None,
             },
         ],
-    )
+        id="amenities_search_with_all_params",
+    ),
+    pytest.param(
+        "amenities_search",
+        {
+            "query": "A place to get food.",
+            "top_k": 1,
+        },
+        [
+            models.Amenity(
+                id=1,
+                name="amenities_search",
+                description="FOO",
+                location="BAR",
+                terminal="FOO BAR",
+                category="FEE",
+                hour="BAZ",
+            ),
+        ],
+        [
+            {
+                "id": 1,
+                "name": "amenities_search",
+                "description": "FOO",
+                "location": "BAR",
+                "terminal": "FOO BAR",
+                "category": "FEE",
+                "hour": "BAZ",
+                "sunday_start_hour": None,
+                "sunday_end_hour": None,
+                "monday_start_hour": None,
+                "monday_end_hour": None,
+                "tuesday_start_hour": None,
+                "tuesday_end_hour": None,
+                "wednesday_start_hour": None,
+                "wednesday_end_hour": None,
+                "thursday_start_hour": None,
+                "thursday_end_hour": None,
+                "friday_start_hour": None,
+                "friday_end_hour": None,
+                "saturday_start_hour": None,
+                "saturday_end_hour": None,
+                "content": None,
+                "embedding": None,
+            },
+        ],
+        id="amenities_search_without_filter",
+    ),
 ]
 
 
@@ -404,6 +453,44 @@ def test_amenities_search(m_datastore, app, method_name, params, mock_return, ex
     assert len(output) == params["top_k"]
     assert output == expected
     assert models.Amenity.model_validate(output[0])
+
+
+amenities_search_bad_params = [
+    pytest.param(
+        {
+            "query": "A place to get food.",
+            "top_k": 2,
+            "open_time": "10:00:00",
+        },
+        id="open_time_only",
+    ),
+    pytest.param(
+        {
+            "query": "A place to get food.",
+            "top_k": 2,
+            "open_day": "wednesday",
+        },
+        id="open_day_only",
+    ),
+    pytest.param(
+        {
+            "query": "A place to get food.",
+            "top_k": 2,
+            "open_time": "10:00:00",
+            "open_day": "foobar",
+        },
+        id="incorrect_open_day",
+    ),
+]
+
+
+@pytest.mark.parametrize("params", amenities_search_bad_params)
+@patch.object(datastore, "create")
+def test_amenities_search_with_bad_params(m_datastore, app, params):
+    m_datastore = AsyncMock()
+    with TestClient(app) as client:
+        response = client.get("/amenities/search", params=params)
+    assert response.status_code == 422
 
 
 get_flight_params = [
