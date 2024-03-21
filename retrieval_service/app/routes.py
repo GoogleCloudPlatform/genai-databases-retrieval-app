@@ -18,7 +18,7 @@ from typing import Any, Mapping, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
 from google.auth.transport import requests  # type:ignore
 from google.oauth2 import id_token  # type:ignore
-from langchain.embeddings.base import Embeddings
+from langchain_core.embeddings import Embeddings
 
 import datastore
 

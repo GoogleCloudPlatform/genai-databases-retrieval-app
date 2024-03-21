@@ -15,7 +15,7 @@
 import asyncio
 import csv
 
-from langchain.embeddings import VertexAIEmbeddings
+from langchain_google_vertexai import VertexAIEmbeddings
 
 import models
 from app import EMBEDDING_MODEL_NAME
