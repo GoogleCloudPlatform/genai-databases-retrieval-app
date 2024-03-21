@@ -107,13 +107,42 @@ async def get_amenity(id: int, request: Request):
 
 
 @routes.get("/amenities/search")
-async def amenities_search(query: str, top_k: int, request: Request):
+async def amenities_search(
+    request: Request,
+    query: str,
+    top_k: int,
+    open_time: Optional[str] = None,
+    open_day: Optional[str] = None,
+):
     ds: datastore.Client = request.app.state.datastore
+
+    days_of_week = [
+        "sunday",
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+    ]
+    if open_day and open_day not in days_of_week:
+        raise HTTPException(
+            status_code=422,
+            detail="open_day value not valid",
+        )
+
+    if (open_time and not open_day) or (open_day and not open_time):
+        raise HTTPException(
+            status_code=422,
+            detail="Request requires query params: provide none or both of open_time and open_day",
+        )
 
     embed_service: Embeddings = request.app.state.embed_service
     query_embedding = embed_service.embed_query(query)
 
-    results = await ds.amenities_search(query_embedding, 0.5, top_k)
+    results = await ds.amenities_search(
+        query_embedding, 0.5, top_k, open_time, open_day
+    )
     return results
 
 

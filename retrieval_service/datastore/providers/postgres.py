@@ -304,23 +304,40 @@ class Client(datastore.Client[Config]):
         return result
 
     async def amenities_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        open_time: Optional[str],
+        open_day: Optional[str],
     ) -> list[models.Amenity]:
+        open_time_datetime = None
+        filter_query = "WHERE "
+        if open_time and open_day:
+            start_hour = open_day + "_start_hour"
+            end_hour = open_day + "_end_hour"
+            open_time_datetime = datetime.strptime(open_time, "%H:%M:%S").time()
+            filter_query += f""" {start_hour} <= $4
+                AND {end_hour} > $4
+                AND
+                """
+        filter_query += " 1 - (embedding <=> $1) > $2"
+
         results = await self.__pool.fetch(
-            """
-            SELECT id, name, description, location, terminal, category, hour
-            FROM (
-                SELECT id, name, description, location, terminal, category,
-                  hour, 1 - (embedding <=> $1) AS similarity
-                FROM amenities
-                WHERE 1 - (embedding <=> $1) > $2
-                ORDER BY similarity DESC
-                LIMIT $3
-            ) AS sorted_amenities
+            f"""
+            select id, name, description, location, terminal, category, hour
+            from (
+                select *, 1 - (embedding <=> $1) as similarity
+                from amenities
+                {filter_query}
+                order by similarity desc
+                limit $3
+            ) as sorted_amenities
             """,
             query_embedding,
             similarity_threshold,
             top_k,
+            open_time_datetime,
             timeout=10,
         )
 

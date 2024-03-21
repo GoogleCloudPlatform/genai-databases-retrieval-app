@@ -47,6 +47,10 @@ search_amenities_func = generative_models.FunctionDeclaration(
                 Use this tool to search amenities by name or to recommended airport amenities at SFO.
                 If user provides flight info, use 'search_flights_by_number'
                 first to get gate info and location.
+                User can also provide time and day of the week to check amenities opening hour.
+                Time is provided in the HH:MM:SS format.
+                Day is one of the days of the week.
+                If time is provided, day MUST be provided as well. Either both time and day is provided, or none.
                 Only recommend amenities that are returned by this query.
                 Find amenities close to the user by matching the terminal and then comparing
                 the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
@@ -57,6 +61,14 @@ search_amenities_func = generative_models.FunctionDeclaration(
         "type": "object",
         "properties": {
             "query": {"type": "string", "description": "Search query"},
+            "open_time": {
+                "type": "string",
+                "description": "Time for filtering amenities by operating hours. Provided in the format HH:MM:SS",
+            },
+            "open_day": {
+                "type": "string",
+                "description": "Day of the week for filtering amenities by operating hours.",
+            },
             "top_k": {
                 "type": "integer",
                 "description": "Number of matching amenities to return. Default this value to 5.",
