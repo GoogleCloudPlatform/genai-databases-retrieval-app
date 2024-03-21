@@ -33,6 +33,15 @@ async def main() -> None:
                 amenity.embedding = embed_service.embed_query(amenity.content)
                 amenities.append(amenity)
 
+    policies: list[models.Policy] = []
+    with open("../data/cymbalair_policy.csv", "r") as f:
+        reader = csv.DictReader(f, delimiter=",")
+        for line in reader:
+            policy = models.Policy.model_validate(line)
+            if policy.content:
+                policy.embedding = embed_service.embed_query(policy.content)
+                policies.append(policy)
+
     print("Completed embedding generation.")
 
     with open("../data/amenity_dataset.csv.new", "w") as f:
@@ -65,6 +74,17 @@ async def main() -> None:
         writer.writeheader()
         for amenity in amenities:
             writer.writerow(amenity.model_dump())
+
+    with open("../data/cymbalair_policy.csv.new", "w") as f:
+        col_names = [
+            "id",
+            "content",
+            "embedding",
+        ]
+        writer = csv.DictWriter(f, col_names, delimiter=",")
+        writer.writeheader()
+        for policy in policies:
+            writer.writerow(policy.model_dump())
 
     print("Wrote data to CSV.")
 

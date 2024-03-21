@@ -69,6 +69,7 @@ class Client(datastore.Client[Config]):
         airports: list[models.Airport],
         amenities: list[models.Amenity],
         flights: list[models.Flight],
+        policies: list[models.Policy],
     ) -> None:
         async with self.__pool.acquire() as conn:
             await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
@@ -220,9 +221,41 @@ class Client(datastore.Client[Config]):
                 """
             )
 
+            # If the table already exists, drop it to avoid conflicts
+            await conn.execute("DROP TABLE IF EXISTS policies CASCADE")
+            # Create a new table
+            await conn.execute(
+                """
+                CREATE TABLE policies(
+                  id INT PRIMARY KEY,
+                  content TEXT NOT NULL,
+                  embedding vector(768) NOT NULL
+                )
+                """
+            )
+            # Insert all the data
+            await conn.executemany(
+                """
+                INSERT INTO policies VALUES ($1, $2, $3)
+                """,
+                [
+                    (
+                        p.id,
+                        p.content,
+                        p.embedding,
+                    )
+                    for p in policies
+                ],
+            )
+
     async def export_data(
         self,
-    ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
+    ) -> tuple[
+        list[models.Airport],
+        list[models.Amenity],
+        list[models.Flight],
+        list[models.Policy],
+    ]:
         airport_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM airports ORDER BY id ASC""")
         )
@@ -232,11 +265,15 @@ class Client(datastore.Client[Config]):
         flight_task = asyncio.create_task(
             self.__pool.fetch("""SELECT * FROM flights ORDER BY id ASC""")
         )
+        policy_task = asyncio.create_task(
+            self.__pool.fetch("""SELECT * FROM policies ORDER BY id ASC""")
+        )
 
         airports = [models.Airport.model_validate(dict(a)) for a in await airport_task]
         amenities = [models.Amenity.model_validate(dict(a)) for a in await amenity_task]
         flights = [models.Flight.model_validate(dict(f)) for f in await flight_task]
-        return airports, amenities, flights
+        policies = [models.Policy.model_validate(dict(p)) for p in await policy_task]
+        return airports, amenities, flights, policies
 
     async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
         result = await self.__pool.fetchrow(

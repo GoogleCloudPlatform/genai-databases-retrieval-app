@@ -14,6 +14,7 @@
 
 import ast
 import datetime
+import json
 from decimal import Decimal
 from typing import Optional
 
@@ -105,3 +106,16 @@ class Ticket(BaseModel):
     arrival_airport: str
     departure_time: datetime.datetime
     arrival_time: datetime.datetime
+
+
+class Policy(BaseModel):
+    id: int
+    content: str
+    embedding: Optional[list[float]] = None
+
+    @field_validator("embedding", mode="before")
+    def validate(cls, v):
+        if type(v) == str:
+            v = ast.literal_eval(v)
+            v = [float(f) for f in v]
+        return v
