@@ -44,7 +44,7 @@ class BaseOrchestrator(ABC):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
-    async def user_session_invoke(self, uuid: str, prompt: str) -> str:
+    async def user_session_invoke(self, uuid: str, prompt: str) -> dict[str, Any]:
         """Invoke user session and return a response from llm orchestrator."""
         raise NotImplementedError("Subclass should implement this!")
 
@@ -55,6 +55,10 @@ class BaseOrchestrator(ABC):
 
     @abstractmethod
     def get_user_session(self, uuid: str) -> Any:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
+    async def user_session_insert_ticket(self, uuid: str, params: str) -> Any:
         raise NotImplementedError("Subclass should implement this!")
 
     def set_user_session_header(self, uuid: str, user_id_token: str):
