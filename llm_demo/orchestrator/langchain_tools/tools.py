@@ -156,13 +156,26 @@ def generate_list_flights(client: aiohttp.ClientSession):
 
 class QueryInput(BaseModel):
     query: str = Field(description="Search query")
+    open_time: str = Field(
+        description="Time for filtering amenities by operating hours."
+    )
+    open_day: str = Field(
+        description="Day of the week for filtering amenities by operating hours."
+    )
 
 
 def generate_search_amenities(client: aiohttp.ClientSession):
-    async def search_amenities(query: str):
+    async def search_amenities(
+        query: str, open_time: Optional[str], open_day: Optional[str]
+    ):
         response = await client.get(
             url=f"{BASE_URL}/amenities/search",
-            params={"top_k": "5", "query": query},
+            params={
+                "top_k": "5",
+                "query": query,
+                "open_time": open_time,
+                "open_day": open_day,
+            },
             headers=get_headers(client),
         )
 
@@ -303,7 +316,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             coroutine=generate_list_flights(client),
             name="List Flights",
             description="""
-                        Use this tool to list flights information matching search criteria.
+                        Use this tool to list flight information matching search criteria.
                         Takes an arrival airport, a departure airport, or both, filters by date and returns all matching flights.
                         If 3-letter iata code is not provided for departure_airport or arrival_airport, use search airport tools to get iata code information.
                         Do NOT guess a date, ask user for date input if it is not given. Date must be in the following format: YYYY-MM-DD.
@@ -337,10 +350,29 @@ async def initialize_tools(client: aiohttp.ClientSession):
                         Use this tool to search amenities by name or to recommended airport amenities at SFO.
                         If user provides flight info, use 'Search Flights by Flight Number'
                         first to get gate info and location.
+
+                        User can also provide time and day of the week to check amenities opening hour.
+                        Time is provided in the HH:MM:SS format.
+                        Day is one of the days of the week.
+                        If time is provided, day MUST be provided as well. Either both time and day is provided, or none.
+
                         Only recommend amenities that are returned by this query.
                         Find amenities close to the user by matching the terminal and then comparing
                         the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
                         B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
+
+                        Example:
+                        {{
+                            "query": "A burger place",
+                            "open_time": null,
+                            "open_day": null,
+                        }}
+                        Example:
+                        {{
+                            "query": "Shop for luxury goods",
+                            "open_time": "10:00:00",
+                            "open_day": "wednesday",
+                        }}
                         """,
             args_schema=QueryInput,
         ),
