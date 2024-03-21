@@ -233,7 +233,12 @@ class Client(datastore.Client[Config]):
         return models.Amenity.model_validate(amenity_dict)
 
     async def amenities_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        open_time: Optional[str],
+        open_day: Optional[str],
     ) -> list[models.Amenity]:
         raise NotImplementedError("Semantic search not yet supported in Firestore.")
 

@@ -397,17 +397,34 @@ class Client(datastore.Client[Config]):
         return res
 
     async def amenities_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        open_time: Optional[str],
+        open_day: Optional[str],
     ) -> list[models.Amenity]:
+
+        open_time_datetime = None
+        filter_query = "WHERE "
+        if open_time and open_day:
+            start_hour = open_day + "_start_hour"
+            end_hour = open_day + "_end_hour"
+            open_time_datetime = datetime.strptime(open_time, "%H:%M:%S").time()
+            filter_query += f""" {start_hour} <= :open_time
+                      AND {end_hour} > :open_time
+                      AND
+                """
+        filter_query += " 1 - (embedding <=> :query_embedding) > :similarity_threshold"
+
         async with self.__pool.connect() as conn:
             s = text(
-                """
+                f"""
                 SELECT id, name, description, location, terminal, category, hour
                   FROM (
-                      SELECT id, name, description, location, terminal, category, hour,
-                        1 - (embedding <=> :query_embedding) AS similarity
+                      SELECT *, 1 - (embedding <=> :query_embedding) AS similarity
                       FROM amenities
-                      WHERE 1 - (embedding <=> :query_embedding) > :similarity_threshold
+                      {filter_query}
                       ORDER BY similarity DESC
                       LIMIT :top_k
                   ) AS sorted_amenities
@@ -417,6 +434,7 @@ class Client(datastore.Client[Config]):
                 "query_embedding": query_embedding,
                 "similarity_threshold": similarity_threshold,
                 "top_k": top_k,
+                "open_time": open_time_datetime,
             }
             results = (await conn.execute(s, params)).mappings().fetchall()
 
