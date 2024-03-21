@@ -172,6 +172,20 @@ def generate_search_amenities(client: aiohttp.ClientSession):
     return search_amenities
 
 
+def generate_search_policies(client: aiohttp.ClientSession):
+    async def search_policies(query: str):
+        response = await client.get(
+            url=f"{BASE_URL}/policies/search",
+            params={"top_k": "5", "query": query},
+            headers=get_headers(client),
+        )
+
+        response = await response.json()
+        return response
+
+    return search_policies
+
+
 class TicketInput(BaseModel):
     airline: str = Field(description="Airline unique 2 letter identifier")
     flight_number: str = Field(description="1 to 4 digit number")
@@ -327,6 +341,17 @@ async def initialize_tools(client: aiohttp.ClientSession):
                         Find amenities close to the user by matching the terminal and then comparing
                         the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
                         B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
+                        """,
+            args_schema=QueryInput,
+        ),
+        StructuredTool.from_function(
+            coroutine=generate_search_policies(client),
+            name="Search Policies",
+            description="""
+						Use this tool to search for cymbal air passenger policy.
+						Policy that are listed is unchangeable.
+						You will not answer any questions outside of the policy given.
+						Policy includes information on ticket purchase and changes, baggage, check-in and boarding, special assistance, overbooking, flight delays and cancellations.
                         """,
             args_schema=QueryInput,
         ),

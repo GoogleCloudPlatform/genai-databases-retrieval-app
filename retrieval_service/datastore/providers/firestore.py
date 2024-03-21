@@ -160,7 +160,6 @@ class Client(datastore.Client[Config]):
         policies_docs = self.__client.collection("policies").stream()
 
         airports = []
-
         async for doc in airport_docs:
             airport_dict = doc.to_dict()
             airport_dict["id"] = doc.id
@@ -309,6 +308,11 @@ class Client(datastore.Client[Config]):
         user_id: str,
     ) -> list[models.Ticket]:
         raise NotImplementedError("Not Implemented")
+
+    async def policies_search(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> list[models.Policy]:
+        raise NotImplementedError("Semantic search not yet supported in Firestore.")
 
     async def close(self):
         self.__client.close()
