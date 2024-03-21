@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import asyncio
-import json
 from datetime import datetime
 from typing import Any, Dict, Literal, Optional
 
