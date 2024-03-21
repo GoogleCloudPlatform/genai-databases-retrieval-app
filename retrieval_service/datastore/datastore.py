@@ -249,6 +249,12 @@ class Client(ABC, Generic[C]):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
+    async def policies_search(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> list[models.Policy]:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
     async def close(self):
         pass
 

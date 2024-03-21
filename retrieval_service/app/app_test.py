@@ -743,3 +743,47 @@ def test_search_flights_with_bad_params(m_datastore, app, params):
     with TestClient(app) as client:
         response = client.get("/flights/search", params=params)
     assert response.status_code == 422
+
+
+policies_search_params = [
+    pytest.param(
+        "policies_search",
+        {
+            "query": "Additional fee for flight changes.",
+            "top_k": 1,
+        },
+        [
+            models.Policy(
+                id=1,
+                content="foo bar",
+            ),
+        ],
+        [
+            {
+                "id": 1,
+                "content": "foo bar",
+                "embedding": None,
+            },
+        ],
+    )
+]
+
+
+@pytest.mark.parametrize(
+    "method_name, params, mock_return, expected", policies_search_params
+)
+@patch.object(datastore, "create")
+def test_policies_search(m_datastore, app, method_name, params, mock_return, expected):
+    with TestClient(app) as client:
+        with patch.object(
+            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+        ) as mock_method:
+            response = client.get(
+                "/policies/search",
+                params=params,
+            )
+    assert response.status_code == 200
+    output = response.json()
+    assert len(output) == params["top_k"]
+    assert output == expected
+    assert models.Policy.model_validate(output[0])

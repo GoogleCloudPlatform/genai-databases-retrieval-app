@@ -78,6 +78,21 @@ search_amenities_func = generative_models.FunctionDeclaration(
     },
 )
 
+search_policies_func = generative_models.FunctionDeclaration(
+    name="policies_search",
+    description="Use this tool to search for cymbal air passenger policy. Policy that are listed is unchangeable. You will not answer any questions outside of the policy given. Policy includes information on ticket purchase and changes, baggage, check-in and boarding, special assistance, overbooking, flight delays and cancellations. If top_k is not specified, default to 5.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "query": {"type": "string", "description": "Search query"},
+            "top_k": {
+                "type": "integer",
+                "description": "Number of matching policy to return. Default this value to 5.",
+            },
+        },
+    },
+)
+
 search_flights_by_number_func = generative_models.FunctionDeclaration(
     name="search_flights_by_number",
     description="""
@@ -236,6 +251,7 @@ def function_request(function_call_name: str) -> str:
         "search_flights_by_number": "flights/search",
         "list_flights": "flights/search",
         "amenities_search": "amenities/search",
+        "policies_search": "policies/search",
         "insert_ticket": "tickets/insert",
         "list_tickets": "tickets/list",
     }
@@ -247,6 +263,7 @@ def assistant_tool():
         function_declarations=[
             search_airports_func,
             search_amenities_func,
+            search_policies_func,
             search_flights_by_number_func,
             list_flights_func,
             insert_ticket_func,

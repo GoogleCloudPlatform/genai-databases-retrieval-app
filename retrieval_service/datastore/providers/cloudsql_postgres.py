@@ -240,6 +240,27 @@ class Client(datastore.Client[Config]):
             )
 
             # If the table already exists, drop it to avoid conflicts
+            await conn.execute(text("DROP TABLE IF EXISTS tickets CASCADE"))
+            # Create a new table
+            await conn.execute(
+                text(
+                    """
+                    CREATE TABLE tickets(
+                        user_id TEXT,
+                        user_name TEXT,
+                        user_email TEXT,
+                        airline TEXT,
+                        flight_number TEXT,
+                        departure_airport TEXT,
+                        arrival_airport TEXT,
+                        departure_time TIMESTAMP,
+                        arrival_time TIMESTAMP
+                    )
+                    """
+                )
+            )
+
+            # If the table already exists, drop it to avoid conflicts
             await conn.execute(text("DROP TABLE IF EXISTS policies CASCADE"))
             # Create a new table
             await conn.execute(
@@ -289,6 +310,9 @@ class Client(datastore.Client[Config]):
             )
             flights_task = asyncio.create_task(
                 conn.execute(text("""SELECT * FROM flights"""))
+            )
+            policy_task = asyncio.create_task(
+                conn.execute(text("""SELECT * FROM policies"""))
             )
             policy_task = asyncio.create_task(
                 conn.execute(text("""SELECT * FROM policies"""))
@@ -502,6 +526,32 @@ class Client(datastore.Client[Config]):
         user_id: str,
     ) -> list[models.Ticket]:
         raise NotImplementedError("Not Implemented")
+
+    async def policies_search(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> list[models.Policy]:
+        async with self.__pool.connect() as conn:
+            s = text(
+                """
+                SELECT id, content
+                  FROM (
+                      SELECT id, content, 1 - (embedding <=> :query_embedding) AS similarity
+                      FROM policies 
+                      WHERE 1 - (embedding <=> :query_embedding) > :similarity_threshold
+                      ORDER BY similarity DESC
+                      LIMIT :top_k
+                  ) AS sorted_policies
+                """
+            )
+            params = {
+                "query_embedding": query_embedding,
+                "similarity_threshold": similarity_threshold,
+                "top_k": top_k,
+            }
+            results = (await conn.execute(s, params)).mappings().fetchall()
+
+        res = [models.Policy.model_validate(r) for r in results]
+        return res
 
     async def close(self):
         await self.__pool.dispose()

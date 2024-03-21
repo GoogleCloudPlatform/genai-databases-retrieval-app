@@ -24,7 +24,13 @@ import models
 
 from .. import datastore
 from . import postgres
-from .test_data import query_embedding1, query_embedding2, query_embedding3
+from .test_data import (
+    amenities_query_embedding1,
+    amenities_query_embedding2,
+    foobar_query_embedding,
+    policies_query_embedding1,
+    policies_query_embedding2,
+)
 from .utils import get_env_var
 
 pytestmark = pytest.mark.asyncio(scope="module")
@@ -288,7 +294,7 @@ async def test_get_amenity(ds: postgres.Client):
 amenities_search_test_data = [
     pytest.param(
         # "Where can I get coffee near gate A6?"
-        query_embedding1,
+        amenities_query_embedding1,
         0.65,
         1,
         "10:00:00",
@@ -324,7 +330,7 @@ amenities_search_test_data = [
     ),
     pytest.param(
         # "Where can I look for luxury goods?"
-        query_embedding2,
+        amenities_query_embedding2,
         0.65,
         2,
         "17:00:00",
@@ -385,7 +391,7 @@ amenities_search_test_data = [
     ),
     pytest.param(
         # "FOO BAR"
-        query_embedding3,
+        foobar_query_embedding,
         0.9,
         1,
         "12:00:00",
@@ -609,4 +615,63 @@ async def test_search_flights_by_airports(
     expected: List[models.Flight],
 ):
     res = await ds.search_flights_by_airports(date, departure_airport, arrival_airport)
+    assert res == expected
+
+
+policies_search_test_data = [
+    pytest.param(
+        # "What is the fee for extra baggage?"
+        policies_query_embedding1,
+        0.65,
+        1,
+        [
+            models.Policy(
+                id=4,
+                content="## Baggage\nChecked Baggage: Each passenger is allowed 2 checked baggage allowance. Business class and First class passengers are allowed 4 checked baggage. Additional baggage will cost $70 and a $30 fee applies for checked bags over 50 lbs. We don’t accept checked bags over 100 lbs. We only accept checked bags up to 115 inches in total dimensions (length + width + height), and oversized baggage will cost $30. Checked bags above 160 inches in total dimensions will not be accepted.",
+                embedding=None,
+            ),
+        ],
+        id="search_extra_baggage_fee",
+    ),
+    pytest.param(
+        # "Can I change my flight?"
+        policies_query_embedding2,
+        0.65,
+        2,
+        [
+            models.Policy(
+                id=1,
+                content="Changes: Changes or reschedules to flights may be permitted depending on the fare type. Changes are permitted right after the ticket is confirmed. The fees for flight changes are $100 for Economy, $50 for Premium Economy, and free for Business Class and First class fares.",
+                embedding=None,
+            ),
+            models.Policy(
+                id=0,
+                content="# Cymbal Air: Passenger Policy  \n## Ticket Purchase and Changes\nTypes of Fares: Cymbal Air offers a variety of fares (Economy, Premium Economy, Business Class, and First Class). Fare restrictions, such as change fees and refundability, vary depending on the fare purchased.",
+                embedding=None,
+            ),
+        ],
+        id="search_flight_delays",
+    ),
+    pytest.param(
+        # "FOO BAR"
+        foobar_query_embedding,
+        0.65,
+        1,
+        [],
+        id="no_results",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "query_embedding, similarity_threshold, top_k, expected", policies_search_test_data
+)
+async def test_policies_search(
+    ds: postgres.Client,
+    query_embedding: List[float],
+    similarity_threshold: float,
+    top_k: int,
+    expected: List[models.Policy],
+):
+    res = await ds.policies_search(query_embedding, similarity_threshold, top_k)
     assert res == expected
