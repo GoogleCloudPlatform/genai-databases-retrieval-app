@@ -45,11 +45,11 @@ branchProtectionRules:
       - "cla/google"
       - "retrieval_service"
       - "llm_demo"
-      - "retrieval-service-app-pr (extension-demo-testing)"
-      - "retrieval-service-alloydb-pr (extension-demo-testing)"
-      - "retrieval-service-cloudsql-pr (extension-demo-testing)"
-      - "llm-demo-langchain-tools-pr (extension-demo-testing)"
-      - "llm-demo-vertexai-fc-pr (extension-demo-testing)"
+      - "retrieval-service-app-pr (genai-databases-retrevial-demo)"
+      - "retrieval-service-alloydb-pr (genai-databases-retrevial-demo)"
+      - "retrieval-service-cloudsql-pr (genai-databases-retrevial-demo)"
+      - "llm-demo-langchain-tools-pr (genai-databases-retrevial-demo)"
+      - "llm-demo-vertexai-fc-pr (genai-databases-retrevial-demo)"
 # Set team access
 permissionRules:
   - team: senseai-eco
