@@ -136,11 +136,10 @@ class Client(datastore.Client[Config]):
         for policy in policies:
             create_policies_tasks.append(
                 self.__client.collection("policies")
-                .document(str(policy.langchain_id))
+                .document(str(policy.id))
                 .set(
                     {
                         "content": policy.content,
-                        "metadata": policy.metadata,
                         "embedding": policy.embedding,
                     }
                 )
@@ -182,7 +181,7 @@ class Client(datastore.Client[Config]):
         policies = []
         async for doc in policies_docs:
             policy_dict = doc.to_dict()
-            policy_dict["langchain_id"] = doc.langchain_id
+            policy_dict["id"] = doc.id
             policies.append(models.Policy.model_validate(policy_dict))
         return airports, amenities, flights, policies
 

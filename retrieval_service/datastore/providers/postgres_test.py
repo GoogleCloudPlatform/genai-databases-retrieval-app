@@ -134,8 +134,8 @@ async def test_export_dataset(ds: postgres.Client):
     assert diff_flights["columns_removed"] == []
 
     diff_policies = compare(
-        load_csv(open(policies_ds_path), "langchain_id"),
-        load_csv(open(policies_new_path), "langchain_id"),
+        load_csv(open(policies_ds_path), "id"),
+        load_csv(open(policies_new_path), "id"),
     )
     assert diff_policies["added"] == []
     assert diff_policies["removed"] == []

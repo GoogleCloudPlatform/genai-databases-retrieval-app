@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import asyncio
-import json
 from datetime import datetime
 from typing import Any, Dict, Literal, Optional
 
@@ -247,9 +246,8 @@ class Client(datastore.Client[Config]):
                 text(
                     """
                     CREATE TABLE policies(
-                      langchain_id INT PRIMARY KEY,
+                      id INT PRIMARY KEY,
                       content TEXT NOT NULL,
-                      metadata JSON,
                       embedding vector(768) NOT NULL
                     )
                     """
@@ -259,14 +257,13 @@ class Client(datastore.Client[Config]):
             await conn.execute(
                 text(
                     """
-                    INSERT INTO policies VALUES (:langchain_id, :content, :metadata, :embedding)
+                    INSERT INTO policies VALUES (:id, :content, :embedding)
                     """
                 ),
                 [
                     {
-                        "langchain_id": p.langchain_id,
+                        "id": p.id,
                         "content": p.content,
-                        "metadata": json.dumps(p.metadata),
                         "embedding": p.embedding,
                     }
                     for p in policies

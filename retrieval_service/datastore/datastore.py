@@ -143,9 +143,8 @@ class Client(ABC, Generic[C]):
 
         with open(policies_new_path, "w") as f:
             col_names = [
-                "langchain_id",
+                "id",
                 "content",
-                "metadata",
                 "embedding",
             ]
             writer = csv.DictWriter(f, col_names, delimiter=",")

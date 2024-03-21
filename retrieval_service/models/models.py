@@ -109,9 +109,8 @@ class Ticket(BaseModel):
 
 
 class Policy(BaseModel):
-    langchain_id: int
+    id: int
     content: str
-    metadata: str
     embedding: Optional[list[float]] = None
 
     @field_validator("embedding", mode="before")
@@ -120,10 +119,3 @@ class Policy(BaseModel):
             v = ast.literal_eval(v)
             v = [float(f) for f in v]
         return v
-
-    @field_validator("metadata", mode="before")
-    def convert_json_to_string(cls, v):
-        try:
-            return json.loads(v)
-        except:
-            return json.dumps(v)

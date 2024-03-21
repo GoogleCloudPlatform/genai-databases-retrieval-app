@@ -227,9 +227,8 @@ class Client(datastore.Client[Config]):
             await conn.execute(
                 """
                 CREATE TABLE policies(
-                  langchain_id INT PRIMARY KEY,
+                  id INT PRIMARY KEY,
                   content TEXT NOT NULL,
-                  metadata JSON,
                   embedding vector(768) NOT NULL
                 )
                 """
@@ -237,13 +236,12 @@ class Client(datastore.Client[Config]):
             # Insert all the data
             await conn.executemany(
                 """
-                INSERT INTO policies VALUES ($1, $2, $3, $4)
+                INSERT INTO policies VALUES ($1, $2, $3)
                 """,
                 [
                     (
-                        p.langchain_id,
+                        p.id,
                         p.content,
-                        p.metadata,
                         p.embedding,
                     )
                     for p in policies
@@ -268,7 +266,7 @@ class Client(datastore.Client[Config]):
             self.__pool.fetch("""SELECT * FROM flights ORDER BY id ASC""")
         )
         policy_task = asyncio.create_task(
-            self.__pool.fetch("""SELECT * FROM policies ORDER BY langchain_id ASC""")
+            self.__pool.fetch("""SELECT * FROM policies ORDER BY id ASC""")
         )
 
         airports = [models.Airport.model_validate(dict(a)) for a in await airport_task]
