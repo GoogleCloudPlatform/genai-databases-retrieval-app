@@ -23,13 +23,14 @@ async def main() -> None:
     airports_ds_path = "../data/airport_dataset.csv"
     amenities_ds_path = "../data/amenity_dataset.csv"
     flights_ds_path = "../data/flights_dataset.csv"
+    policies_ds_path = "../data/cymbalair_policy.csv"
 
     cfg = parse_config("config.yml")
     ds = await datastore.create(cfg.datastore)
-    airports, amenities, flights = await ds.load_dataset(
-        airports_ds_path, amenities_ds_path, flights_ds_path
+    airports, amenities, flights, policies = await ds.load_dataset(
+        airports_ds_path, amenities_ds_path, flights_ds_path, policies_ds_path
     )
-    await ds.initialize_data(airports, amenities, flights)
+    await ds.initialize_data(airports, amenities, flights, policies)
     await ds.close()
 
     print("database init done.")

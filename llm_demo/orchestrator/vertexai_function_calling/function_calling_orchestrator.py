@@ -111,7 +111,7 @@ class UserChatModel:
     def get_prompt(self) -> str:
         formatter = "%A, %m/%d/%Y, %H:%M:%S"
         now = datetime.now(timezone("US/Pacific")).strftime("%A, %m/%d/%Y, %H:%M:%S")
-        prompt = f"{PREFIX}. Today's date and current time is {now}."
+        prompt = f"{PREFIX}\nToday's date and current time is {now}."
         return prompt
 
     def debug_log(self, output: str) -> None:

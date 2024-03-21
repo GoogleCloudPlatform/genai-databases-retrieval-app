@@ -81,6 +81,7 @@ class Client(datastore.Client[Config]):
         airports: list[models.Airport],
         amenities: list[models.Amenity],
         flights: list[models.Flight],
+        policies: list[models.Policy],
     ) -> None:
         async with self.__pool.connect() as conn:
             # If the table already exists, drop it to avoid conflicts
@@ -237,11 +238,47 @@ class Client(datastore.Client[Config]):
                     for f in flights
                 ],
             )
+
+            # If the table already exists, drop it to avoid conflicts
+            await conn.execute(text("DROP TABLE IF EXISTS policies CASCADE"))
+            # Create a new table
+            await conn.execute(
+                text(
+                    """
+                    CREATE TABLE policies(
+                      id INT PRIMARY KEY,
+                      content TEXT NOT NULL,
+                      embedding vector(768) NOT NULL
+                    )
+                    """
+                )
+            )
+            # Insert all the data
+            await conn.execute(
+                text(
+                    """
+                    INSERT INTO policies VALUES (:id, :content, :embedding)
+                    """
+                ),
+                [
+                    {
+                        "id": p.id,
+                        "content": p.content,
+                        "embedding": p.embedding,
+                    }
+                    for p in policies
+                ],
+            )
             await conn.commit()
 
     async def export_data(
         self,
-    ) -> tuple[list[models.Airport], list[models.Amenity], list[models.Flight]]:
+    ) -> tuple[
+        list[models.Airport],
+        list[models.Amenity],
+        list[models.Flight],
+        list[models.Policy],
+    ]:
         async with self.__pool.connect() as conn:
             airport_task = asyncio.create_task(
                 conn.execute(text("""SELECT * FROM airports"""))
@@ -253,15 +290,21 @@ class Client(datastore.Client[Config]):
             flights_task = asyncio.create_task(
                 conn.execute(text("""SELECT * FROM flights"""))
             )
+            policy_task = asyncio.create_task(
+                conn.execute(text("""SELECT * FROM policies"""))
+            )
 
             airport_results = (await airport_task).mappings().fetchall()
             amenity_results = (await amenity_task).mappings().fetchall()
             flights_results = (await flights_task).mappings().fetchall()
+            policy_results = (await policy_task).mappings().fetchall()
 
             airports = [models.Airport.model_validate(a) for a in airport_results]
             amenities = [models.Amenity.model_validate(a) for a in amenity_results]
             flights = [models.Flight.model_validate(f) for f in flights_results]
-            return airports, amenities, flights
+            policies = [models.Policy.model_validate(p) for p in policy_results]
+
+            return airports, amenities, flights, policies
 
     async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
         async with self.__pool.connect() as conn:

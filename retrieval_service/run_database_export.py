@@ -25,21 +25,24 @@ async def main():
     cfg = parse_config("config.yml")
     ds = await datastore.create(cfg.datastore)
 
-    airports, amenities, flights = await ds.export_data()
+    airports, amenities, flights, policies = await ds.export_data()
 
     await ds.close()
 
     airports_new_path = "../data/airport_dataset.csv.new"
     amenities_new_path = "../data/amenity_dataset.csv.new"
     flights_new_path = "../data/flights_dataset.csv.new"
+    policies_new_path = "../data/cymbalair_policy.csv.new"
 
     await ds.export_dataset(
         airports,
         amenities,
         flights,
+        policies,
         airports_new_path,
         amenities_new_path,
         flights_new_path,
+        policies_new_path,
     )
 
     print("database export done.")
