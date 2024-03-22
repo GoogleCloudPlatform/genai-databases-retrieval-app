@@ -115,6 +115,8 @@ function buildConfirmation(confirmation, messageId) {
         flight_number = params.flight_number;
         departure_time = params.departure_time;
         arrival_time = params.arrival_time;
+        seat_row = params.seat_row;
+        seat_letter = params.seat_letter;
         userName = $('#user-name').first().text();
         let message = `<div class="chat-bubble ai" id="${messageId}">
         <div class="sender-icon"><img src="static/logo.png"></div>
@@ -127,8 +129,9 @@ function buildConfirmation(confirmation, messageId) {
                 <div class="to">${to}</div>
             </div>
             ${buildBox('left', 133, 35, 15, "Departure", departure_time.replace('T', ' '))}
-            ${buildBox('right', 133, 35, 15, "Arrival", arrival_time.replace('T', ' '))}
+            ${buildBox('left', 133, 245, 15, "Arrival", arrival_time.replace('T', ' '))}
             ${buildBox('left', 205, 35, 15, "Flight", flight)}
+            ${seat_row && seat_letter ? buildBox('left', 205, 245, 15, "Seat", `${seat_row}${seat_letter}`) : ''}
             ${buildBox('left', 265, 35, 15, "Passenger", userName, "")}
             ${buildButton("Looks good to me. Book it!", 342, "#FFF", "#1b980f", "confirmTicket('" + messageId + "')")}
             ${buildButton("I changed my mind.", 395, "#FFF", "#181a23", "cancelTicket('" + messageId + "')")}
