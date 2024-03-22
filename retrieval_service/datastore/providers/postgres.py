@@ -350,15 +350,19 @@ class Client(datastore.Client[Config]):
     ) -> list[models.Amenity]:
         open_time_datetime = None
         filter_query = "WHERE "
+
         if open_time and open_day:
             start_hour = open_day + "_start_hour"
             end_hour = open_day + "_end_hour"
             open_time_datetime = datetime.strptime(open_time, "%H:%M:%S").time()
             filter_query += f""" {start_hour} <= $4
                 AND {end_hour} > $4
-                AND
-                """
-        filter_query += " 1 - (embedding <=> $1) > $2"
+                AND """
+        # Dummy text to prevent extra input variable in the fetch query below
+        else:
+            filter_query += """ $4::TEXT IS NULL
+                AND """
+        filter_query += "1 - (embedding <=> $1) > $2"
 
         results = await self.__pool.fetch(
             f"""

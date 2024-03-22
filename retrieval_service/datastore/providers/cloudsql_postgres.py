@@ -404,18 +404,17 @@ class Client(datastore.Client[Config]):
         open_time: Optional[str],
         open_day: Optional[str],
     ) -> list[models.Amenity]:
-
         open_time_datetime = None
         filter_query = "WHERE "
+
         if open_time and open_day:
             start_hour = open_day + "_start_hour"
             end_hour = open_day + "_end_hour"
             open_time_datetime = datetime.strptime(open_time, "%H:%M:%S").time()
             filter_query += f""" {start_hour} <= :open_time
                       AND {end_hour} > :open_time
-                      AND
-                """
-        filter_query += " 1 - (embedding <=> :query_embedding) > :similarity_threshold"
+                      AND """
+        filter_query += "1 - (embedding <=> :query_embedding) > :similarity_threshold"
 
         async with self.__pool.connect() as conn:
             s = text(
