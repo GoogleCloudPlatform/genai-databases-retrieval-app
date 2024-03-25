@@ -258,6 +258,26 @@ def generate_list_tickets(client: aiohttp.ClientSession):
     return list_tickets
 
 
+class NL2QueryInput(BaseModel):
+    query: str = Field(description="Search query")
+
+
+def generate_nl2query(client: aiohttp.ClientSession):
+    nl2query_url = "https://nl2query-service-ocagqisd5q-uc.a.run.app"
+
+    async def nl2query(query: str):
+        response = await client.get(
+            url=f"{nl2query_url}/run_query",
+            params={"query": query},
+            headers=get_headers(client),
+        )
+
+        response = await response.json()
+        return response
+
+    return nl2query
+
+
 # Tools for agent
 async def initialize_tools(client: aiohttp.ClientSession):
     return [
@@ -426,13 +446,13 @@ async def initialize_tools(client: aiohttp.ClientSession):
             args_schema=TicketInput,
         ),
         StructuredTool.from_function(
-            coroutine=generate_list_tickets(client),
-            name="List Tickets",
+            coroutine=generate_nl2query(client),
+            name="Run NL2Query",
             description="""
-                        Use this tool to list a user's flight tickets.
-                        Takes no input and returns a list of current user's flight tickets.
-                        Input is always empty JSON blob. Example: {{}}
+                        Use this tool to query information from the database.
+                        Send user query in natural language to the tool.
                         """,
+            args_schema=NL2QueryInput,
         ),
     ]
 
