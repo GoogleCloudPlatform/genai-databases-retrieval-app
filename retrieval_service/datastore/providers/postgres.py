@@ -349,16 +349,18 @@ class Client(datastore.Client[Config]):
         open_day: Optional[str],
     ) -> list[models.Amenity]:
         open_time_datetime = None
+        params = (query_embedding, similarity_threshold, top_k)
         filter_query = "WHERE "
+
         if open_time and open_day:
             start_hour = open_day + "_start_hour"
             end_hour = open_day + "_end_hour"
             open_time_datetime = datetime.strptime(open_time, "%H:%M:%S").time()
             filter_query += f""" {start_hour} <= $4
                 AND {end_hour} > $4
-                AND
-                """
-        filter_query += " 1 - (embedding <=> $1) > $2"
+                AND """
+            params += (open_time_datetime,)  # type: ignore
+        filter_query += "1 - (embedding <=> $1) > $2"
 
         results = await self.__pool.fetch(
             f"""
@@ -371,10 +373,7 @@ class Client(datastore.Client[Config]):
                 limit $3
             ) as sorted_amenities
             """,
-            query_embedding,
-            similarity_threshold,
-            top_k,
-            open_time_datetime,
+            *params,
             timeout=10,
         )
 
