@@ -787,3 +787,59 @@ def test_policies_search(m_datastore, app, method_name, params, mock_return, exp
     assert len(output) == params["top_k"]
     assert output == expected
     assert models.Policy.model_validate(output[0])
+
+
+find_seats_params = [
+    pytest.param(
+        "search_flight_seats",
+        {
+            "airline": "search_flights_by_airports",
+            "flight_number": "FOOBAR",
+            "departure_airport": "FOO",
+            "departure_time": "2023-01-01T05:57:00",
+            "seat_class": "B",
+        },
+        [
+            models.Seat(
+                flight_id=1,
+                seat_row=1,
+                seat_letter="A",
+                seat_type="W",
+                seat_class="B",
+                is_reserved=False,
+                ticket_id=1,
+            )
+        ],
+        [
+            {
+                "flight_id": 1,
+                "seat_row": 1,
+                "seat_letter": "A",
+                "seat_type": "W",
+                "seat_class": "B",
+                "is_reserved": False,
+                "ticket_id": 1,
+            }
+        ],
+        id="seat_class_only",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "method_name, params, mock_return, expected", find_seats_params
+)
+@patch.object(datastore, "create")
+def test_find_seats(m_datastore, app, method_name, params, mock_return, expected):
+    with TestClient(app) as client:
+        with patch.object(
+            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+        ) as mock_method:
+            response = client.get(
+                "/seats/search",
+                params=params,
+            )
+    assert response.status_code == 200
+    output = response.json()
+    assert output == expected
+    assert models.Seat.model_validate(output[0])
