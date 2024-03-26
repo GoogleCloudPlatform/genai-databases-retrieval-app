@@ -276,7 +276,7 @@ class Client(ABC, Generic[C]):
         flights_streamer: CSVStreamer[models.Flight],
         tickets_streamer: CSVStreamer[models.Ticket],
         seats_streamer: CSVStreamer[models.Seat],
-        stream_limit: int = 10000
+        stream_limit: int = 10000,
     ) -> None:
         pass
 
