@@ -154,28 +154,27 @@ def generate_list_flights(client: aiohttp.ClientSession):
     return list_flights
 
 
-class QueryInput(BaseModel):
+class AmenityQueryInput(BaseModel):
     query: str = Field(description="Search query")
-    open_time: str = Field(
-        description="Time for filtering amenities by operating hours."
+    open_time: Optional[str] = Field(
+        description="Time for filtering amenities by operating hours"
     )
-    open_day: str = Field(
-        description="Day of the week for filtering amenities by operating hours."
+    open_day: Optional[str] = Field(
+        description="Day of the week for filtering amenities by operating hours"
     )
 
 
 def generate_search_amenities(client: aiohttp.ClientSession):
-    async def search_amenities(
-        query: str, open_time: Optional[str], open_day: Optional[str]
-    ):
+    async def search_amenities(query: str, open_time: str, open_day: str):
+        params = {
+            "top_k": 5,
+            "query": query,
+            "open_time": open_time,
+            "open_day": open_day,
+        }
         response = await client.get(
             url=f"{BASE_URL}/amenities/search",
-            params={
-                "top_k": "5",
-                "query": query,
-                "open_time": open_time,
-                "open_day": open_day,
-            },
+            params=filter_none_values(params),
             headers=get_headers(client),
         )
 
@@ -183,6 +182,10 @@ def generate_search_amenities(client: aiohttp.ClientSession):
         return response
 
     return search_amenities
+
+
+class PolicyQueryInput(BaseModel):
+    query: str = Field(description="Search query")
 
 
 def generate_search_policies(client: aiohttp.ClientSession):
@@ -351,10 +354,10 @@ async def initialize_tools(client: aiohttp.ClientSession):
                         If user provides flight info, use 'Search Flights by Flight Number'
                         first to get gate info and location.
 
-                        User can also provide time and day of the week to check amenities opening hour.
-                        Time is provided in the HH:MM:SS format.
-                        Day is one of the days of the week.
-                        If time is provided, day MUST be provided as well. Either both time and day is provided, or none.
+                        User can also provide open_time and open_day to check amenities opening hour.
+                        Open_time is provided in the HH:MM:SS format.
+                        Open_day is one of days of the week (for example: sunday, monday, etc.). Convert terms like today to today's day.
+                        If open_time is provided, open_day MUST be provided as well. If open_time is provided without open_day, default open_day to today's day. If open_day is provided without open_time, default open_time to current time.
 
                         Only recommend amenities that are returned by this query.
                         Find amenities close to the user by matching the terminal and then comparing
@@ -374,7 +377,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
                             "open_day": "wednesday",
                         }}
                         """,
-            args_schema=QueryInput,
+            args_schema=AmenityQueryInput,
         ),
         StructuredTool.from_function(
             coroutine=generate_search_policies(client),
@@ -385,7 +388,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
 						You will not answer any questions outside of the policy given.
 						Policy includes information on ticket purchase and changes, baggage, check-in and boarding, special assistance, overbooking, flight delays and cancellations.
                         """,
-            args_schema=QueryInput,
+            args_schema=PolicyQueryInput,
         ),
         StructuredTool.from_function(
             coroutine=generate_insert_ticket(client),
