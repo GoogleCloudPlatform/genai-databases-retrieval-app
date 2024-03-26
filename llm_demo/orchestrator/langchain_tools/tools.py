@@ -284,59 +284,6 @@ def generate_nl2query(client: aiohttp.ClientSession):
 
     return nl2query
 
-class SeatInput(BaseModel):
-    airline: str = Field(description="Airline unique 2 letter identifier")
-    flight_number: str = Field(description="1 to 4 digit number")
-    departure_airport: str = Field(
-        description="Departure airport 3-letter code",
-    )
-    departure_time: datetime = Field(description="Flight departure datetime")
-    seat_row: Optional[int] = Field(
-        description="A number between 1 to 33 for the seat row",
-    )
-    seat_letter: Optional[str] = Field(
-        description="A single letter between A, B, C, D, E and F",
-    )
-    seat_class: Optional[str] = Field(
-        description="Can be null for no preference. 'F' for first, 'B' for business, 'P' for premium economy, and 'E' for economy.",
-    )
-    seat_type: Optional[str] = Field(
-        description="Can be null for no preference, 'A' for aisle, 'W' for window and 'M' for middle.",
-    )
-
-
-def generate_list_seats(client: aiohttp.ClientSession):
-    async def list_seats(
-        airline: str,
-        flight_number: str,
-        departure_airport: str,
-        departure_time: datetime,
-        seat_row: int,
-        seat_letter: str,
-        seat_class: str,
-        seat_type: str,
-    ):
-        params = {
-            "airline": airline,
-            "flight_number": flight_number,
-            "departure_airport": departure_airport,
-            "departure_time": departure_time.strftime("%Y-%m-%d %H:%M:%S"),
-            "seat_row": seat_row,
-            "seat_letter": seat_letter,
-            "seat_class": seat_class,
-            "seat_type": seat_type,
-        }
-        response = await client.get(
-            url=f"{BASE_URL}/seats/search",
-            params=filter_none_values(params),
-            headers=get_headers(client),
-        )
-
-        response = await response.json()
-        return response
-
-    return list_seats
-
 
 # Tools for agent
 async def initialize_tools(client: aiohttp.ClientSession):
@@ -530,58 +477,6 @@ async def initialize_tools(client: aiohttp.ClientSession):
                         Send user query in natural language to the tool.
                         """,
             args_schema=NL2QueryInput,
-        ),
-        StructuredTool.from_function(
-            coroutine=generate_list_seats(client),
-            name="Find Seats",
-            description="""
-                        Use this tool to find available seats for the user on a flight.
-                        Example for searching for a Business class seat on the flight AA 452:
-                        {{
-                            "airline": "AA",
-                            "flight_number": "452",
-                            "departure_airport": "LAX",
-                            "departure_time": "2024-01-01 05:50:00",
-                            "seat_row": null,
-                            "seat_letter": null,
-                            "seat_class": "B",
-                            "seat_type": null,
-                        }}
-                        Example for searching for a Premium Economy seat on the flight AA 452:
-                        {{
-                            "airline": "AA",
-                            "flight_number": "452",
-                            "departure_airport": "LAX",
-                            "departure_time": "2024-01-01 05:50:00",
-                            "seat_row": null,
-                            "seat_letter": null,
-                            "seat_class": "P",
-                            "seat_type": null,
-                        }}
-                        Example for searching for a Window seat in Economy on the flight UA 1532:
-                        {{
-                            "airline": "UA",
-                            "flight_number": "1532",
-                            "departure_airport": "SFO",
-                            "departure_time": "2024-01-08 05:50:00",
-                            "seat_row": null,
-                            "seat_letter": null,
-                            "seat_class": "E",
-                            "seat_type": "W",
-                        }}
-                        Example for booking seat 25B on the flight OO 6307:
-                        {{
-                            "airline": "OO",
-                            "flight_number": "6307",
-                            "departure_airport": "SFO",
-                            "departure_time": "2024-10-28 20:13:00",
-                            "seat_row": 25,
-                            "seat_letter": "B",
-                            "seat_class": null,
-                            "seat_type": null,
-                        }}
-                        """,
-            args_schema=SeatInput,
         ),
     ]
 
