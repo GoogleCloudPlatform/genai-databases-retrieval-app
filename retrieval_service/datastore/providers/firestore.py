@@ -16,7 +16,7 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Literal, Optional
 
-from google.cloud.firestore import AsyncClient  # type: ignore
+from google.cloud.firestore import AsyncClient as FirestoreAsyncClient
 from google.cloud.firestore_v1.async_collection import AsyncCollectionReference
 from google.cloud.firestore_v1.base_query import FieldFilter
 from pydantic import BaseModel
@@ -32,25 +32,28 @@ class Config(BaseModel, datastore.AbstractConfig):
 
 
 class Client(datastore.Client[Config]):
-    __client: AsyncClient
+    __client: FirestoreAsyncClient
 
     @datastore.classproperty
     def kind(cls):
         return "firestore"
 
-    def __init__(self, client: AsyncClient):
+    def __init__(self, client: FirestoreAsyncClient):
         self.__client = client
 
     @classmethod
     async def create(cls, config: Config) -> "Client":
-        return cls(AsyncClient(project=config.projectId))
+        return cls(FirestoreAsyncClient(project=config.projectId))
 
     async def initialize_data(
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
-        flights: list[models.Flight],
         policies: list[models.Policy],
+        flights_streamer: datastore.CSVStreamer[models.Flight],
+        tickets_streamer: datastore.CSVStreamer[models.Ticket],
+        seats_streamer: datastore.CSVStreamer[models.Seat],
+        stream_limit: int = 10000,
     ) -> None:
         async def delete_collections(collection_list: list[AsyncCollectionReference]):
             # Checks if colelction exists and deletes all documents
@@ -109,29 +112,33 @@ class Client(datastore.Client[Config]):
                 )
             )
         await asyncio.gather(*create_amenities_tasks)
-        create_flights_tasks = []
-        for flight in flights:
-            create_flights_tasks.append(
-                self.__client.collection("flights")
-                .document(str(flight.id))
-                .set(
-                    {
-                        "airline": flight.airline,
-                        "flight_number": flight.flight_number,
-                        "departure_airport": flight.departure_airport,
-                        "arrival_airport": flight.arrival_airport,
-                        "departure_time": flight.departure_time,
-                        "arrival_time": flight.arrival_time,
-                        "departure_gate": flight.departure_gate,
-                        "arrival_gate": flight.arrival_gate,
-                    }
+
+        while not flights_streamer.is_done():
+            create_flights_tasks = []
+            flights = flights_streamer.read_next_n(10000)
+            for flight in flights:
+                create_flights_tasks.append(
+                    self.__client.collection("flights")
+                    .document(str(flight.id))
+                    .set(
+                        {
+                            "airline": flight.airline,
+                            "flight_number": flight.flight_number,
+                            "departure_airport": flight.departure_airport,
+                            "arrival_airport": flight.arrival_airport,
+                            "departure_time": flight.departure_time,
+                            "arrival_time": flight.arrival_time,
+                            "departure_gate": flight.departure_gate,
+                            "arrival_gate": flight.arrival_gate,
+                        }
+                    )
                 )
-            )
-            if len(create_flights_tasks) % 10000 == 0:
-                # avoid gRPC batch write timeout error
-                await asyncio.gather(*create_flights_tasks)
-                create_flights_tasks.clear()
-        await asyncio.gather(*create_flights_tasks)
+                if len(create_flights_tasks) % 10000 == 0:
+                    # avoid gRPC batch write timeout error
+                    await asyncio.gather(*create_flights_tasks)
+                    create_flights_tasks.clear()
+            await asyncio.gather(*create_flights_tasks)
+
         create_policies_tasks = []
         for policy in policies:
             create_policies_tasks.append(
@@ -151,13 +158,17 @@ class Client(datastore.Client[Config]):
     ) -> tuple[
         list[models.Airport],
         list[models.Amenity],
-        list[models.Flight],
         list[models.Policy],
+        list[models.Flight],
+        list[models.Ticket],
+        list[models.Seat],
     ]:
         airport_docs = self.__client.collection("airports").stream()
         amenities_docs = self.__client.collection("amenities").stream()
-        flights_docs = self.__client.collection("flights").stream()
         policies_docs = self.__client.collection("policies").stream()
+        flights_docs = self.__client.collection("flights").stream()
+        tickets_docs = self.__client.collection("tickets").limit(1000).stream()
+        seats_docs = self.__client.collection("seats").limit(1000).stream()
 
         airports = []
         async for doc in airport_docs:
@@ -171,18 +182,31 @@ class Client(datastore.Client[Config]):
             amenity_dict["id"] = doc.id
             amenities.append(models.Amenity.model_validate(amenity_dict))
 
+        policies = []
+        async for doc in policies_docs:
+            policy_dict = doc.to_dict()
+            policy_dict["id"] = doc.id
+            policies.append(models.Policy.model_validate(policy_dict))
+
         flights = []
         async for doc in flights_docs:
             flight_dict = doc.to_dict()
             flight_dict["id"] = doc.id
             flights.append(models.Flight.model_validate(flight_dict))
 
-        policies = []
-        async for doc in policies_docs:
-            policy_dict = doc.to_dict()
-            policy_dict["id"] = doc.id
-            policies.append(models.Policy.model_validate(policy_dict))
-        return airports, amenities, flights, policies
+        tickets = []
+        async for doc in tickets_docs:
+            ticket_dict = doc.to_dict()
+            ticket_dict["id"] = doc.id
+            tickets.append(models.Ticket.model_validate(ticket_dict))
+
+        seats = []
+        async for doc in seats_docs:
+            seat_dict = doc.to_dict()
+            seat_dict["id"] = doc.id
+            seats.append(models.Seat.model_validate(seat_dict))
+
+        return airports, amenities, policies, flights, tickets, seats
 
     async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
         query = self.__client.collection("airports").where(
@@ -305,7 +329,22 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
+        seat_row: int | None = None,
+        seat_letter: str | None = None,
     ):
+        raise NotImplementedError("Not Implemented")
+
+    async def search_flight_seats(
+        self,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        departure_time: str,
+        seat_row: int | None,
+        seat_letter: str | None,
+        seat_class: str | None,
+        seat_type: str | None,
+    ) -> list[models.Seat]:
         raise NotImplementedError("Not Implemented")
 
     async def list_tickets(

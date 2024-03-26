@@ -211,6 +211,12 @@ class TicketInput(BaseModel):
     arrival_airport: str = Field(description="Arrival airport 3-letter code")
     departure_time: datetime = Field(description="Flight departure datetime")
     arrival_time: datetime = Field(description="Flight arrival datetime")
+    seat_row: Optional[int] = Field(
+        description="A number between 1 to 33 for the seat row",
+    )
+    seat_letter: Optional[str] = Field(
+        description="A single letter between A, B, C, D, E and F",
+    )
 
 
 def generate_insert_ticket(client: aiohttp.ClientSession):
@@ -221,6 +227,8 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
         arrival_airport: str,
         departure_time: datetime,
         arrival_time: datetime,
+        seat_row: int,
+        seat_letter: str,
     ):
         return f"Booking ticket on {airline} {flight_number}"
 
@@ -238,6 +246,8 @@ async def insert_ticket(client: aiohttp.ClientSession, params: str):
             "arrival_airport": ticket_info.get("arrival_airport"),
             "departure_time": ticket_info.get("departure_time").replace("T", " "),
             "arrival_time": ticket_info.get("arrival_time").replace("T", " "),
+            "seat_row": ticket_info.get("seat_row"),
+            "seat_letter": ticket_info.get("seat_letter"),
         },
         headers=get_headers(client),
     )
@@ -422,7 +432,9 @@ async def initialize_tools(client: aiohttp.ClientSession):
                             "departure_airport": "LAX",
                             "arrival_airport": "SFO",
                             "departure_time": "2024-01-01 05:50:00",
-                            "arrival_time": "2024-01-01 09:23:00"
+                            "arrival_time": "2024-01-01 09:23:00",
+                            "seat_row": null,
+                            "seat_letter": null
                         }}
                         Example:
                         {{
@@ -431,7 +443,9 @@ async def initialize_tools(client: aiohttp.ClientSession):
                             "departure_airport": "SFO",
                             "arrival_airport": "DEN",
                             "departure_time": "2024-01-08 05:50:00",
-                            "arrival_time": "2024-01-08 09:23:00"
+                            "arrival_time": "2024-01-08 09:23:00",
+                            "seat_row": null,
+                            "seat_letter": null,
                         }}
                         Example:
                         {{
@@ -440,7 +454,20 @@ async def initialize_tools(client: aiohttp.ClientSession):
                             "departure_airport": "SFO",
                             "arrival_airport": "MSP",
                             "departure_time": "2024-10-28 20:13:00",
-                            "arrival_time": "2024-10-28 21:07:00"
+                            "arrival_time": "2024-10-28 21:07:00",
+                            "seat_row": null,
+                            "seat_letter": null,
+                        }}
+                        Example with user requesting to book seat 24B:
+                        {{
+                            "airline": "AA",
+                            "flight_number": "452",
+                            "departure_airport": "LAX",
+                            "arrival_airport": "SFO",
+                            "departure_time": "2024-01-01 05:50:00",
+                            "arrival_time": "2024-01-01 09:23:00",
+                            "seat_row": "24",
+                            "seat_letter": "B",
                         }}
                         """,
             args_schema=TicketInput,
