@@ -76,4 +76,4 @@ if __name__ == "__main__":
         help="Whether or not to load all the data from GCS. This may take a long time.",
     )
     args = parser.parse_args()
-    asyncio.run(main(args.load_all_data, args.stream_limit))
+    asyncio.run(main(args.load_all_data, args.stream_limit or 10000))
