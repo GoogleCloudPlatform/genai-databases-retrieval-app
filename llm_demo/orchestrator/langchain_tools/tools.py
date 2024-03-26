@@ -25,7 +25,8 @@ from langchain.agents.agent import ExceptionTool  # type: ignore
 from langchain.tools import StructuredTool
 from pydantic.v1 import BaseModel, Field
 
-BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
+RETRIEVAL_URL = os.getenv("RETRIEVAL_URL", default="http://127.0.0.1:8080")
+NL2QUERY_URL = os.getenv("NL2QUERY_URL", default="http://127.0.0.1:8084")
 CREDENTIALS = None
 
 
@@ -33,7 +34,7 @@ def filter_none_values(params: dict) -> dict:
     return {key: value for key, value in params.items() if value is not None}
 
 
-def get_id_token():
+def get_id_token(base_url: str):
     global CREDENTIALS
     if CREDENTIALS is None:
         CREDENTIALS, _ = google.auth.default()
@@ -41,7 +42,7 @@ def get_id_token():
             # Use Compute Engine default credential
             CREDENTIALS = compute_engine.IDTokenCredentials(
                 request=Request(),
-                target_audience=BASE_URL,
+                target_audience=base_url,
                 use_metadata_identity_endpoint=True,
             )
     if not CREDENTIALS.valid:
@@ -52,108 +53,16 @@ def get_id_token():
         return CREDENTIALS.token
 
 
-def get_headers(client: aiohttp.ClientSession):
+def get_headers(client: aiohttp.ClientSession, base_url: str):
     """Helper method to generate ID tokens for authenticated requests"""
     headers = client.headers
-    if not "http://" in BASE_URL:
+    if not "http://" in base_url:
         # Append ID Token to make authenticated requests to Cloud Run services
-        headers["Authorization"] = f"Bearer {get_id_token()}"
+        headers["Authorization"] = f"Bearer {get_id_token(base_url)}"
     return headers
 
 
 # Tools
-class AirportSearchInput(BaseModel):
-    country: Optional[str] = Field(description="Country")
-    city: Optional[str] = Field(description="City")
-    name: Optional[str] = Field(description="Airport name")
-
-
-def generate_search_airports(client: aiohttp.ClientSession):
-    async def search_airports(country: str, city: str, name: str):
-        params = {
-            "country": country,
-            "city": city,
-            "name": name,
-        }
-        response = await client.get(
-            url=f"{BASE_URL}/airports/search",
-            params=filter_none_values(params),
-            headers=get_headers(client),
-        )
-
-        num = 2
-        response_json = await response.json()
-        if len(response_json) < 1:
-            return "There are no airports matching that query. Let the user know there are no results."
-        elif len(response_json) > num:
-            return (
-                f"There are {len(response_json)} airports matching that query. Here are the first {num} results:\n"
-                + " ".join([f"{response_json[i]}" for i in range(num)])
-            )
-        else:
-            return "\n".join([f"{r}" for r in response_json])
-
-    return search_airports
-
-
-class FlightNumberInput(BaseModel):
-    airline: str = Field(description="Airline unique 2 letter identifier")
-    flight_number: str = Field(description="1 to 4 digit number")
-
-
-def generate_search_flights_by_number(client: aiohttp.ClientSession):
-    async def search_flights_by_number(airline: str, flight_number: str):
-        response = await client.get(
-            url=f"{BASE_URL}/flights/search",
-            params={"airline": airline, "flight_number": flight_number},
-            headers=get_headers(client),
-        )
-
-        return await response.json()
-
-    return search_flights_by_number
-
-
-class ListFlights(BaseModel):
-    departure_airport: Optional[str] = Field(
-        description="Departure airport 3-letter code",
-    )
-    arrival_airport: Optional[str] = Field(description="Arrival airport 3-letter code")
-    date: str = Field(description="Date of flight departure")
-
-
-def generate_list_flights(client: aiohttp.ClientSession):
-    async def list_flights(
-        departure_airport: str,
-        arrival_airport: str,
-        date: str,
-    ):
-        params = {
-            "departure_airport": departure_airport,
-            "arrival_airport": arrival_airport,
-            "date": date,
-        }
-        response = await client.get(
-            url=f"{BASE_URL}/flights/search",
-            params=filter_none_values(params),
-            headers=get_headers(client),
-        )
-
-        num = 2
-        response_json = await response.json()
-        if len(response_json) < 1:
-            return "There are no flights matching that query. Let the user know there are no results."
-        elif len(response_json) > num:
-            return (
-                f"There are {len(response_json)} flights matching that query. Here are the first {num} results:\n"
-                + " ".join([f"{response_json[i]}" for i in range(num)])
-            )
-        else:
-            return "\n".join([f"{r}" for r in response_json])
-
-    return list_flights
-
-
 class AmenityQueryInput(BaseModel):
     query: str = Field(description="Search query")
     open_time: Optional[str] = Field(
@@ -166,16 +75,15 @@ class AmenityQueryInput(BaseModel):
 
 def generate_search_amenities(client: aiohttp.ClientSession):
     async def search_amenities(query: str, open_time: str, open_day: str):
-        params = {
-            "top_k": 5,
-            "query": query,
-            "open_time": open_time,
-            "open_day": open_day,
-        }
         response = await client.get(
-            url=f"{BASE_URL}/amenities/search",
-            params=filter_none_values(params),
-            headers=get_headers(client),
+            url=f"{RETRIEVAL_URL}/amenities/search",
+            params={
+                "top_k": "5",
+                "query": query,
+                "open_time": open_time,
+                "open_day": open_day,
+            },
+            headers=get_headers(client, RETRIEVAL_URL),
         )
 
         response = await response.json()
@@ -191,9 +99,9 @@ class PolicyQueryInput(BaseModel):
 def generate_search_policies(client: aiohttp.ClientSession):
     async def search_policies(query: str):
         response = await client.get(
-            url=f"{BASE_URL}/policies/search",
+            url=f"{RETRIEVAL_URL}/policies/search",
             params={"top_k": "5", "query": query},
-            headers=get_headers(client),
+            headers=get_headers(client, RETRIEVAL_URL),
         )
 
         response = await response.json()
@@ -238,7 +146,7 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
 async def insert_ticket(client: aiohttp.ClientSession, params: str):
     ticket_info = json.loads(params)
     response = await client.post(
-        url=f"{BASE_URL}/tickets/insert",
+        url=f"{RETRIEVAL_URL}/tickets/insert",
         params={
             "airline": ticket_info.get("airline"),
             "flight_number": ticket_info.get("flight_number"),
@@ -249,133 +157,37 @@ async def insert_ticket(client: aiohttp.ClientSession, params: str):
             "seat_row": ticket_info.get("seat_row"),
             "seat_letter": ticket_info.get("seat_letter"),
         },
-        headers=get_headers(client),
+        headers=get_headers(client, RETRIEVAL_URL),
     )
     response = await response.json()
     return response
-
-
-def generate_list_tickets(client: aiohttp.ClientSession):
-    async def list_tickets():
-        response = await client.get(
-            url=f"{BASE_URL}/tickets/list",
-            headers=get_headers(client),
-        )
-
-        response = await response.json()
-        return response
-
-    return list_tickets
 
 
 class NL2QueryInput(BaseModel):
     query: str = Field(description="Search query")
 
 
-def generate_nl2query(client: aiohttp.ClientSession):
-    nl2query_url = "https://nl2query-service-ocagqisd5q-uc.a.run.app"
-
+def generate_nl2query(client: aiohttp.ClientSession, user_email: str):
     async def nl2query(query: str):
         response = await client.get(
-            url=f"{nl2query_url}/run_query",
-            params={"query": query},
-            headers=get_headers(client),
+            url=f"{NL2QUERY_URL}/run_query",
+            params={"query": query, "user_email": user_email},
+            headers=get_headers(client, NL2QUERY_URL),
         )
 
-        response = await response.json()
-        return response
+        response_json = await response.json()
+
+        if response_json["is_clear"] is True:
+            return response_json["results"]
+        else:
+            return f"The previous information provided is insufficient. We have a followup question for the user: {response_json.followup_question}"
 
     return nl2query
 
 
 # Tools for agent
-async def initialize_tools(client: aiohttp.ClientSession):
+async def initialize_tools(client: aiohttp.ClientSession, user_email: str):
     return [
-        StructuredTool.from_function(
-            coroutine=generate_search_airports(client),
-            name="Search Airport",
-            description="""
-                        Use this tool to list all airports matching search criteria.
-                        Takes at least one of country, city, name, or all and returns all matching airports.
-                        The agent can decide to return the results directly to the user.
-                        Input of this tool must be in JSON format and include all three inputs - country, city, name.
-                        Example:
-                        {{
-                            "country": "United States",
-                            "city": "San Francisco",
-                            "name": null
-                        }}
-                        Example:
-                        {{
-                            "country": null,
-                            "city": "Goroka",
-                            "name": "Goroka"
-                        }}
-                        Example:
-                        {{
-                            "country": "Mexico",
-                            "city": null,
-                            "name": null
-                        }}
-                        """,
-            args_schema=AirportSearchInput,
-        ),
-        StructuredTool.from_function(
-            coroutine=generate_search_flights_by_number(client),
-            name="Search Flights By Flight Number",
-            description="""
-                        Use this tool to get information for a specific flight.
-                        Takes an airline code and flight number and returns info on the flight.
-                        Do NOT use this tool with a flight id. Do NOT guess an airline code or flight number.
-                        A airline code is a code for an airline service consisting of two-character
-                        airline designator and followed by flight number, which is 1 to 4 digit number.
-                        For example, if given CY 0123, the airline is "CY", and flight_number is "123".
-                        Another example for this is DL 1234, the airline is "DL", and flight_number is "1234".
-                        If the tool returns more than one option choose the date closes to today.
-                        Example:
-                        {{
-                            "airline": "CY",
-                            "flight_number": "888",
-                        }}
-                        Example:
-                        {{
-                            "airline": "DL",
-                            "flight_number": "1234",
-                        }}
-                        """,
-            args_schema=FlightNumberInput,
-        ),
-        StructuredTool.from_function(
-            coroutine=generate_list_flights(client),
-            name="List Flights",
-            description="""
-                        Use this tool to list flight information matching search criteria.
-                        Takes an arrival airport, a departure airport, or both, filters by date and returns all matching flights.
-                        If 3-letter iata code is not provided for departure_airport or arrival_airport, use search airport tools to get iata code information.
-                        Do NOT guess a date, ask user for date input if it is not given. Date must be in the following format: YYYY-MM-DD.
-                        The agent can decide to return the results directly to the user.
-                        Input of this tool must be in JSON format and include all three inputs - arrival_airport, departure_airport, and date.
-                        Example:
-                        {{
-                            "departure_airport": "SFO",
-                            "arrival_airport": null,
-                            "date": 2023-10-30"
-                        }}
-                        Example:
-                        {{
-                            "departure_airport": "SFO",
-                            "arrival_airport": "SEA",
-                            "date": "2023-11-01"
-                        }}
-                        Example:
-                        {{
-                            "departure_airport": null,
-                            "arrival_airport": "SFO",
-                            "date": "2023-01-01"
-                        }}
-                        """,
-            args_schema=ListFlights,
-        ),
         StructuredTool.from_function(
             coroutine=generate_search_amenities(client),
             name="Search Amenities",
@@ -473,11 +285,17 @@ async def initialize_tools(client: aiohttp.ClientSession):
             args_schema=TicketInput,
         ),
         StructuredTool.from_function(
-            coroutine=generate_nl2query(client),
-            name="Run NL2Query",
+            coroutine=generate_nl2query(client, user_email),
+            name="General Flight and Airport Information",
             description="""
-                        Use this tool to query information from the database.
+                        Use this tool to query information from the database. The database have information on flights, airports, and tickets.
                         Send user query in natural language to the tool.
+                        If a follow up question is used, include the previous user query in the current query.
+
+                        Example of information that will be able to retrieved from the tool includes:
+                        - Listing flights that are available from an airport, or to an airport, on a specific date.
+                        - Get information for a specific flight using airline code or flight number.
+                        - List information of an airport. This will provide airport information such as airport's name, iata code, etc.
                         """,
             args_schema=NL2QueryInput,
         ),
