@@ -35,7 +35,7 @@ body {
 
 .chat-header {
     position: relative;
-    min-width: 600px;
+    min-width: 472px;
     font-size: 28px;
     font-weight: 500;
     text-align: center;
@@ -46,6 +46,11 @@ body {
     padding-top: 15px;
     padding-left: 20px;
     padding-right: 20px;
+}
+
+.chat-header .title {
+    position: fixed;
+    left: calc(50% - 70px);
 }
 
 #g_id_onload,
@@ -144,6 +149,10 @@ div.chat-content>span {
     padding: 0;
 }
 
+.chat-bubble span {
+    font-size: 15px;
+}
+
 div.chat-wrapper div.chat-content div.ai span {
     position: relative;
     width: 70%;
@@ -158,6 +167,7 @@ div.chat-wrapper div.chat-content div.ai span {
 div.chat-wrapper div.chat-content div.ai div.ticket-confirmation {
     position: relative;
     width: 70%;
+    min-width: 390px;
     max-width: 400px;
     height: 430px;
     display: inline-block;
