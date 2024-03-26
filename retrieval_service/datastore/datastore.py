@@ -17,6 +17,9 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Generic, List, Optional, TypeVar
 
+from google.cloud.storage import Client as StorageClient
+from pydantic import BaseModel
+
 import models
 
 
@@ -25,6 +28,7 @@ class AbstractConfig(ABC):
 
 
 C = TypeVar("C", bound=AbstractConfig)
+T = TypeVar("T", bound=BaseModel)
 
 
 class classproperty:
@@ -33,6 +37,42 @@ class classproperty:
 
     def __get__(self, instance, owner):
         return self.fget(owner)
+
+
+class CSVStreamer(Generic[T]):
+    read = 0
+    done_reading = False
+
+    def __init__(self, bucket, blob_path, max_rows, validator):
+        self.file = bucket.blob(blob_path).open("rt", encoding="utf-8")
+        self.csv_reader = csv.DictReader(self.file, delimiter=",")
+        self.validator = validator
+        self.max_rows = max_rows
+
+    def read_next_n(self, n: int) -> List[T]:
+        rows = []
+        # If max rows is set, default, only fetch up to that
+        fetch_count = (
+            min(self.max_rows - self.read, n) if self.max_rows is not None else n
+        )
+        try:
+            for _ in range(fetch_count):
+                rows.append(next(self.csv_reader))
+        except StopIteration:
+            # End of file on GCS
+            self.done_reading = True
+            pass
+        self.read = self.read + len(rows)
+        # Only read up to max rows
+        if self.max_rows is not None and self.read >= self.max_rows:
+            self.done_reading = True
+        return [self.validator(row) for row in rows]
+
+    def is_done(self):
+        return self.done_reading
+
+    def close(self):
+        self.file.close()
 
 
 class Client(ABC, Generic[C]):
@@ -47,13 +87,27 @@ class Client(ABC, Generic[C]):
         pass
 
     async def load_dataset(
-        self, airports_ds_path, amenities_ds_path, flights_ds_path, policies_ds_path
+        self,
+        bucket_path,
+        airports_ds_path,
+        amenities_ds_path,
+        policies_ds_path,
+        flights_blob_path,
+        tickets_blob_path,
+        seats_blob_path,
+        load_all_data=False,
     ) -> tuple[
         List[models.Airport],
         List[models.Amenity],
-        List[models.Flight],
         List[models.Policy],
+        CSVStreamer[models.Flight],
+        CSVStreamer[models.Ticket],
+        CSVStreamer[models.Seat],
     ]:
+
+        storage_client = StorageClient.create_anonymous_client()
+        bucket = storage_client.bucket(bucket_path)
+
         airports: List[models.Airport] = []
         with open(airports_ds_path, "r") as f:
             reader = csv.DictReader(f, delimiter=",")
@@ -64,27 +118,53 @@ class Client(ABC, Generic[C]):
             reader = csv.DictReader(f, delimiter=",")
             amenities = [models.Amenity.model_validate(line) for line in reader]
 
-        flights: List[models.Flight] = []
-        with open(flights_ds_path, "r") as f:
-            reader = csv.DictReader(f, delimiter=",")
-            flights = [models.Flight.model_validate(line) for line in reader]
-
         policies: List[models.Policy] = []
         with open(policies_ds_path, "r") as f:
             reader = csv.DictReader(f, delimiter=",")
             policies = [models.Policy.model_validate(line) for line in reader]
-        return airports, amenities, flights, policies
+
+        flights_streamer = CSVStreamer[models.Flight](
+            bucket,
+            flights_blob_path,
+            None if load_all_data else 70000,
+            models.Flight.model_validate,
+        )
+        ticket_streamer = CSVStreamer[models.Ticket](
+            bucket,
+            tickets_blob_path,
+            None if load_all_data else 1000,
+            models.Ticket.model_validate,
+        )
+        seats_streamer = CSVStreamer[models.Seat](
+            bucket,
+            seats_blob_path,
+            None if load_all_data else 1000,
+            models.Seat.model_validate,
+        )
+
+        return (
+            airports,
+            amenities,
+            policies,
+            flights_streamer,
+            ticket_streamer,
+            seats_streamer,
+        )
 
     async def export_dataset(
         self,
         airports,
         amenities,
-        flights,
         policies,
+        flights,
+        tickets,
+        seats,
         airports_new_path,
         amenities_new_path,
-        flights_new_path,
         policies_new_path,
+        flights_new_path,
+        tickets_new_path,
+        seats_new_path,
     ) -> None:
         with open(airports_new_path, "w") as f:
             col_names = ["id", "iata", "name", "city", "country"]
@@ -152,13 +232,51 @@ class Client(ABC, Generic[C]):
             for p in policies:
                 writer.writerow(p.model_dump())
 
+        with open(tickets_new_path, "w") as t:
+            col_names = [
+                "id",
+                "user_id",
+                "user_name",
+                "user_email",
+                "airline",
+                "flight_number",
+                "departure_airport",
+                "arrival_airport",
+                "departure_time",
+                "arrival_time",
+                "seat_row",
+                "seat_letter",
+            ]
+            writer = csv.DictWriter(t, col_names, delimiter=",")
+            writer.writeheader()
+            for ti in tickets:
+                writer.writerow(ti.model_dump())
+
+        with open(seats_new_path, "w") as s:
+            col_names = [
+                "flight_id",
+                "seat_row",
+                "seat_letter",
+                "seat_type",
+                "seat_class",
+                "is_reserved",
+                "ticket_id",
+            ]
+            writer = csv.DictWriter(s, col_names, delimiter=",")
+            writer.writeheader()
+            for se in seats:
+                writer.writerow(se.model_dump())
+
     @abstractmethod
     async def initialize_data(
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
-        flights: list[models.Flight],
         policies: list[models.Policy],
+        flights_streamer: CSVStreamer[models.Flight],
+        tickets_streamer: CSVStreamer[models.Ticket],
+        seats_streamer: CSVStreamer[models.Seat],
+        stream_limit: int = 10000,
     ) -> None:
         pass
 
@@ -168,8 +286,10 @@ class Client(ABC, Generic[C]):
     ) -> tuple[
         list[models.Airport],
         list[models.Amenity],
-        list[models.Flight],
         list[models.Policy],
+        list[models.Flight],
+        list[models.Ticket],
+        list[models.Seat],
     ]:
         pass
 
@@ -227,6 +347,20 @@ class Client(ABC, Generic[C]):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
+    async def search_flight_seats(
+        self,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        departure_time: str,
+        seat_row: int | None,
+        seat_letter: str | None,
+        seat_class: str | None,
+        seat_type: str | None,
+    ) -> list[models.Seat]:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
     async def insert_ticket(
         self,
         user_id: str,
@@ -238,6 +372,8 @@ class Client(ABC, Generic[C]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
+        seat_row: int | None = None,
+        seat_letter: str | None = None,
     ):
         raise NotImplementedError("Subclass should implement this!")
 

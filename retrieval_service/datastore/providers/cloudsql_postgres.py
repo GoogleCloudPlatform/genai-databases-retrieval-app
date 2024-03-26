@@ -80,8 +80,11 @@ class Client(datastore.Client[Config]):
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
-        flights: list[models.Flight],
         policies: list[models.Policy],
+        flights_streamer: datastore.CSVStreamer[models.Flight],
+        tickets_streamer: datastore.CSVStreamer[models.Ticket],
+        seats_streamer: datastore.CSVStreamer[models.Seat],
+        stream_limit: int = 10000,
     ) -> None:
         async with self.__pool.connect() as conn:
             # If the table already exists, drop it to avoid conflicts
@@ -195,72 +198,6 @@ class Client(datastore.Client[Config]):
             )
 
             # If the table already exists, drop it to avoid conflicts
-            await conn.execute(text("DROP TABLE IF EXISTS flights CASCADE"))
-            # Create a new table
-            await conn.execute(
-                text(
-                    """
-                    CREATE TABLE flights(
-                      id INTEGER PRIMARY KEY,
-                      airline TEXT,
-                      flight_number TEXT,
-                      departure_airport TEXT,
-                      arrival_airport TEXT,
-                      departure_time TIMESTAMP,
-                      arrival_time TIMESTAMP,
-                      departure_gate TEXT,
-                      arrival_gate TEXT
-                    )
-                    """
-                )
-            )
-            # Insert all the data
-            await conn.execute(
-                text(
-                    """
-                    INSERT INTO flights VALUES (:id, :airline, :flight_number,
-                      :departure_airport, :arrival_airport, :departure_time,
-                      :arrival_time, :departure_gate, :arrival_gate)
-                    """
-                ),
-                [
-                    {
-                        "id": f.id,
-                        "airline": f.airline,
-                        "flight_number": f.flight_number,
-                        "departure_airport": f.departure_airport,
-                        "arrival_airport": f.arrival_airport,
-                        "departure_time": f.departure_time,
-                        "arrival_time": f.arrival_time,
-                        "departure_gate": f.departure_gate,
-                        "arrival_gate": f.arrival_gate,
-                    }
-                    for f in flights
-                ],
-            )
-
-            # If the table already exists, drop it to avoid conflicts
-            await conn.execute(text("DROP TABLE IF EXISTS tickets CASCADE"))
-            # Create a new table
-            await conn.execute(
-                text(
-                    """
-                    CREATE TABLE tickets(
-                        user_id TEXT,
-                        user_name TEXT,
-                        user_email TEXT,
-                        airline TEXT,
-                        flight_number TEXT,
-                        departure_airport TEXT,
-                        arrival_airport TEXT,
-                        departure_time TIMESTAMP,
-                        arrival_time TIMESTAMP
-                    )
-                    """
-                )
-            )
-
-            # If the table already exists, drop it to avoid conflicts
             await conn.execute(text("DROP TABLE IF EXISTS policies CASCADE"))
             # Create a new table
             await conn.execute(
@@ -292,43 +229,196 @@ class Client(datastore.Client[Config]):
             )
             await conn.commit()
 
+            # If the table already exists, drop it to avoid conflicts
+            await conn.execute(text("DROP TABLE IF EXISTS flights CASCADE"))
+            # Create a new table
+            await conn.execute(
+                text(
+                    """
+                    CREATE TABLE flights(
+                      id INTEGER PRIMARY KEY,
+                      airline TEXT,
+                      flight_number TEXT,
+                      departure_airport TEXT,
+                      arrival_airport TEXT,
+                      departure_time TIMESTAMP,
+                      arrival_time TIMESTAMP,
+                      departure_gate TEXT,
+                      arrival_gate TEXT
+                    )
+                    """
+                )
+            )
+            while not flights_streamer.is_done():
+                flights = flights_streamer.read_next_n(stream_limit)
+                # Insert all the data
+                await conn.execute(
+                    text(
+                        """
+                        INSERT INTO flights VALUES (:id, :airline, :flight_number,
+                        :departure_airport, :arrival_airport, :departure_time,
+                        :arrival_time, :departure_gate, :arrival_gate)
+                        """
+                    ),
+                    [
+                        {
+                            "id": f.id,
+                            "airline": f.airline,
+                            "flight_number": f.flight_number,
+                            "departure_airport": f.departure_airport,
+                            "arrival_airport": f.arrival_airport,
+                            "departure_time": f.departure_time,
+                            "arrival_time": f.arrival_time,
+                            "departure_gate": f.departure_gate,
+                            "arrival_gate": f.arrival_gate,
+                        }
+                        for f in flights
+                    ],
+                )
+                await conn.commit()
+
+            # If the table already exists, drop it to avoid conflicts
+            await conn.execute(text("DROP TABLE IF EXISTS tickets CASCADE"))
+            # Create a new table
+            await conn.execute(
+                text(
+                    """
+                    CREATE TABLE tickets(
+                        id INTEGER PRIMARY KEY,
+                        user_id TEXT,
+                        user_name TEXT,
+                        user_email TEXT,
+                        airline TEXT,
+                        flight_number TEXT,
+                        departure_airport TEXT,
+                        arrival_airport TEXT,
+                        departure_time TIMESTAMP,
+                        arrival_time TIMESTAMP,
+                        seat_row INTEGER,
+                        seat_letter TEXT
+                    )
+                    """
+                )
+            )
+            # Insert all the data
+            while not tickets_streamer.is_done():
+                tickets = tickets_streamer.read_next_n(stream_limit)
+                await conn.execute(
+                    text(
+                        """
+                        INSERT INTO tickets VALUES (:id, :user_id, :user_name,
+                        :user_email, :airline, :flight_number,
+                        :departure_airport, :arrival_airport, :departure_time,
+                        :arrival_time, :seat_row, :seat_letter)
+                        """
+                    ),
+                    [
+                        {
+                            "id": t.id,
+                            "user_id": t.user_id,
+                            "user_name": t.user_name,
+                            "user_email": t.user_email,
+                            "airline": t.airline,
+                            "flight_number": t.flight_number,
+                            "departure_airport": t.departure_airport,
+                            "arrival_airport": t.arrival_airport,
+                            "departure_time": t.departure_time,
+                            "arrival_time": t.arrival_time,
+                            "seat_row": t.seat_row,
+                            "seat_letter": t.seat_letter,
+                        }
+                        for t in tickets
+                    ],
+                )
+                await conn.commit()
+
+            # If the table already exists, drop it to avoid conflicts
+            await conn.execute(text("DROP TABLE IF EXISTS seats CASCADE"))
+            # Create a new table
+            await conn.execute(
+                text(
+                    """
+                    CREATE TABLE seats(
+                        flight_id INTEGER,
+                        seat_row INTEGER,
+                        seat_letter TEXT,
+                        seat_type TEXT,
+                        seat_class TEXT,
+                        is_reserved BOOL,
+                        ticket_id INTEGER
+                    )
+                    """
+                )
+            )
+            # Insert all the data
+            while not seats_streamer.is_done():
+                seats = seats_streamer.read_next_n(stream_limit)
+                await conn.execute(
+                    text(
+                        """
+                        INSERT INTO seats VALUES (:flight_id, :seat_row, :seat_letter,
+                        :seat_type, :seat_class, :is_reserved, :ticket_id)
+                        """
+                    ),
+                    [
+                        {
+                            "flight_id": s.flight_id,
+                            "seat_row": s.seat_row,
+                            "seat_letter": s.seat_letter,
+                            "seat_type": s.seat_type,
+                            "seat_class": s.seat_class,
+                            "is_reserved": s.is_reserved,
+                            "ticket_id": s.ticket_id,
+                        }
+                        for s in seats
+                    ],
+                )
+                await conn.commit()
+
     async def export_data(
         self,
     ) -> tuple[
         list[models.Airport],
         list[models.Amenity],
-        list[models.Flight],
         list[models.Policy],
+        list[models.Flight],
+        list[models.Ticket],
+        list[models.Seat],
     ]:
-        async with self.__pool.connect() as conn:
+        async with self.__pool.connect() as conn1, self.__pool.connect() as conn2, self.__pool.connect() as conn3:
             airport_task = asyncio.create_task(
-                conn.execute(text("""SELECT * FROM airports"""))
+                conn1.execute(text("""SELECT * FROM airports"""))
             )
-
             amenity_task = asyncio.create_task(
-                conn.execute(text("""SELECT * FROM amenities"""))
+                conn2.execute(text("""SELECT * FROM amenities"""))
+            )
+            policy_task = asyncio.create_task(
+                conn3.execute(text("""SELECT * FROM policies"""))
             )
             flights_task = asyncio.create_task(
-                conn.execute(text("""SELECT * FROM flights"""))
+                conn1.execute(text("""SELECT * FROM flights"""))
             )
-            policy_task = asyncio.create_task(
-                conn.execute(text("""SELECT * FROM policies"""))
+            tickets_task = asyncio.create_task(
+                conn2.execute(text("""SELECT * FROM tickets LIMIT 1000"""))
             )
-            policy_task = asyncio.create_task(
-                conn.execute(text("""SELECT * FROM policies"""))
+            seats_task = asyncio.create_task(
+                conn3.execute(text("""SELECT * FROM seats LIMIT 1000"""))
             )
 
             airport_results = (await airport_task).mappings().fetchall()
             amenity_results = (await amenity_task).mappings().fetchall()
-            flights_results = (await flights_task).mappings().fetchall()
             policy_results = (await policy_task).mappings().fetchall()
+            flights_results = (await flights_task).mappings().fetchall()
+            tickets_results = (await tickets_task).mappings().fetchall()
+            seats_results = (await seats_task).mappings().fetchall()
 
             airports = [models.Airport.model_validate(a) for a in airport_results]
             amenities = [models.Amenity.model_validate(a) for a in amenity_results]
             flights = [models.Flight.model_validate(f) for f in flights_results]
             policies = [models.Policy.model_validate(p) for p in policy_results]
-
-            return airports, amenities, flights, policies
+            tickets = [models.Ticket.model_validate(t) for t in tickets_results]
+            seats = [models.Seat.model_validate(s) for s in seats_results]
+            return airports, amenities, policies, flights, tickets, seats
 
     async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
         async with self.__pool.connect() as conn:
@@ -517,7 +607,22 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
+        seat_row: int | None = None,
+        seat_letter: str | None = None,
     ):
+        raise NotImplementedError("Not Implemented")
+
+    async def search_flight_seats(
+        self,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        departure_time: str,
+        seat_row: int | None,
+        seat_letter: str | None,
+        seat_class: str | None,
+        seat_type: str | None,
+    ) -> list[models.Seat]:
         raise NotImplementedError("Not Implemented")
 
     async def list_tickets(
@@ -535,7 +640,7 @@ class Client(datastore.Client[Config]):
                 SELECT id, content
                   FROM (
                       SELECT id, content, 1 - (embedding <=> :query_embedding) AS similarity
-                      FROM policies 
+                      FROM policies
                       WHERE 1 - (embedding <=> :query_embedding) > :similarity_threshold
                       ORDER BY similarity DESC
                       LIMIT :top_k
