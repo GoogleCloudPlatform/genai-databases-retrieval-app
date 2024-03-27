@@ -616,7 +616,7 @@ policies_search_test_data = [
         [
             models.Policy(
                 id=4,
-                content="## Baggage\nChecked Baggage: Each passenger is allowed 2 checked baggage allowance. Business class and First class passengers are allowed 4 checked baggage. Additional baggage will cost $70 and a $30 fee applies for checked bags over 50 lbs. We don’t accept checked bags over 100 lbs. We only accept checked bags up to 115 inches in total dimensions (length + width + height), and oversized baggage will cost $30. Checked bags above 160 inches in total dimensions will not be accepted.",
+                content="## Baggage\nChecked Baggage: Economy passengers are allowed 2 checked bags. Business class and First class passengers are allowed 4 checked bags. Additional baggage will cost $70 and a $30 fee applies for all checked bags over 50 lbs. Cymbal Air cannot accept checked bags over 100 lbs. We only accept checked bags up to 115 inches in total dimensions (length + width + height), and oversized baggage will cost $30. Checked bags above 160 inches in total dimensions will not be accepted.",
                 embedding=None,
             ),
         ],
@@ -630,7 +630,7 @@ policies_search_test_data = [
         [
             models.Policy(
                 id=1,
-                content="Changes: Changes or reschedules to flights may be permitted depending on the fare type. Changes are permitted right after the ticket is confirmed. The fees for flight changes are $100 for Economy, $50 for Premium Economy, and free for Business Class and First class fares.",
+                content="Changes: Changes to tickets are permitted at any time until 60 minutes prior to scheduled departure. There are no fees for changes as long as the new ticket is on Cymbal Air and is at an equal or lower price.  If the new ticket has a higher price, the customer must pay the difference between the new and old fares.  Changes to a non-Cymbal-Air flight include a $100 change fee.",
                 embedding=None,
             ),
             models.Policy(
