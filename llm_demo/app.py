@@ -220,6 +220,7 @@ def get_user_info(user_id_token: str, client_id: str) -> dict[str, str]:
         return {
             "user_img": id_info["picture"],
             "name": id_info["name"],
+            "user_email": id_info["email"],
         }
     except ValueError as err:
         return {}
