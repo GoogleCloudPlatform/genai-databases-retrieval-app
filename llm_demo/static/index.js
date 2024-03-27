@@ -39,7 +39,10 @@ async function submitMessage() {
     logMessage("human", msg)
     // Clear message
     $('.chat-bar input').val('');
-    window.setTimeout(()=>{$('#loader-container').show()},400);
+    window.setTimeout(()=>{
+        $('#loader-container').show();
+        $('.chat-content').scrollTop($('.chat-content').prop("scrollHeight"));
+    },400);
     try {
         // Prompt LLM
         let answer = await askQuestion(msg);
