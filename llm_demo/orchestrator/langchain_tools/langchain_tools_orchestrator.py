@@ -142,7 +142,10 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
             session["history"] = [BASE_HISTORY]
         history = self.parse_messages(session["history"])
         client = await self.create_client_session()
-        tools = await initialize_tools(client)
+        user_email = ""
+        if "user_info" in session:
+            user_email = session["user_info"]["user_email"]
+        tools = await initialize_tools(client, user_email)
         prompt = self.create_prompt_template(tools)
         agent = UserAgent.initialize_agent(client, tools, history, prompt, self.MODEL)
         self._user_sessions[id] = agent
