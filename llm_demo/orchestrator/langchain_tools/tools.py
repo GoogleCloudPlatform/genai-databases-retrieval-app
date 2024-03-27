@@ -27,7 +27,7 @@ from pydantic.v1 import BaseModel, Field
 
 RETRIEVAL_URL = os.getenv("RETRIEVAL_URL", default="http://127.0.0.1:8080")
 NL2QUERY_URL = os.getenv("NL2QUERY_URL", default="http://127.0.0.1:8084")
-CREDENTIALS = None
+CREDENTIALS = {}
 
 
 def filter_none_values(params: dict) -> dict:
@@ -36,21 +36,21 @@ def filter_none_values(params: dict) -> dict:
 
 def get_id_token(base_url: str):
     global CREDENTIALS
-    if CREDENTIALS is None:
-        CREDENTIALS, _ = google.auth.default()
-        if not hasattr(CREDENTIALS, "id_token"):
+    if base_url not in CREDENTIALS:
+        CREDENTIALS[base_url], _ = google.auth.default()
+        if not hasattr(CREDENTIALS[base_url], "id_token"):
             # Use Compute Engine default credential
-            CREDENTIALS = compute_engine.IDTokenCredentials(
+            CREDENTIALS[base_url] = compute_engine.IDTokenCredentials(
                 request=Request(),
                 target_audience=base_url,
                 use_metadata_identity_endpoint=True,
             )
-    if not CREDENTIALS.valid:
-        CREDENTIALS.refresh(Request())
-    if hasattr(CREDENTIALS, "id_token"):
-        return CREDENTIALS.id_token
+    if not CREDENTIALS[base_url].valid:
+        CREDENTIALS[base_url].refresh(Request())
+    if hasattr(CREDENTIALS[base_url], "id_token"):
+        return CREDENTIALS[base_url].id_token
     else:
-        return CREDENTIALS.token
+        return CREDENTIALS[base_url].token
 
 
 def get_headers(client: aiohttp.ClientSession, base_url: str):
