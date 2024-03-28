@@ -93,6 +93,9 @@ class UserAgent:
             raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
         return response
 
+    def update_tools(self, tools: List[StructuredTool]):
+        self.agent.tools = tools
+
     async def insert_ticket(self, params: str):
         return await insert_ticket(self.client, params)
 
@@ -176,6 +179,11 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
     def get_user_session(self, uuid: str) -> UserAgent:
         return self._user_sessions[uuid]
 
+    async def set_user_email(self, uuid: str, user_email: str):
+        tools = await initialize_tools(self.client, user_email)
+        user_session = self.get_user_session(uuid)
+        user_session.update_tools(tools)
+
     async def get_connector(self) -> TCPConnector:
         if self.connector is None:
             self.connector = TCPConnector(limit=100)
@@ -202,9 +210,9 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         template = "\n\n".join(
             [
                 PREFIX,
-                current_datetime,
                 TOOLS_PREFIX,
                 tool_strings,
+                current_datetime,
                 MULTITURN_PROMPT,
                 format_instructions,
                 SUFFIX,
@@ -309,7 +317,7 @@ Action:
 MULTITURN_PROMPT = """Assistant will judge if multiple action need to be taken before returning final response to human.
 For example, if user ask 'Where can I get a snack near the gate for flight CY 123?'
 Actions that will be taken by the assistant is as below:
-First, assistant will first complete action for "Search Flights By Flight Number".
+First, assistant will first complete action for "General Flight and Airport Information".
 Next, assistant will complete action for "Search Amenities" based on the gate for that flight.
 Lastly, assistant will return final response to human.
 """
