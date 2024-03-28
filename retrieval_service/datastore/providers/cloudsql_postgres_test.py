@@ -24,6 +24,7 @@ from csv_diff import compare, load_csv  # type: ignore
 from google.cloud.sql.connector import Connector
 
 import models
+from retrieval_service.helpers.helpers import UIFriendlyLogger
 
 from .. import datastore
 from . import cloudsql_postgres
@@ -458,7 +459,13 @@ async def test_amenities_search(
     expected: List[Any],
 ):
     res = await ds.amenities_search(
-        query_embedding, similarity_threshold, top_k, open_time, open_day
+        "",
+        query_embedding,
+        similarity_threshold,
+        top_k,
+        UIFriendlyLogger(),
+        open_time,
+        open_day,
     )
     assert res == expected
 
@@ -706,5 +713,7 @@ async def test_policies_search(
     top_k: int,
     expected: List[str],
 ):
-    res = await ds.policies_search(query_embedding, similarity_threshold, top_k)
+    res = await ds.policies_search(
+        "", query_embedding, similarity_threshold, top_k, UIFriendlyLogger()
+    )
     assert res == expected

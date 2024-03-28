@@ -21,6 +21,7 @@ import pytest_asyncio
 from csv_diff import compare, load_csv  # type: ignore
 
 import models
+from helpers import UIFriendlyLogger
 
 from .. import datastore
 from . import postgres
@@ -410,7 +411,13 @@ async def test_amenities_search(
     expected: List[Any],
 ):
     res = await ds.amenities_search(
-        query_embedding, similarity_threshold, top_k, open_time, open_day
+        "",
+        query_embedding,
+        similarity_threshold,
+        top_k,
+        UIFriendlyLogger(),
+        open_time,
+        open_day,
     )
     assert res == expected
 
@@ -655,7 +662,9 @@ async def test_policies_search(
     top_k: int,
     expected: List[str],
 ):
-    res = await ds.policies_search(query_embedding, similarity_threshold, top_k)
+    res = await ds.policies_search(
+        "", query_embedding, similarity_threshold, top_k, UIFriendlyLogger()
+    )
     assert res == expected
 
 
@@ -671,6 +680,7 @@ async def test_insert_ticket_failure(ds: postgres.Client):
             arrival_airport="ORD",
             departure_time="2024-03-15 00:22:00",
             arrival_time="2024-03-15 06:16:00",
+            ufl=UIFriendlyLogger(),
             seat_row=None,
             seat_letter=None,
         )
@@ -687,6 +697,7 @@ async def test_insert_ticket_success(ds: postgres.Client):
         arrival_airport="DEN",
         departure_time="2024-01-01 05:50:00",
         arrival_time="2024-01-01 09:23:00",
+        ufl=UIFriendlyLogger(),
         seat_row=None,
         seat_letter=None,
     )

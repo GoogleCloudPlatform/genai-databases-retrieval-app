@@ -21,6 +21,7 @@ from google.oauth2 import id_token  # type:ignore
 from langchain_core.embeddings import Embeddings
 
 import datastore
+from helpers import UIFriendlyLogger
 
 routes = APIRouter()
 
@@ -37,6 +38,13 @@ def _ParseUserIdToken(headers: Mapping[str, Any]) -> Optional[str]:
         raise Exception("Invalid ID token")
 
     return parts[1]
+
+
+def build_result(results, ufl: UIFriendlyLogger | None = None):
+    result = {"result": results}
+    if ufl is not None and ufl.get_log() != "":
+        result["trace"] = ufl.get_log()
+    return result
 
 
 async def get_user_info(request):
@@ -78,7 +86,7 @@ async def get_airport(
             status_code=422,
             detail="Request requires query params: airport id or iata",
         )
-    return results
+    return build_result(results)
 
 
 @routes.get("/airports/search")
@@ -96,14 +104,14 @@ async def search_airports(
 
     ds: datastore.Client = request.app.state.datastore
     results = await ds.search_airports(country, city, name)
-    return results
+    return build_result(results)
 
 
 @routes.get("/amenities")
 async def get_amenity(id: int, request: Request):
     ds: datastore.Client = request.app.state.datastore
     results = await ds.get_amenity(id)
-    return results
+    return build_result(results)
 
 
 @routes.get("/amenities/search")
@@ -114,8 +122,9 @@ async def amenities_search(
     open_time: Optional[str] = None,
     open_day: Optional[str] = None,
 ):
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header("Attempting to use vector / embedding search for amenities")
     ds: datastore.Client = request.app.state.datastore
-
     days_of_week = [
         "sunday",
         "monday",
@@ -141,16 +150,16 @@ async def amenities_search(
     query_embedding = embed_service.embed_query(query)
 
     results = await ds.amenities_search(
-        query_embedding, 0.5, top_k, open_time, open_day
+        query, query_embedding, 0.5, top_k, ufl, open_time, open_day
     )
-    return results
+    return build_result(results, ufl)
 
 
 @routes.get("/flights")
 async def get_flight(flight_id: int, request: Request):
     ds: datastore.Client = request.app.state.datastore
     flights = await ds.get_flight(flight_id)
-    return flights
+    return build_result(flights)
 
 
 @routes.get("/flights/search")
@@ -174,7 +183,7 @@ async def search_flights(
             status_code=422,
             detail="Request requires query params: arrival_airport, departure_airport, date, or both airline and flight_number",
         )
-    return flights
+    return build_result(flights)
 
 
 @routes.get("/seats/search")
@@ -200,7 +209,7 @@ async def search_seats(
         seat_class,
         seat_type,
     )
-    return seats
+    return build_result(seats)
 
 
 @routes.post("/tickets/insert")
@@ -215,6 +224,10 @@ async def insert_ticket(
     seat_row: Optional[int] = None,
     seat_letter: Optional[str] = None,
 ):
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header(
+        "Attempting to insert the requested ticket into the database"
+    )
     user_info = await get_user_info(request)
     if user_info is None:
         raise HTTPException(
@@ -232,10 +245,11 @@ async def insert_ticket(
         arrival_airport,
         departure_time,
         arrival_time,
+        ufl,
         seat_row,
         seat_letter,
     )
-    return result
+    return build_result(result, ufl)
 
 
 @routes.get("/tickets/list")
@@ -250,15 +264,17 @@ async def list_tickets(
         )
     ds: datastore.Client = request.app.state.datastore
     results = await ds.list_tickets(user_info["user_id"])
-    return results
+    return build_result(results)
 
 
 @routes.get("/policies/search")
 async def policies_search(query: str, top_k: int, request: Request):
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header("Attempting to use vector / embedding search for policies")
     ds: datastore.Client = request.app.state.datastore
 
     embed_service: Embeddings = request.app.state.embed_service
     query_embedding = embed_service.embed_query(query)
 
-    results = await ds.policies_search(query_embedding, 0.5, top_k)
-    return results
+    results = await ds.policies_search(query, query_embedding, 0.5, top_k, ufl)
+    return build_result(results, ufl)

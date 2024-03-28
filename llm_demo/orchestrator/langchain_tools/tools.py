@@ -24,6 +24,7 @@ from google.auth.transport.requests import Request  # type: ignore
 from langchain.agents.agent import ExceptionTool  # type: ignore
 from langchain.tools import StructuredTool
 from pydantic.v1 import BaseModel, Field
+from .helpers import ToolTrace
 
 RETRIEVAL_URL = os.getenv("RETRIEVAL_URL", default="http://127.0.0.1:8080")
 NL2QUERY_URL = os.getenv("NL2QUERY_URL", default="http://127.0.0.1:8084")
@@ -73,7 +74,7 @@ class AmenityQueryInput(BaseModel):
     )
 
 
-def generate_search_amenities(client: aiohttp.ClientSession):
+def generate_search_amenities(client: aiohttp.ClientSession, tool_trace: ToolTrace):
     async def search_amenities(query: str, open_time: str, open_day: str):
         params = {
             "top_k": "5",
@@ -87,8 +88,10 @@ def generate_search_amenities(client: aiohttp.ClientSession):
             headers=get_headers(client, RETRIEVAL_URL),
         )
 
-        response = await response.json()
-        return response
+        response_json = await response.json()
+        if response_json.get("trace"):
+            tool_trace.add_message(response_json.get("trace"))
+        return response_json.get("result")
 
     return search_amenities
 
@@ -97,7 +100,7 @@ class PolicyQueryInput(BaseModel):
     query: str = Field(description="Search query")
 
 
-def generate_search_policies(client: aiohttp.ClientSession):
+def generate_search_policies(client: aiohttp.ClientSession, tool_trace: ToolTrace):
     async def search_policies(query: str):
         response = await client.get(
             url=f"{RETRIEVAL_URL}/policies/search",
@@ -105,8 +108,11 @@ def generate_search_policies(client: aiohttp.ClientSession):
             headers=get_headers(client, RETRIEVAL_URL),
         )
 
-        response = await response.json()
-        return response
+        response_json = await response.json()
+
+        if response_json.get("trace"):
+            tool_trace.add_message(response_json.get("trace"))
+        return response_json.get("result")
 
     return search_policies
 
@@ -144,7 +150,9 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
     return insert_ticket
 
 
-async def insert_ticket(client: aiohttp.ClientSession, params: str):
+async def insert_ticket(
+    client: aiohttp.ClientSession, params: str, tool_trace: ToolTrace
+):
     ticket_info = json.loads(params)
     response = await client.post(
         url=f"{RETRIEVAL_URL}/tickets/insert",
@@ -162,15 +170,20 @@ async def insert_ticket(client: aiohttp.ClientSession, params: str):
         ),
         headers=get_headers(client, RETRIEVAL_URL),
     )
-    response = await response.json()
-    return response
+    response_json = await response.json()
+
+    if response_json.get("trace"):
+        tool_trace.add_message(response_json.get("trace"))
+    return response_json.get("result")
 
 
 class NL2QueryInput(BaseModel):
     query: str = Field(description="Search query")
 
 
-def generate_nl2query(client: aiohttp.ClientSession, user_email: str):
+def generate_nl2query(
+    client: aiohttp.ClientSession, user_email: str, tool_trace: ToolTrace
+):
     async def nl2query(query: str):
         response = await client.get(
             url=f"{NL2QUERY_URL}/run_query",
@@ -180,19 +193,23 @@ def generate_nl2query(client: aiohttp.ClientSession, user_email: str):
 
         response_json = await response.json()
 
-        if response_json["is_clear"] is True:
-            return f"These are the results. Do not make up information from this result: {response_json['results']}"
+        if response_json.get("trace"):
+            tool_trace.add_message(response_json.get("trace"))
+        if response_json.get("is_clear") is True:
+            return f"These are the results. Do not make up information from this result: {response_json.get('results')}"
         else:
-            return f"The previous information provided is insufficient. We have a followup question for the user: {response_json['followup_question']}"
+            return f"The previous information provided is insufficient. We have a followup question for the user: {response_json.get('followup_question')}"
 
     return nl2query
 
 
 # Tools for agent
-async def initialize_tools(client: aiohttp.ClientSession, user_email: str):
+async def initialize_tools(
+    client: aiohttp.ClientSession, user_email: str, tool_trace: ToolTrace
+):
     return [
         StructuredTool.from_function(
-            coroutine=generate_search_amenities(client),
+            coroutine=generate_search_amenities(client, tool_trace),
             name="Search Amenities",
             description="""
     Use this tool to search amenities by name or to recommended airport amenities at SFO.
@@ -225,7 +242,7 @@ async def initialize_tools(client: aiohttp.ClientSession, user_email: str):
             args_schema=AmenityQueryInput,
         ),
         StructuredTool.from_function(
-            coroutine=generate_search_policies(client),
+            coroutine=generate_search_policies(client, tool_trace),
             name="Search Policies",
             description="""
     Use this tool to search for cymbal air passenger policy.
@@ -288,7 +305,7 @@ async def initialize_tools(client: aiohttp.ClientSession, user_email: str):
             args_schema=TicketInput,
         ),
         StructuredTool.from_function(
-            coroutine=generate_nl2query(client, user_email),
+            coroutine=generate_nl2query(client, user_email, tool_trace),
             name="General Flight and Airport Information",
             description="""
     Use this tool to query generic information about flight and airport that is not covered by the other tools.
