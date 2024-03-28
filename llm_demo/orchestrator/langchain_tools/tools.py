@@ -147,16 +147,18 @@ async def insert_ticket(client: aiohttp.ClientSession, params: str):
     ticket_info = json.loads(params)
     response = await client.post(
         url=f"{RETRIEVAL_URL}/tickets/insert",
-        params={
-            "airline": ticket_info.get("airline"),
-            "flight_number": ticket_info.get("flight_number"),
-            "departure_airport": ticket_info.get("departure_airport"),
-            "arrival_airport": ticket_info.get("arrival_airport"),
-            "departure_time": ticket_info.get("departure_time").replace("T", " "),
-            "arrival_time": ticket_info.get("arrival_time").replace("T", " "),
-            "seat_row": ticket_info.get("seat_row"),
-            "seat_letter": ticket_info.get("seat_letter"),
-        },
+        params=filter_none_values(
+            {
+                "airline": ticket_info.get("airline"),
+                "flight_number": ticket_info.get("flight_number"),
+                "departure_airport": ticket_info.get("departure_airport"),
+                "arrival_airport": ticket_info.get("arrival_airport"),
+                "departure_time": ticket_info.get("departure_time").replace("T", " "),
+                "arrival_time": ticket_info.get("arrival_time").replace("T", " "),
+                "seat_row": ticket_info.get("seat_row", None),
+                "seat_letter": ticket_info.get("seat_letter", None),
+            }
+        ),
         headers=get_headers(client, RETRIEVAL_URL),
     )
     response = await response.json()
