@@ -16,39 +16,28 @@ steps:
   - id: Install dependencies
     name: python:3.11
     dir: retrieval_service
-    entrypoint: pip
-    args:
-      [
-        "install",
-        "-r",
-        "requirements.txt",
-        "-r",
-        "requirements-test.txt",
-        "--user",
-      ]
+    script: pip install -r requirements.txt -r requirements-test.txt --user
 
   - id: Create database
     name: postgres
-    entrypoint: /bin/bash
     secretEnv:
-      - PGUSER # Use built-in env vars for database connection
-      - PGPASSWORD
-    args:
-      - "-c"
-      - |
-        psql -h ${_DATABASE_HOST} -c "CREATE DATABASE ${_DATABASE_NAME};" || echo "Database '${_DATABASE_NAME}' already exists."
-        psql -h ${_DATABASE_HOST} -d ${_DATABASE_NAME} -c 'CREATE EXTENSION vector;' || echo "Extension 'vector' already exists."
+      - DB_USER # Use built-in env vars for database connection
+      - DB_PASS
+    script: |
+        #!/usr/bin/env bash
+        export PGUSER=$DB_USER
+        export PGPASSWORD=$DB_PASS
+        echo "SELECT 'CREATE DATABASE ${_DATABASE_NAME}' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '${_DATABASE_NAME}')\gexec" | psql -h ${_DATABASE_HOST}
+        psql -h ${_DATABASE_HOST} -d ${_DATABASE_NAME} -c 'CREATE EXTENSION IF NOT EXISTS vector;'
 
   - id: Update config
     name: python:3.11
     dir: retrieval_service
     secretEnv:
-      - PGUSER
-      - PGPASSWORD
-    entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
+      - DB_USER
+      - DB_PASS
+    script: | 
+        #!/usr/bin/env bash
         # Create config
         cp example-config.yml config.yml
         sed -i "s/127.0.0.1/${_DATABASE_HOST}/g" config.yml
@@ -63,26 +52,21 @@ steps:
       - "DB_NAME=${_DATABASE_NAME}"
       - "DB_HOST=${_DATABASE_HOST}"
     secretEnv:
-      - PGUSER
-      - PGPASSWORD
-    entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
-        # Set env var expected by tests
-        export DB_USER=$$PGUSER
-        export DB_PASS=$$PGPASSWORD
+      - DB_USER
+      - DB_PASS
+    script: |
+        #!/usr/bin/env bash
         python -m pytest datastore/providers/postgres_test.py
 
   - id: Clean database
     name: postgres
-    entrypoint: /bin/bash
     secretEnv:
-      - PGUSER
-      - PGPASSWORD
-    args:
-      - "-c"
-      - |
+      - DB_USER
+      - DB_PASS
+    script: |
+        #!/usr/bin/env bash
+        export PGUSER=$DB_USER
+        export PGPASSWORD=$DB_PASS
         psql -h ${_DATABASE_HOST} -c "DROP DATABASE IF EXISTS ${_DATABASE_NAME};"
 
 substitutions:
@@ -92,11 +76,12 @@ substitutions:
 
 availableSecrets:
   secretManager:
-    - versionName: projects/$PROJECT_ID/secrets/alloy_db_pass/versions/latest
-      env: PGPASSWORD
     - versionName: projects/$PROJECT_ID/secrets/alloy_db_user/versions/latest
-      env: PGUSER
+      env: DB_USER
+    - versionName: projects/$PROJECT_ID/secrets/alloy_db_pass/versions/latest
+      env: DB_PASS
 options:
+  automapSubstitutions: true
   substitutionOption: 'ALLOW_LOOSE'
   dynamic_substitutions: true
   pool:
