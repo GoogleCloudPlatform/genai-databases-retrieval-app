@@ -21,6 +21,7 @@ from google.cloud.storage import Client as StorageClient
 from pydantic import BaseModel
 
 import models
+from helpers import UIFriendlyLogger
 
 
 class AbstractConfig(ABC):
@@ -316,9 +317,11 @@ class Client(ABC, Generic[C]):
     @abstractmethod
     async def amenities_search(
         self,
+        query: str,
         query_embedding: list[float],
         similarity_threshold: float,
         top_k: int,
+        ufl: UIFriendlyLogger,
         open_time: Optional[str],
         open_day: Optional[str],
     ) -> list[Any]:
@@ -371,6 +374,7 @@ class Client(ABC, Generic[C]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
+        ufl: UIFriendlyLogger,
         seat_row: int | None = None,
         seat_letter: str | None = None,
     ):
@@ -385,7 +389,12 @@ class Client(ABC, Generic[C]):
 
     @abstractmethod
     async def policies_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query: str,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        ufl: UIFriendlyLogger,
     ) -> list[str]:
         raise NotImplementedError("Subclass should implement this!")
 

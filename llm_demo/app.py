@@ -156,12 +156,17 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     response = await orchestrator.user_session_invoke(request.session["uuid"], prompt)
     output = response.get("output")
     confirmation = response.get("confirmation")
+    trace = response.get("trace")
     # Return assistant response
     if confirmation:
-        return json.dumps({"type": "confirmation", "content": confirmation})
+        return json.dumps(
+            {"type": "confirmation", "content": confirmation, "trace": trace}
+        )
     else:
         request.session["history"].append({"type": "ai", "data": {"content": output}})
-        return json.dumps({"type": "message", "content": markdown(output)})
+        return json.dumps(
+            {"type": "message", "content": markdown(output), "trace": trace}
+        )
 
 
 @routes.post("/book/flight", response_class=PlainTextResponse)
@@ -182,7 +187,7 @@ async def book_flight(request: Request, params: str = Body(embed=True)):
     request.session["history"].append(
         {"type": "ai", "data": {"content": "I have booked your ticket."}}
     )
-    return response
+    return json.dumps(response)
 
 
 @routes.post("/book/flight/decline", response_class=PlainTextResponse)
