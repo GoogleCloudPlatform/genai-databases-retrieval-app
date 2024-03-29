@@ -367,5 +367,5 @@ div.chat-wrapper div.chat-content div#loader-container span {
     padding: 10px;
     max-height: 200px;
     overflow: scroll;
-    word-break: auto-phrase;
+    white-space: nowrap;
 }
