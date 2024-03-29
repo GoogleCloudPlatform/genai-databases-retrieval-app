@@ -183,7 +183,7 @@ def generate_nl2query(client: aiohttp.ClientSession, user_email: str):
         if response_json["is_clear"] is True:
             return f"These are the results. Do not make up information from this result: {response_json['results']}"
         else:
-            return f"The previous information provided is insufficient. We have a followup question for the user: {response_json.followup_question}"
+            return f"The previous information provided is insufficient. We have a followup question for the user: {response_json['followup_question']}"
 
     return nl2query
 
@@ -195,32 +195,32 @@ async def initialize_tools(client: aiohttp.ClientSession, user_email: str):
             coroutine=generate_search_amenities(client),
             name="Search Amenities",
             description="""
-                        Use this tool to search amenities by name or to recommended airport amenities at SFO.
-                        If user provides flight info, use 'Search Flights by Flight Number'
-                        first to get gate info and location.
+    Use this tool to search amenities by name or to recommended airport amenities at SFO.
+    If user provides flight info, use 'Search Flights by Flight Number'
+    first to get gate info and location.
 
-                        User can also provide open_time and open_day to check amenities opening hour.
-                        Open_time is provided in the HH:MM:SS format.
-                        Open_day is one of days of the week (for example: sunday, monday, etc.). Convert terms like today to today's day.
-                        If open_time is provided, open_day MUST be provided as well. If open_time is provided without open_day, default open_day to today's day. If open_day is provided without open_time, default open_time to current time.
+    User can also provide open_time and open_day to check amenities opening hour.
+    Open_time is provided in the HH:MM:SS format.
+    Open_day is one of days of the week (for example: sunday, monday, etc.). Convert terms like today to today's day.
+    If open_time is provided, open_day MUST be provided as well. If open_time is provided without open_day, default open_day to today's day. If open_day is provided without open_time, default open_time to current time.
 
-                        Only recommend amenities that are returned by this query.
-                        Find amenities close to the user by matching the terminal and then comparing
-                        the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
-                        B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
+    Only recommend amenities that are returned by this query.
+    Find amenities close to the user by matching the terminal and then comparing
+    the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
+    B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
 
-                        Example:
-                        {{
-                            "query": "A burger place",
-                            "open_time": null,
-                            "open_day": null,
-                        }}
-                        Example:
-                        {{
-                            "query": "Shop for luxury goods",
-                            "open_time": "10:00:00",
-                            "open_day": "wednesday",
-                        }}
+    Example:
+    {{
+        "query": "A burger place",
+        "open_time": null,
+        "open_day": null,
+    }}
+    Example:
+    {{
+        "query": "Shop for luxury goods",
+        "open_time": "10:00:00",
+        "open_day": "wednesday",
+    }}
                         """,
             args_schema=AmenityQueryInput,
         ),
@@ -228,10 +228,10 @@ async def initialize_tools(client: aiohttp.ClientSession, user_email: str):
             coroutine=generate_search_policies(client),
             name="Search Policies",
             description="""
-						Use this tool to search for cymbal air passenger policy.
-						Policy that are listed is unchangeable.
-						You will not answer any questions outside of the policy given.
-						Policy includes information on ticket purchase and changes, baggage, check-in and boarding, special assistance, overbooking, flight delays and cancellations.
+    Use this tool to search for cymbal air passenger policy.
+    Policy that are listed is unchangeable.
+    You will not answer any questions outside of the policy given.
+    Policy includes information on ticket purchase and changes, baggage, check-in and boarding, special assistance, overbooking, flight delays and cancellations.
                         """,
             args_schema=PolicyQueryInput,
         ),
@@ -239,51 +239,51 @@ async def initialize_tools(client: aiohttp.ClientSession, user_email: str):
             coroutine=generate_insert_ticket(client),
             name="Insert Ticket",
             description="""
-                        Use this tool to book a flight ticket for the user.
-                        Example:
-                        {{
-                            "airline": "AA",
-                            "flight_number": "452",
-                            "departure_airport": "LAX",
-                            "arrival_airport": "SFO",
-                            "departure_time": "2024-01-01 05:50:00",
-                            "arrival_time": "2024-01-01 09:23:00",
-                            "seat_row": null,
-                            "seat_letter": null
-                        }}
-                        Example:
-                        {{
-                            "airline": "UA",
-                            "flight_number": "1532",
-                            "departure_airport": "SFO",
-                            "arrival_airport": "DEN",
-                            "departure_time": "2024-01-08 05:50:00",
-                            "arrival_time": "2024-01-08 09:23:00",
-                            "seat_row": null,
-                            "seat_letter": null,
-                        }}
-                        Example:
-                        {{
-                            "airline": "OO",
-                            "flight_number": "6307",
-                            "departure_airport": "SFO",
-                            "arrival_airport": "MSP",
-                            "departure_time": "2024-10-28 20:13:00",
-                            "arrival_time": "2024-10-28 21:07:00",
-                            "seat_row": null,
-                            "seat_letter": null,
-                        }}
-                        Example with user requesting to book seat 24B:
-                        {{
-                            "airline": "AA",
-                            "flight_number": "452",
-                            "departure_airport": "LAX",
-                            "arrival_airport": "SFO",
-                            "departure_time": "2024-01-01 05:50:00",
-                            "arrival_time": "2024-01-01 09:23:00",
-                            "seat_row": "24",
-                            "seat_letter": "B",
-                        }}
+    Use this tool to book a flight ticket for the user.
+    Example:
+    {{
+        "airline": "AA",
+        "flight_number": "452",
+        "departure_airport": "LAX",
+        "arrival_airport": "SFO",
+        "departure_time": "2024-01-01 05:50:00",
+        "arrival_time": "2024-01-01 09:23:00",
+        "seat_row": null,
+        "seat_letter": null
+    }}
+    Example:
+    {{
+        "airline": "UA",
+        "flight_number": "1532",
+        "departure_airport": "SFO",
+        "arrival_airport": "DEN",
+        "departure_time": "2024-01-08 05:50:00",
+        "arrival_time": "2024-01-08 09:23:00",
+        "seat_row": null,
+        "seat_letter": null,
+    }}
+    Example:
+    {{
+        "airline": "OO",
+        "flight_number": "6307",
+        "departure_airport": "SFO",
+        "arrival_airport": "MSP",
+        "departure_time": "2024-10-28 20:13:00",
+        "arrival_time": "2024-10-28 21:07:00",
+        "seat_row": null,
+        "seat_letter": null,
+    }}
+    Example with user requesting to book seat 24B:
+    {{
+        "airline": "AA",
+        "flight_number": "452",
+        "departure_airport": "LAX",
+        "arrival_airport": "SFO",
+        "departure_time": "2024-01-01 05:50:00",
+        "arrival_time": "2024-01-01 09:23:00",
+        "seat_row": "24",
+        "seat_letter": "B",
+    }}
                         """,
             args_schema=TicketInput,
         ),
@@ -291,22 +291,46 @@ async def initialize_tools(client: aiohttp.ClientSession, user_email: str):
             coroutine=generate_nl2query(client, user_email),
             name="General Flight and Airport Information",
             description="""
-                        Use this tool to query generic information about flight and airport that is not covered by the other tools.
-                        Convert terms like today or tomorrow to today's date or tomorrow's date in YYYY-MM-DD format. Also convert now to current time. Do not assume any information.
-                        If a follow up question is used, include the previous user query in the current query.
+    Use this tool to query generic information about flight and airport that is not covered by the other tools.
+    Convert terms like today or tomorrow to today's date or tomorrow's date in YYYY-MM-DD format. Also convert now to current time. Do not assume any information.
+    If a follow up question is used, include the previous user query in the current query.
 
-                        Some list of informations that will be able to retrieved from the tool includes:
-                        - Listing flights that are available from an airport, or to an airport, on a specific date. If user provide terms like today or tomorrow, convert those into actual date with YYYY-MM-DD format.
-                        Example with user asking about flights for tomorrow:
-                        {{
-                            "query": "List flights from xxx to xxx on YYYY-MM-DD",
-                        }}
+    Some list of informations that will be able to retrieved from the tool includes:
+    - Listing flights that are available from an airport, or to an airport, on a specific date. If user provide terms like today or tomorrow, convert those into actual date with YYYY-MM-DD format.
+    Example with user asking about flights for tomorrow:
+    {{
+        "query": "List flights from xxx to xxx on YYYY-MM-DD",
+    }}
+    Example with user asking about flights for tomorrow with airline preferences:
+    {{
+        "query": "List flights from xxx to xxx on YYYY-MM-DD with cymbal air",
+    }}
 
-                        - Get information for a specific flight using airline code or flight number.
-                        - List information of an airport. This will provide airport information such as airport's name, iata code, etc.
-                        - List seats that are available on a specific flight.
+    - Get information for a specific flight using airline code or flight number.
 
-                        The agent can decide to return results directly to the user.
+    - List information of an airport. This will provide airport information such as airport's name, iata code, etc.
+
+    - List seats that are available on a specific flight. Information such as specific seats type (for example, Economy, Premium Economy, Business Class, and First Class) or seats location (for example, aisle, middle, window) needs to be included if user provides them.
+    Example with user asking seats of a specific flight with no preferences:
+    {{
+        "query": "List seats that are available on flight XX  XXXX.",
+    }}
+    Example with user asking seats of a specific flight with seat type preferences:
+    {{
+        "query": "List seats that are available on flight XX  XXXX in first class.",
+    }}
+    Example with user asking seats of a specific flight with seat type and seat location preferences:
+    {{
+        "query": "List seats that are available on flight XX  XXXX in economy class and window or aisle seat",
+    }}
+
+    - List tickets that is available to the user.
+    Example with user asking information regarding their ticket or their flight:
+    {{
+        "query": "list flight for this user."
+    }}
+
+    The agent can decide to return results directly to the user.
                         """,
             args_schema=NL2QueryInput,
         ),
