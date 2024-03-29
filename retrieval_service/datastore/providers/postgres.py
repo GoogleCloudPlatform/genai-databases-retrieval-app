@@ -479,7 +479,7 @@ class Client(datastore.Client[Config]):
 
         results = [dict(r) for r in results]
         ufl.log_header("Found following amenities:")
-        ufl.log_results(results)
+        ufl.log_list_dict_as_result(results)
         return results
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
@@ -858,7 +858,7 @@ class Client(datastore.Client[Config]):
         )
         results = [r["content"] for r in results]
         ufl.log_header("Found following policies:")
-        ufl.log_results(results)
+        ufl.log_list_string_as_result("policy", results)
         return results
 
     async def close(self):
