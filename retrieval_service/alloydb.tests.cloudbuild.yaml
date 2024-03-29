@@ -16,16 +16,7 @@ steps:
   - id: Install dependencies
     name: python:3.11
     dir: retrieval_service
-    entrypoint: pip
-    args:
-      [
-        "install",
-        "-r",
-        "requirements.txt",
-        "-r",
-        "requirements-test.txt",
-        "--user",
-      ]
+    script: pip install -r requirements.txt -r requirements-text.txt --user
 
   - id: Create database
     name: postgres
@@ -33,9 +24,8 @@ steps:
     secretEnv:
       - PGUSER # Use built-in env vars for database connection
       - PGPASSWORD
-    args:
-      - "-c"
-      - |
+    script: |
+        #!/usr/bin/env bash
         psql -h ${_DATABASE_HOST} -c "CREATE DATABASE ${_DATABASE_NAME};" || echo "Database '${_DATABASE_NAME}' already exists."
         psql -h ${_DATABASE_HOST} -d ${_DATABASE_NAME} -c 'CREATE EXTENSION vector;' || echo "Extension 'vector' already exists."
 
@@ -46,9 +36,8 @@ steps:
       - PGUSER
       - PGPASSWORD
     entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
+    script: | 
+        #!/usr/bin/env bash
         # Create config
         cp example-config.yml config.yml
         sed -i "s/127.0.0.1/${_DATABASE_HOST}/g" config.yml
@@ -66,12 +55,8 @@ steps:
       - PGUSER
       - PGPASSWORD
     entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
-        # Set env var expected by tests
-        export DB_USER=$$PGUSER
-        export DB_PASS=$$PGPASSWORD
+    script: |
+        #!/usr/bin/env bash
         python -m pytest datastore/providers/postgres_test.py
 
   - id: Clean database
@@ -80,9 +65,8 @@ steps:
     secretEnv:
       - PGUSER
       - PGPASSWORD
-    args:
-      - "-c"
-      - |
+    script: |
+        #!/usr/bin/env bash
         psql -h ${_DATABASE_HOST} -c "DROP DATABASE IF EXISTS ${_DATABASE_NAME};"
 
 substitutions:
@@ -93,10 +77,11 @@ substitutions:
 availableSecrets:
   secretManager:
     - versionName: projects/$PROJECT_ID/secrets/alloy_db_pass/versions/latest
-      env: PGPASSWORD
+      env: DB_PASS
     - versionName: projects/$PROJECT_ID/secrets/alloy_db_user/versions/latest
-      env: PGUSER
+      env: DB_USER
 options:
+  automapSubstitutions: true
   substitutionOption: 'ALLOW_LOOSE'
   dynamic_substitutions: true
   pool:
