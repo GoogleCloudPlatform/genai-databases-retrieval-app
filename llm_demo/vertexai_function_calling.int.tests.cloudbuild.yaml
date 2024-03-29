@@ -25,9 +25,11 @@ steps:
 
   - id: "Test Frontend"
     name: "gcr.io/cloud-builders/gcloud:latest"
+    entrypoint: /bin/bash
     env: # Set env var expected by app
-    script: |
-        #!/usr/bin/env bash
+    args:
+      - "-c"
+      - |
         export URL=$(gcloud run services describe ${_SERVICE} --region ${_REGION} --format 'value(status.url)')
         export ID_TOKEN=$(gcloud auth print-identity-token --audiences $$URL)
         export ORCHESTRATION_TYPE=${_ORCHESTRATION_TYPE}
