@@ -15,7 +15,7 @@
 import csv
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Generic, List, Optional, TypeVar
+from typing import Any, Generic, List, Optional, TypeVar
 
 from google.cloud.storage import Client as StorageClient
 from pydantic import BaseModel
@@ -104,7 +104,6 @@ class Client(ABC, Generic[C]):
         CSVStreamer[models.Ticket],
         CSVStreamer[models.Seat],
     ]:
-
         storage_client = StorageClient.create_anonymous_client()
         bucket = storage_client.bucket(bucket_path)
 
@@ -322,7 +321,7 @@ class Client(ABC, Generic[C]):
         top_k: int,
         open_time: Optional[str],
         open_day: Optional[str],
-    ) -> list[models.Amenity]:
+    ) -> list[Any]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
@@ -387,7 +386,7 @@ class Client(ABC, Generic[C]):
     @abstractmethod
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Policy]:
+    ) -> list[str]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
