@@ -24,7 +24,6 @@ from pydantic import BaseModel
 import models
 from helpers import UIFriendlyLogger
 
-
 from .. import datastore
 
 POSTGRES_IDENTIFIER = "postgres"

@@ -16,3 +16,7 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["google.cloud.firestore"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["sqlparse"]
+ignore_missing_imports = true
