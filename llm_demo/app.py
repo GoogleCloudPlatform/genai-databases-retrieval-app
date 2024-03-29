@@ -101,6 +101,8 @@ async def login_google(
     # create new request session
     orchestrator = request.app.state.orchestrator
     orchestrator.set_user_session_header(session["uuid"], str(user_id_token))
+    user_email = session["user_info"].get("user_email", "")
+    await orchestrator.set_user_email(session["uuid"], user_email)
     print("Logged in to Google.")
 
     welcome_text = (

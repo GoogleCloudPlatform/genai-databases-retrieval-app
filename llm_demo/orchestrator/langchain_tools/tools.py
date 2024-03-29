@@ -75,14 +75,15 @@ class AmenityQueryInput(BaseModel):
 
 def generate_search_amenities(client: aiohttp.ClientSession):
     async def search_amenities(query: str, open_time: str, open_day: str):
+        params = {
+            "top_k": "5",
+            "query": query,
+            "open_time": open_time,
+            "open_day": open_day,
+        }
         response = await client.get(
             url=f"{RETRIEVAL_URL}/amenities/search",
-            params={
-                "top_k": "5",
-                "query": query,
-                "open_time": open_time,
-                "open_day": open_day,
-            },
+            params=filter_none_values(params),
             headers=get_headers(client, RETRIEVAL_URL),
         )
 
@@ -180,7 +181,7 @@ def generate_nl2query(client: aiohttp.ClientSession, user_email: str):
         response_json = await response.json()
 
         if response_json["is_clear"] is True:
-            return response_json["results"]
+            return f"These are the results. Do not make up information from this result: {response_json['results']}"
         else:
             return f"The previous information provided is insufficient. We have a followup question for the user: {response_json.followup_question}"
 
@@ -290,14 +291,22 @@ async def initialize_tools(client: aiohttp.ClientSession, user_email: str):
             coroutine=generate_nl2query(client, user_email),
             name="General Flight and Airport Information",
             description="""
-                        Use this tool to query information from the database. The database have information on flights, airports, and tickets.
-                        Send user query in natural language to the tool.
+                        Use this tool to query generic information about flight and airport that is not covered by the other tools.
+                        Convert terms like today or tomorrow to today's date or tomorrow's date in YYYY-MM-DD format. Also convert now to current time. Do not assume any information.
                         If a follow up question is used, include the previous user query in the current query.
 
-                        Example of information that will be able to retrieved from the tool includes:
-                        - Listing flights that are available from an airport, or to an airport, on a specific date.
+                        Some list of informations that will be able to retrieved from the tool includes:
+                        - Listing flights that are available from an airport, or to an airport, on a specific date. If user provide terms like today or tomorrow, convert those into actual date with YYYY-MM-DD format.
+                        Example with user asking about flights for tomorrow:
+                        {{
+                            "query": "List flights from xxx to xxx on YYYY-MM-DD",
+                        }}
+
                         - Get information for a specific flight using airline code or flight number.
                         - List information of an airport. This will provide airport information such as airport's name, iata code, etc.
+                        - List seats that are available on a specific flight.
+
+                        The agent can decide to return results directly to the user.
                         """,
             args_schema=NL2QueryInput,
         ),
