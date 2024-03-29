@@ -27,7 +27,7 @@ steps:
         #!/usr/bin/env bash
         export PGUSER=$DB_USER
         export PGPASSWORD=$DB_PASS
-        psql -h ${_DATABASE_HOST} -c "CREATE DATABASE ${_DATABASE_NAME};"
+        echo "SELECT 'CREATE DATABASE ${_DATABASE_NAME}' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '${_DATABASE_NAME}')\gexec" | psql -h ${_DATABASE_HOST}
         psql -h ${_DATABASE_HOST} -d ${_DATABASE_NAME} -c 'CREATE EXTENSION IF NOT EXISTS vector;'
 
   - id: Update config
