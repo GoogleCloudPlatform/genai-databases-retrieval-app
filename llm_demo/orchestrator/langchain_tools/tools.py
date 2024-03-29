@@ -24,6 +24,7 @@ from google.auth.transport.requests import Request  # type: ignore
 from langchain.agents.agent import ExceptionTool  # type: ignore
 from langchain.tools import StructuredTool
 from pydantic.v1 import BaseModel, Field
+
 from .helpers import ToolTrace
 
 RETRIEVAL_URL = os.getenv("RETRIEVAL_URL", default="http://127.0.0.1:8080")

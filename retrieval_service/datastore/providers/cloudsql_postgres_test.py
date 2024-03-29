@@ -24,7 +24,7 @@ from csv_diff import compare, load_csv  # type: ignore
 from google.cloud.sql.connector import Connector
 
 import models
-from retrieval_service.helpers.helpers import UIFriendlyLogger
+from helpers import UIFriendlyLogger
 
 from .. import datastore
 from . import cloudsql_postgres

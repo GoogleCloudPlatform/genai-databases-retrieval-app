@@ -13,6 +13,9 @@
 # limitations under the License.
 
 
+from typing import Any, List
+
+
 class UIFriendlyLogger:
     friendly_log: str = ""
 
@@ -31,8 +34,10 @@ class UIFriendlyLogger:
     def log_code(self, message: str):
         self.friendly_log += f'<div class="codeblock">{message}</div>'
 
-    def log_results(self, message: str):
-        self.friendly_log += f'<div class="results">{message}</div>'
+    def log_results(self, results: List[Any]):
+        self.friendly_log += (
+            f'<div class="results">{"<br>".join(map(str, results))}</div>'
+        )
 
     def log_SQL(self, sql: str, params):
         for i in range(len(params)):

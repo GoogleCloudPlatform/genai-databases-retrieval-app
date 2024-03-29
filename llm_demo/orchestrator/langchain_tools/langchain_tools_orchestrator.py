@@ -29,9 +29,9 @@ from langchain.tools import StructuredTool
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_google_vertexai import VertexAI
 from pytz import timezone
-from .helpers import ToolTrace
 
 from ..orchestrator import BaseOrchestrator, classproperty
+from .helpers import ToolTrace
 from .tools import get_confirmation_needing_tools, initialize_tools, insert_ticket
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
