@@ -41,7 +41,7 @@ class UIFriendlyLogger:
 
     def log_SQL(self, sql: str, params):
         for i in range(len(params)):
-            sql = sql.replace(f"${i+1}", f"'{params[i]}'")
+            sql = sql.replace(f"${i+1}", f"{params[i]}")
         self.log_code(sql)
 
     def get_log(self):
