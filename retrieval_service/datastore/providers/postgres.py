@@ -840,12 +840,16 @@ class Client(datastore.Client[Config]):
                 WHERE (embedding <=> $1) < $2
                 ORDER BY (embedding <=> $1)
                 LIMIT $3
-            """,
+            """
         search_query_params = (query_embedding, similarity_threshold, top_k)
 
         ufl.log_SQL(
             search_query,
-            (f"embedding('textembedding-gecko@001', '{query}')", search_query_params[1], search_query_params[2]),
+            (
+                f"embedding('textembedding-gecko@001', '{query}')",
+                search_query_params[1],
+                search_query_params[2],
+            ),
         )
         results = await self.__pool.fetch(
             search_query,
