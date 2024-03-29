@@ -25,8 +25,8 @@ steps:
       - DB_PASS
     script: |
         #!/usr/bin/env bash
-        export PGUSER=$$DB_USER
-        export PGPASSWORD=$$DB_PASS
+        export PGUSER=$DB_USER
+        export PGPASSWORD=$DB_PASS
         psql -h ${_DATABASE_HOST} -c "CREATE DATABASE IF NOT EXISTS ${_DATABASE_NAME};"
         psql -h ${_DATABASE_HOST} -d ${_DATABASE_NAME} -c 'CREATE EXTENSION IF NOT EXISTS vector;'
 
@@ -65,8 +65,8 @@ steps:
       - DB_PASS
     script: |
         #!/usr/bin/env bash
-        export PGUSER=$$DB_USER
-        export PGPASSWORD=$$DB_PASS
+        export PGUSER=$DB_USER
+        export PGPASSWORD=$DB_PASS
         psql -h ${_DATABASE_HOST} -c "DROP DATABASE IF EXISTS ${_DATABASE_NAME};"
 
 substitutions:
