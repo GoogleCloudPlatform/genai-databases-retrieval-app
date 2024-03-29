@@ -186,7 +186,7 @@ async def book_flight(request: Request, params: str = Body(embed=True)):
     request.session["history"].append(
         {"type": "ai", "data": {"content": "I have booked your ticket."}}
     )
-    return response
+    return json.dumps(response)
 
 
 @routes.post("/book/flight/decline", response_class=PlainTextResponse)

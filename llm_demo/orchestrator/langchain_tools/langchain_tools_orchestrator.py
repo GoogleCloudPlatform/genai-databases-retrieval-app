@@ -98,7 +98,9 @@ class UserAgent:
         self.agent.tools = tools
 
     async def insert_ticket(self, params: str, tool_trace: ToolTrace):
-        return await insert_ticket(self.client, params, tool_trace)
+        result = await insert_ticket(self.client, params, tool_trace)
+        trace = tool_trace.flush()
+        return {"result": result, "trace": trace}
 
     def reset_memory(self, base_message: List[BaseMessage]):
         self.memory.clear()
@@ -187,7 +189,8 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         return self._user_sessions[uuid]
 
     async def set_user_email(self, uuid: str, user_email: str):
-        tools = await initialize_tools(self.client, user_email)
+        tool_trace = self.get_user_traces(uuid)
+        tools = await initialize_tools(self.client, user_email, tool_trace)
         user_session = self.get_user_session(uuid)
         user_session.update_tools(tools)
 
