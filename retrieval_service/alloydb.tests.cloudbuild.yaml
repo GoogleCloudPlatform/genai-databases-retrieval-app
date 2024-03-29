@@ -16,7 +16,7 @@ steps:
   - id: Install dependencies
     name: python:3.11
     dir: retrieval_service
-    script: pip install -r requirements.txt -r requirements-text.txt --user
+    script: pip install -r requirements.txt -r requirements-test.txt --user
 
   - id: Create database
     name: postgres
