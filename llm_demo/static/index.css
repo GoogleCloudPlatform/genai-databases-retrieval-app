@@ -356,10 +356,17 @@ div.chat-wrapper div.chat-content div#loader-container span {
     padding-left: 20px;
     font-family: monospace;
     font-size: 13px;
-    color: #007d00;
-    background: #e4e4e4;
+    color: #317b10;
+    background: #f2f2f2;
     padding-top: 5px;
     padding-bottom: 5px;
+    text-wrap: nowrap;
+    overflow: scroll;
+}
+
+#trace .codeblock .indent {
+    display: inline-block;
+    width: 4px;
 }
 
 #trace .results {
@@ -368,4 +375,24 @@ div.chat-wrapper div.chat-content div#loader-container span {
     max-height: 200px;
     overflow: scroll;
     white-space: nowrap;
+}
+
+#trace .results th, td {
+    border: 0;
+    border-right: 1px solid #b5b5b5;
+    text-align: left;
+    padding-right: 10px;
+    padding-left: 5px;
+}
+
+#trace .results th:last-child, td:last-child {
+    border-right: 0px;
+}
+
+#trace .results th:first-child, td:first-child {
+    padding-left: 0px;
+}
+
+#trace .results table {
+    border: 0;
 }
