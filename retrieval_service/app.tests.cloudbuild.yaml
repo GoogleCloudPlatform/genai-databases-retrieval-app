@@ -16,22 +16,11 @@ steps:
   - id: Install dependencies
     name: python:3.11
     dir: retrieval_service
-    entrypoint: pip
-    args:
-      [
-        "install",
-        "-r",
-        "requirements.txt",
-        "-r",
-        "requirements-test.txt",
-        "--user",
-      ]
+    script: pip install -r requirements.txt -r requirements-test.txt --user
 
   - id: Run retrieval service app tests
     name: python:3.11
     dir: retrieval_service/app
-    entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
+    script: |
+        #!/usr/bin/env bash
         python -m pytest app_test.py
