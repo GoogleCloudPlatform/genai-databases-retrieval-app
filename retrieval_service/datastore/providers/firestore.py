@@ -22,6 +22,7 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 from pydantic import BaseModel
 
 import models
+from helpers import UIFriendlyLogger
 
 from .. import datastore
 
@@ -258,9 +259,11 @@ class Client(datastore.Client[Config]):
 
     async def amenities_search(
         self,
+        query: str,
         query_embedding: list[float],
         similarity_threshold: float,
         top_k: int,
+        ufl: UIFriendlyLogger,
         open_time: Optional[str],
         open_day: Optional[str],
     ) -> list[Any]:
@@ -329,6 +332,7 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
+        ufl: UIFriendlyLogger,
         seat_row: int | None = None,
         seat_letter: str | None = None,
     ):
@@ -354,7 +358,12 @@ class Client(datastore.Client[Config]):
         raise NotImplementedError("Not Implemented")
 
     async def policies_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query: str,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        ufl: UIFriendlyLogger,
     ) -> list[str]:
         raise NotImplementedError("Semantic search not yet supported in Firestore.")
 

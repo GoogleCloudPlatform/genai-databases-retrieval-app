@@ -22,6 +22,7 @@ from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 
 import models
+from helpers import UIFriendlyLogger
 
 from .. import datastore
 
@@ -423,12 +424,15 @@ class Client(datastore.Client[Config]):
 
     async def amenities_search(
         self,
+        query: str,
         query_embedding: list[float],
         similarity_threshold: float,
         top_k: int,
+        ufl: UIFriendlyLogger,
         open_time: Optional[str],
         open_day: Optional[str],
     ) -> list[Any]:
+        ufl.log_header("Running similarity search:")
         open_time_datetime = None
         params = (query_embedding, similarity_threshold, top_k)
         filter_query = "WHERE "
@@ -443,6 +447,24 @@ class Client(datastore.Client[Config]):
             params += (open_time_datetime,)  # type: ignore
         filter_query += "(embedding <=> $1) < $2"
 
+        search_query = f"""
+            select id, name, description, location, terminal, category, hour
+            from (
+                select *, 1 - (embedding <=> $1) as similarity
+                from amenities
+                {filter_query}
+                order by similarity desc
+                limit $3
+            ) as sorted_amenities
+            """
+
+        # Mocking the logging of code due to not using embeddings on the server currently
+        ufl.log_SQL(
+            search_query.replace(
+                "embedding", "embedding('textembedding-gecko@001', description)"
+            ),
+            (f"embedding('textembedding-gecko@001', '{query}')", params[1], params[2]),
+        )
         results = await self.__pool.fetch(
             f"""
                 SELECT name, description, location, terminal, category, hour
@@ -456,6 +478,8 @@ class Client(datastore.Client[Config]):
         )
 
         results = [dict(r) for r in results]
+        ufl.log_header("Found following amenities:")
+        ufl.log_results(results)
         return results
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
@@ -572,9 +596,10 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: datetime,
         arrival_time: datetime,
+        ufl: UIFriendlyLogger,
     ) -> bool:
-        results = await self.__pool.fetch(
-            """
+        ufl.log_header("Running query to determine if flight requested exists:")
+        query = """
                 SELECT * FROM flights
                 WHERE airline ILIKE $1
                 AND flight_number ILIKE $2
@@ -582,16 +607,23 @@ class Client(datastore.Client[Config]):
                 AND arrival_airport ILIKE $4
                 AND departure_time = $5::timestamp
                 AND arrival_time = $6::timestamp;
-            """,
+            """
+        query_params = (
             airline,
             flight_number,
             departure_airport,
             arrival_airport,
             departure_time,
             arrival_time,
+        )
+        ufl.log_SQL(query, query_params)
+        results = await self.__pool.fetch(
+            query,
+            *query_params,
             timeout=10,
         )
         if len(results) == 1:
+            ufl.log("Determined that flight exists.")
             return True
         return False
 
@@ -606,6 +638,7 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
+        ufl: UIFriendlyLogger,
         seat_row: int | None = None,
         seat_letter: str | None = None,
     ):
@@ -618,14 +651,17 @@ class Client(datastore.Client[Config]):
             arrival_airport,
             departure_time_datetime,
             arrival_time_datetime,
+            ufl,
         ):
             raise Exception("Flight information not in database")
         async with self.__pool.acquire() as conn:
             async with conn.transaction():
                 # If a seat is pre-selected, ensure it is not already booked
                 if seat_row is not None or seat_letter is not None:
-                    open_seat = await conn.fetchrow(
-                        """
+                    ufl.log_header(
+                        "Since seat was provided. Checking if seat is taken:"
+                    )
+                    check_seat_open_query = """
                             SELECT seat_row, seat_letter
                             FROM seats
                             WHERE flight_id = (
@@ -638,13 +674,19 @@ class Client(datastore.Client[Config]):
                                     AND is_reserved = FALSE
                                     AND seat_row = $5
                                     AND seat_letter = $6
-                        """,
+                        """
+                    check_seat_open_query_params = (
                         flight_number,
                         airline,
                         departure_airport,
                         departure_time_datetime,
                         seat_row,
                         seat_letter,
+                    )
+                    ufl.log_SQL(check_seat_open_query, check_seat_open_query_params)
+                    open_seat = await conn.fetchrow(
+                        check_seat_open_query,
+                        *check_seat_open_query_params,
                         timeout=10,
                     )
                     if not open_seat:
@@ -655,8 +697,10 @@ class Client(datastore.Client[Config]):
                     )
                 # If no seat is pre-selected, find the first seat on this flight
                 if seat_row is None or seat_letter is None:
-                    open_seat = await conn.fetchrow(
-                        """
+                    ufl.log_header(
+                        "Since no specific seat was provided. Checking for an empty seat on flight:"
+                    )
+                    find_open_seat_query = """
                             SELECT seat_row, seat_letter
                             FROM seats
                             WHERE flight_id = (
@@ -667,11 +711,17 @@ class Client(datastore.Client[Config]):
                                         departure_airport = $3 AND
                                         departure_time = $4)
                                     AND is_reserved = FALSE;
-                        """,
+                        """
+                    find_open_seat_query_params = (
                         flight_number,
                         airline,
                         departure_airport,
                         departure_time_datetime,
+                    )
+                    ufl.log_SQL(find_open_seat_query, find_open_seat_query_params)
+                    open_seat = await conn.fetchrow(
+                        find_open_seat_query,
+                        *find_open_seat_query_params,
                         timeout=10,
                     )
                     if not open_seat:
@@ -680,10 +730,11 @@ class Client(datastore.Client[Config]):
                         open_seat["seat_row"],
                         open_seat["seat_letter"],
                     )
+                    ufl.log(f"Found seat {seat_row}{seat_letter}")
                 # Book the ticket
                 ticket_id = None
-                ticket_booking_result = await conn.fetchrow(
-                    """
+                ufl.log_header("Inserting confirmed ticket into tickets table:")
+                ticket_insertion_query = """
                         INSERT INTO tickets (
                             id,
                             user_id,
@@ -700,7 +751,8 @@ class Client(datastore.Client[Config]):
                         ) VALUES (
                         (SELECT COALESCE(MAX(id), 0) + 1 FROM tickets), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
                         ) RETURNING id;
-                    """,
+                    """
+                ticket_insertion_query_params = (
                     user_id,
                     user_name,
                     user_email,
@@ -712,15 +764,21 @@ class Client(datastore.Client[Config]):
                     arrival_time_datetime,
                     seat_row,
                     seat_letter,
+                )
+                ufl.log_SQL(ticket_insertion_query, ticket_insertion_query_params)
+                ticket_booking_result = await conn.fetchrow(
+                    ticket_insertion_query,
+                    *ticket_insertion_query_params,
                     timeout=10,
                 )
                 if ticket_booking_result:
                     ticket_id = ticket_booking_result["id"]
+                    ufl.log(f"Confirmed insertion of ticket. Id:{ticket_id}")
                 else:
                     raise Exception("Ticket Insertion failure")
                 # Book the seat in the same transaction
-                seat_booking_result = await conn.execute(
-                    """
+                ufl.log_header(f"Updating seats table with user's seat:")
+                seat_update_query = """
                         UPDATE seats
                         SET is_reserved = TRUE, ticket_id = $1
                         WHERE flight_id = (
@@ -732,7 +790,8 @@ class Client(datastore.Client[Config]):
                                     departure_time = $5)
                                 AND seat_row = $6
                                 AND seat_letter = $7
-                    """,
+                    """
+                seat_update_query_params = (
                     ticket_id,
                     flight_number,
                     airline,
@@ -740,10 +799,16 @@ class Client(datastore.Client[Config]):
                     departure_time_datetime,
                     seat_row,
                     seat_letter,
+                )
+                ufl.log_SQL(seat_update_query, seat_update_query_params)
+                seat_booking_result = await conn.execute(
+                    seat_update_query,
+                    *seat_update_query_params,
                     timeout=10,
                 )
                 if seat_booking_result != "UPDATE 1":
                     raise Exception("Ticket - Seat Update failure")
+                ufl.log("Seat update completed.")
 
     async def list_tickets(
         self,
@@ -761,23 +826,39 @@ class Client(datastore.Client[Config]):
         return results
 
     async def policies_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query: str,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        ufl: UIFriendlyLogger,
     ) -> list[str]:
-        results = await self.__pool.fetch(
-            """
+        ufl.log_header("Running similarity search:")
+        search_query = """
                 SELECT content
                 FROM policies
                 WHERE (embedding <=> $1) < $2
                 ORDER BY (embedding <=> $1)
                 LIMIT $3
-            """,
-            query_embedding,
-            similarity_threshold,
-            top_k,
+            """
+        search_query_params = (query_embedding, similarity_threshold, top_k)
+
+        ufl.log_SQL(
+            search_query,
+            (
+                f"embedding('textembedding-gecko@001', '{query}')",
+                search_query_params[1],
+                search_query_params[2],
+            ),
+        )
+        results = await self.__pool.fetch(
+            search_query,
+            *search_query_params,
             timeout=10,
         )
-
         results = [r["content"] for r in results]
+        ufl.log_header("Found following policies:")
+        ufl.log_results(results)
         return results
 
     async def close(self):

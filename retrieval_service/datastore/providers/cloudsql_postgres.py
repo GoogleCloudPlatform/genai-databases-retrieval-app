@@ -25,6 +25,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 import models
+from helpers import UIFriendlyLogger
 
 from .. import datastore
 
@@ -488,9 +489,11 @@ class Client(datastore.Client[Config]):
 
     async def amenities_search(
         self,
+        query: str,
         query_embedding: list[float],
         similarity_threshold: float,
         top_k: int,
+        ufl: UIFriendlyLogger,
         open_time: Optional[str],
         open_day: Optional[str],
     ) -> list[Any]:
@@ -512,7 +515,7 @@ class Client(datastore.Client[Config]):
                 SELECT name, description, location, terminal, category, hour
                 FROM amenities
                 {filter_query}
-                ORDER BY (embedding <=> :query_embedding) 
+                ORDER BY (embedding <=> :query_embedding)
                 LIMIT :top_k
                 """
             )
@@ -604,6 +607,7 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
+        ufl: UIFriendlyLogger,
         seat_row: int | None = None,
         seat_letter: str | None = None,
     ):
@@ -629,7 +633,12 @@ class Client(datastore.Client[Config]):
         raise NotImplementedError("Not Implemented")
 
     async def policies_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query: str,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        ufl: UIFriendlyLogger,
     ) -> list[str]:
         async with self.__pool.connect() as conn:
             s = text(
