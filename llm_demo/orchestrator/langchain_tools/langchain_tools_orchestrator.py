@@ -321,7 +321,7 @@ Action:
 ```"""
 
 MULTITURN_PROMPT = """Assistant will judge if multiple action need to be taken before returning final response to human.
-For example, if user ask 'Where can I get a snack near the gate for flight CY 123?'
+For example, if user ask 'Where can I get a snack near the gate for flight XX XXXX?'
 Actions that will be taken by the assistant is as below:
 First, assistant will first complete action for "General Flight and Airport Information".
 Next, assistant will complete action for "Search Amenities" based on the gate for that flight.
