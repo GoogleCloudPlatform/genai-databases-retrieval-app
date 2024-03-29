@@ -27,8 +27,8 @@ steps:
         #!/usr/bin/env bash
         export PGUSER=$DB_USER
         export PGPASSWORD=$DB_PASS
-        psql -h ${_DATABASE_HOST} -c "CREATE DATABASE IF NOT EXISTS ${_DATABASE_NAME};"
-        psql -h ${_DATABASE_HOST} -d ${_DATABASE_NAME} -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+        psql -h ${_DATABASE_HOST} -c "CREATE DATABASE ${_DATABASE_NAME} IF NOT EXISTS;"
+        psql -h ${_DATABASE_HOST} -d ${_DATABASE_NAME} -c 'CREATE EXTENSION vector IF NOT EXISTS;'
 
   - id: Update config
     name: python:3.11
