@@ -20,10 +20,9 @@ steps:
 
   - id: Create database
     name: postgres
-    entrypoint: /bin/bash
     secretEnv:
-      - PGUSER # Use built-in env vars for database connection
-      - PGPASSWORD
+      - DB_USER # Use built-in env vars for database connection
+      - DB_PASS
     script: |
         #!/usr/bin/env bash
         psql -h ${_DATABASE_HOST} -c "CREATE DATABASE ${_DATABASE_NAME};" || echo "Database '${_DATABASE_NAME}' already exists."
@@ -33,9 +32,8 @@ steps:
     name: python:3.11
     dir: retrieval_service
     secretEnv:
-      - PGUSER
-      - PGPASSWORD
-    entrypoint: /bin/bash
+      - DB_USER
+      - DB_PASS
     script: | 
         #!/usr/bin/env bash
         # Create config
@@ -52,19 +50,17 @@ steps:
       - "DB_NAME=${_DATABASE_NAME}"
       - "DB_HOST=${_DATABASE_HOST}"
     secretEnv:
-      - PGUSER
-      - PGPASSWORD
-    entrypoint: /bin/bash
+      - DB_USER
+      - DB_PASS
     script: |
         #!/usr/bin/env bash
         python -m pytest datastore/providers/postgres_test.py
 
   - id: Clean database
     name: postgres
-    entrypoint: /bin/bash
     secretEnv:
-      - PGUSER
-      - PGPASSWORD
+      - DB_USER
+      - DB_PASS
     script: |
         #!/usr/bin/env bash
         psql -h ${_DATABASE_HOST} -c "DROP DATABASE IF EXISTS ${_DATABASE_NAME};"
@@ -76,10 +72,10 @@ substitutions:
 
 availableSecrets:
   secretManager:
-    - versionName: projects/$PROJECT_ID/secrets/alloy_db_pass/versions/latest
-      env: DB_PASS
     - versionName: projects/$PROJECT_ID/secrets/alloy_db_user/versions/latest
       env: DB_USER
+    - versionName: projects/$PROJECT_ID/secrets/alloy_db_pass/versions/latest
+      env: DB_PASS
 options:
   automapSubstitutions: true
   substitutionOption: 'ALLOW_LOOSE'
