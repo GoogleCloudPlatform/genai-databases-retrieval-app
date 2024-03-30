@@ -230,7 +230,7 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
                 TOOLS_PREFIX,
                 tool_strings,
                 current_datetime,
-                MULTITURN_PROMPT,
+                # MULTITURN_PROMPT,
                 format_instructions,
                 SUFFIX,
             ]
