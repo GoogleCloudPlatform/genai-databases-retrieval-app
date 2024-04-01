@@ -310,14 +310,22 @@ async def initialize_tools(
             name="General Flight and Airport Information",
             description="""
     Use this tool to query generic information about flight and airport that is not covered by the other tools.
-    Convert terms like today or tomorrow to today's date or tomorrow's date in YYYY-MM-DD format. Also convert now to current time. Do not assume any information.
+    Convert terms like today or tomorrow to today's date or tomorrow's date in YYYY-MM-DD format. Also convert now to current time. Do not assume any information. Include details that are specified by user into the query.
     If a follow up question is used, include the previous user query in the current query.
 
     Some list of informations that will be able to retrieved from the tool includes:
     - Listing flights that are available from an airport, or to an airport, on a specific date. If user provide terms like today or tomorrow, convert those into actual date with YYYY-MM-DD format.
+    Example with user asking about flights to New York (without additional context):
+    {{
+        "query": "List flights to New York."
+    }}
     Example with user asking about flights for tomorrow:
     {{
         "query": "List flights from xxx to xxx on YYYY-MM-DD",
+    }}
+    Example with user asking about next flight for today:
+    {{
+        "query": "List next flight from xxx to xxx on YYYY-MM-DD",
     }}
     Example with user asking about flights for tomorrow with airline preferences:
     {{
@@ -333,6 +341,10 @@ async def initialize_tools(
     {{
         "query": "List seats that are available on flight XX  XXXX.",
     }}
+    Example with user asking for a good seat:
+    {{
+        "query": "List good seats that are available on flight xx  xxxx.",
+    }}
     Example with user asking seats of a specific flight with seat type preferences:
     {{
         "query": "List seats that are available on flight XX  XXXX in first class.",
@@ -345,7 +357,7 @@ async def initialize_tools(
     - List tickets that is available to the user.
     Example with user asking information regarding their ticket or their flight:
     {{
-        "query": "list flight for this user."
+        "query": "list flight for this user.",
     }}
 
     The agent can decide to return results directly to the user.
