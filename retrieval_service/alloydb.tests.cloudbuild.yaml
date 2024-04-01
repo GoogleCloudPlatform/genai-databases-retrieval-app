@@ -36,14 +36,14 @@ steps:
     secretEnv:
       - DB_USER
       - DB_PASS
-    script: | 
+    script: |
         #!/usr/bin/env bash
         # Create config
         cp example-config.yml config.yml
         sed -i "s/127.0.0.1/${_DATABASE_HOST}/g" config.yml
         sed -i "s/my_database/${_DATABASE_NAME}/g" config.yml
-        sed -i "s/my-user/$$PGUSER/g" config.yml
-        sed -i "s/my-password/$$PGPASSWORD/g" config.yml
+        sed -i "s/my-user/$$DB_USER/g" config.yml
+        sed -i "s/my-password/$$DB_PASS/g" config.yml
 
   - id: Run Alloy DB integration tests
     name: python:3.11

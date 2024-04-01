@@ -15,10 +15,8 @@ steps:
   - id: "Deploy to Cloud Run"
     name: "gcr.io/cloud-builders/gcloud:latest"
     dir: llm_demo
-    entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
+    script: |
+        #!/usr/bin/env bash
         gcloud run deploy ${_SERVICE} \
           --source . \
           --region ${_REGION} \
@@ -46,7 +44,7 @@ steps:
           -H 'Content-Type: application/json' \
           -d '{"prompt":"How can you help me?"}' \
           $$URL/chat)
-        
+
         if grep -q "400" <<< "$msg"; then
           echo "Chat Handler Test: PASSED"
         else
@@ -64,15 +62,14 @@ steps:
 
   - id: "Delete image and service"
     name: "gcr.io/cloud-builders/gcloud"
-    entrypoint: "/bin/bash"
-    args:
-      - "-c"
-      - |
+    script: |
+        #!/usr/bin/env bash
         gcloud artifacts docker images delete $_GCR_HOSTNAME/$PROJECT_ID/cloud-run-source-deploy/$_SERVICE --quiet
         gcloud run services delete ${_SERVICE} --region ${_REGION} --quiet
 
 serviceAccount: "projects/$PROJECT_ID/serviceAccounts/548341735270-compute@developer.gserviceaccount.com" # Necessary for ID token creation
 options:
+  automapSubstitutions: true
   logging: CLOUD_LOGGING_ONLY # Necessary for custom service account
   dynamic_substitutions: true
 

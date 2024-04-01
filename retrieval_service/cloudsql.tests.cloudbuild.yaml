@@ -16,32 +16,21 @@ steps:
   - id: Install dependencies
     name: python:3.11
     dir: retrieval_service
-    entrypoint: pip
-    args:
-      [
-        "install",
-        "-r",
-        "requirements.txt",
-        "-r",
-        "requirements-test.txt",
-        "--user",
-      ]
+    script: pip install -r requirements.txt -r requirements-test.txt --user
 
   - id: Update config
     name: python:3.11
     dir: retrieval_service
     secretEnv:
-      - PGUSER
-      - PGPASSWORD
-    entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
+      - DB_USER
+      - DB_PASS
+    script: |
+        #!/usr/bin/env bash
         # Create config
         cp example-config-cloudsql.yml config.yml
         sed -i "s/my_database/${_DATABASE_NAME}/g" config.yml
-        sed -i "s/my-user/$$PGUSER/g" config.yml
-        sed -i "s/my-password/$$PGPASSWORD/g" config.yml
+        sed -i "s/my-user/$$DB_USER/g" config.yml
+        sed -i "s/my-password/$$DB_PASS/g" config.yml
         sed -i "s/my-project/$PROJECT_ID/g" config.yml
         sed -i "s/my-region/${_CLOUDSQL_REGION}/g" config.yml
         sed -i "s/my-instance/${_CLOUDSQL_INSTANCE}/g" config.yml
@@ -55,15 +44,10 @@ steps:
       - "DB_REGION=${_CLOUDSQL_REGION}"
       - "DB_INSTANCE=${_CLOUDSQL_INSTANCE}"
     secretEnv:
-      - PGUSER
-      - PGPASSWORD
-    entrypoint: /bin/bash
-    args:
-      - "-c"
-      - |
-        # Set env var expected by tests
-        export DB_USER=$$PGUSER
-        export DB_PASS=$$PGPASSWORD
+      - DB_USER
+      - DB_PASS
+    script: |
+        #!/usr/bin/env bash
         python -m pytest datastore/providers/cloudsql_postgres_test.py
 
 substitutions:
@@ -75,10 +59,11 @@ substitutions:
 availableSecrets:
   secretManager:
     - versionName: projects/$PROJECT_ID/secrets/cloudsql_pass/versions/latest
-      env: PGPASSWORD
+      env: DB_PASS
     - versionName: projects/$PROJECT_ID/secrets/cloudsql_user/versions/latest
-      env: PGUSER
+      env: DB_USER
 
 options:
+  automapSubstitutions: true
   substitutionOption: 'ALLOW_LOOSE'
   dynamic_substitutions: true
