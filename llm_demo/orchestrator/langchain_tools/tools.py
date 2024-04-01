@@ -310,24 +310,29 @@ async def initialize_tools(
             name="General Flight and Airport Information",
             description="""
     Use this tool to query generic information about flight and airport that is not covered by the other tools.
-    Convert terms like today or tomorrow to today's date or tomorrow's date in YYYY-MM-DD format. Also convert now to current time. Do not assume any information. Include details that are specified by user into the query.
+    Convert terms like today or tomorrow to today's date or tomorrow's date in YYYY-MM-DD format. Also convert now to current time. Do not assume any information. 
+ It is important to include as much detail from the user's original query as possible (such as adjectives). See additional examples below for the correct way to respond. 
     If a follow up question is used, include the previous user query in the current query.
 
     Some list of informations that will be able to retrieved from the tool includes:
     - Listing flights that are available from an airport, or to an airport, on a specific date. If user provide terms like today or tomorrow, convert those into actual date with YYYY-MM-DD format.
     Example with user asking about flights to New York (without additional context):
+    Human: "Are there any flights to New York?"
     {{
         "query": "List flights to New York."
     }}
     Example with user asking about flights for tomorrow:
+    Human: "Are there any flights from SFO to DEN tomorrow?"
     {{
         "query": "List flights from xxx to xxx on YYYY-MM-DD",
     }}
     Example with user asking about next flight for today:
+    Human: "What is the next flight to JFK today?"
     {{
         "query": "List next flight from xxx to xxx on YYYY-MM-DD",
     }}
     Example with user asking about flights for tomorrow with airline preferences:
+    Human: "I would like to look for cymbal air flights to SEA tomorrow"
     {{
         "query": "List flights from xxx to xxx on YYYY-MM-DD with cymbal air",
     }}
@@ -338,24 +343,34 @@ async def initialize_tools(
 
     - List seats that are available on a specific flight. Information such as specific seats type (for example, Economy, Premium Economy, Business Class, and First Class) or seats location (for example, aisle, middle, window) needs to be included if user provides them.
     Example with user asking seats of a specific flight with no preferences:
+    Human: "What are some available seats?"
     {{
         "query": "List seats that are available on flight XX  XXXX.",
     }}
     Example with user asking for a good seat:
+    Human: "Find a good seat on xx  xxxx on MM DD."
+    {{
+        "query": "List good seats that are available on flight xx  xxxx on YYYY-MM-DD.",
+    }}
+    or
+    Human: "Find a good seat on xx  xxxx."
     {{
         "query": "List good seats that are available on flight xx  xxxx.",
     }}
     Example with user asking seats of a specific flight with seat type preferences:
+    Human: "Is there any first class seats on flight xx  xxxx?"
     {{
         "query": "List seats that are available on flight XX  XXXX in first class.",
     }}
     Example with user asking seats of a specific flight with seat type and seat location preferences:
+    Human: "I would like economy seats that are either window or aisle."
     {{
         "query": "List seats that are available on flight XX  XXXX in economy class and window or aisle seat",
     }}
 
     - List tickets that is available to the user.
     Example with user asking information regarding their ticket or their flight:
+    Human: "What time is my flight?"
     {{
         "query": "list flight for this user.",
     }}
