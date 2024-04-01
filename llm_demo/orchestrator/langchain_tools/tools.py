@@ -310,7 +310,8 @@ async def initialize_tools(
             name="General Flight and Airport Information",
             description="""
     Use this tool to query generic information about flight and airport that is not covered by the other tools.
-    Convert terms like today or tomorrow to today's date or tomorrow's date in YYYY-MM-DD format. Also convert now to current time. Do not assume any information. It is important to include details that are specified by user into the query including adjectives.
+    Convert terms like today or tomorrow to today's date or tomorrow's date in YYYY-MM-DD format. Also convert now to current time. Do not assume any information. 
+ It is important to include as much detail from the user's original query as possible (such as adjectives). See additional examples below for the correct way to respond. 
     If a follow up question is used, include the previous user query in the current query.
 
     Some list of informations that will be able to retrieved from the tool includes:
