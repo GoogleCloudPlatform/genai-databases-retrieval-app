@@ -595,9 +595,8 @@ class Client(datastore.Client[Config]):
         departure_airport: str,
         arrival_airport: str,
         departure_time: datetime,
-        arrival_time: datetime,
         ufl: UIFriendlyLogger,
-    ) -> bool:
+    ) -> tuple[bool, Optional[str]]:
         ufl.log_header("Running query to determine if flight requested exists:")
         query = """
                 SELECT * FROM flights
@@ -605,8 +604,7 @@ class Client(datastore.Client[Config]):
                 AND flight_number ILIKE $2
                 AND departure_airport ILIKE $3
                 AND arrival_airport ILIKE $4
-                AND departure_time = $5::timestamp
-                AND arrival_time = $6::timestamp;
+                AND departure_time = $5::timestamp;
             """
         query_params = (
             airline,
@@ -614,18 +612,17 @@ class Client(datastore.Client[Config]):
             departure_airport,
             arrival_airport,
             departure_time,
-            arrival_time,
         )
         ufl.log_SQL(query, query_params)
-        results = await self.__pool.fetch(
+        result = await self.__pool.fetchrow(
             query,
             *query_params,
             timeout=10,
         )
-        if len(results) == 1:
+        if result is not None:
             ufl.log("Determined that flight exists.")
-            return True
-        return False
+            return (True, result["arrival_time"])
+        return (False, None)
 
     async def insert_ticket(
         self,
@@ -643,16 +640,15 @@ class Client(datastore.Client[Config]):
         seat_letter: str | None = None,
     ):
         departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
-        arrival_time_datetime = datetime.strptime(arrival_time, "%Y-%m-%d %H:%M:%S")
-        if not await self.validate_ticket(
+        validation, arrival_time_datetime = await self.validate_ticket(
             airline,
             flight_number,
             departure_airport,
             arrival_airport,
             departure_time_datetime,
-            arrival_time_datetime,
             ufl,
-        ):
+        )
+        if not validation:
             raise Exception("Flight information not in database")
         async with self.__pool.acquire() as conn:
             async with conn.transaction():
