@@ -1,0 +1,692 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import asyncio
+from datetime import datetime
+from typing import Any, Dict, Literal, Optional
+
+from google.cloud import spanner  # type: ignore
+from google.cloud.spanner_v1.instance import Instance
+from google.cloud.spanner_v1.database import Database
+from google.oauth2 import service_account
+from pydantic import BaseModel
+from google.cloud.spanner_v1 import JsonObject, param_types
+import models
+
+from .. import datastore
+
+# Identifier for Spanner
+SPANNER_IDENTIFIER = "spanner"
+
+# Configuration model for Spanner
+class Config(BaseModel, datastore.AbstractConfig):
+    """
+    Configuration model for Spanner.
+
+    Attributes:
+        kind (Literal["spanner"]): Type of datastore.
+        project (str): Google Cloud project ID.
+        instance (str): ID of the Spanner instance.
+        database (str): ID of the Spanner database.
+        service_account_key_file (str): Service Account Key File.        
+    """
+    kind: Literal["spanner"]
+    project: str
+    instance: str
+    database: str
+    service_account_key_file: str
+
+# Client class for interacting with Spanner
+class Client(datastore.Client[Config]):
+    """
+    Client class for interacting with Spanner.
+
+    Attributes:
+        __client (spanner.Client): Spanner client instance.
+        __instance_id (str): ID of the Spanner instance.
+        __database_id (str): ID of the Spanner database.
+        __instance (Instance): Spanner instance.
+        __database (Database): Spanner database.
+    """
+
+    @datastore.classproperty
+    def kind(cls):
+        return SPANNER_IDENTIFIER
+
+    def __init__(self, client: spanner.Client, instance_id: str, database_id: str):
+        """
+        Initialize the Spanner client.
+
+        Args:
+            client (spanner.Client): Spanner client instance.
+            instance_id (str): ID of the Spanner instance.
+            database_id (str): ID of the Spanner database.
+        """
+        self.__client = client
+        self.__instance_id = instance_id
+        self.__database_id = database_id
+
+        self.__instance = self.__client.instance(self.__instance_id)
+        self.__database = self.__instance.database(self.__database_id)
+
+    @classmethod
+    async def create(cls, config: Config) -> "Client":
+        """
+        Create a Spanner client.
+
+        Args:
+            config (Config): Configuration for creating the client.
+
+        Returns:
+            Client: Initialized Spanner client.
+        """
+        credentials = service_account.Credentials.from_service_account_file(config.service_account_key_file)
+
+        client = spanner.Client(project=config.project, credentials=credentials)
+
+        instance_id = config.instance
+        instance = client.instance(instance_id)
+
+        if not instance.exists():
+            raise Exception(f"Instance with id: {instance_id} doesn't exist.")
+
+        database_id = config.database
+        database = instance.database(database_id)
+
+        if not database.exists():
+            raise Exception(f"Database with id: {database_id} doesn't exist.")
+
+        return cls(client, instance_id, database_id)
+    
+    async def initialize_data(
+        self,
+        airports: list[models.Airport],
+        amenities: list[models.Amenity],
+        flights: list[models.Flight],
+        policies: list[models.Policy],
+    ) -> None:
+        """
+        Initialize data in the Spanner database by creating tables and inserting records.
+
+        Args:
+            airports (list[models.Airport]): list of airports to be initialized.
+            amenities (list[models.Amenity]): list of amenities to be initialized.
+            flights (list[models.Flight]): list of flights to be initialized.
+            policies (list[models.Policy]): list of policies to be initialized.
+        Returns:
+            None
+        """
+        # Initialize a list to store Data Definition Language (DDL) statements
+        ddl = []
+
+        # Create DDL statement to drop the 'airports' table if it exists
+        ddl.append("DROP TABLE IF EXISTS airports")
+        
+        # Create DDL statement to create the 'airports' table
+        ddl.append("""
+            CREATE TABLE airports(
+                id INT64 PRIMARY KEY,
+                iata STRING(MAX),
+                name STRING(MAX),
+                city STRING(MAX),
+                country STRING(MAX)
+            )
+            """)
+        
+        # Create DDL statement to drop the 'amenities' table if it exists
+        ddl.append("DROP TABLE IF EXISTS amenities")
+
+        # Create DDL statement to create the 'amenities' table
+        ddl.append("""
+            CREATE TABLE amenities(
+              id INT64 PRIMARY KEY,
+              name STRING(MAX),
+              description STRING(MAX),
+              location STRING(MAX),
+              terminal STRING(MAX),
+              category STRING(MAX),
+              hour STRING(MAX),
+              sunday_start_hour STRING(100),
+              sunday_end_hour STRING(100),
+              monday_start_hour STRING(100),
+              monday_end_hour STRING(100),
+              tuesday_start_hour STRING(100),
+              tuesday_end_hour STRING(100),
+              wednesday_start_hour STRING(100),
+              wednesday_end_hour STRING(100),
+              thursday_start_hour STRING(100),
+              thursday_end_hour STRING(100),
+              friday_start_hour STRING(100),
+              friday_end_hour STRING(100),
+              saturday_start_hour STRING(100),
+              saturday_end_hour STRING(100),
+              content STRING(MAX) NOT NULL,
+              embedding ARRAY<FLOAT64> NOT NULL
+            )
+            """)
+        
+        # Create DDL statement to drop the 'flights' table if it exists
+        ddl.append("DROP TABLE IF EXISTS flights")
+
+        # Create DDL statement to create the 'flights' table
+        ddl.append("""CREATE TABLE flights(
+              id INT64 PRIMARY KEY,
+              airline STRING(MAX),
+              flight_number STRING(MAX),
+              departure_airport STRING(MAX),
+              arrival_airport STRING(MAX),
+              departure_time STRING(100)STAMP,
+              arrival_time STRING(100)STAMP,
+              departure_gate STRING(MAX),
+              arrival_gate STRING(MAX)
+            )
+            """)
+        
+        # Create DDL statement to drop the 'policies' table if it exists
+        ddl.append("DROP TABLE IF EXISTS policies")
+        
+        # Create DDL statement to create the 'policies' table
+        ddl.append("""
+            CREATE TABLE policies(
+              id INT64 PRIMARY KEY,
+              content STRING(MAX) NOT NULL,
+              embedding ARRAY<FLOAT64> NOT NULL
+            )
+            """)
+        
+        # Create DDL statement to drop the 'tickets' table if it exists
+        ddl.append("DROP TABLE IF EXISTS tickets")
+        
+        # Create DDL statement to create the 'tickets' table
+        ddl.append("""
+            CREATE TABLE tickets(
+              user_id STRING(MAX),
+              user_name STRING(MAX),
+              user_email STRING(MAX),
+              airline STRING(MAX),
+              flight_number STRING(MAX),
+              departure_airport STRING(MAX),
+              arrival_airport STRING(MAX),
+              departure_time STRING(100),
+              arrival_time STRING(100)
+            )
+            """)
+
+        # Update the schema using DDL statements
+        self.__database.update_ddl(ddl)
+
+        # Insert data into 'airports' table using batch operation
+        with self.__database.batch() as batch:
+            batch.insert(
+                table='airports',
+                columns=['id', 'iata', 'name', 'city', 'country'],
+                values=airports,
+            )
+
+        # Insert data into 'amenities' table using batch operation
+        with self.__database.batch() as batch:
+            batch.insert(
+                table='amenities',
+                columns=[
+                    'id', 'name', 'description', 'location',
+                    'terminal', 'category', 'hour', 'sunday_start_hour', 'sunday_end_hour',
+                    'monday_start_hour', 'monday_end_hour', 'tuesday_start_hour',
+                    'tuesday_end_hour', 'wednesday_start_hour', 'wednesday_end_hour',
+                    'thursday_start_hour', 'thursday_end_hour', 'friday_start_hour',
+                    'friday_end_hour', 'saturday_start_hour', 'saturday_end_hour', 'content', 'embedding'
+                ],
+                values=amenities,
+            )
+
+        # Insert data into 'flights' table using batch operation
+        with self.__database.batch() as batch:
+            batch.insert(
+                table='flights',
+                columns=[
+                    'id', 'airline', 'flight_number', 'departure_airport', 'arrival_airport',
+                    'departure_time', 'arrival_time', 'departure_gate', 'arrival_gate'
+                ],
+                values=flights,
+            )   
+
+        # Insert data into 'policies' table using batch operation
+        with self.__database.batch() as batch:
+            batch.insert(
+                table='policies',
+                columns=[
+                    'id', 'content', 'embedding'
+                ],
+                values=policies,
+            )   
+
+        # Return None to indicate successful initialization
+        return None
+
+        
+    async def export_data(
+        self,
+    ) -> tuple[
+        list[models.Airport],
+        list[models.Amenity],
+        list[models.Flight],
+        list[models.Policy],
+    ]:
+        """
+        Export data from the Spanner database.
+
+        Returns:
+            tuple: A tuple containing lists of airports, amenities, flights, and policies.
+        """
+        try:
+            with self.__database.snapshot() as snapshot:
+                # Execute SQL queries to fetch data from respective tables
+                airport_results = snapshot.execute_sql("""SELECT * FROM airports ORDER BY id ASC""")
+                amenity_results = snapshot.execute_sql("""SELECT * FROM amenities ORDER BY id ASC""")
+                flights_results = snapshot.execute_sql("""SELECT * FROM flights ORDER BY id ASC""")
+                policy_results = snapshot.execute_sql("""SELECT * FROM policies ORDER BY id ASC""")
+        except Exception as e:
+            # Handle any exceptions, such as database connection errors
+            print(f"Error occurred while executing SQL queries: {e}")
+            # Return empty lists in case of error
+            return [], [], [], []
+
+        # Convert query results to model instances using model_validate method
+        airports = [models.Airport.model_validate(a) for a in airport_results]
+        amenities = [models.Amenity.model_validate(a) for a in amenity_results]
+        flights = [models.Flight.model_validate(f) for f in flights_results]
+        policies = [models.Policy.model_validate(p) for p in policy_results]
+
+        return airports, amenities, flights, policies
+
+
+    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+        """
+        Retrieve an airport by its ID.
+
+        Args:
+            id (int): The ID of the airport.
+
+        Returns:
+            Optional[models.Airport]: An Airport model instance if found, else None.
+        """
+        with self.__database.snapshot() as snapshot:
+            # Execute SQL query to fetch airport by ID
+            result = snapshot.execute_sql(
+                sql="SELECT * FROM airports WHERE id=@id",
+                params={id: id},
+                param_types={id: param_types.INT64}),
+
+        # Check if result is None
+        if result is None:
+            return None
+        
+        # Convert query result to model instance using model_validate method
+        res = models.Airport.model_validate(result)
+        
+        return res
+
+    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+        """
+        Retrieve an airport by its IATA code.
+
+        Args:
+            iata (str): The IATA code of the airport.
+
+        Returns:
+            Optional[models.Airport]: An Airport model instance if found, else None.
+        """
+        with self.__database.snapshot() as snapshot:
+            # Execute SQL query to fetch airport by IATA code
+            result = snapshot.execute_sql(
+                sql="""SELECT * FROM airports WHERE iata LIKE @iata""",
+                params={iata: iata},
+                param_types={iata: param_types.STRING})
+            
+        # Check if result is None
+        if result is None:
+            return None
+
+        # Convert query result to model instance using model_validate method
+        res = models.Airport.model_validate(result)
+        return res
+
+    async def search_airports(
+        self,
+        country: Optional[str] = None,
+        city: Optional[str] = None,
+        name: Optional[str] = None,
+    ) -> list[models.Airport]:
+        """
+        Search for airports based on optional parameters.
+
+        Args:
+            country (Optional[str]): The country of the airport.
+            city (Optional[str]): The city of the airport.
+            name (Optional[str]): The name of the airport.
+
+        Returns:
+            list[models.Airport]: A list of Airport model instances matching the search criteria.
+        """
+        with self.__database.snapshot() as snapshot:
+            # Construct SQL query based on provided parameters
+            query = """
+                SELECT * FROM airports
+                  WHERE (CAST(@country AS STRING(MAX)) IS NULL OR country LIKE @country)
+                  AND (CAST(@city AS STRING(MAX)) IS NULL OR city LIKE @city)
+                  AND (CAST(@name AS STRING(MAX)) IS NULL OR name LIKE '%' || @name || '%')
+                """
+            
+            # Execute SQL query with parameters
+            results = snapshot.execute_sql(
+                sql=query,
+                params = {
+                    "country": country,
+                    "city": city,
+                    "name": name,
+                    },
+                param_types={
+                    "country": param_types.STRING,
+                    "city": param_types.STRING,
+                    "name": param_types.STRING,
+                    })
+            
+        # Convert query results to model instances using model_validate method
+        res = [models.Airport.model_validate(r) for r in results]
+
+        return res
+
+
+    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
+        """
+        Retrieves an amenity by its ID.
+
+        Args:
+            id (int): The ID of the amenity.
+
+        Returns:
+            Optional[models.Amenity]: An Amenity model instance if found, else None.
+        """
+        with self.__database.snapshot() as snapshot:
+            # Spread SQL query for readability
+            result = snapshot.execute_sql(
+                sql="""
+                SELECT id, name, description, location, terminal, category, hour
+                FROM amenities
+                WHERE id = @id
+                """,
+                params={id: id},
+                param_types={id: param_types.INT64}
+            )
+        
+        if result is None:
+            return None
+
+        # Convert query result to model instance using model_validate method
+        res = models.Amenity.model_validate(result)
+        return res
+
+    async def amenities_search(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> list[models.Amenity]:
+        """
+        Search for amenities based on similarity to a query embedding.
+
+        Args:
+            query_embedding (list[float]): The embedding representing the query.
+            similarity_threshold (float): The minimum similarity threshold for results.
+            top_k (int): The maximum number of results to return.
+
+        Returns:
+            list[models.Amenity]: A list of Amenity model instances matching the search criteria.
+        """
+        with self.__database.snapshot() as snapshot:
+            # Spread SQL query for readability
+            query = """
+                SELECT id, name, description, location, terminal, category, hour
+                FROM (
+                    SELECT id, name, description, location, terminal, category, hour,
+                        1 - (embedding <=> @query_embedding) AS similarity
+                    FROM amenities
+                    WHERE 1 - (embedding <=> @query_embedding) > @similarity_threshold
+                    ORDER BY similarity DESC
+                    LIMIT @top_k
+                ) AS sorted_amenities
+            """
+            
+            # Execute SQL query with parameters
+            results = snapshot.execute_sql(
+                sql=query,
+                params = {
+                    "query_embedding": query_embedding,
+                    "similarity_threshold": similarity_threshold,
+                    "top_k": top_k,
+                },
+                param_types={
+                    "query_embedding": param_types.Array(param_types.FLOAT64),
+                    "similarity_threshold": param_types.FLOAT64,
+                    "top_k": param_types.INT64,
+                }
+            )
+
+        # Convert query results to model instances using model_validate method
+        res = [models.Amenity.model_validate(r) for r in results]
+
+        return res
+
+    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+        """
+        Retrieves a flight by its ID.
+
+        Args:
+            flight_id (int): The ID of the flight.
+
+        Returns:
+            Optional[models.Flight]: A Flight model instance if found, else None.
+        """
+        with self.__database.snapshot() as snapshot:
+            # Spread SQL query for readability
+            result = snapshot.execute_sql(
+                sql="""
+                SELECT * FROM flights
+                WHERE id = @flight_id
+                """,
+                params={flight_id: flight_id},
+                param_types={flight_id: param_types.INT64}
+            )
+
+        if result is None:
+            return None
+
+        # Convert query result to model instance using model_validate method
+        res = models.Flight.model_validate(result)
+        return res
+
+    async def search_flights_by_number(
+        self,
+        airline: str,
+        number: str,
+    ) -> list[models.Flight]:
+        """
+        Search for flights by airline and flight number.
+
+        Args:
+            airline (str): The airline of the flight.
+            number (str): The flight number.
+
+        Returns:
+            list[models.Flight]: A list of Flight model instances matching the search criteria.
+        """
+        with self.__database.snapshot() as snapshot:
+            # Spread SQL query for readability
+            results = snapshot.execute_sql(
+                sql="""
+                SELECT * FROM flights
+                WHERE airline = @airline
+                AND flight_number = @number
+                """,
+                params={airline: airline, number: number},
+                param_types={airline: param_types.STRING, number: param_types.STRING}
+            )
+
+        # Convert query results to model instances using model_validate method
+        res = [models.Flight.model_validate(r) for r in results]
+        return res
+
+    async def search_flights_by_airports(
+        self,
+        date: str,
+        departure_airport: Optional[str] = None,
+        arrival_airport: Optional[str] = None,
+    ) -> list[models.Flight]:
+        """
+        Search for flights by departure and/or arrival airports.
+
+        Args:
+            date (str): The date of the flights in 'YYYY-MM-DD' format.
+            departure_airport (str, optional): The departure airport code. Defaults to None.
+            arrival_airport (str, optional): The arrival airport code. Defaults to None.
+
+        Returns:
+            list[models.Flight]: A list of Flight model instances matching the search criteria.
+        """
+        with self.__database.snapshot() as snapshot:
+            # Spread SQL query for readability
+            query = """
+                SELECT * FROM flights
+                WHERE (CAST(@departure_airport AS STRING(MAX)) IS NULL OR departure_airport LIKE @departure_airport)
+                AND (CAST(@arrival_airport AS STRING(MAX)) IS NULL OR arrival_airport LIKE @arrival_airport)
+                AND departure_time >= CAST(@datetime AS timestamp)
+                AND departure_time < CAST(@datetime AS timestamp) + interval '1 day'
+            """
+            
+            # Execute SQL query with parameters
+            results = snapshot.execute_sql(
+                sql=query,
+                params={
+                    "departure_airport": departure_airport,
+                    "arrival_airport": arrival_airport,
+                    "datetime": datetime.strptime(date, "%Y-%m-%d"),
+                },
+                param_types={
+                    "departure_airport": param_types.STRING,
+                    "arrival_airport": param_types.STRING,
+                    "datetime": param_types.STRING,
+                }
+            )
+
+        # Convert query results to model instances using model_validate method
+        res = [models.Flight.model_validate(r) for r in results]
+        return res
+
+    async def insert_ticket(
+        self,
+        user_id: str,
+        user_name: str,
+        user_email: str,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        arrival_airport: str,
+        departure_time: str,
+        arrival_time: str,
+    ):
+        """
+        Inserts a ticket into the database.
+
+        This method is not implemented.
+
+        Args:
+            user_id (str): The ID of the user.
+            user_name (str): The name of the user.
+            user_email (str): The email of the user.
+            airline (str): The airline of the flight.
+            flight_number (str): The flight number.
+            departure_airport (str): The departure airport code.
+            arrival_airport (str): The arrival airport code.
+            departure_time (str): The departure time of the flight.
+            arrival_time (str): The arrival time of the flight.
+
+        Raises:
+            NotImplementedError: This method is not implemented.
+        """
+        raise NotImplementedError("Not Implemented")
+
+    async def list_tickets(
+        self,
+        user_id: str,
+    ) -> list[models.Ticket]:
+        """
+        Retrieves a list of tickets for a user.
+
+        This method is not implemented.
+
+        Args:
+            user_id (str): The ID of the user.
+
+        Raises:
+            NotImplementedError: This method is not implemented.
+        """
+        raise NotImplementedError("Not Implemented")
+
+    async def policies_search(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> list[models.Policy]:
+        """
+        Search for policies based on similarity to a query embedding.
+
+        Args:
+            query_embedding (list[float]): The embedding representing the query.
+            similarity_threshold (float): The minimum similarity threshold for results.
+            top_k (int): The maximum number of results to return.
+
+        Returns:
+            list[models.Policy]: A list of Policy model instances matching the search criteria.
+        """
+        with self.__database.snapshot() as snapshot:
+            # Spread SQL query for readability
+            query = """
+                SELECT id, content
+                FROM (
+                    SELECT id, content, 1 - (embedding <=> @query_embedding) AS similarity
+                    FROM policies 
+                    WHERE 1 - (embedding <=> @query_embedding) > @similarity_threshold
+                    ORDER BY similarity DESC
+                    LIMIT @top_k
+                ) AS sorted_policies
+            """
+            
+            # Execute SQL query with parameters
+            results = snapshot.execute_sql(
+                sql=query,
+                params={
+                    "query_embedding": query_embedding,
+                    "similarity_threshold": similarity_threshold,
+                    "top_k": top_k,
+                },
+                param_types={
+                    "query_embedding": param_types.Array(param_types.FLOAT64),
+                    "similarity_threshold": param_types.FLOAT64,
+                    "top_k": param_types.INT64,
+                }
+            )
+
+        # Convert query results to model instances using model_validate method
+        res = [models.Policy.model_validate(r) for r in results]
+        return res
+
+    async def close(self):
+        """
+        Closes the database client connection.
+        """
+        self.__client.close()

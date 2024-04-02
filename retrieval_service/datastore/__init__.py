@@ -21,6 +21,7 @@ Config = Union[
     providers.firestore.Config,
     providers.postgres.Config,
     providers.cloudsql_postgres.Config,
+    providers.spanner.Config
 ]
 
 __ALL__ = [Client, Config, create, providers]
