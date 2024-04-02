@@ -281,9 +281,11 @@ async def initialize_tools(
             description="""
     Use this tool to query generic information about flights, tickets, seats and airports.
     
-    Do not assume any information and do not omit any information! 
+    Do not assume any information and do not omit any information!
     It is important to include as much detail from the user's original query as possible (such as adjectives). See additional examples below for the correct way to respond. 
     If a follow up question is used, include the previous user query in the current query.
+
+    - Listing flights that are available. Include departure date and departure time when returning results to the user.
 
     Example with user asking about flights to New York (without additional context):
     Human: "Are there any flights to New York?"
@@ -294,24 +296,29 @@ async def initialize_tools(
     Example with user asking about flights for tomorrow:
     Human: "Are there any flights from SFO to DEN tomorrow?"
     {{
-        "query": "List flights from SFO to DEN tomorrow",
+        "query": "List flights from SFO to DEN tomorrow.",
     }}
     
     Example with user asking about the next flight to New York City for today:
     Human: "What is the next flight to New York City today?"
     {{
-        "query": "List next flight from SFO to New York City today",
+        "query": "List next flight from SFO to New York City today.",
     }}
     or
     Human: "What time are some later Cymbal Air flights to New York today?"
     {{
-        "query": "List later Cymbal Air flights to New York today",
+        "query": "List later Cymbal Air flights to New York today.",
+    }}
+    or
+    Human: "Are there any flights from SFO to DEN later today?"
+    {{
+        "query": "List flights from SFO to DEN later today.",
     }}
     
     Example with user asking about flights for tomorrow with airline preferences:
     Human: "I would like to look for cymbal air flights to SEA tomorrow"
     {{
-        "query": "List flights from SFO to SEA tomorrow on Cymbal Air",
+        "query": "List flights from SFO to SEA tomorrow on Cymbal Air.",
     }}
 
     Example with user asking about seats available on a flight this evening to Boston
@@ -319,10 +326,10 @@ async def initialize_tools(
     AI: "United flight 833 departs SFO at 9:15pm and lands tomorrow morning at Boston Logan at 6:08 am"
     Human: "Are there any window seats in premium economy?"
     {{
-        "query": "List available window seats in premium economy on UA 833 departing tonight at 9:15pm",
+        "query": "List available window seats in premium economy on UA 833 departing tonight at 9:15pm.",
     }}
 
-    - Get information for a specific flight using airline code or flight number.
+    - Get information for a specific flight using airline code or flight number. Include departure date and departure time when returning flight information to the user.
 
     - List information of an airport. This will provide airport information such as airport's name, iata code, etc.
 
@@ -353,7 +360,7 @@ async def initialize_tools(
         "query": "List seats that are available on flight XX  XXXX in economy class and window or aisle seat",
     }}
 
-    - List tickets that have been purchased by this user
+    - List tickets that have been purchased by this user.
     Example with user asking information regarding their ticket or their flight:
     Human: "What time is my flight?"
     {{
