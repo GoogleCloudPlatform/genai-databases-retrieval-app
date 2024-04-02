@@ -242,10 +242,15 @@ async def initialize_tools(
             coroutine=generate_search_policies(client, tool_trace),
             name="Search Policies",
             description="""
-    Use this tool to search for cymbal air passenger policy.
+    Use this tool to search for Cymbal Air policies including ticket purchase and change fees, baggage restriction, 
+    checkin and boarding procedures, special assistance, overbooking, flight delays and cancellations.
     Policy that are listed is unchangeable.
     You will not answer any questions outside of the policy given.
-    Policy includes information on ticket purchase and changes, baggage, check-in and boarding, special assistance, overbooking, flight delays and cancellations.
+
+    Example: Is there a fee to switch to a later flight?
+    {{
+        "query": "ticket change fees"
+    }}
                         """,
             args_schema=PolicyQueryInput,
         ),
@@ -253,8 +258,10 @@ async def initialize_tools(
             coroutine=generate_insert_ticket(client),
             name="Insert Ticket",
             description="""
-    Use this tool to book a flight ticket for the user. Make sure that seat preference (seat_row and seat_letter) is provided, ask user for seat preferences if it is not given. seat_row and seat_letter CANNOT be null.
-    Example of user booking with seat 10A:
+    Use this tool to book a flight ticket for the user. Make sure to include all necessary arguments: airline, flight_number, departure_airport, 
+    arrival_airport, departure_time, arrival_time, seat_row and seat_letter.  If any of these are missing, ask the user for additional information.
+
+    Example of user booking on American Airlines flight 452 from LAX to SFO on January 1st, 2024 with seat 10A:
     {{
         "airline": "AA",
         "flight_number": "452",
@@ -272,32 +279,42 @@ async def initialize_tools(
             coroutine=generate_nl2query(client, user_email, tool_trace),
             name="General Flight and Airport Information",
             description="""
-    Use this tool to query generic information about flight and airport that is not covered by the other tools.
-    Convert terms like today or tomorrow to today's date or tomorrow's date in YYYY-MM-DD format. Also convert now to current time. Do not assume any information. 
- It is important to include as much detail from the user's original query as possible (such as adjectives). See additional examples below for the correct way to respond. 
+    Use this tool to query generic information about flights, tickets, seats and airports.
+    
+    Do not assume any information and do not omit any information! 
+    It is important to include as much detail from the user's original query as possible (such as adjectives). See additional examples below for the correct way to respond. 
     If a follow up question is used, include the previous user query in the current query.
 
-    Some list of informations that will be able to retrieved from the tool includes:
-    - Listing flights that are available from an airport, or to an airport, on a specific date. If user provide terms like today or tomorrow, convert those into actual date with YYYY-MM-DD format.
     Example with user asking about flights to New York (without additional context):
     Human: "Are there any flights to New York?"
     {{
         "query": "List flights to New York."
     }}
+    
     Example with user asking about flights for tomorrow:
     Human: "Are there any flights from SFO to DEN tomorrow?"
     {{
-        "query": "List flights from xxx to xxx on YYYY-MM-DD",
+        "query": "List flights from SFO to DEN tomorrow",
     }}
-    Example with user asking about next flight for today:
-    Human: "What is the next flight to JFK today?"
+    
+    Example with user asking about the next flight to New York Cityfor today:
+    Human: "What is the next flight to New York City today?"
     {{
-        "query": "List next flight from xxx to xxx on YYYY-MM-DD",
+        "query": "List next flight from SFO to New York City today",
     }}
+    
     Example with user asking about flights for tomorrow with airline preferences:
     Human: "I would like to look for cymbal air flights to SEA tomorrow"
     {{
-        "query": "List flights from xxx to xxx on YYYY-MM-DD with cymbal air",
+        "query": "List flights from SFO to SEA tomorrow on Cymbal Air",
+    }}
+
+    Example with user asking about seats available on a flight this evening to Boston
+    Human: "Are there any flights to Boston tonight?"
+    AI: "United flight 833 departs SFO at 9:15pm and lands tomorrow morning at Boston Logan at 6:08 am"
+    Human: "Are there any window seats in premium economy?"
+    {{
+        "query": "List available window seats in premium economy on UA 833 departing tonight at 9:15pm",
     }}
 
     - Get information for a specific flight using airline code or flight number.
@@ -305,20 +322,20 @@ async def initialize_tools(
     - List information of an airport. This will provide airport information such as airport's name, iata code, etc.
 
     - List seats that are available on a specific flight. Information such as specific seats type (for example, Economy, Premium Economy, Business Class, and First Class) or seats location (for example, aisle, middle, window) needs to be included if user provides them.
-    Example with user asking seats of a specific flight with no preferences:
-    Human: "What are some available seats?"
+    Example with user asking about business class seats of a specific flight:
+    Human: "What are some available business class seats on CY 123 tomorrow?"
     {{
-        "query": "List seats that are available on flight XX  XXXX.",
+        "query": "List available business class seats on CY 123 tomorrow."
     }}
     Example with user asking for a good seat:
-    Human: "Find a good seat on xx  xxxx on MM DD."
+    Human: "Find a good seat on CY 123 on April 7th, 2024."
     {{
-        "query": "List good seats that are available on flight xx  xxxx on YYYY-MM-DD.",
+        "query": "List good seats that are available on flight CY 123 on 2024-04-07.",
     }}
-    or
-    Human: "Find a good seat on xx  xxxx."
+    Example with user asking for a seat with leg room:
+    Human: "Is there a seat with legroom on the next flight to Seattle today?"
     {{
-        "query": "List good seats that are available on flight xx  xxxx.",
+        "query": "List seats with legroom on the next flight to Seattle today"
     }}
     Example with user asking seats of a specific flight with seat type preferences:
     Human: "Is there any first class seats on flight xx  xxxx?"
@@ -331,14 +348,18 @@ async def initialize_tools(
         "query": "List seats that are available on flight XX  XXXX in economy class and window or aisle seat",
     }}
 
-    - List tickets that is available to the user.
+    - List tickets that have been purchased by this user
     Example with user asking information regarding their ticket or their flight:
     Human: "What time is my flight?"
     {{
         "query": "list flight for this user.",
     }}
 
-    The agent can decide to return results directly to the user.
+    Example with user asking for specific information about an upcoming reservation:
+    Human: "Which seat am I in for my flight to Boston?"
+    {{
+        "query": "list tickets including seat assignment for this user's next flight to Boston.",
+    }}
                         """,
             args_schema=NL2QueryInput,
         ),
