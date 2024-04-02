@@ -127,12 +127,8 @@ class TicketInput(BaseModel):
     arrival_airport: str = Field(description="Arrival airport 3-letter code")
     departure_time: datetime = Field(description="Flight departure datetime")
     arrival_time: datetime = Field(description="Flight arrival datetime")
-    seat_row: Optional[int] = Field(
-        description="A number between 1 to 33 for the seat row",
-    )
-    seat_letter: Optional[str] = Field(
-        description="A single letter between A, B, C, D, E and F",
-    )
+    seat_row: int = Field(description="A number between 1 to 33 for the seat row")
+    seat_letter: str = Field(description="A single letter between A, B, C, D, E and F")
 
 
 def generate_insert_ticket(client: aiohttp.ClientSession):
@@ -165,8 +161,8 @@ async def insert_ticket(
                 "arrival_airport": ticket_info.get("arrival_airport"),
                 "departure_time": ticket_info.get("departure_time").replace("T", " "),
                 "arrival_time": ticket_info.get("arrival_time").replace("T", " "),
-                "seat_row": ticket_info.get("seat_row", None),
-                "seat_letter": ticket_info.get("seat_letter", None),
+                "seat_row": ticket_info.get("seat_row"),
+                "seat_letter": ticket_info.get("seat_letter"),
             }
         ),
         headers=get_headers(client, RETRIEVAL_URL),
@@ -257,8 +253,8 @@ async def initialize_tools(
             coroutine=generate_insert_ticket(client),
             name="Insert Ticket",
             description="""
-    Use this tool to book a flight ticket for the user.
-    Example:
+    Use this tool to book a flight ticket for the user. Make sure that seat preference (seat_row and seat_letter) is provided, ask user for seat preferences if it is not given. seat_row and seat_letter CANNOT be null.
+    Example of user booking with seat 10A:
     {{
         "airline": "AA",
         "flight_number": "452",
@@ -266,41 +262,8 @@ async def initialize_tools(
         "arrival_airport": "SFO",
         "departure_time": "2024-01-01 05:50:00",
         "arrival_time": "2024-01-01 09:23:00",
-        "seat_row": null,
-        "seat_letter": null
-    }}
-    Example:
-    {{
-        "airline": "UA",
-        "flight_number": "1532",
-        "departure_airport": "SFO",
-        "arrival_airport": "DEN",
-        "departure_time": "2024-01-08 05:50:00",
-        "arrival_time": "2024-01-08 09:23:00",
-        "seat_row": null,
-        "seat_letter": null,
-    }}
-    Example:
-    {{
-        "airline": "OO",
-        "flight_number": "6307",
-        "departure_airport": "SFO",
-        "arrival_airport": "MSP",
-        "departure_time": "2024-10-28 20:13:00",
-        "arrival_time": "2024-10-28 21:07:00",
-        "seat_row": null,
-        "seat_letter": null,
-    }}
-    Example with user requesting to book seat 24B:
-    {{
-        "airline": "AA",
-        "flight_number": "452",
-        "departure_airport": "LAX",
-        "arrival_airport": "SFO",
-        "departure_time": "2024-01-01 05:50:00",
-        "arrival_time": "2024-01-01 09:23:00",
-        "seat_row": "24",
-        "seat_letter": "B",
+        "seat_row": "10",
+        "seat_letter": "A",
     }}
                         """,
             args_schema=TicketInput,
