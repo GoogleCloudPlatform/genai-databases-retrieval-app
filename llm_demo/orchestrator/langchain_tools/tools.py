@@ -354,10 +354,10 @@ async def initialize_tools(
     {{
         "query": "List seats that are available on flight XX  XXXX in first class.",
     }}
-    Example with user asking seats of a specific flight with seat type and seat location preferences:
+    Example with user asking seats of a specific flight with seat type and seat location preferences (include flight date information within query, default it to today):
     Human: "I would like economy seats that are either window or aisle."
     {{
-        "query": "List seats that are available on flight XX  XXXX in economy class and window or aisle seat",
+        "query": "List seats that are available on flight XX  XXXX today in economy class and window or aisle seat",
     }}
 
     - List tickets that have been purchased by this user.
