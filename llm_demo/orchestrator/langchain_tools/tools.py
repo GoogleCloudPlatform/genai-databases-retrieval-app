@@ -227,13 +227,13 @@ async def initialize_tools(
     {{
         "query": "A burger place",
         "open_time": null,
-        "open_day": null,
+        "open_day": null
     }}
     Example:
     {{
         "query": "Shop for luxury goods",
         "open_time": "10:00:00",
-        "open_day": "wednesday",
+        "open_day": "wednesday"
     }}
                         """,
             args_schema=AmenityQueryInput,
@@ -270,7 +270,7 @@ async def initialize_tools(
         "departure_time": "2024-01-01 05:50:00",
         "arrival_time": "2024-01-01 09:23:00",
         "seat_row": "10",
-        "seat_letter": "A",
+        "seat_letter": "A"
     }}
                         """,
             args_schema=TicketInput,
@@ -296,29 +296,29 @@ async def initialize_tools(
     Example with user asking about flights for tomorrow:
     Human: "Are there any flights from SFO to DEN tomorrow?"
     {{
-        "query": "List flights from SFO to DEN tomorrow.",
+        "query": "List flights from SFO to DEN tomorrow."
     }}
     
     Example with user asking about the next flight to New York City for today:
     Human: "What is the next flight to New York City today?"
     {{
-        "query": "List next flight from SFO to New York City today.",
+        "query": "List next flight from SFO to New York City today."
     }}
     or
     Human: "What time are some later Cymbal Air flights to New York today?"
     {{
-        "query": "List later Cymbal Air flights to New York today.",
+        "query": "List later Cymbal Air flights to New York today."
     }}
     or
     Human: "Are there any flights from SFO to DEN later today?"
     {{
-        "query": "List flights from SFO to DEN later today.",
+        "query": "List flights from SFO to DEN later today."
     }}
     
     Example with user asking about flights for tomorrow with airline preferences:
     Human: "I would like to look for cymbal air flights to SEA tomorrow"
     {{
-        "query": "List flights from SFO to SEA tomorrow on Cymbal Air.",
+        "query": "List flights from SFO to SEA tomorrow on Cymbal Air."
     }}
 
     Example with user asking about seats available on a flight this evening to Boston
@@ -326,7 +326,7 @@ async def initialize_tools(
     AI: "United flight 833 departs SFO at 9:15pm and lands tomorrow morning at Boston Logan at 6:08 am"
     Human: "Are there any window seats in premium economy?"
     {{
-        "query": "List available window seats in premium economy on UA 833 departing tonight at 9:15pm.",
+        "query": "List available window seats in premium economy on UA 833 departing tonight at 9:15pm."
     }}
 
     - Get information for a specific flight using airline code or flight number. Include departure date and departure time when returning flight information to the user.
@@ -337,40 +337,40 @@ async def initialize_tools(
     Example with user asking about business class seats of a specific flight:
     Human: "What are some available business class seats on CY 123 tomorrow?"
     {{
-        "query": "List available business class seats on CY 123 tomorrow.",
+        "query": "List available business class seats on CY 123 tomorrow."
     }}
     Example with user asking for a good seat (if date is not specified, default it to today):
     Human: "Find a good seat on CY 123."
     {{
-        "query": "List good seats that are available on flight CY 123 today.",
+        "query": "List good seats that are available on flight CY 123 today."
     }}
     Example with user asking for a seat with leg room:
     Human: "Is there a seat with legroom on the next flight to Seattle today?"
     {{
-        "query": "List seats with legroom on the next flight to Seattle today"
+        "query": "List seats with legroom on the next flight to Seattle today."
     }}
     Example with user asking seats of a specific flight with seat type preferences:
     Human: "Is there any first class seats on flight xx  xxxx?"
     {{
-        "query": "List seats that are available on flight XX  XXXX in first class.",
+        "query": "List seats that are available on flight XX  XXXX in first class."
     }}
     Example with user asking seats of a specific flight with seat type and seat location preferences (include flight date information within query, default it to today):
     Human: "I would like economy seats that are either window or aisle."
     {{
-        "query": "List seats that are available on flight XX  XXXX today in economy class and window or aisle seat",
+        "query": "List seats that are available on flight XX  XXXX today in economy class and window or aisle seat."
     }}
 
     - List tickets that have been purchased by this user.
     Example with user asking information regarding their ticket or their flight:
     Human: "What time is my flight?"
     {{
-        "query": "list flight for this user.",
+        "query": "list flight for this user."
     }}
 
     Example with user asking for specific information about an upcoming reservation:
     Human: "Which seat am I in for my flight to Boston?"
     {{
-        "query": "list tickets including seat assignment for this user's next flight to Boston.",
+        "query": "list tickets including seat assignment for this user's next flight to Boston."
     }}
                         """,
             args_schema=NL2QueryInput,
