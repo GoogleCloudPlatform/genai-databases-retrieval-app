@@ -339,10 +339,10 @@ async def initialize_tools(
     {{
         "query": "List available business class seats on CY 123 tomorrow.",
     }}
-    Example with user asking for a good seat:
-    Human: "Find a good seat on CY 123 on April 7th, 2024."
+    Example with user asking for a good seat (if date is not specified, default it to today):
+    Human: "Find a good seat on CY 123."
     {{
-        "query": "List good seats that are available on flight CY 123 on 2024-04-07.",
+        "query": "List good seats that are available on flight CY 123 today.",
     }}
     Example with user asking for a seat with leg room:
     Human: "Is there a seat with legroom on the next flight to Seattle today?"
