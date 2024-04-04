@@ -193,14 +193,20 @@ def generate_nl2query(
         if response_json.get("trace"):
             tool_trace.add_message(response_json.get("trace"))
         if response_json.get("is_clear") is True:
-            return f"These are the matching queries: {response_json.get('results')}"
+            return f"These are the query results: {response_json.get('results')}"
         else:
-            return f"The previous information provided is insufficient. We have a followup question for the user: {response_json.get('followup_question')}"
+            return f"The input query was unclear. Please respond by asking the user the following clarifying question: {response_json.get('followup_question')}"
 
     return nl2query
 
 
 # Tools for agent
+#
+# NOTE: We're currently hardcoding a bunch of examples and additional context into the tool descriptions.  This will be moving to a separate
+# service.  That service will have a (much larger) database of contextual information, example user queries mapped to tool selections, etc.
+# Using a combination of techniques, it will be used to select the most relevant context and examples based on the task.  For now, though,
+# context and examples are just statically dumped here to make demo building easier.
+#
 async def initialize_tools(
     client: aiohttp.ClientSession, user_email: str, tool_trace: ToolTrace
 ):
@@ -244,7 +250,7 @@ async def initialize_tools(
             description="""
     Use this tool to search for Cymbal Air policies including ticket purchase and change fees, baggage restriction, 
     checkin and boarding procedures, special assistance, overbooking, flight delays and cancellations.
-    Policy that are listed is unchangeable.
+    Policy that are listed are unchangeable.
     You will not answer any questions outside of the policy given.
 
     Example: Is there a fee to switch to a later flight?
