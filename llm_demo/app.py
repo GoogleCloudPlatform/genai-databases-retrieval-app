@@ -205,7 +205,7 @@ async def decline_flight(request: Request):
 
 
 @routes.post("/reset")
-def reset(request: Request):
+async def reset(request: Request):
     """Reset user session"""
 
     if "uuid" not in request.session:
@@ -216,7 +216,7 @@ def reset(request: Request):
     if not orchestrator.user_session_exist(uuid):
         raise HTTPException(status_code=500, detail=f"Current user session not found")
 
-    orchestrator.user_session_reset(request.session, uuid)
+    await orchestrator.user_session_reset(request.session, uuid)
 
 
 def get_user_info(user_id_token: str, client_id: str) -> dict[str, str]:

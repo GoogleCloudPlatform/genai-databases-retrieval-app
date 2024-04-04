@@ -177,13 +177,26 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         response["trace"] = self.flush_user_trace(uuid)
         return response
 
-    def user_session_reset(self, session: dict[str, Any], uuid: str):
+    async def user_session_reset(self, session: dict[str, Any], uuid: str):
         user_session = self.get_user_session(uuid)
+
+        # clear session history
         del session["history"]
         base_history = self.get_base_history(session)
         session["history"] = [base_history]
         history = self.parse_messages(session["history"])
         user_session.reset_memory(history)
+
+        # clear session traces
+        del self._user_traces[uuid]
+        tool_trace = ToolTrace()
+        self._user_traces[uuid] = tool_trace
+
+        user_email = ""
+        if "user_info" in session:
+            user_email = session["user_info"].get("user_email", "")
+        tools = await initialize_tools(self.client, user_email, tool_trace)
+        user_session.update_tools(tools)
 
     def get_user_session(self, uuid: str) -> UserAgent:
         return self._user_sessions[uuid]
