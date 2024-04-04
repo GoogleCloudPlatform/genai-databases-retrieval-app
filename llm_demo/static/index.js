@@ -101,8 +101,14 @@ function buildMessage(name, msg, trace) {
         traces[traceid] = trace
         traceobj = `<div onclick="showTrace(event, '${traceid}')" class="material-symbols-outlined info-icon">info</div>`
     }
+    let image = ''
+    if (name === "ai"){
+        image = '<div class="sender-icon"><img src="static/logo.png"></div>'
+    } else if(name === "human" && $('.chat-user-image').first().attr('src')){
+        image = `<div class="sender-icon"><img src="${$('.chat-user-image').first().attr('src')}"></div>`
+    }
     let message = `<div class="chat-bubble ${name}">
-    <div class="sender-icon"><img src="static/logo.png"></div>
+    ${image}
     <span><div class="innermsg">${msg}</div>${traceobj}</span>
     </div>`;
     return message;
@@ -257,4 +263,26 @@ async function confirmTicket(id) {
 
 function generateRandomID(length) {
     return Math.random().toString(36).substring(2, 2 + length);
+}
+
+function showSignOut(){
+
+    $('.popup-signout').show()
+
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+
+    overlay.addEventListener('click', function() {
+        $('.popup-signout').hide()
+        if (overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
+      });
+
+    document.body.appendChild(overlay);
 }
