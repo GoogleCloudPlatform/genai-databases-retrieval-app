@@ -150,8 +150,8 @@ function buildConfirmation(confirmation, messageId) {
             ${buildBox('left', 205, 35, 15, "Flight", flight)}
             ${seat_row && seat_letter ? buildBox('left', 205, 245, 15, "Seat", `${seat_row}${seat_letter}`) : ''}
             ${buildBox('left', 265, 35, 15, "Passenger", userName, "")}
-            ${buildButton("Looks good to me. Book it!", 342, "#1b980f", "#FFF", "confirmTicket('" + messageId + "')")}
-            ${buildButton("I changed my mind.", 395, "#f3afc6", "#181a23", "cancelTicket('" + messageId + "')")}
+            ${buildButton("Looks good to me. Book it!", 342, "#805e9d", "#FFF", "confirmTicket('" + messageId + "')")}
+            ${buildButton("I changed my mind.", 395, "#f8f8f8", "#181a23", "cancelTicket('" + messageId + "')")}
         </div></div>`;
         $('.inner-content').append(message);
         $('.chat-content').scrollTop($('.chat-content').prop("scrollHeight"));
