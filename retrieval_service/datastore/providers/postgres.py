@@ -593,24 +593,21 @@ class Client(datastore.Client[Config]):
         airline: str,
         flight_number: str,
         departure_airport: str,
-        arrival_airport: str,
         departure_time: datetime,
         ufl: UIFriendlyLogger,
-    ) -> tuple[bool, Optional[str]]:
+    ) -> tuple[bool, Optional[str], Optional[str]]:
         ufl.log_header("Running query to determine if flight requested exists:")
         query = """
                 SELECT * FROM flights
                 WHERE airline ILIKE $1
                 AND flight_number ILIKE $2
                 AND departure_airport ILIKE $3
-                AND arrival_airport ILIKE $4
-                AND departure_time = $5::timestamp;
+                AND departure_time = $4::timestamp;
             """
         query_params = (
             airline,
             flight_number,
             departure_airport,
-            arrival_airport,
             departure_time,
         )
         ufl.log_SQL(query, query_params)
@@ -621,8 +618,8 @@ class Client(datastore.Client[Config]):
         )
         if result is not None:
             ufl.log("Determined that flight exists.")
-            return (True, result["arrival_time"])
-        return (False, None)
+            return (True, result["arrival_time"], result["arrival_airport"])
+        return (False, None, None)
 
     async def insert_ticket(
         self,
@@ -640,13 +637,14 @@ class Client(datastore.Client[Config]):
         seat_letter: str | None = None,
     ):
         departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
-        validation, arrival_time_datetime = await self.validate_ticket(
-            airline,
-            flight_number,
-            departure_airport,
-            arrival_airport,
-            departure_time_datetime,
-            ufl,
+        validation, arrival_time_datetime, arrival_airport_confirmed = (
+            await self.validate_ticket(
+                airline,
+                flight_number,
+                departure_airport,
+                departure_time_datetime,
+                ufl,
+            )
         )
         if not validation:
             raise Exception("Flight information not in database")
@@ -755,7 +753,7 @@ class Client(datastore.Client[Config]):
                     airline,
                     flight_number,
                     departure_airport,
-                    arrival_airport,
+                    arrival_airport_confirmed,
                     departure_time_datetime,
                     arrival_time_datetime,
                     seat_row,
