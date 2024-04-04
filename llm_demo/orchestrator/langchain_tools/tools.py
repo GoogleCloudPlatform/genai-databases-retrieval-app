@@ -193,9 +193,9 @@ def generate_nl2query(
         if response_json.get("trace"):
             tool_trace.add_message(response_json.get("trace"))
         if response_json.get("is_clear") is True:
-            return f"These are the matching queries: {response_json.get('results')}"
+            return f"These are the query results: {response_json.get('results')}"
         else:
-            return f"The previous information provided is insufficient. We have a followup question for the user: {response_json.get('followup_question')}"
+            return f"The user's question was unclear. Please respond by asking the user the following question: {response_json.get('followup_question')}"
 
     return nl2query
 
