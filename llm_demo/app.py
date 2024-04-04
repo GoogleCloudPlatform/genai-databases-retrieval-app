@@ -50,16 +50,19 @@ async def index(request: Request):
     orchestrator = request.app.state.orchestrator
     session = request.session
 
+    # check if token and user info is still valid
+    if "uuid" in session:
+        user_id_token = orchestrator.get_user_id_token(session["uuid"])
+        if user_id_token:
+            if session.get("user_info") and not get_user_info(
+                user_id_token, request.app.state.client_id
+            ):
+                await logout_google(request)
+        elif not user_id_token and "user_info" in session:
+            await logout_google(request)
+
     if "uuid" not in session or not orchestrator.user_session_exist(session["uuid"]):
         await orchestrator.user_session_create(session)
-
-    # recheck if token and user info is still valid
-    user_id_token = orchestrator.get_user_id_token(session["uuid"])
-    if user_id_token:
-        if not get_user_info(user_id_token, request.app.state.client_id):
-            clear_user_info(session)
-    elif not user_id_token and "user_info" in session:
-        clear_user_info(session)
 
     return templates.TemplateResponse(
         "index.html",
@@ -129,10 +132,8 @@ async def logout_google(
 
     uuid = request.session["uuid"]
     orchestrator = request.app.state.orchestrator
-    if not orchestrator.user_session_exist(uuid):
-        raise HTTPException(status_code=500, detail=f"Current user session not found")
-
-    orchestrator.user_session_signout(uuid)
+    if orchestrator.user_session_exist(uuid):
+        await orchestrator.user_session_signout(uuid)
     request.session.clear()
 
 
