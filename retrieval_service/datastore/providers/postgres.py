@@ -593,33 +593,32 @@ class Client(datastore.Client[Config]):
         airline: str,
         flight_number: str,
         departure_airport: str,
-        departure_time: datetime,
-        ufl: UIFriendlyLogger,
-    ) -> tuple[bool, Optional[str], Optional[str]]:
-        ufl.log_header("Running query to determine if flight requested exists:")
+        departure_time: str,
+    ) -> models.Flight:
+        departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
         query = """
                 SELECT * FROM flights
                 WHERE airline ILIKE $1
                 AND flight_number ILIKE $2
                 AND departure_airport ILIKE $3
-                AND departure_time = $4::timestamp;
+                AND departure_time::date = $4::date;
             """
         query_params = (
             airline,
             flight_number,
             departure_airport,
-            departure_time,
+            departure_time_datetime,
         )
-        ufl.log_SQL(query, query_params)
         result = await self.__pool.fetchrow(
             query,
             *query_params,
             timeout=10,
         )
-        if result is not None:
-            ufl.log("Determined that flight exists.")
-            return (True, result["arrival_time"], result["arrival_airport"])
-        return (False, None, None)
+        if result is None:
+            raise Exception("Flight information not in database")
+
+        result = models.Flight.model_validate(dict(result))
+        return result
 
     async def insert_ticket(
         self,
@@ -637,17 +636,7 @@ class Client(datastore.Client[Config]):
         seat_letter: str | None = None,
     ):
         departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
-        validation, arrival_time_datetime, arrival_airport_confirmed = (
-            await self.validate_ticket(
-                airline,
-                flight_number,
-                departure_airport,
-                departure_time_datetime,
-                ufl,
-            )
-        )
-        if not validation:
-            raise Exception("Flight information not in database")
+        arrival_time_datetime = datetime.strptime(arrival_time, "%Y-%m-%d %H:%M:%S")
         async with self.__pool.acquire() as conn:
             async with conn.transaction():
                 # If a seat is pre-selected, ensure it is not already booked
@@ -753,7 +742,7 @@ class Client(datastore.Client[Config]):
                     airline,
                     flight_number,
                     departure_airport,
-                    arrival_airport_confirmed,
+                    arrival_airport,
                     departure_time_datetime,
                     arrival_time_datetime,
                     seat_row,
