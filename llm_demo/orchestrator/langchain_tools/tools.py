@@ -15,7 +15,7 @@
 import json
 import os
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import aiohttp
 import google.oauth2.id_token  # type: ignore
@@ -124,11 +124,11 @@ class TicketInput(BaseModel):
     departure_airport: str = Field(
         description="Departure airport 3-letter code",
     )
-    arrival_airport: str = Field(description="Arrival airport 3-letter code")
     departure_time: datetime = Field(description="Flight departure datetime")
-    arrival_time: datetime = Field(description="Flight arrival datetime")
     seat_row: int = Field(description="A number between 1 to 33 for the seat row")
     seat_letter: str = Field(description="A single letter between A, B, C, D, E and F")
+    arrival_airport: Optional[str] = Field(description="Arrival airport 3-letter code")
+    arrival_time: Optional[datetime] = Field(description="Flight arrival datetime")
 
 
 def generate_insert_ticket(client: aiohttp.ClientSession):
@@ -145,6 +145,38 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
         return f"Booking ticket on {airline} {flight_number}"
 
     return insert_ticket
+
+
+async def validate_ticket(client: aiohttp.ClientSession, ticket_info: Dict[Any, Any]):
+    response = await client.get(
+        url=f"{RETRIEVAL_URL}/tickets/validate",
+        params=filter_none_values(
+            {
+                "airline": ticket_info.get("airline"),
+                "flight_number": ticket_info.get("flight_number"),
+                "departure_airport": ticket_info.get("departure_airport"),
+                "departure_time": ticket_info.get("departure_time", "").replace(
+                    "T", " "
+                ),
+            }
+        ),
+        headers=get_headers(client, RETRIEVAL_URL),
+    )
+    response_json = await response.json()
+
+    result = response_json.get("result")
+    flight_info = {
+        "airline": result.get("airline"),
+        "flight_number": result.get("flight_number"),
+        "departure_airport": result.get("departure_airport"),
+        "arrival_airport": result.get("arrival_airport"),
+        "departure_time": result.get("departure_time"),
+        "arrival_time": result.get("arrival_time"),
+        "seat_row": ticket_info.get("seat_row"),
+        "seat_letter": ticket_info.get("seat_letter"),
+    }
+
+    return flight_info
 
 
 async def insert_ticket(
