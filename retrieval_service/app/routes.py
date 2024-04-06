@@ -21,6 +21,7 @@ from google.oauth2 import id_token  # type:ignore
 from langchain_core.embeddings import Embeddings
 
 import datastore
+from helpers import UIFriendlyLogger
 
 routes = APIRouter()
 
@@ -37,6 +38,13 @@ def _ParseUserIdToken(headers: Mapping[str, Any]) -> Optional[str]:
         raise Exception("Invalid ID token")
 
     return parts[1]
+
+
+def build_result(results, ufl: UIFriendlyLogger | None = None):
+    result = {"result": results}
+    if ufl is not None and ufl.get_log() != "":
+        result["trace"] = ufl.get_log()
+    return result
 
 
 async def get_user_info(request):
@@ -68,17 +76,20 @@ async def get_airport(
     id: Optional[int] = None,
     iata: Optional[str] = None,
 ):
+    ufl = UIFriendlyLogger()
     ds: datastore.Client = request.app.state.datastore
     if id:
-        results = await ds.get_airport_by_id(id)
+        ufl.log_section_header("Finding airport by id")
+        results = await ds.get_airport_by_id(id, ufl)
     elif iata:
-        results = await ds.get_airport_by_iata(iata)
+        ufl.log_section_header("Finding airport by IATA code")
+        results = await ds.get_airport_by_iata(iata, ufl)
     else:
         raise HTTPException(
             status_code=422,
             detail="Request requires query params: airport id or iata",
         )
-    return results
+    return build_result(results, ufl)
 
 
 @routes.get("/airports/search")
@@ -88,6 +99,7 @@ async def search_airports(
     city: Optional[str] = None,
     name: Optional[str] = None,
 ):
+    ufl = UIFriendlyLogger()
     if country is None and city is None and name is None:
         raise HTTPException(
             status_code=422,
@@ -95,33 +107,39 @@ async def search_airports(
         )
 
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.search_airports(country, city, name)
-    return results
+    ufl.log_section_header("Searching for airport")
+    results = await ds.search_airports(ufl, country, city, name)
+    return build_result(results, ufl)
 
 
 @routes.get("/amenities")
 async def get_amenity(id: int, request: Request):
+    ufl = UIFriendlyLogger()
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.get_amenity(id)
-    return results
+    ufl.log_section_header("Getting amenities by id")
+    results = await ds.get_amenity(id, ufl)
+    return build_result(results, ufl)
 
 
 @routes.get("/amenities/search")
 async def amenities_search(query: str, top_k: int, request: Request):
     ds: datastore.Client = request.app.state.datastore
-
+    ufl = UIFriendlyLogger()
     embed_service: Embeddings = request.app.state.embed_service
     query_embedding = embed_service.embed_query(query)
 
-    results = await ds.amenities_search(query_embedding, 0.5, top_k)
-    return results
+    ufl.log_section_header("Attempting to use vector / embedding search for amenities")
+    results = await ds.amenities_search(query, query_embedding, 0.5, top_k, ufl)
+    return build_result(results, ufl)
 
 
 @routes.get("/flights")
 async def get_flight(flight_id: int, request: Request):
+    ufl = UIFriendlyLogger()
     ds: datastore.Client = request.app.state.datastore
-    flights = await ds.get_flight(flight_id)
-    return flights
+    ufl.log_section_header("Getting flight by id")
+    flights = await ds.get_flight(flight_id, ufl)
+    return build_result(flights, ufl)
 
 
 @routes.get("/flights/search")
@@ -133,19 +151,24 @@ async def search_flights(
     airline: Optional[str] = None,
     flight_number: Optional[str] = None,
 ):
+    ufl = UIFriendlyLogger()
     ds: datastore.Client = request.app.state.datastore
     if date and (arrival_airport or departure_airport):
+        ufl.log_section_header(
+            "Searching for flights by date and/or airport information"
+        )
         flights = await ds.search_flights_by_airports(
-            date, departure_airport, arrival_airport
+            date, ufl, departure_airport, arrival_airport
         )
     elif airline and flight_number:
-        flights = await ds.search_flights_by_number(airline, flight_number)
+        ufl.log_section_header("Searching for flights by flight number and airline")
+        flights = await ds.search_flights_by_number(airline, flight_number, ufl)
     else:
         raise HTTPException(
             status_code=422,
             detail="Request requires query params: arrival_airport, departure_airport, date, or both airline and flight_number",
         )
-    return flights
+    return build_result(flights, ufl)
 
 
 @routes.post("/tickets/insert")
@@ -158,12 +181,16 @@ async def insert_ticket(
     departure_time: str,
     arrival_time: str,
 ):
+    ufl = UIFriendlyLogger()
     user_info = await get_user_info(request)
     if user_info is None:
         raise HTTPException(
             status_code=401,
             detail="User login required for data insertion",
         )
+    ufl.log_section_header(
+        "Attempting to insert the requested ticket into the database"
+    )
     ds: datastore.Client = request.app.state.datastore
     result = await ds.insert_ticket(
         user_info["user_id"],
@@ -175,31 +202,36 @@ async def insert_ticket(
         arrival_airport,
         departure_time,
         arrival_time,
+        ufl,
     )
-    return result
+    return build_result(result, ufl)
 
 
 @routes.get("/tickets/list")
 async def list_tickets(
     request: Request,
 ):
+    ufl = UIFriendlyLogger()
     user_info = await get_user_info(request)
     if user_info is None:
         raise HTTPException(
             status_code=401,
             detail="User login required for data insertion",
         )
+    ufl.log_section_header("Looking up tickets by user")
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.list_tickets(user_info["user_id"])
-    return results
+    results = await ds.list_tickets(user_info["user_id"], ufl)
+    return build_result(results, ufl)
 
 
 @routes.get("/policies/search")
 async def policies_search(query: str, top_k: int, request: Request):
+    ufl = UIFriendlyLogger()
     ds: datastore.Client = request.app.state.datastore
 
     embed_service: Embeddings = request.app.state.embed_service
     query_embedding = embed_service.embed_query(query)
 
-    results = await ds.policies_search(query_embedding, 0.5, top_k)
-    return results
+    ufl.log_section_header("Attempting to use vector / embedding search for policies")
+    results = await ds.policies_search(query, query_embedding, 0.5, top_k, ufl)
+    return build_result(results, ufl)
