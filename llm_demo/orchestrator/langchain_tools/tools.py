@@ -14,7 +14,7 @@
 
 import json
 import os
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict, Optional
 
 import aiohttp
@@ -119,35 +119,133 @@ def generate_search_policies(client: aiohttp.ClientSession, tool_trace: ToolTrac
 
 
 class TicketInput(BaseModel):
-    airline: str = Field(description="Airline unique 2 letter identifier")
-    flight_number: str = Field(description="1 to 4 digit number")
-    departure_airport: str = Field(
+    airline: Optional[str] = Field(description="Airline unique 2 letter identifier")
+    flight_number: Optional[str] = Field(description="1 to 4 digit number")
+    departure_airport: Optional[str] = Field(
         description="Departure airport 3-letter code",
     )
-    departure_time: datetime = Field(description="Flight departure datetime")
-    seat_row: int = Field(description="A number between 1 to 33 for the seat row")
-    seat_letter: str = Field(description="A single letter between A, B, C, D, E and F")
+    departure_time: Optional[datetime] | Optional[date] = Field(
+        description="Flight departure datetime"
+    )
+    seat_row: Optional[int] = Field(
+        description="A number between 1 to 33 for the seat row"
+    )
+    seat_letter: Optional[str] = Field(
+        description="A single letter between A, B, C, D, E and F"
+    )
     arrival_airport: Optional[str] = Field(description="Arrival airport 3-letter code")
-    arrival_time: Optional[datetime] = Field(description="Flight arrival datetime")
+    arrival_time: Optional[datetime] | Optional[date] = Field(
+        description="Flight arrival datetime"
+    )
 
 
-def generate_insert_ticket(client: aiohttp.ClientSession):
+def generate_insert_ticket(client: aiohttp.ClientSession, tool_trace: ToolTrace):
     async def insert_ticket(
-        airline: str,
-        flight_number: str,
-        departure_airport: str,
-        arrival_airport: str,
-        departure_time: datetime,
-        arrival_time: datetime,
-        seat_row: int,
-        seat_letter: str,
+        airline: str | None = None,
+        flight_number: str | None = None,
+        departure_airport: str | None = None,
+        arrival_airport: str | None = None,
+        departure_time: datetime | date | None = None,
+        arrival_time: datetime | date | None = None,
+        seat_row: int | None = None,
+        seat_letter: str | None = None,
     ):
+        # Check to make sure all provided parameters are there or request more info
+        checked_ticket = await check_ticket_input(
+            client,
+            {
+                "airline": airline,
+                "flight_number": flight_number,
+                "seat_letter": seat_letter,
+                "seat_row": seat_row,
+                "departure_airport": departure_airport,
+                "departure_time": (
+                    None
+                    if departure_time is None
+                    else departure_time.strftime("%Y-%m-%d 00:00:00")
+                ),
+            },
+            tool_trace,
+        )
+        if checked_ticket.get("error") is not None:
+            return checked_ticket.get("error")
         return f"Booking ticket on {airline} {flight_number}"
 
     return insert_ticket
 
 
-async def validate_ticket(client: aiohttp.ClientSession, ticket_info: Dict[Any, Any]):
+async def check_ticket_input(
+    client: aiohttp.ClientSession,
+    ticket_info: Dict[Any, Any],
+    tool_trace: ToolTrace | None = None,
+):
+
+    airline = ticket_info.get("airline")
+    flight_number = ticket_info.get("flight_number")
+    departure_airport = ticket_info.get("departure_airport")
+    departure_time = ticket_info.get("departure_time")
+    seat_row = ticket_info.get("seat_row")
+    seat_letter = ticket_info.get("seat_letter")
+
+    # Check if basic flight information is provided
+    if airline is None or flight_number is None:
+        return {
+            "error": "Ask the user what flight they you interested in booking? We need to know the airline and flight number."
+        }
+    if departure_airport is None:
+        return {
+            "error": "Ask the user where they you flying from? We need to know the departure airport."
+        }
+    if departure_time is None:
+        return {
+            "error": "Ask the user date and time is the flight? We need to know the departure date."
+        }
+
+    # Fix departure_time into a common format
+    try:
+        if " " in departure_time:
+            departure_date = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
+        elif "T" in departure_time:
+            departure_date = datetime.strptime(departure_time, "%Y-%m-%dT%H:%M:%S")
+        else:
+            departure_date = datetime.strptime(departure_time, "%Y-%m-%d")
+        departure_date_str = departure_date.strftime("%Y-%m-%d")
+    except ValueError:
+        return {
+            "error": "departure_time is in an invalid format. Make sure it's in the format '%Y-%m-%d %H:%M:%S'"
+        }
+
+    ticket_info["validated_departure_date"] = departure_date_str
+    # Check if ticket is valid and flight exists
+    validated_ticket_info = await validate_ticket(client, ticket_info, tool_trace)
+    if validated_ticket_info is None:
+        return {
+            "error": f"There seems to be no flight {airline}{flight_number} on {departure_date_str} from {departure_airport}. Ask the user to check the flight information."
+        }
+
+    # Lastly check if seat exists on the request if all flight_information is accurate
+    if seat_row is None or seat_letter is None:
+        return {"error": "Ask the user what seat they would like before booking."}
+
+    # Now check that the seat exists if all flight information is ok.
+    validated_ticket_info["seat_row"] = seat_row
+    validated_ticket_info["seat_letter"] = seat_letter
+    validated_ticket_info["validated_departure_date"] = departure_date_str
+    seat_is_valid = await validate_seat(client, validated_ticket_info, tool_trace)
+    if not seat_is_valid:
+        return {
+            "error": f"The seat {seat_row}{seat_letter} does not seem to be available. Ask the user to pick another seat."
+        }
+
+    # Everything looks good
+    return {"flight_info": validated_ticket_info}
+
+
+async def validate_ticket(
+    client: aiohttp.ClientSession,
+    ticket_info: Dict[Any, Any],
+    tool_trace: ToolTrace | None,
+):
     response = await client.get(
         url=f"{RETRIEVAL_URL}/tickets/validate",
         params=filter_none_values(
@@ -155,9 +253,8 @@ async def validate_ticket(client: aiohttp.ClientSession, ticket_info: Dict[Any, 
                 "airline": ticket_info.get("airline"),
                 "flight_number": ticket_info.get("flight_number"),
                 "departure_airport": ticket_info.get("departure_airport"),
-                "departure_time": ticket_info.get("departure_time", "").replace(
-                    "T", " "
-                ),
+                "departure_time": ticket_info.get("validated_departure_date", "")
+                + " 00:00:00",
             }
         ),
         headers=get_headers(client, RETRIEVAL_URL),
@@ -165,18 +262,50 @@ async def validate_ticket(client: aiohttp.ClientSession, ticket_info: Dict[Any, 
     response_json = await response.json()
 
     result = response_json.get("result")
-    flight_info = {
-        "airline": result.get("airline"),
-        "flight_number": result.get("flight_number"),
-        "departure_airport": result.get("departure_airport"),
-        "arrival_airport": result.get("arrival_airport"),
-        "departure_time": result.get("departure_time"),
-        "arrival_time": result.get("arrival_time"),
-        "seat_row": ticket_info.get("seat_row"),
-        "seat_letter": ticket_info.get("seat_letter"),
-    }
+    if tool_trace is not None:
+        tool_trace.add_message(response_json.get("trace"))
+    if result is None:
+        return result
+    else:
+        flight_info = {
+            "airline": result.get("airline"),
+            "flight_number": result.get("flight_number"),
+            "departure_airport": result.get("departure_airport"),
+            "arrival_airport": result.get("arrival_airport"),
+            "departure_time": result.get("departure_time"),
+            "arrival_time": result.get("arrival_time"),
+            "seat_row": ticket_info.get("seat_row"),
+            "seat_letter": ticket_info.get("seat_letter"),
+        }
+        return flight_info
 
-    return flight_info
+
+async def validate_seat(
+    client: aiohttp.ClientSession,
+    ticket_info: Dict[Any, Any],
+    tool_trace: ToolTrace | None,
+):
+    response = await client.get(
+        url=f"{RETRIEVAL_URL}/seats/validate",
+        params=filter_none_values(
+            {
+                "airline": ticket_info.get("airline"),
+                "flight_number": ticket_info.get("flight_number"),
+                "departure_airport": ticket_info.get("departure_airport"),
+                "departure_time": ticket_info.get("validated_departure_date", "")
+                + " 00:00:00",
+                "seat_row": ticket_info.get("seat_row"),
+                "seat_letter": ticket_info.get("seat_letter"),
+            }
+        ),
+        headers=get_headers(client, RETRIEVAL_URL),
+    )
+    response_json = await response.json()
+
+    result = response_json.get("result")
+    if tool_trace is not None:
+        tool_trace.add_message(response_json.get("trace"))
+    return result
 
 
 async def insert_ticket(
@@ -280,7 +409,7 @@ async def initialize_tools(
             coroutine=generate_search_policies(client, tool_trace),
             name="Search Policies",
             description="""
-    Use this tool to search for Cymbal Air policies including ticket purchase and change fees, baggage restriction, 
+    Use this tool to search for Cymbal Air policies including ticket purchase and change fees, baggage restriction,
     checkin and boarding procedures, special assistance, overbooking, flight delays and cancellations.
     Policy that are listed are unchangeable.
     You will not answer any questions outside of the policy given.
@@ -293,10 +422,10 @@ async def initialize_tools(
             args_schema=PolicyQueryInput,
         ),
         StructuredTool.from_function(
-            coroutine=generate_insert_ticket(client),
+            coroutine=generate_insert_ticket(client, tool_trace),
             name="Insert Ticket",
             description="""
-    Use this tool to book a flight ticket for the user. Make sure to include all necessary arguments: airline, flight_number, departure_airport, 
+    Use this tool to book a flight ticket for the user. Make sure to include all necessary arguments: airline, flight_number, departure_airport,
     arrival_airport, departure_time, arrival_time, seat_row and seat_letter.  If any of these are missing, ask the user for additional information.
 
     Example of user booking on American Airlines flight 452 from LAX to SFO on January 1st, 2024 with seat 10A:
@@ -318,9 +447,9 @@ async def initialize_tools(
             name="General Flight and Airport Information",
             description="""
     Use this tool to query generic information about flights, tickets, seats and airports.
-    
+
     Do not assume any information and do not omit any information!
-    It is important to include as much detail from the user's original query as possible (such as adjectives). See additional examples below for the correct way to respond. 
+    It is important to include as much detail from the user's original query as possible (such as adjectives). See additional examples below for the correct way to respond.
     If a follow up question is used, include the previous user query in the current query.
 
     - Listing flights that are available. Include departure date and departure time when returning results to the user.
@@ -330,13 +459,13 @@ async def initialize_tools(
     {{
         "query": "List flights to New York."
     }}
-    
+
     Example with user asking about flights for tomorrow:
     Human: "Are there any flights from SFO to DEN tomorrow?"
     {{
         "query": "List flights from SFO to DEN tomorrow."
     }}
-    
+
     Example with user asking about the next flight to New York City for today:
     Human: "What is the next flight to New York City today?"
     {{
@@ -352,7 +481,7 @@ async def initialize_tools(
     {{
         "query": "List flights from SFO to DEN later today."
     }}
-    
+
     Example with user asking about flights for tomorrow with airline preferences:
     Human: "I would like to look for cymbal air flights to SEA tomorrow"
     {{

@@ -33,10 +33,10 @@ from pytz import timezone
 from ..orchestrator import BaseOrchestrator, classproperty
 from .helpers import ToolTrace
 from .tools import (
+    check_ticket_input,
     get_confirmation_needing_tools,
     initialize_tools,
     insert_ticket,
-    validate_ticket,
 )
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
@@ -144,11 +144,20 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
                 # This tool is a no-op and requires user confirmation before continuing
                 if called_tool.tool in self.confirmation_needing_tools:
                     if called_tool.tool == "Insert Ticket":
-                        flight_info = await validate_ticket(
+                        ticket_validation = await check_ticket_input(
                             self.client, called_tool.tool_input
                         )
-                        return {"tool": called_tool.tool, "params": flight_info}
-                    return {"tool": called_tool.tool, "params": called_tool.tool_input}
+                        flight_info = ticket_validation.get("flight_info")
+                        if (
+                            ticket_validation.get("error") is None
+                            and flight_info is not None
+                        ):
+                            return {"tool": called_tool.tool, "params": flight_info}
+                    else:
+                        return {
+                            "tool": called_tool.tool,
+                            "params": called_tool.tool_input,
+                        }
         return None
 
     async def user_session_create(self, session: dict[str, Any]):

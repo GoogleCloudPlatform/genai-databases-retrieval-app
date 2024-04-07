@@ -594,8 +594,10 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         departure_time: str,
-    ) -> models.Flight:
+        ufl: UIFriendlyLogger,
+    ) -> models.Flight | None:
         departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
+        ufl.log_header("Running query to determine if flight requested exists:")
         query = """
                 SELECT * FROM flights
                 WHERE airline ILIKE $1
@@ -609,16 +611,63 @@ class Client(datastore.Client[Config]):
             departure_airport,
             departure_time_datetime,
         )
+        ufl.log_SQL(query, query_params)
         result = await self.__pool.fetchrow(
             query,
             *query_params,
             timeout=10,
         )
         if result is None:
-            raise Exception("Flight information not in database")
+            ufl.log("No matching flight found.")
+            return None
 
+        ufl.log("Flight found.")
         result = models.Flight.model_validate(dict(result))
         return result
+
+    async def validate_seat(
+        self,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        departure_time: str,
+        seat_row: int,
+        seat_letter: str,
+        ufl: UIFriendlyLogger,
+    ) -> bool:
+        departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
+        ufl.log_header("Running query to determine if seat requested is available:")
+        query = """
+                SELECT seat_row, seat_letter FROM flights
+                JOIN seats ON flights.id = seats.flight_id
+                WHERE airline ILIKE $1
+                AND flight_number ILIKE $2
+                AND departure_airport ILIKE $3
+                AND departure_time::date = $4::date
+                AND seat_row = $5
+                AND seat_letter = $6
+                AND is_reserved = FALSE;
+            """
+        query_params = (
+            airline,
+            flight_number,
+            departure_airport,
+            departure_time_datetime,
+            seat_row,
+            seat_letter,
+        )
+        ufl.log_SQL(query, query_params)
+        result = await self.__pool.fetchrow(
+            query,
+            *query_params,
+            timeout=10,
+        )
+        if result is None:
+            ufl.log("This specific seat is not available.")
+            return False
+
+        ufl.log("Seat found.")
+        return True
 
     async def insert_ticket(
         self,

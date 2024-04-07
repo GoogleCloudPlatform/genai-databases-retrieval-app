@@ -212,6 +212,31 @@ async def search_seats(
     return build_result(seats)
 
 
+@routes.get("/seats/validate")
+async def validate_seat(
+    request: Request,
+    airline: str,
+    flight_number: str,
+    departure_airport: str,
+    departure_time: str,
+    seat_row: int,
+    seat_letter: str,
+):
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header("Validating that seat is available on flight")
+    ds: datastore.Client = request.app.state.datastore
+    result = await ds.validate_seat(
+        airline,
+        flight_number,
+        departure_airport,
+        departure_time,
+        seat_row,
+        seat_letter,
+        ufl,
+    )
+    return build_result(result, ufl)
+
+
 @routes.get("/tickets/validate")
 async def validate_ticket(
     request: Request,
@@ -220,14 +245,13 @@ async def validate_ticket(
     departure_airport: str,
     departure_time: str,
 ):
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header("Validating that flight is available")
     ds: datastore.Client = request.app.state.datastore
     result = await ds.validate_ticket(
-        airline,
-        flight_number,
-        departure_airport,
-        departure_time,
+        airline, flight_number, departure_airport, departure_time, ufl
     )
-    return build_result(result)
+    return build_result(result, ufl)
 
 
 @routes.post("/tickets/insert")
