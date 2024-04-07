@@ -127,8 +127,6 @@ class TicketInput(BaseModel):
     departure_time: datetime = Field(description="Flight departure datetime")
     seat_row: int = Field(description="A number between 1 to 33 for the seat row")
     seat_letter: str = Field(description="A single letter between A, B, C, D, E and F")
-    arrival_airport: Optional[str] = Field(description="Arrival airport 3-letter code")
-    arrival_time: Optional[datetime] = Field(description="Flight arrival datetime")
 
 
 def generate_insert_ticket(client: aiohttp.ClientSession):
@@ -136,9 +134,7 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
         airline: str,
         flight_number: str,
         departure_airport: str,
-        arrival_airport: str,
         departure_time: datetime,
-        arrival_time: datetime,
         seat_row: int,
         seat_letter: str,
     ):
@@ -297,16 +293,14 @@ async def initialize_tools(
             name="Insert Ticket",
             description="""
     Use this tool to book a flight ticket for the user. Make sure to include all necessary arguments: airline, flight_number, departure_airport, 
-    arrival_airport, departure_time, arrival_time, seat_row and seat_letter.  If any of these are missing, ask the user for additional information.
+    departure_time, seat_row and seat_letter.  If any of these are missing, ask the user for additional information.
 
     Example of user booking on American Airlines flight 452 from LAX to SFO on January 1st, 2024 with seat 10A:
     {{
         "airline": "AA",
         "flight_number": "452",
         "departure_airport": "LAX",
-        "arrival_airport": "SFO",
         "departure_time": "2024-01-01 05:50:00",
-        "arrival_time": "2024-01-01 09:23:00",
         "seat_row": "10",
         "seat_letter": "A"
     }}
