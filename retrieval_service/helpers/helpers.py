@@ -31,7 +31,7 @@ class UIFriendlyLogger:
         self.friendly_log += f'<div class="header">{message}</div>'
 
     def log_header(self, message: str):
-        self.friendly_log += f"<br><b>{message}</b><br/>"
+        self.friendly_log += f"<b>{message}</b><br/>"
 
     def log_code(self, message: str):
         self.friendly_log += f'<div class="codeblock">{message}</div>'

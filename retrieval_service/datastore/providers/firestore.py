@@ -327,7 +327,20 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         departure_time: str,
-    ) -> models.Flight:
+        ufl: UIFriendlyLogger,
+    ) -> models.Flight | None:
+        raise NotImplementedError("Not Implemented")
+
+    async def validate_seat(
+        self,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        departure_time: str,
+        seat_row: int,
+        seat_letter: str,
+        ufl: UIFriendlyLogger,
+    ) -> bool:
         raise NotImplementedError("Not Implemented")
 
     async def insert_ticket(

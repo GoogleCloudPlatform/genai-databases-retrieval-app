@@ -369,7 +369,21 @@ class Client(ABC, Generic[C]):
         flight_number: str,
         departure_airport: str,
         departure_time: str,
-    ) -> models.Flight:
+        ufl: UIFriendlyLogger,
+    ) -> models.Flight | None:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
+    async def validate_seat(
+        self,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        departure_time: str,
+        seat_row: int,
+        seat_letter: str,
+        ufl: UIFriendlyLogger,
+    ) -> bool:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
