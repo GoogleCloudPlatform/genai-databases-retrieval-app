@@ -329,7 +329,7 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         prompt = ChatPromptTemplate.from_messages(
             [("system", template), ("human", human_message_template)]
         )
-        prompt = prompt.partial(cur_datetime=self.get_datetime)
+        prompt = prompt.partial(cur_datetime="2024-04-09")
         return prompt
 
     def get_datetime(self):
