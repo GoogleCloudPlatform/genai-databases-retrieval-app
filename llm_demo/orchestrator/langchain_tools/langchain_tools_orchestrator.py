@@ -49,15 +49,18 @@ BASE_HISTORY = {
 class UserAgent:
     client: ClientSession
     agent: AgentExecutor
+    less_predictable_agent: AgentExecutor
 
     def __init__(
         self,
         client: ClientSession,
         agent: AgentExecutor,
+        less_predictable_agent: AgentExecutor,
         memory: ConversationBufferMemory,
     ):
         self.client = client
         self.agent = agent
+        self.less_predictable_agent = less_predictable_agent
         self.memory = memory
 
     @classmethod
@@ -70,6 +73,12 @@ class UserAgent:
         model: str,
     ) -> "UserAgent":
         llm = VertexAI(max_output_tokens=512, model_name=model, temperature=0.0)
+        # Create an llm that has slightly higher temp and higher max_output_token for retries
+        less_predictable_llm = VertexAI(
+            max_output_tokens=1024, model_name=model, temperature=0.2
+        )
+        # Given that all instructions are the same,
+        #   memory is shared between both agents (original and less_predictable)
         memory = ConversationBufferMemory(
             chat_memory=ChatMessageHistory(messages=history),
             memory_key="chat_history",
@@ -86,18 +95,66 @@ class UserAgent:
             early_stopping_method="generate",
             return_intermediate_steps=True,
         )
+        less_predictable_agent = initialize_agent(
+            tools,
+            less_predictable_llm,
+            agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+            memory=memory,
+            handle_parsing_errors=True,
+            max_iterations=3,
+            early_stopping_method="generate",
+            return_intermediate_steps=True,
+        )
         agent.agent.llm_chain.prompt = prompt  # type: ignore
-        return UserAgent(client, agent, memory)
+        less_predictable_agent.agent.llm_chain.prompt = prompt  # type: ignore
+        return UserAgent(client, agent, less_predictable_agent, memory)
 
     async def close(self):
         await self.client.close()
 
     async def invoke(self, prompt: str) -> Dict[str, Any]:
-        try:
-            response = await self.agent.ainvoke({"input": prompt})
-        except Exception as err:
-            raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
-        return response
+        error_count = 0
+        passed_back_error_msg = ""
+        while True:
+            try:
+                if error_count == 0:
+                    response = await self.agent.ainvoke({"input": prompt})
+                elif error_count == 1:
+                    # try again with higher temp agent on current memory
+                    response = await self.less_predictable_agent.ainvoke(
+                        {"input": prompt}
+                    )
+                else:
+                    # on the two last tries, pass back error into prompt
+                    # freeze the current memory as to not keep the error message in the chat history
+                    memory_snapshot = self.memory.copy(deep=True)
+                    self.less_predictable_agent.memory = memory_snapshot
+                    response = await self.less_predictable_agent.ainvoke(
+                        {
+                            "input": f"{prompt}. Last time you tried this, you got the following error: '{passed_back_error_msg}'. Try to prevent that."
+                        }
+                    )
+                    # if we are here, this was successful. Now append the memory correctly and reinitialize the agents
+                    ai_message = self.less_predictable_agent.memory.chat_memory.messages.pop()  # type: ignore
+                    # append memory state
+                    self.memory.chat_memory.add_user_message(prompt)
+                    self.memory.chat_memory.add_ai_message(ai_message)  # type: ignore
+                    # reset the memories
+                    self.less_predictable_agent.memory = self.memory
+                return response
+            except Exception as err:
+                err_msg = f"Error invoking agent: {err}"
+                if bool(os.getenv("DEBUG", default=False)):
+                    print(f"{err_msg}. Retrying with non deterministic agent.")
+                error_count += 1
+                if error_count == 2:
+                    print(
+                        f"{err_msg}. Retrying with non deterministic agent and passing back error into feed."
+                    )
+                    passed_back_error_msg = err_msg
+                if error_count > 3:
+                    # Give up after third re-try
+                    raise HTTPException(status_code=500, detail=err_msg)
 
     def update_tools(self, tools: List[StructuredTool]):
         self.agent.tools = tools
