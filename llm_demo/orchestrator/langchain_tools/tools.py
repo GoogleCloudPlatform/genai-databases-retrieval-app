@@ -14,7 +14,7 @@
 
 import json
 import os
-from datetime import date, datetime
+from datetime import date, datetime, time
 from typing import Any, Dict, Optional
 
 import aiohttp
@@ -124,7 +124,7 @@ class TicketInput(BaseModel):
     departure_airport: Optional[str] = Field(
         description="Departure airport 3-letter code",
     )
-    departure_time: Optional[datetime] | Optional[date] = Field(
+    departure_time: Optional[datetime] | Optional[date] | Optional[time] = Field(
         description="Flight departure datetime"
     )
     seat_row: Optional[int] = Field(
@@ -134,21 +134,21 @@ class TicketInput(BaseModel):
         description="A single letter between A, B, C, D, E and F"
     )
     arrival_airport: Optional[str] = Field(description="Arrival airport 3-letter code")
-    arrival_time: Optional[datetime] | Optional[date] = Field(
+    arrival_time: Optional[datetime] | Optional[date] | Optional[time] = Field(
         description="Flight arrival datetime"
     )
 
 
 def generate_insert_ticket(client: aiohttp.ClientSession, tool_trace: ToolTrace):
     async def insert_ticket(
-        airline: str | None = None,
-        flight_number: str | None = None,
-        departure_airport: str | None = None,
-        arrival_airport: str | None = None,
-        departure_time: datetime | date | None = None,
-        arrival_time: datetime | date | None = None,
-        seat_row: int | None = None,
-        seat_letter: str | None = None,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        arrival_airport: str,
+        departure_time: datetime | date | time,
+        arrival_time: datetime | date | time,
+        seat_row: int,
+        seat_letter: str,
     ):
         # Check to make sure all provided parameters are there or request more info
         checked_ticket = await check_ticket_input(
@@ -161,7 +161,7 @@ def generate_insert_ticket(client: aiohttp.ClientSession, tool_trace: ToolTrace)
                 "departure_airport": departure_airport,
                 "departure_time": (
                     None
-                    if departure_time is None
+                    if isinstance(departure_time, time) or departure_time is None
                     else departure_time.strftime("%Y-%m-%d 00:00:00")
                 ),
             },
@@ -198,7 +198,7 @@ async def check_ticket_input(
         }
     if departure_time is None:
         return {
-            "error": "Ask the user date and time is the flight? We need to know the departure date."
+            "error": "Ask the user date is the flight? We need to know the departure date."
         }
 
     # Fix departure_time into a common format
