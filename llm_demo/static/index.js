@@ -15,6 +15,7 @@
  */
 
 confirmations = {}
+traces = {}
 
 // Submit chat message via click
 $('.btn-group span').click(async (e) => {
@@ -39,17 +40,17 @@ async function submitMessage() {
     logMessage("human", msg)
     // Clear message
     $('.chat-bar input').val('');
-    window.setTimeout(()=>{
+    window.setTimeout(() => {
         $('#loader-container').show();
         $('.chat-content').scrollTop($('.chat-content').prop("scrollHeight"));
-    },400);
+    }, 400);
     try {
         // Prompt LLM
         let answer = await askQuestion(msg);
         $('#loader-container').hide();
         // Add response to UI
         if (answer.type === "message") {
-            logMessage("ai", answer.content)
+            logMessage("ai", answer.content, answer.trace)
         } else if (answer.type === "confirmation") {
             messageId = generateRandomID(10);
             buildConfirmation(answer.content, messageId)
@@ -93,22 +94,35 @@ async function signout() {
     })
 }
 
-function buildMessage(name, msg) {
+function buildMessage(name, msg, trace) {
+    traceobj = ""
+    if (!!trace) {
+        traceid = generateRandomID(10);
+        traces[traceid] = trace
+        traceobj = `<div onclick="showTrace(event, '${traceid}')" class="material-symbols-outlined info-icon">info</div>`
+    }
+    let image = ''
+    if (name === "ai"){
+        image = '<div class="sender-icon"><img src="static/logo.png"></div>'
+    } else if(name === "human" && $('.chat-user-image').first().attr('src')){
+        image = `<div class="sender-icon"><img src="${$('.chat-user-image').first().attr('src')}"></div>`
+    }
     let message = `<div class="chat-bubble ${name}">
-    <div class="sender-icon"><img src="static/logo.png"></div>
-    <span>${msg}</span></div>`;
+    ${image}
+    <span><div class="innermsg">${msg}</div>${traceobj}</span>
+    </div>`;
     return message;
 }
 
 // Helper function to print to chatroom
-function logMessage(name, msg) {
-    let message = buildMessage(name, msg);
+function logMessage(name, msg, trace) {
+    let message = buildMessage(name, msg, trace);
     $('.inner-content').append(message);
     $('.chat-content').scrollTop($('.chat-content').prop("scrollHeight"));
 }
 
 function buildConfirmation(confirmation, messageId) {
-    if (["Insert Ticket","insert_ticket"].includes(confirmation.tool)) {
+    if (["Insert Ticket", "insert_ticket"].includes(confirmation.tool)) {
         params = confirmation.params;
         confirmations[messageId] = params
         from = params.departure_airport;
@@ -133,8 +147,8 @@ function buildConfirmation(confirmation, messageId) {
             ${buildBox('right', 133, 35, 15, "Arrival", arrival_time.replace('T', ' '))}
             ${buildBox('left', 205, 35, 15, "Flight", flight)}
             ${buildBox('left', 265, 35, 15, "Passenger", userName, "")}
-            ${buildButton("Looks good to me. Book it!", 342, "#FFF", "#1b980f", "confirmTicket('" + messageId + "')")}
-            ${buildButton("I changed my mind.", 395, "#FFF", "#181a23", "cancelTicket('" + messageId + "')")}
+            ${buildButton("Looks good to me. Book it!", 342, "#805e9d", "#FFF", "confirmTicket('" + messageId + "')")}
+            ${buildButton("I changed my mind.", 395, "#f8f8f8", "#181a23", "cancelTicket('" + messageId + "')")}
         </div></div>`;
         $('.inner-content').append(message);
         $('.chat-content').scrollTop($('.chat-content').prop("scrollHeight"));
@@ -158,6 +172,49 @@ function buildButton(text, top, bg, color, link) {
     ${text}
     </div>`
     return button;
+}
+
+function showTrace(event, id) {
+    const trace = traces[id];
+    const rect = event.target.getBoundingClientRect();
+
+    let leftPosition = rect.left + window.scrollX;
+    let topPosition = rect.bottom + window.scrollY;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+
+    if (leftPosition + 500 > windowWidth) {
+        leftPosition = windowWidth - 500;
+    }
+    if (topPosition + 500 > windowHeight) {
+        topPosition = windowHeight - 500;
+    }
+
+    const tooltip = document.createElement('div');
+    tooltip.id = "trace"
+    tooltip.innerHTML = trace;
+    tooltip.style.left = `${leftPosition}px`;
+    tooltip.style.top = `${topPosition}px`;
+
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+
+    overlay.addEventListener('click', function() {
+        if (tooltip.parentNode) {
+          tooltip.parentNode.removeChild(tooltip);
+        }
+        if (overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
+      });
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(tooltip);
 }
 
 function removeTicketChoices(id) {
@@ -191,8 +248,9 @@ async function confirmTicket(id) {
     });
     if (response.ok) {
         const text_response = await response.text();
+        result = JSON.parse(text_response)
         removeTicketChoices(id);
-        logMessage("ai", "Your flight has been successfully booked.")
+        logMessage("ai", "<p>Your flight has been successfully booked.</p>", result.trace)
     } else {
         console.error(await response.text())
         removeTicketChoices(id);
@@ -202,4 +260,26 @@ async function confirmTicket(id) {
 
 function generateRandomID(length) {
     return Math.random().toString(36).substring(2, 2 + length);
+}
+
+function showSignOut(){
+
+    $('.popup-signout').show()
+
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+
+    overlay.addEventListener('click', function() {
+        $('.popup-signout').hide()
+        if (overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
+      });
+
+    document.body.appendChild(overlay);
 }

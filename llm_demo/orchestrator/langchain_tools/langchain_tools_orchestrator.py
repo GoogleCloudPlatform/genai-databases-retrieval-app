@@ -30,8 +30,14 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_google_vertexai import VertexAI
 from pytz import timezone
 
+from ..helpers import ToolTrace
 from ..orchestrator import BaseOrchestrator, classproperty
-from .tools import get_confirmation_needing_tools, initialize_tools, insert_ticket
+from .tools import (
+    check_ticket_input,
+    get_confirmation_needing_tools,
+    initialize_tools,
+    insert_ticket,
+)
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
 BASE_HISTORY = {
@@ -93,8 +99,10 @@ class UserAgent:
             raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
         return response
 
-    async def insert_ticket(self, params: str):
-        return await insert_ticket(self.client, params)
+    async def insert_ticket(self, params: str, tool_trace: ToolTrace):
+        result = await insert_ticket(self.client, params, tool_trace)
+        trace = tool_trace.flush()
+        return {"result": result, "trace": trace}
 
     def reset_memory(self, base_message: List[BaseMessage]):
         self.memory.clear()
@@ -103,11 +111,13 @@ class UserAgent:
 
 class LangChainToolsOrchestrator(BaseOrchestrator):
     _user_sessions: Dict[str, UserAgent]
+    _user_traces: Dict[str, ToolTrace]
     # aiohttp context
     connector = None
 
     def __init__(self):
         self._user_sessions = {}
+        self._user_traces = {}
 
     @classproperty
     def kind(cls):
@@ -118,10 +128,11 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
 
     async def user_session_insert_ticket(self, uuid: str, params: str) -> Any:
         user_session = self.get_user_session(uuid)
-        response = await user_session.insert_ticket(params)
+        user_traces = self.get_user_traces(uuid)
+        response = await user_session.insert_ticket(params, user_traces)
         return response
 
-    def check_and_add_confirmations(cls, response: Dict[str, Any]):
+    async def check_and_add_confirmations(cls, response: Dict[str, Any]):
         for step in response.get("intermediate_steps") or []:
             if len(step) > 0:
                 # Find the called tool in the step
@@ -129,7 +140,21 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
                 # Check to see if the agent has made a decision to call Prepare Insert Ticket
                 # This tool is a no-op and requires user confirmation before continuing
                 if called_tool.tool in cls.confirmation_needing_tools:
-                    return {"tool": called_tool.tool, "params": called_tool.tool_input}
+                    if called_tool.tool == "Insert Ticket":
+                        ticket_validation = await check_ticket_input(
+                            cls.client, called_tool.tool_input
+                        )
+                        flight_info = ticket_validation.get("flight_info")
+                        if (
+                            ticket_validation.get("error") is None
+                            and flight_info is not None
+                        ):
+                            return {"tool": called_tool.tool, "params": flight_info}
+                    else:
+                        return {
+                            "tool": called_tool.tool,
+                            "params": called_tool.tool_input,
+                        }
         return None
 
     async def user_session_create(self, session: dict[str, Any]):
@@ -142,10 +167,12 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
             session["history"] = [BASE_HISTORY]
         history = self.parse_messages(session["history"])
         client = await self.create_client_session()
-        tools = await initialize_tools(client)
+        tool_trace = ToolTrace()
+        tools = await initialize_tools(client, tool_trace)
         prompt = self.create_prompt_template(tools)
         agent = UserAgent.initialize_agent(client, tools, history, prompt, self.MODEL)
         self._user_sessions[id] = agent
+        self._user_traces[id] = tool_trace
         self.confirmation_needing_tools = get_confirmation_needing_tools()
         self.client = client
 
@@ -154,12 +181,13 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         # Send prompt to LLM
         agent_response = await user_session.invoke(prompt)
         # Check for calls that may require confirmation to proceed
-        confirmation = self.check_and_add_confirmations(agent_response)
+        confirmation = await self.check_and_add_confirmations(agent_response)
         # Build final response
         response = {}
         response["output"] = agent_response.get("output")
         if confirmation:
             response["confirmation"] = confirmation
+        response["trace"] = self.flush_user_trace(uuid)
         return response
 
     def user_session_reset(self, session: dict[str, Any], uuid: str):
@@ -172,6 +200,13 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
 
     def get_user_session(self, uuid: str) -> UserAgent:
         return self._user_sessions[uuid]
+
+    def get_user_traces(self, uuid: str) -> ToolTrace:
+        return self._user_traces[uuid]
+
+    def flush_user_trace(self, uuid: str) -> str:
+        tool_trace = self.get_user_traces(uuid)
+        return tool_trace.flush()
 
     async def get_connector(self) -> TCPConnector:
         if self.connector is None:

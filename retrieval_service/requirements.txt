@@ -13,3 +13,4 @@ pandas-stubs==2.2.1.240316
 langchain-text-splitters==0.0.1
 langchain-google-vertexai==0.1.1
 asyncio==3.4.3
+sqlparse==0.4.4
