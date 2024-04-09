@@ -31,6 +31,7 @@ from vertexai.preview.generative_models import (  # type: ignore
     Part,
 )
 
+from ..helpers import ToolTrace
 from ..orchestrator import BaseOrchestrator, classproperty
 from .functions import (
     BASE_URL,
@@ -67,7 +68,7 @@ class UserChatModel:
     async def close(self):
         await self.client.close()
 
-    async def invoke(self, input_prompt: str) -> Dict[str, Any]:
+    async def invoke(self, input_prompt: str, tool_trace: ToolTrace) -> Dict[str, Any]:
         prompt = self.get_prompt()
         model_response = self.request_chat_model(prompt + input_prompt)
         self.debug_log(f"Prompt:\n{prompt}\n\nQuestion: {input_prompt}.")
@@ -89,11 +90,14 @@ class UserChatModel:
                 }
             else:
                 function_response = await self.request_function(function_call)
-            self.debug_log(f"Function response:\n{function_response}")
+            if function_response.get("trace"):
+                tool_trace.add_message(function_response.get("trace"))
+            function_response_result = function_response.get("result")
+            self.debug_log(f"Function response:\n{function_response_result}")
             part = Part.from_function_response(
                 name=function_call["name"],
                 response={
-                    "content": function_response,
+                    "content": function_response_result,
                 },
             )
             model_response = self.request_chat_model(part)
@@ -145,8 +149,10 @@ class UserChatModel:
         response = await response.json()
         return response
 
-    async def insert_ticket(self, params: str):
-        return await insert_ticket(self.client, params)
+    async def insert_ticket(self, params: str, tool_trace: ToolTrace):
+        result = await insert_ticket(self.client, params, tool_trace)
+        trace = tool_trace.flush()
+        return {"result": result, "trace": trace}
 
     def reset_memory(self, model: str):
         """reinitiate chat model to reset memory."""
@@ -157,11 +163,13 @@ class UserChatModel:
 
 class FunctionCallingOrchestrator(BaseOrchestrator):
     _user_sessions: Dict[str, UserChatModel]
+    _user_traces: Dict[str, ToolTrace]
     # aiohttp context
     connector = None
 
     def __init__(self):
         self._user_sessions = {}
+        self._user_traces = {}
 
     @classproperty
     def kind(cls):
@@ -172,7 +180,8 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
 
     async def user_session_insert_ticket(self, uuid: str, params: str) -> Any:
         user_session = self.get_user_session(uuid)
-        response = await user_session.insert_ticket(params)
+        user_traces = self.get_user_traces(uuid)
+        response = await user_session.insert_ticket(params, user_traces)
         return response
 
     async def user_session_create(self, session: dict[str, Any]):
@@ -185,13 +194,17 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
             session["history"] = [BASE_HISTORY]
         client = await self.create_client_session()
         chat = UserChatModel.initialize_chat_model(client, self.MODEL)
+        tool_trace = ToolTrace()
         self._user_sessions[id] = chat
+        self._user_traces[id] = tool_trace
         self.client = client
 
     async def user_session_invoke(self, uuid: str, prompt: str) -> dict[str, Any]:
         user_session = self.get_user_session(uuid)
+        tool_trace = self.get_user_traces(uuid)
         # Send prompt to LLM
-        response = await user_session.invoke(prompt)
+        response = await user_session.invoke(prompt, tool_trace)
+        response["trace"] = self.flush_user_trace(uuid)
         return response
 
     def user_session_reset(self, session: dict[str, Any], uuid: str):
@@ -203,6 +216,13 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
 
     def get_user_session(self, uuid: str) -> UserChatModel:
         return self._user_sessions[uuid]
+
+    def get_user_traces(self, uuid: str) -> ToolTrace:
+        return self._user_traces[uuid]
+
+    def flush_user_trace(self, uuid: str) -> str:
+        tool_trace = self.get_user_traces(uuid)
+        return tool_trace.flush()
 
     async def get_connector(self) -> TCPConnector:
         if self.connector is None:
