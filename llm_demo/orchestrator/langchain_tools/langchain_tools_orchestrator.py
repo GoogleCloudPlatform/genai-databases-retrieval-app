@@ -32,8 +32,12 @@ from pytz import timezone
 
 from ..helpers import ToolTrace
 from ..orchestrator import BaseOrchestrator, classproperty
-from .tools import (check_ticket_input, get_confirmation_needing_tools,
-                    initialize_tools, insert_ticket)
+from .tools import (
+    check_ticket_input,
+    get_confirmation_needing_tools,
+    initialize_tools,
+    insert_ticket,
+)
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
 BASE_HISTORY = {
