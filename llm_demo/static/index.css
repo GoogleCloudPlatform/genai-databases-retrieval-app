@@ -40,12 +40,20 @@ body {
     font-weight: 500;
     text-align: center;
     height: 45px;
-    background: #181a23;
+    background: linear-gradient(to right, #29207C , #8E68A1);
     color: white;
     margin-bottom: 30px;
     padding-top: 15px;
     padding-left: 20px;
     padding-right: 20px;
+    border-top-right-radius: 20px;
+    border-top-left-radius: 20px;
+}
+
+.chat-header .header-logo {
+    float: left;
+    height: 100%;
+    margin-top: -7px;
 }
 
 .chat-header .title {
@@ -56,8 +64,8 @@ body {
 #g_id_onload,
 .g_id_signin {
     position: absolute;
-    top: 6px;
-    right: 10px;
+    top: 7px;
+    right: 26px;
     .chat-user-state {
         top: 6px;
         position: relative;
@@ -65,14 +73,18 @@ body {
             border-radius: 50%;
             height: 36px;
             width: 36px;
+            border: 2px solid white;
+            margin-top: -2px;
+            margin-right: 30px;
         }
         .chat-signout-btn {
-            border-radius: 5px;
-            margin-left: 10px;
-            height: 32px;
-            font-family: "Roboto";
-            fill: "none";
-            outline: 1px;
+            width: 100%;
+            height: 30px;
+            padding-top: 6px;
+            color: white;
+            cursor: pointer;
+            text-decoration: underline;
+            text-align: center;
         }
     }
 }
@@ -84,10 +96,24 @@ body {
 
 #resetButton {
     position: fixed;
-    top: 65px;
+    top: 20px;
     right: 15px;
-    color: #181a23;
+    color: white;
     cursor: pointer;
+    z-index: 1000000;
+}
+
+.popup-signout {
+    background: #4b3889;
+    width: 120px;
+    position: fixed;
+    right: 3px;
+    top: 54px;
+    border: 1px solid #755698;
+    border-radius: 10px;
+    padding-top: 3px;
+    display: none;
+    z-index: 1000000;
 }
 
 #resetButton:hover {
@@ -101,6 +127,13 @@ body {
     height: 100%;
     padding-left: 20px;
     padding-right: 20px;
+}
+
+.chat-bar-wrapper {
+    padding-left: 20px;
+    padding-right: 20px;
+    background: #F2F0FB;
+    padding-top: 10px;
 }
 
 .chat-content {
@@ -118,10 +151,12 @@ div.chat-content>span {
     position: relative;
     margin-top: auto;
     margin-bottom: 15px;
-    border: 1px solid #212A3E;
+    border: 1px solid #362A81;
     border-radius: 10px;
     overflow: hidden;
     min-height: 48.1px;
+    background: #FFF;
+    cursor: pointer;
 }
 
 .chat-input-container {
@@ -159,7 +194,7 @@ div.chat-wrapper div.chat-content div.ai span {
     height: auto;
     display: inline-block;
     padding: 10px 12px;
-    background: #efefef;
+    background: #F5E7EC;
     color: #212A3E;
     border-radius: 10px;
 }
@@ -185,7 +220,7 @@ div.chat-wrapper div.chat-content div.ai div.ticket-confirmation {
     height: 430px;
     display: inline-block;
     padding: 10px 12px;
-    background: #efefef;
+    background: #f6e6ec;
     color: #212A3E;
     border-radius: 10px;
 }
@@ -248,7 +283,7 @@ div.chat-wrapper div.chat-content div.human span {
     height: auto;
     display: inline-block;
     padding: 10px 12px;
-    background: #D2E3FC;
+    background: #E9E7F2;
     color: #000;
     border-radius: 10px;
 }
@@ -258,7 +293,17 @@ div.chat-wrapper div.chat-content div.human span .info-icon {
 }
 
 div.chat-wrapper div.chat-content div.human .sender-icon {
-    display: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    float: right;
+    margin-left: 10px;;
+    border: 2px solid #e9e7f2;
+    margin-top: -2px;
 }
 
 div.chat-wrapper div.chat-content div.ai .sender-icon {
@@ -270,7 +315,7 @@ div.chat-wrapper div.chat-content div.ai .sender-icon {
     justify-content: center;
     align-items: center;
     float: left;
-    margin-right: 15px;
+    margin-right: 10px;
 }
 
 div.chat-wrapper div.chat-content div .sender-icon img {
@@ -300,6 +345,7 @@ div.chat-wrapper div.chat-content div .sender-icon img {
 .send-button {
     margin-top: 12px;
     margin-right: 12px;
+    color: #86629E;
 }
 
 div.chat-wrapper div.chat-content div#loader-container span {
@@ -307,7 +353,7 @@ div.chat-wrapper div.chat-content div#loader-container span {
     height: auto;
     display: inline-block;
     padding: 10px 12px;
-    background: #efefef;
+    background: #f6e6ec;
     color: #212A3E;
     border-radius: 10px;
     width: 50px;
@@ -317,7 +363,7 @@ div.chat-wrapper div.chat-content div#loader-container span {
 .loader {
     width: 30px;
     aspect-ratio: 2;
-    --_g: no-repeat radial-gradient(circle closest-side,#000 90%,#0000);
+    --_g: no-repeat radial-gradient(circle closest-side,#ebaac4 90%,#0000);
     background:
       var(--_g) 0%   50%,
       var(--_g) 50%  50%,
