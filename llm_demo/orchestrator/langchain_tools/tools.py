@@ -25,7 +25,7 @@ from langchain.agents.agent import ExceptionTool  # type: ignore
 from langchain.tools import StructuredTool
 from pydantic.v1 import BaseModel, Field
 
-from .helpers import ToolTrace
+from ..helpers import ToolTrace
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 CREDENTIALS = None
