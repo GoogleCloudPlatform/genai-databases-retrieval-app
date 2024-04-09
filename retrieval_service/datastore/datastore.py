@@ -18,6 +18,7 @@ from datetime import datetime
 from typing import Generic, List, Optional, TypeVar
 
 import models
+from helpers import UIFriendlyLogger
 
 
 class AbstractConfig(ABC):
@@ -174,16 +175,21 @@ class Client(ABC, Generic[C]):
         pass
 
     @abstractmethod
-    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+    async def get_airport_by_id(
+        self, id: int, ufl: UIFriendlyLogger
+    ) -> Optional[models.Airport]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
-    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+    async def get_airport_by_iata(
+        self, iata: str, ufl: UIFriendlyLogger
+    ) -> Optional[models.Airport]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
     async def search_airports(
         self,
+        ufl: UIFriendlyLogger,
         country: Optional[str] = None,
         city: Optional[str] = None,
         name: Optional[str] = None,
@@ -191,22 +197,32 @@ class Client(ABC, Generic[C]):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
-    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
+    async def get_amenity(
+        self,
+        id: int,
+        ufl: UIFriendlyLogger,
+    ) -> Optional[models.Amenity]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
     async def amenities_search(
         self,
+        query: str,
         query_embedding: list[float],
         similarity_threshold: float,
         top_k: int,
+        ufl: UIFriendlyLogger,
         open_time: Optional[str],
         open_day: Optional[str],
     ) -> list[models.Amenity]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
-    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+    async def get_flight(
+        self,
+        flight_id: int,
+        ufl: UIFriendlyLogger,
+    ) -> Optional[models.Flight]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
@@ -214,6 +230,7 @@ class Client(ABC, Generic[C]):
         self,
         airline: str,
         flight_number: str,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Flight]:
         raise NotImplementedError("Subclass should implement this!")
 
@@ -221,6 +238,7 @@ class Client(ABC, Generic[C]):
     async def search_flights_by_airports(
         self,
         date,
+        ufl: UIFriendlyLogger,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
     ) -> list[models.Flight]:
@@ -238,6 +256,7 @@ class Client(ABC, Generic[C]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
+        ufl: UIFriendlyLogger,
     ):
         raise NotImplementedError("Subclass should implement this!")
 
@@ -245,12 +264,18 @@ class Client(ABC, Generic[C]):
     async def list_tickets(
         self,
         user_id: str,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Ticket]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
     async def policies_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query: str,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Policy]:
         raise NotImplementedError("Subclass should implement this!")
 

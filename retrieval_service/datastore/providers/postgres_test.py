@@ -21,6 +21,7 @@ import pytest_asyncio
 from csv_diff import compare, load_csv  # type: ignore
 
 import models
+from helpers import UIFriendlyLogger
 
 from .. import datastore
 from . import postgres
@@ -151,7 +152,7 @@ async def test_export_dataset(ds: postgres.Client):
 
 
 async def test_get_airport_by_id(ds: postgres.Client):
-    res = await ds.get_airport_by_id(1)
+    res = await ds.get_airport_by_id(1, UIFriendlyLogger())
     expected = models.Airport(
         id=1,
         iata="MAG",
@@ -170,7 +171,7 @@ async def test_get_airport_by_id(ds: postgres.Client):
     ],
 )
 async def test_get_airport_by_iata(ds: postgres.Client, iata: str):
-    res = await ds.get_airport_by_iata(iata)
+    res = await ds.get_airport_by_iata(iata, UIFriendlyLogger())
     expected = models.Airport(
         id=3270,
         iata="SFO",
@@ -259,12 +260,12 @@ async def test_search_airports(
     name: str,
     expected: List[models.Airport],
 ):
-    res = await ds.search_airports(country, city, name)
+    res = await ds.search_airports(UIFriendlyLogger(), country, city, name)
     assert res == expected
 
 
 async def test_get_amenity(ds: postgres.Client):
-    res = await ds.get_amenity(0)
+    res = await ds.get_amenity(0, UIFriendlyLogger())
     expected = models.Amenity(
         id=0,
         name="Coffee Shop 732",
@@ -452,13 +453,13 @@ async def test_amenities_search(
     expected: List[models.Amenity],
 ):
     res = await ds.amenities_search(
-        query_embedding, similarity_threshold, top_k, open_time, open_day
+        "", query_embedding, similarity_threshold, top_k, UIFriendlyLogger(), open_time, open_day
     )
     assert res == expected
 
 
 async def test_get_flight(ds: postgres.Client):
-    res = await ds.get_flight(1)
+    res = await ds.get_flight(1, UIFriendlyLogger())
     expected = models.Flight(
         id=1,
         airline="UA",
@@ -526,7 +527,7 @@ search_flights_by_number_test_data = [
 async def test_search_flights_by_number(
     ds: postgres.Client, airline: str, number: str, expected: List[models.Flight]
 ):
-    res = await ds.search_flights_by_number(airline, number)
+    res = await ds.search_flights_by_number(airline, number, UIFriendlyLogger())
     assert res == expected
 
 
@@ -650,7 +651,9 @@ async def test_search_flights_by_airports(
     arrival_airport: str,
     expected: List[models.Flight],
 ):
-    res = await ds.search_flights_by_airports(date, departure_airport, arrival_airport)
+    res = await ds.search_flights_by_airports(
+        date, UIFriendlyLogger(), departure_airport, arrival_airport
+    )
     assert res == expected
 
 
@@ -709,5 +712,7 @@ async def test_policies_search(
     top_k: int,
     expected: List[models.Policy],
 ):
-    res = await ds.policies_search(query_embedding, similarity_threshold, top_k)
+    res = await ds.policies_search(
+        "", query_embedding, similarity_threshold, top_k, UIFriendlyLogger()
+    )
     assert res == expected
