@@ -410,12 +410,15 @@ class Client(datastore.Client[Config]):
             amenities_search_query,
             (
                 f"embedding('textembedding-gecko@001', '{query}')",
-                (amenities_search_query_params[1],
-                amenities_search_query_params[2],
-                open_time_datetime or "")
+                (
+                    amenities_search_query_params[1],
+                    amenities_search_query_params[2],
+                    open_time_datetime or "",
+                ),
             ),
         )
-        results = await self.__pool.fetch(amenities_search_query,
+        results = await self.__pool.fetch(
+            amenities_search_query,
             *amenities_search_query_params,
             timeout=10,
         )

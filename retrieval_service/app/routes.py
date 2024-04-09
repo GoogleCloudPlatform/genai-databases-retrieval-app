@@ -157,7 +157,7 @@ async def amenities_search(
 
     ufl.log_section_header("Attempting to use vector / embedding search for amenities")
     results = await ds.amenities_search(
-        query_embedding, 0.5, top_k, open_time, open_day
+        query, query_embedding, 0.5, top_k, ufl, open_time, open_day
     )
     return build_result(results, ufl)
 
