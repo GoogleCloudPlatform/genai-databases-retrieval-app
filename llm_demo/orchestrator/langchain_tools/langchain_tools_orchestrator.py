@@ -32,7 +32,8 @@ from pytz import timezone
 
 from ..helpers import ToolTrace
 from ..orchestrator import BaseOrchestrator, classproperty
-from .tools import get_confirmation_needing_tools, initialize_tools, insert_ticket
+from .tools import (check_ticket_input, get_confirmation_needing_tools,
+                    initialize_tools, insert_ticket)
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
 BASE_HISTORY = {
@@ -127,7 +128,7 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         response = await user_session.insert_ticket(params, user_traces)
         return response
 
-    def check_and_add_confirmations(cls, response: Dict[str, Any]):
+    async def check_and_add_confirmations(cls, response: Dict[str, Any]):
         for step in response.get("intermediate_steps") or []:
             if len(step) > 0:
                 # Find the called tool in the step
@@ -135,7 +136,21 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
                 # Check to see if the agent has made a decision to call Prepare Insert Ticket
                 # This tool is a no-op and requires user confirmation before continuing
                 if called_tool.tool in cls.confirmation_needing_tools:
-                    return {"tool": called_tool.tool, "params": called_tool.tool_input}
+                    if called_tool.tool == "Insert Ticket":
+                        ticket_validation = await check_ticket_input(
+                            cls.client, called_tool.tool_input
+                        )
+                        flight_info = ticket_validation.get("flight_info")
+                        if (
+                            ticket_validation.get("error") is None
+                            and flight_info is not None
+                        ):
+                            return {"tool": called_tool.tool, "params": flight_info}
+                    else:
+                        return {
+                            "tool": called_tool.tool,
+                            "params": called_tool.tool_input,
+                        }
         return None
 
     async def user_session_create(self, session: dict[str, Any]):
@@ -162,7 +177,7 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         # Send prompt to LLM
         agent_response = await user_session.invoke(prompt)
         # Check for calls that may require confirmation to proceed
-        confirmation = self.check_and_add_confirmations(agent_response)
+        confirmation = await self.check_and_add_confirmations(agent_response)
         # Build final response
         response = {}
         response["output"] = agent_response.get("output")

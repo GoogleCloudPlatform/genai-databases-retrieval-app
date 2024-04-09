@@ -200,6 +200,23 @@ async def search_flights(
     return build_result(flights, ufl)
 
 
+@routes.get("/tickets/validate")
+async def validate_ticket(
+    request: Request,
+    airline: str,
+    flight_number: str,
+    departure_airport: str,
+    departure_time: str,
+):
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header("Validating that flight is available")
+    ds: datastore.Client = request.app.state.datastore
+    result = await ds.validate_ticket(
+        airline, flight_number, departure_airport, departure_time, ufl
+    )
+    return build_result(result, ufl)
+
+
 @routes.post("/tickets/insert")
 async def insert_ticket(
     request: Request,

@@ -308,6 +308,16 @@ class Client(datastore.Client[Config]):
             flights.append(models.Flight.model_validate(flight_dict))
         return flights
 
+    async def validate_ticket(
+        self,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        departure_time: str,
+        ufl: UIFriendlyLogger,
+    ) -> models.Flight | None:
+        raise NotImplementedError("Not Implemented")
+
     async def insert_ticket(
         self,
         user_id: str,

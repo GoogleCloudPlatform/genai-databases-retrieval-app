@@ -14,8 +14,8 @@
 
 import json
 import os
-from datetime import datetime
-from typing import Dict, Optional
+from datetime import date, datetime, time
+from typing import Any, Dict, Optional
 
 import aiohttp
 import google.oauth2.id_token  # type: ignore
@@ -220,28 +220,137 @@ def generate_search_policies(client: aiohttp.ClientSession, tool_trace: ToolTrac
 
 
 class TicketInput(BaseModel):
-    airline: str = Field(description="Airline unique 2 letter identifier")
-    flight_number: str = Field(description="1 to 4 digit number")
-    departure_airport: str = Field(
+    airline: Optional[str] = Field(description="Airline unique 2 letter identifier")
+    flight_number: Optional[str] = Field(description="1 to 4 digit number")
+    departure_airport: Optional[str] = Field(
         description="Departure airport 3-letter code",
     )
-    arrival_airport: str = Field(description="Arrival airport 3-letter code")
-    departure_time: datetime = Field(description="Flight departure datetime")
-    arrival_time: datetime = Field(description="Flight arrival datetime")
+    departure_time: Optional[datetime] | Optional[date] | Optional[time] = Field(
+        description="Flight departure datetime"
+    )
+    arrival_airport: Optional[str] = Field(description="Arrival airport 3-letter code")
+    arrival_time: Optional[datetime] | Optional[date] | Optional[time] = Field(
+        description="Flight arrival datetime"
+    )
 
 
-def generate_insert_ticket(client: aiohttp.ClientSession):
+def generate_insert_ticket(client: aiohttp.ClientSession, tool_trace: ToolTrace):
     async def insert_ticket(
         airline: str,
         flight_number: str,
         departure_airport: str,
         arrival_airport: str,
-        departure_time: datetime,
-        arrival_time: datetime,
+        departure_time: datetime | date | time,
+        arrival_time: datetime | date | time,
     ):
+        # Check to make sure all provided parameters are there or request more info
+        checked_ticket = await check_ticket_input(
+            client,
+            {
+                "airline": airline,
+                "flight_number": flight_number,
+                "departure_airport": departure_airport,
+                "departure_time": (
+                    None
+                    if isinstance(departure_time, time) or departure_time is None
+                    else departure_time.strftime("%Y-%m-%d 00:00:00")
+                ),
+            },
+            tool_trace,
+        )
+        if checked_ticket.get("error") is not None:
+            return checked_ticket.get("error")
         return f"Booking ticket on {airline} {flight_number}"
 
     return insert_ticket
+
+
+async def check_ticket_input(
+    client: aiohttp.ClientSession,
+    ticket_info: Dict[Any, Any],
+    tool_trace: ToolTrace | None = None,
+):
+
+    airline = ticket_info.get("airline")
+    flight_number = ticket_info.get("flight_number")
+    departure_airport = ticket_info.get("departure_airport")
+    departure_time = ticket_info.get("departure_time")
+
+    # Check if basic flight information is provided
+    if airline is None or flight_number is None:
+        return {
+            "error": "Ask the user what flight they you interested in booking? We need to know the airline and flight number."
+        }
+    if departure_airport is None:
+        return {
+            "error": "Ask the user where they you flying from? We need to know the departure airport."
+        }
+    if departure_time is None:
+        return {
+            "error": "Ask the user date is the flight? We need to know the departure date."
+        }
+
+    # Fix departure_time into a common format
+    try:
+        if " " in departure_time:
+            departure_date = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
+        elif "T" in departure_time:
+            departure_date = datetime.strptime(departure_time, "%Y-%m-%dT%H:%M:%S")
+        else:
+            departure_date = datetime.strptime(departure_time, "%Y-%m-%d")
+        departure_date_str = departure_date.strftime("%Y-%m-%d")
+    except ValueError:
+        return {
+            "error": "departure_time is in an invalid format. Make sure it's in the format '%Y-%m-%d %H:%M:%S'"
+        }
+
+    ticket_info["validated_departure_date"] = departure_date_str
+    # Check if ticket is valid and flight exists
+    validated_ticket_info = await validate_ticket(client, ticket_info, tool_trace)
+    if validated_ticket_info is None:
+        return {
+            "error": f"There seems to be no flight {airline}{flight_number} on {departure_date_str} from {departure_airport}. Ask the user to check the flight information."
+        }
+
+    # Everything looks good
+    return {"flight_info": validated_ticket_info}
+
+
+async def validate_ticket(
+    client: aiohttp.ClientSession,
+    ticket_info: Dict[Any, Any],
+    tool_trace: ToolTrace | None,
+):
+    response = await client.get(
+        url=f"{BASE_URL}/tickets/validate",
+        params=filter_none_values(
+            {
+                "airline": ticket_info.get("airline"),
+                "flight_number": ticket_info.get("flight_number"),
+                "departure_airport": ticket_info.get("departure_airport"),
+                "departure_time": ticket_info.get("validated_departure_date", "")
+                + " 00:00:00",
+            }
+        ),
+        headers=get_headers(client),
+    )
+    response_json = await response.json()
+
+    result = response_json.get("result")
+    if tool_trace is not None:
+        tool_trace.add_message(response_json.get("trace"))
+    if result is None:
+        return result
+    else:
+        flight_info = {
+            "airline": result.get("airline"),
+            "flight_number": result.get("flight_number"),
+            "departure_airport": result.get("departure_airport"),
+            "arrival_airport": result.get("arrival_airport"),
+            "departure_time": result.get("departure_time"),
+            "arrival_time": result.get("arrival_time"),
+        }
+        return flight_info
 
 
 async def insert_ticket(
@@ -250,14 +359,16 @@ async def insert_ticket(
     ticket_info = json.loads(params)
     response = await client.post(
         url=f"{BASE_URL}/tickets/insert",
-        params={
-            "airline": ticket_info.get("airline"),
-            "flight_number": ticket_info.get("flight_number"),
-            "departure_airport": ticket_info.get("departure_airport"),
-            "arrival_airport": ticket_info.get("arrival_airport"),
-            "departure_time": ticket_info.get("departure_time").replace("T", " "),
-            "arrival_time": ticket_info.get("arrival_time").replace("T", " "),
-        },
+        params=filter_none_values(
+            {
+                "airline": ticket_info.get("airline"),
+                "flight_number": ticket_info.get("flight_number"),
+                "departure_airport": ticket_info.get("departure_airport"),
+                "arrival_airport": ticket_info.get("arrival_airport"),
+                "departure_time": ticket_info.get("departure_time").replace("T", " "),
+                "arrival_time": ticket_info.get("arrival_time").replace("T", " "),
+            }
+        ),
         headers=get_headers(client),
     )
     response_json = await response.json()
@@ -415,7 +526,7 @@ async def initialize_tools(client: aiohttp.ClientSession, tool_trace: ToolTrace)
             args_schema=PolicyQueryInput,
         ),
         StructuredTool.from_function(
-            coroutine=generate_insert_ticket(client),
+            coroutine=generate_insert_ticket(client, tool_trace),
             name="Insert Ticket",
             description="""
                         Use this tool to book a flight ticket for the user.

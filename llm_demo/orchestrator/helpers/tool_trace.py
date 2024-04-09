@@ -22,7 +22,8 @@ class ToolTrace:
         self.curr_log = []
 
     def add_message(self, message: str):
-        self.curr_log.append(message)
+        if message is not None:
+            self.curr_log.append(message)
 
     def flush(self):
         curr_log_str = " ".join(self.curr_log)
