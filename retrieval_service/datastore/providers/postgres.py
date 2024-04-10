@@ -393,17 +393,14 @@ class Client(datastore.Client[Config]):
                 AND {end_hour} > $4
                 AND """
             amenities_search_query_params += (open_time_datetime,)  # type: ignore
-        filter_query += "1 - (embedding <=> $1) > $2"
+        filter_query += "(embedding <=> $1) < $2"
 
         amenities_search_query = f"""
-            select id, name, description, location, terminal, category, hour
-            from (
-                select *, 1 - (embedding <=> $1) as similarity
-                from amenities
-                {filter_query}
-                order by similarity desc
-                limit $3
-            ) as sorted_amenities
+            SELECT name, description, location, terminal, category, hour
+            FROM amenities
+            {filter_query}
+            ORDER BY (embedding <=> $1)
+            LIMIT $3
             """
         # Mocking the logging of code due to not using embeddings on the server currently
         ufl.log_SQL(
@@ -423,7 +420,7 @@ class Client(datastore.Client[Config]):
             timeout=10,
         )
 
-        results = [models.Amenity.model_validate(dict(r)) for r in results]
+        results = [dict(r) for r in results]
         ufl.log_header("Found following amenities:")
         ufl.log_list_dict_as_result(results)
         return results
@@ -627,14 +624,11 @@ class Client(datastore.Client[Config]):
     ) -> list[models.Policy]:
         ufl.log_header("Running vector similarity search for policies:")
         policies_search_query = """
-            SELECT id, content
-            FROM (
-                SELECT id, content, 1 - (embedding <=> $1) AS similarity
-                FROM policies
-                WHERE 1 - (embedding <=> $1) > $2
-                ORDER BY similarity DESC
-                LIMIT $3
-            ) AS sorted_policies
+            SELECT content
+            FROM policies
+            WHERE (embedding <=> $1) < $2
+            ORDER BY (embedding <=> $1)
+            LIMIT $3
             """
         policies_search_query_params = (query_embedding, similarity_threshold, top_k)
         ufl.log_SQL(
@@ -651,7 +645,7 @@ class Client(datastore.Client[Config]):
             timeout=10,
         )
 
-        results = [models.Policy.model_validate(dict(r)) for r in results]
+        results = [r["content"] for r in results]
         ufl.log_header("Found following policies:")
         ufl.log_list_dict_as_result(results)
         return results

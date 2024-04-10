@@ -91,12 +91,13 @@ def generate_search_airports(client: aiohttp.ClientSession, tool_trace: ToolTrac
         if len(response_json_result) < 1:
             return "There are no airports matching that query. Let the user know there are no results."
         elif len(response_json_result) > num:
-            return (
-                f"There are {len(response_json_result)} airports matching that query. Here are the first {num} results:\n"
-                + " ".join([f"{response_json_result[i]}" for i in range(num)])
-            )
+            res = [response_json_result[i] for i in range(num)]
+            return {
+                "total results": len(response_json_result),
+                f"first {num} results": res,
+            }
         else:
-            return "\n".join([f"{r}" for r in response_json_result])
+            return response_json_result
 
     return search_airports
 
@@ -157,12 +158,13 @@ def generate_list_flights(client: aiohttp.ClientSession, tool_trace: ToolTrace):
         if len(response_json_result) < 1:
             return "There are no flights matching that query. Let the user know there are no results."
         elif len(response_json_result) > num:
-            return (
-                f"There are {len(response_json_result)} flights matching that query. Here are the first {num} results:\n"
-                + " ".join([f"{response_json_result[i]}" for i in range(num)])
-            )
+            res = [response_json_result[i] for i in range(num)]
+            return {
+                "total results": len(response_json_result),
+                f"first {num} results": res,
+            }
         else:
-            return "\n".join([f"{r}" for r in response_json_result])
+            return response_json_result
 
     return list_flights
 
