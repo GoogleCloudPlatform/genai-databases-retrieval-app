@@ -1,4 +1,4 @@
-# Setup and configure AlloyDB with Private IP
+# Setup and configure non-cloud postgres (such as AlloyDB Omni)
 
 ## Before you begin
 

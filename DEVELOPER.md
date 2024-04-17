@@ -29,7 +29,7 @@
     cd retrieval_service
     ```
 
-1. Open a local connection to your database by starting the [AlloyDB Auth Proxy][alloydb-proxy] or [Cloud SQL Auth Proxy][cloudsql-proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance.
+1. Open a local connection to your database by starting the [AlloyDB Auth Proxy][alloydb-proxy] or [Cloud SQL Auth Proxy][cloudsql-proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance (for non-cloud postgres such as AlloyDB Omni).
 
 1. You should already have a [`config.yml` created with your database config][config]. Continue to use `host: 127.0.0.1` and `port: 5432`, unless you instruct the proxy to listen or the SSH tunnel to forward to a different address.
 
@@ -91,7 +91,7 @@
 ### Run tests locally
 
 1. Change into the `retrieval_service` directory
-1. Open a local connection to your database by starting the [AlloyDB Auth Proxy][alloydb-proxy] or [Cloud SQL Auth Proxy][cloudsql-proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance.
+1. Open a local connection to your database by starting the [AlloyDB Auth Proxy][alloydb-proxy] or [Cloud SQL Auth Proxy][cloudsql-proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance (for non-cloud prstgres such as AlloyDB Omni).
 1. Set environment variables:
 
     ```bash
