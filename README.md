@@ -126,8 +126,10 @@ git clone https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app.g
 The retrieval service uses an interchangeable 'datastore' interface. Choose one
 of any of the database's listed below to set up and initialize your database:
 
-* [Set up and configure AlloyDB](./docs/datastore/alloydb.md)
+* [Set up and configure AlloyDB with private IP](./docs/datastore/postgres.md)
+* [Set up and configure AlloyDB with public IP](./docs/datastore/alloydb.md)
 * [Set up and configure Cloud SQL](./docs/datastore/cloudsql_postgres.md)
+* [Set up and configure Firestore](./docs/datastore/firestore.md)
 
 ### Deploying the Retrieval Service
 

@@ -29,7 +29,7 @@
     cd retrieval_service
     ```
 
-1. Open a local connection to your database by starting the [Cloud SQL Auth Proxy][proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance.
+1. Open a local connection to your database by starting the [AlloyDB Auth Proxy][alloydb-proxy] or [Cloud SQL Auth Proxy][cloudsql-proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance.
 
 1. You should already have a [`config.yml` created with your database config][config]. Continue to use `host: 127.0.0.1` and `port: 5432`, unless you instruct the proxy to listen or the SSH tunnel to forward to a different address.
 
@@ -91,7 +91,7 @@
 ### Run tests locally
 
 1. Change into the `retrieval_service` directory
-1. Open a local connection to your database by starting the [Cloud SQL Auth Proxy][proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance.
+1. Open a local connection to your database by starting the [AlloyDB Auth Proxy][alloydb-proxy] or [Cloud SQL Auth Proxy][cloudsql-proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance.
 1. Set environment variables:
 
     ```bash
@@ -173,7 +173,8 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 To run Cloud Build tests on GitHub from external contributors, ie RenovateBot, comment: `/gcbrun`.
 
 
-[proxy]: https://cloud.google.com/sql/docs/mysql/sql-proxy
+[alloydb-proxy]: https://cloud.google.com/alloydb/docs/auth-proxy/connect
+[cloudsql-proxy]: https://cloud.google.com/sql/docs/mysql/sql-proxy
 [tunnel]: https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/blob/main/docs/datastore/alloydb.md#set-up-connection-to-alloydb
 [config]: https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/blob/main/docs/datastore/alloydb.md#initialize-data-in-alloydb
 [triggers]: https://console.cloud.google.com/cloud-build/triggers?e=13802955&project=extension-demo-testing
