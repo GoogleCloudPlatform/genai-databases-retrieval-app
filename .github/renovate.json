@@ -27,6 +27,22 @@
         "asyncpg",
         "asyncpg-stubs"
       ]
+    },
+    {
+      "groupname": "pytest",
+      "matchPackageNames": [
+        "pytest",
+        "pytest-asyncio"
+      ]
+    },
+    {
+      "groupname": "langchain",
+      "matchPackageNames": [
+        "langchain",
+        "langchain-google-vertexai",
+        "langchain-core",
+        "google-cloud-aiplatform"
+      ]
     }
   ]
 }
