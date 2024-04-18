@@ -46,7 +46,7 @@ Notes:
 
 1.  Grant permissions to access your database:
 
-    * For AlloyDB:
+    * For AlloyDB Omni:
 
         ```bash
         gcloud projects add-iam-policy-binding $PROJECT_ID \
@@ -64,17 +64,15 @@ Notes:
 
 ## Configuration
 
-Your `retrieval_service/config.yml` should look like this for AlloyDB connection:
+Set up configuration for `retrieval_service/config.yml`:
 
-```
-host: 0.0.0.0
-datastore:
-    kind: "postgres"
-    host: <YOUR_ALLOY_DB_IP_ADDRESS> # Use your AlloyDB private IP address
-    database: "assistantdemo"  # Update if you created or are reusing a different database
-    user: "postgres"  # Update if you created or are reusing a different user
-    password: "my-alloydb-pass"  # Update if you updated or created a different password
-```
+| provider                               |
+|----------------------------------------|
+| [alloydb](./datastore/alloydb.md#update-config) |
+| [cloudsql_postgres](./datastore/cloudsql_postgres.md#update-config) |
+| [non-cloud postgres (AlloyDB Omni)](./datastore/postgres.md#update-config) |
+
+* For AlloyDB Omni, replace host with `host: <YOUR ALLOYDB_IP_ADDRESS>`.
 
 
 ## Deploy to Cloud Run
@@ -82,26 +80,25 @@ datastore:
 1. From the root `genai-databases-retrieval-app` directory, deploy the retrieval
    service to Cloud Run using the following command:
 
-    * For AlloyDB:
+    ```bash
+    gcloud run deploy retrieval-service \
+        --source=./retrieval_service/\
+        --no-allow-unauthenticated \
+        --service-account retrieval-identity \
+        --region us-central1
+    ```
 
-        ```bash
-        gcloud run deploy retrieval-service \
-            --source=./retrieval_service/\
-            --no-allow-unauthenticated \
-            --service-account retrieval-identity \
-            --region us-central1
-        ```
+    If you are using a VPC network, use the command below:
 
-        If you are using a VPC network, use the command below:
-        ```bash
-        gcloud alpha run deploy retrieval-service \
-            --source=./retrieval_service/\
-            --no-allow-unauthenticated \
-            --service-account retrieval-identity \
-            --region us-central1 \
-            --network=default \
-            --subnet=default
-        ```
+    ```bash
+    gcloud alpha run deploy retrieval-service \
+        --source=./retrieval_service/\
+        --no-allow-unauthenticated \
+        --service-account retrieval-identity \
+        --region us-central1 \
+        --network=default \
+        --subnet=default
+    ```
 
 ## Connecting to Cloud Run
 

@@ -180,6 +180,25 @@ Private IP.
     psql -h 127.0.0.1 -U postgres
     ```
 
+## Update config
+
+Update `config.yml` with your database information. Keep using `127.0.0.1` as the datastore host IP address for port forwarding.
+
+```bash
+host: 0.0.0.0
+datastore:
+    # Example for postgres.py provider
+    kind: "postgres"
+    host: 127.0.0.1
+    port: 5432
+    # Update this with the database name
+    database: "assistantdemo"
+    # Update with database user, the default is `postgres`
+    user: "postgres"
+    # Update with database user password
+    password: "my-alloydb-pass"
+```
+
 ## Initialize data in AlloyDB
 
 1. While connected using `psql`, create a database and switch to it:
@@ -217,23 +236,6 @@ Private IP.
 
     ```bash
     cp example-config.yml config.yml
-    ```
-
-1. Update `config.yml` with your database information. Keep using `127.0.0.1` as the datastore host IP address for port forwarding.
-
-    ```bash
-    host: 0.0.0.0
-    datastore:
-      # Example for postgres.py provider
-      kind: "postgres"
-      host: 127.0.0.1
-      port: 5432
-      # Update this with the database name
-      database: "assistantdemo"
-      # Update with database user, the default is `postgres`
-      user: "postgres"
-      # Update with database user password
-      password: "my-alloydb-pass"
     ```
 
 1. Populate data into database:
@@ -278,3 +280,29 @@ Clean up after completing the demo.
     gcloud compute addresses delete $RANGE_NAME \
         --global
     ```
+
+## Developer information
+
+This section is for developers that want to develop and run the app locally.
+
+### Test Environment Variables
+
+Set environment variables:
+
+```bash
+export DB_USER=""
+export DB_PASS=""
+export DB_NAME=""
+export DB_HOST=""
+```
+
+### Run tests
+
+Run retrieval service unit tests:
+
+```bash
+gcloud builds submit --config retrieval_service/postgres.tests.cloudbuild.yaml \
+    --substitutions _DATABASE_HOST=$DB_HOST,_DATABASE_NAME=$DB_NAME,_DATABASE_USER=$DB_USER
+```
+
+Where `$DB_HOST`,`$DB_NAME`,`$DB_USER` are environment variables with your database values.

@@ -103,6 +103,28 @@
     psql -h 127.0.0.1 -p 5432 -U $DB_USER
     ```
 
+## Update config
+
+Update `config.yml` with your database information.
+
+```bash
+host: 0.0.0.0
+datastore:
+    # Example for alloydb.py provider
+    kind: "alloydb-postgres"
+    # Update this with your project ID
+    project: <PROJECT_ID>
+    region: us-central1
+    cluster: my-alloydb-cluster
+    instance: my-alloydb-instance
+    # Update this with the database name
+    database: "assistantdemo"
+    # Update with database user, the default is `postgres`
+    user: "postgres"
+    # Update with database user password
+    password: "my-alloydb-pass"
+```
+
 ## Initialize data
 
 1. While connected using `psql`, create a database and switch to it:
@@ -136,26 +158,6 @@
     cp example-config-alloydb.yml config.yml
     ```
 
-1. Update `config.yml` with your database information.
-
-    ```bash
-    host: 0.0.0.0
-    datastore:
-      # Example for alloydb.py provider
-      kind: "alloydb-postgres"
-      # Update this with your project ID
-      project: <PROJECT_ID>
-      region: us-central1
-      cluster: my-alloydb-cluster
-      instance: my-alloydb-instance
-      # Update this with the database name
-      database: "assistantdemo"
-      # Update with database user, the default is `postgres`
-      user: "postgres"
-      # Update with database user password
-      password: "my-alloydb-pass"
-    ```
-
 1. Populate data into database:
 
     ```bash
@@ -183,3 +185,31 @@ Clean up after completing the demo.
         --region=$REGION \
         --project=$PROJECT_ID
     ```
+
+## Developer information
+
+This section is for developers that want to develop and run the app locally.
+
+### Test Environment Variables
+
+Set environment variables:
+
+```bash
+export DB_USER=""
+export DB_PASS=""
+export DB_PROJECT=""
+export DB_REGION=""
+export DB_CLUSTER=""
+export DB_INSTANCE=""
+```
+
+### Run tests
+
+Run retrieval service unit tests:
+
+```bash
+gcloud builds submit --config retrieval_service/alloydb.tests.cloudbuild.yaml \
+    --substitutions _DATABASE_NAME=$DB_NAME,_DATABASE_USER=$DB_USER,_ALLOYDB_REGION=$DB_REGION,_ALLOYDB_CLUSTER=$DB_CLUSTER,_ALLOYDB_INSTANCE=$DB_INSTANCE
+```
+
+Where `$DB_NAME`,`$DB_USER`,`$DB_REGION`,`$DB_CLUSTER`,`$DB_INSTANCE` are environment variables with your database values.

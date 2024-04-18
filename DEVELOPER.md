@@ -70,7 +70,12 @@
     export DEBUG=True
     ```
 
-1. Set orchestration type environment variable (e.g. langchain-tools):
+1. Set orchestration type environment variable:
+
+    | orchestration-type            | Description                                 |
+    |-------------------------------|---------------------------------------------|
+    | langchain-tools               | LangChain tools orchestrator.               |
+    | vertexai-function-calling     | VertexAI Function Calling orchestrator.     |
 
     ```bash
     export ORCHESTRATION_TYPE=<orchestration-type>
@@ -91,14 +96,14 @@
 ### Run tests locally
 
 1. Change into the `retrieval_service` directory
-1. Open a local connection to your database by starting the [AlloyDB Auth Proxy][alloydb-proxy] or [Cloud SQL Auth Proxy][cloudsql-proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance (for non-cloud prstgres such as AlloyDB Omni).
-1. Set environment variables:
+1. Open a local connection to your database by starting the [AlloyDB Auth Proxy][alloydb-proxy] or [Cloud SQL Auth Proxy][cloudsql-proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance (for non-cloud postgres such as AlloyDB Omni).
+1. Set environment variables (different provider requires different environment variables):
 
-    ```bash
-    export DB_USER=""
-    export DB_PASS=""
-    export DB_NAME=""
-    ```
+    | provider                               |
+    |----------------------------------------|
+    | [alloydb](./docs/datastore/alloydb.md#test-environment-variables) |
+    | [cloudsql_postgres](./docs/datastore/cloudsql_postgres.md#test-environment-variables) |
+    | [non-cloud postgres (AlloyDB Omni)](./docs/datastore/postgres.md#test-environment-variables) |
 
 1. Run pytest to automatically run all tests:
 
@@ -127,13 +132,13 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 * Config: Cloud Build configuration file
   * Location: Repository (add path to file)
 * Substitution variables:
-  * Add `_DATABASE_HOST` for AlloyDB IP address
+  * Add `_DATABASE_HOST` for non-cloud postgres
 * Service account: set for demo service to enable ID token creation to use to authenticated services
 
 #### Project Setup
 
 1. Follow instructions to setup the test project:
-    * [Set up and configure AlloyDB](./docs/datastore/alloydb.md)
+    * [Set up and configure database](./README.md#setting-up-your-database)
     * [Instructions for deploying the retrieval service](./docs/deploy_retrieval_service.md)
 1. Setup Cloud Build triggers (above)
 
@@ -141,8 +146,8 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 
 1. Create a Cloud Build private pool
 1. Enable Secret Manager API
-1. Create secret, `alloy_db_pass`, with your AlloyDB password
-1. Create secret, `alloy_db_user`, with your AlloyDB user
+1. Create secret, `db_pass`, with your database password
+1. Create secret, `db_user`, with your database user
 1. Allow Cloud Build to access secret
 1. Add role Vertex AI User (roles/aiplatform.user) to Cloud Build Service account. Needed to run database init script.
 
@@ -160,11 +165,11 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 
 * Run retrieval service unit tests:
 
-    ```bash
-    gcloud builds submit --config retrieval_service/alloydb.tests.cloudbuild.yaml \
-        --substitutions _DATABASE_HOST=$DB_HOST,_DATABASE_NAME=$DB_NAME,_DATABASE_USER=$DB_USER
-    ```
-    Where `$DB_HOST`,`$DB_NAME`,`$DB_USER` are environment variables with your database values.
+    | provider                               |
+    |----------------------------------------|
+    | [alloydb](./docs/datastore/alloydb.md#run-tests) |
+    | [cloudsql_postgres](./docs/datastore/cloudsql_postgres.md#run-tests) |
+    | [non-cloud postgres (AlloyDB Omni)](./docs/datastore/postgres.md#run-tests) |
 
     Note: Make sure to setup secrets describe in [Setup for retrieval service](#setup-for-retrieval-service)
 
