@@ -1,0 +1,8 @@
+host: 0.0.0.0
+datastore:
+  # Example for Spanner
+  kind: "spanner"
+  project: "span-cloud-testing"
+  instance: "gaurav-test"
+  database: "db-retrieve1"
+  service_account_key_file: "/usr/local/google/home/gauravpurohit/.config/gcloud/application_default_credentials.json"
