@@ -1,4 +1,4 @@
-# Setup and configure AlloyDB with Public IP
+# Setup and configure AlloyDB (with Public IP)
 
 ## Before you begin
 
