@@ -146,8 +146,14 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 
 1. Create a Cloud Build private pool
 1. Enable Secret Manager API
-1. Create secret, `db_pass`, with your database password
-1. Create secret, `db_user`, with your database user
+1. Create secret, `db_user` and `db_pass`, with your database user and database password defined here:
+
+    | provider                               |
+    |----------------------------------------|
+    | [AlloyDB](./docs/datastore/alloydb.md#create-a-alloydb-cluster) |
+    | [Cloud SQL for Postgres](./docs/datastore/cloudsql_postgres.md#create-a-cloud-sql-for-postgresql-instance) |
+    | [Non-cloud Postgres (e.g. AlloyDB Omni)](./docs/datastore/postgres.md#create-a-alloydb-cluster) |
+
 1. Allow Cloud Build to access secret
 1. Add role Vertex AI User (roles/aiplatform.user) to Cloud Build Service account. Needed to run database init script.
 
@@ -167,9 +173,9 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 
     | provider                               |
     |----------------------------------------|
-    | [alloydb](./docs/datastore/alloydb.md#run-tests) |
-    | [cloudsql_postgres](./docs/datastore/cloudsql_postgres.md#run-tests) |
-    | [non-cloud postgres (AlloyDB Omni)](./docs/datastore/postgres.md#run-tests) |
+    | [AlloyDB](./docs/datastore/alloydb.md#run-tests) |
+    | [Cloud SQL for Postgres](./docs/datastore/cloudsql_postgres.md#run-tests) |
+    | [Non-cloud Postgres (e.g. AlloyDB Omni)](./docs/datastore/postgres.md#run-tests) |
 
     Note: Make sure to setup secrets describe in [Setup for retrieval service](#setup-for-retrieval-service)
 

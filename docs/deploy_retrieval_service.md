@@ -68,9 +68,9 @@ Set up configuration for `retrieval_service/config.yml`:
 
 | provider                               |
 |----------------------------------------|
-| [alloydb](./datastore/alloydb.md#update-config) |
-| [cloudsql_postgres](./datastore/cloudsql_postgres.md#update-config) |
-| [non-cloud postgres (AlloyDB Omni)](./datastore/postgres.md#update-config) |
+| [AlloyDB](./datastore/alloydb.md#update-config) |
+| [Cloud SQL for Postgres](./datastore/cloudsql_postgres.md#update-config) |
+| [Non-cloud Postgres (e.g. AlloyDB Omni)](./datastore/postgres.md#update-config) |
 
 * For AlloyDB Omni, replace host with `host: <YOUR ALLOYDB_IP_ADDRESS>`.
 
