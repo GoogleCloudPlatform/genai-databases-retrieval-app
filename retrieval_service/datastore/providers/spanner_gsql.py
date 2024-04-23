@@ -55,6 +55,45 @@ class Config(BaseModel, datastore.AbstractConfig):
 class Client(datastore.Client[Config]):
     OPERATION_TIMEOUT_SECONDS = 240
     BATCH_SIZE = 1000
+    AIRPORT_COLUMNS = ["id", "iata", "name", "city", "country"]
+    AMENITIES_COLUMNS = [
+        "id",
+        "name",
+        "description",
+        "location",
+        "terminal",
+        "category",
+        "hour",
+        "sunday_start_hour",
+        "sunday_end_hour",
+        "monday_start_hour",
+        "monday_end_hour",
+        "tuesday_start_hour",
+        "tuesday_end_hour",
+        "wednesday_start_hour",
+        "wednesday_end_hour",
+        "thursday_start_hour",
+        "thursday_end_hour",
+        "friday_start_hour",
+        "friday_end_hour",
+        "saturday_start_hour",
+        "saturday_end_hour",
+        "content",
+        "embedding",
+    ]
+    FLIGHTS_COLUMNS = [
+        "id",
+        "airline",
+        "flight_number",
+        "departure_airport",
+        "arrival_airport",
+        "departure_time",
+        "arrival_time",
+        "departure_gate",
+        "arrival_gate",
+    ]
+
+    POLICIES_COLUMNS = ["id", "content", "embedding"]
     """
     Client class for interacting with Spanner.
 
@@ -241,16 +280,17 @@ class Client(datastore.Client[Config]):
         )
 
         # Update the schema using DDL statements
-        operation =  self.__database.update_ddl(ddl)
+        operation = self.__database.update_ddl(ddl)
 
         print("Waiting for schema update operation to complete...")
         operation.result(self.OPERATION_TIMEOUT_SECONDS)
         print("Schema update operation completed")
 
         # Insert data into 'airports' table using batch operation
-        columns = ["id", "iata", "name", "city", "country"]
+
         values = [
-            tuple(getattr(airport, field) for field in columns) for airport in airports
+            tuple(getattr(airport, field) for field in self.AIRPORT_COLUMNS)
+            for airport in airports
         ]
 
         for i in range(0, len(values), self.BATCH_SIZE):
@@ -259,37 +299,11 @@ class Client(datastore.Client[Config]):
             with self.__database.batch() as batch:
                 batch.insert(
                     table="airports",
-                    columns=columns,
+                    columns=self.AIRPORT_COLUMNS,
                     values=records,
                 )
 
         # Insert data into 'amenities' table using batch operation
-        columns = [
-            "id",
-            "name",
-            "description",
-            "location",
-            "terminal",
-            "category",
-            "hour",
-            "sunday_start_hour",
-            "sunday_end_hour",
-            "monday_start_hour",
-            "monday_end_hour",
-            "tuesday_start_hour",
-            "tuesday_end_hour",
-            "wednesday_start_hour",
-            "wednesday_end_hour",
-            "thursday_start_hour",
-            "thursday_end_hour",
-            "friday_start_hour",
-            "friday_end_hour",
-            "saturday_start_hour",
-            "saturday_end_hour",
-            "content",
-            "embedding",
-        ]
-
         values = [
             tuple(
                 (
@@ -297,7 +311,7 @@ class Client(datastore.Client[Config]):
                     if isinstance(getattr(amenity, field), datetime.time)
                     else getattr(amenity, field)
                 )
-                for field in columns
+                for field in self.AMENITIES_COLUMNS
             )
             for amenity in amenities
         ]
@@ -308,24 +322,14 @@ class Client(datastore.Client[Config]):
             with self.__database.batch() as batch:
                 batch.insert(
                     table="amenities",
-                    columns=columns,
+                    columns=self.AMENITIES_COLUMNS,
                     values=records,
                 )
 
         # Insert data into 'flights' table using batch operation
-        columns = [
-            "id",
-            "airline",
-            "flight_number",
-            "departure_airport",
-            "arrival_airport",
-            "departure_time",
-            "arrival_time",
-            "departure_gate",
-            "arrival_gate",
-        ]
         values = [
-            tuple(getattr(flight, field) for field in columns) for flight in flights
+            tuple(getattr(flight, field) for field in self.FLIGHTS_COLUMNS)
+            for flight in flights
         ]
 
         for i in range(0, len(values), self.BATCH_SIZE):
@@ -334,14 +338,14 @@ class Client(datastore.Client[Config]):
             with self.__database.batch() as batch:
                 batch.insert(
                     table="flights",
-                    columns=columns,
+                    columns=self.FLIGHTS_COLUMNS,
                     values=records,
                 )
 
         # Insert data into 'policies' table using batch operation
-        columns = ["id", "content", "embedding"]
         values = [
-            tuple(getattr(policy, field) for field in columns) for policy in policies
+            tuple(getattr(policy, field) for field in self.POLICIES_COLUMNS)
+            for policy in policies
         ]
 
         for i in range(0, len(values), self.BATCH_SIZE):
@@ -350,7 +354,7 @@ class Client(datastore.Client[Config]):
             with self.__database.batch() as batch:
                 batch.insert(
                     table="policies",
-                    columns=columns,
+                    columns=self.POLICIES_COLUMNS,
                     values=records,
                 )
 
@@ -371,32 +375,98 @@ class Client(datastore.Client[Config]):
         Returns:
             tuple: A tuple containing lists of airports, amenities, flights, and policies.
         """
+        airports = []
+        amenities = []
+        flights = []
+        policies = []
+
         try:
             with self.__database.snapshot() as snapshot:
                 # Execute SQL queries to fetch data from respective tables
                 airport_results = snapshot.execute_sql(
-                    """SELECT * FROM airports ORDER BY id ASC"""
-                )
-                amenity_results = snapshot.execute_sql(
-                    """SELECT * FROM amenities ORDER BY id ASC"""
-                )
-                flights_results = snapshot.execute_sql(
-                    """SELECT * FROM flights ORDER BY id ASC"""
-                )
-                policy_results = snapshot.execute_sql(
-                    """SELECT * FROM policies ORDER BY id ASC"""
+                    "SELECT {} FROM airports ORDER BY id ASC".format(
+                        ",".join(self.AIRPORT_COLUMNS)
+                    )
                 )
         except Exception as e:
             # Handle any exceptions, such as database connection errors
-            print(f"Error occurred while executing SQL queries: {e}")
+            print(f"Error occurred while fetch airports: {e}")
             # Return empty lists in case of error
-            return [], [], [], []
+            return airports, amenities, flights, policies
 
         # Convert query results to model instances using model_validate method
-        airports = [models.Airport.model_validate(a) for a in airport_results]
-        amenities = [models.Amenity.model_validate(a) for a in amenity_results]
-        flights = [models.Flight.model_validate(f) for f in flights_results]
-        policies = [models.Policy.model_validate(p) for p in policy_results]
+        airports = [
+            models.Airport.model_validate(
+                {key: value for key, value in zip(self.AIRPORT_COLUMNS, a)}
+            )
+            for a in airport_results
+        ]
+
+        try:
+            with self.__database.snapshot() as snapshot:
+                # Execute SQL queries to fetch data from respective tables
+                amenity_results = snapshot.execute_sql(
+                    "SELECT {} FROM amenities ORDER BY id ASC".format(
+                        ",".join(self.AMENITIES_COLUMNS)
+                    )
+                )
+        except Exception as e:
+            # Handle any exceptions, such as database connection errors
+            print(f"Error occurred while fetch amenities: {e}")
+            # Return empty lists in case of error
+            return airports, amenities, flights, policies
+
+        # Convert query results to model instances using model_validate method
+        amenities = [
+            models.Amenity.model_validate(
+                {key: value for key, value in zip(self.AMENITIES_COLUMNS, a)}
+            )
+            for a in amenity_results
+        ]
+
+        try:
+            with self.__database.snapshot() as snapshot:
+                # Execute SQL queries to fetch data from respective tables
+                flights_results = snapshot.execute_sql(
+                    "SELECT {} FROM flights ORDER BY id ASC".format(
+                        ",".join(self.FLIGHTS_COLUMNS)
+                    )
+                )
+        except Exception as e:
+            # Handle any exceptions, such as database connection errors
+            print(f"Error occurred while fetch flights: {e}")
+            # Return empty lists in case of error
+            return airports, amenities, flights, policies
+
+        # Convert query results to model instances using model_validate method
+        flights = [
+            models.Flight.model_validate(
+                {key: value for key, value in zip(self.FLIGHTS_COLUMNS, a)}
+            )
+            for a in flights_results
+        ]
+
+        try:
+            with self.__database.snapshot() as snapshot:
+                # Execute SQL queries to fetch data from respective tables
+                policy_results = snapshot.execute_sql(
+                    "SELECT {} FROM policies ORDER BY id ASC".format(
+                        ",".join(self.POLICIES_COLUMNS)
+                    )
+                )
+        except Exception as e:
+            # Handle any exceptions, such as database connection errors
+            print(f"Error occurred while fetch policies: {e}")
+            # Return empty lists in case of error
+            return airports, amenities, flights, policies
+
+        # Convert query results to model instances using model_validate method
+        policies = [
+            models.Policy.model_validate(
+                {key: value for key, value in zip(self.POLICIES_COLUMNS, a)}
+            )
+            for a in policy_results
+        ]
 
         return airports, amenities, flights, policies
 
@@ -412,12 +482,10 @@ class Client(datastore.Client[Config]):
         """
         with self.__database.snapshot() as snapshot:
             # Execute SQL query to fetch airport by ID
-            result = (
-                snapshot.execute_sql(
-                    sql="SELECT * FROM airports WHERE id=@id",
-                    params={id: id},
-                    param_types={id: param_types.INT64},
-                ),
+            result = snapshot.execute_sql(
+                sql="SELECT * FROM airports WHERE id = @id",
+                params={"id": id},
+                param_types={"id": param_types.INT64},
             )
 
         # Check if result is None
@@ -425,9 +493,14 @@ class Client(datastore.Client[Config]):
             return None
 
         # Convert query result to model instance using model_validate method
-        res = models.Airport.model_validate(result)
+        airports = [
+            models.Airport.model_validate(
+                {key: value for key, value in zip(self.AIRPORT_COLUMNS, a)}
+            )
+            for a in result
+        ]
 
-        return res
+        return airports[0]
 
     async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
         """
@@ -440,11 +513,11 @@ class Client(datastore.Client[Config]):
             Optional[models.Airport]: An Airport model instance if found, else None.
         """
         with self.__database.snapshot() as snapshot:
-            # Execute SQL query to fetch airport by IATA code
+            # Execute SQL query to fetch airport by ID
             result = snapshot.execute_sql(
-                sql="""SELECT * FROM airports WHERE iata LIKE @iata""",
-                params={iata: iata},
-                param_types={iata: param_types.STRING},
+                sql="SELECT * FROM airports WHERE iata LIKE @iata",
+                params={"iata": iata},
+                param_types={"iata": param_types.STRING},
             )
 
         # Check if result is None
@@ -452,8 +525,14 @@ class Client(datastore.Client[Config]):
             return None
 
         # Convert query result to model instance using model_validate method
-        res = models.Airport.model_validate(result)
-        return res
+        airports = [
+            models.Airport.model_validate(
+                {key: value for key, value in zip(self.AIRPORT_COLUMNS, a)}
+            )
+            for a in result
+        ]
+
+        return airports[0]
 
     async def search_airports(
         self,
@@ -476,9 +555,9 @@ class Client(datastore.Client[Config]):
             # Construct SQL query based on provided parameters
             query = """
                 SELECT * FROM airports
-                  WHERE (CAST(@country AS STRING(MAX)) IS NULL OR country LIKE @country)
-                  AND (CAST(@city AS STRING(MAX)) IS NULL OR city LIKE @city)
-                  AND (CAST(@name AS STRING(MAX)) IS NULL OR name LIKE '%' || @name || '%')
+                  WHERE (@country IS NULL OR country LIKE @country)
+                  AND (@city IS NULL OR city LIKE @city)
+                  AND (@name IS NULL OR name LIKE '%' || @name || '%')
                 """
 
             # Execute SQL query with parameters
@@ -496,10 +575,15 @@ class Client(datastore.Client[Config]):
                 },
             )
 
-        # Convert query results to model instances using model_validate method
-        res = [models.Airport.model_validate(r) for r in results]
+        # Convert query result to model instance using model_validate method
+        airports = [
+            models.Airport.model_validate(
+                {key: value for key, value in zip(self.AIRPORT_COLUMNS, a)}
+            )
+            for a in results
+        ]
 
-        return res
+        return airports
 
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         """
@@ -515,20 +599,26 @@ class Client(datastore.Client[Config]):
             # Spread SQL query for readability
             result = snapshot.execute_sql(
                 sql="""
-                SELECT id, name, description, location, terminal, category, hour
-                FROM amenities
+                SELECT * FROM amenities
                 WHERE id = @id
                 """,
-                params={id: id},
-                param_types={id: param_types.INT64},
+                params={"id": id},
+                param_types={"id": param_types.INT64},
             )
 
+        # Check if result is None
         if result is None:
             return None
 
         # Convert query result to model instance using model_validate method
-        res = models.Amenity.model_validate(result)
-        return res
+        amenities = [
+            models.Amenity.model_validate(
+                {key: value for key, value in zip(self.AMENITIES_COLUMNS, a)}
+            )
+            for a in result
+        ]
+
+        return amenities[0]
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
@@ -550,12 +640,12 @@ class Client(datastore.Client[Config]):
                 SELECT id, name, description, location, terminal, category, hour
                 FROM (
                     SELECT id, name, description, location, terminal, category, hour,
-                        1 - (embedding <=> @query_embedding) AS similarity
+                       COSINE_DISTANCE(embedding, @query_embedding) AS similarity
                     FROM amenities
-                    WHERE 1 - (embedding <=> @query_embedding) > @similarity_threshold
-                    ORDER BY similarity DESC
-                    LIMIT @top_k
                 ) AS sorted_amenities
+                WHERE (2 - similarity) > @similarity_threshold
+                ORDER BY similarity
+                LIMIT @top_k
             """
 
             # Execute SQL query with parameters
@@ -573,10 +663,15 @@ class Client(datastore.Client[Config]):
                 },
             )
 
-        # Convert query results to model instances using model_validate method
-        res = [models.Amenity.model_validate(r) for r in results]
+        # Convert query result to model instance using model_validate method
+        amenities = [
+            models.Amenity.model_validate(
+                {key: value for key, value in zip(self.AMENITIES_COLUMNS, a)}
+            )
+            for a in results
+        ]
 
-        return res
+        return amenities
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
         """
@@ -595,16 +690,22 @@ class Client(datastore.Client[Config]):
                 SELECT * FROM flights
                 WHERE id = @flight_id
                 """,
-                params={flight_id: flight_id},
-                param_types={flight_id: param_types.INT64},
+                params={"flight_id": flight_id},
+                param_types={"flight_id": param_types.INT64},
             )
-
+        # Check if result is None
         if result is None:
             return None
 
         # Convert query result to model instance using model_validate method
-        res = models.Flight.model_validate(result)
-        return res
+        flights = [
+            models.Flight.model_validate(
+                {key: value for key, value in zip(self.FLIGHTS_COLUMNS, a)}
+            )
+            for a in result
+        ]
+
+        return flights[0]
 
     async def search_flights_by_number(
         self,
@@ -629,13 +730,22 @@ class Client(datastore.Client[Config]):
                 WHERE airline = @airline
                 AND flight_number = @number
                 """,
-                params={airline: airline, number: number},
-                param_types={airline: param_types.STRING, number: param_types.STRING},
+                params={"airline": airline, "number": number},
+                param_types={
+                    "airline": param_types.STRING,
+                    "number": param_types.STRING,
+                },
             )
 
-        # Convert query results to model instances using model_validate method
-        res = [models.Flight.model_validate(r) for r in results]
-        return res
+        # Convert query result to model instance using model_validate method
+        flights = [
+            models.Flight.model_validate(
+                {key: value for key, value in zip(self.FLIGHTS_COLUMNS, a)}
+            )
+            for a in results
+        ]
+
+        return flights
 
     async def search_flights_by_airports(
         self,
@@ -658,10 +768,10 @@ class Client(datastore.Client[Config]):
             # Spread SQL query for readability
             query = """
                 SELECT * FROM flights
-                WHERE (CAST(@departure_airport AS STRING(MAX)) IS NULL OR departure_airport LIKE @departure_airport)
-                AND (CAST(@arrival_airport AS STRING(MAX)) IS NULL OR arrival_airport LIKE @arrival_airport)
-                AND departure_time >= CAST(@datetime AS timestamp)
-                AND departure_time < CAST(@datetime AS timestamp) + interval '1 day'
+                WHERE (@departure_airport IS NULL OR departure_airport LIKE @departure_airport)
+                AND (@arrival_airport IS NULL OR arrival_airport LIKE @arrival_airport)
+                AND cast(departure_time as TIMESTAMP) >= CAST(@datetime AS TIMESTAMP)
+                AND cast(departure_time as TIMESTAMP) < TIMESTAMP_ADD(CAST(@datetime AS TIMESTAMP), INTERVAL 1 DAY)
             """
 
             # Execute SQL query with parameters
@@ -670,7 +780,7 @@ class Client(datastore.Client[Config]):
                 params={
                     "departure_airport": departure_airport,
                     "arrival_airport": arrival_airport,
-                    "datetime": datetime.strptime(date, "%Y-%m-%d"),
+                    "datetime": datetime.datetime.strptime(date, "%Y-%m-%d"),
                 },
                 param_types={
                     "departure_airport": param_types.STRING,
@@ -680,8 +790,14 @@ class Client(datastore.Client[Config]):
             )
 
         # Convert query results to model instances using model_validate method
-        res = [models.Flight.model_validate(r) for r in results]
-        return res
+        flights = [
+            models.Flight.model_validate(
+                {key: value for key, value in zip(self.FLIGHTS_COLUMNS, a)}
+            )
+            for a in results
+        ]
+
+        return flights
 
     async def validate_ticket(
         self,
@@ -689,8 +805,8 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         arrival_airport: str,
-        departure_time: datetime,
-        arrival_time: datetime,
+        departure_time: datetime.datetime,
+        arrival_time: datetime.datetime,
     ) -> bool:
         with self.__database.snapshot() as snapshot:
             # Spread SQL query for readability
@@ -705,24 +821,28 @@ class Client(datastore.Client[Config]):
                     AND arrival_time = @arrival_time
                 """,
                 params={
-                    airline: airline,
-                    flight_number: flight_number,
-                    departure_airport: departure_airport,
-                    arrival_airport: arrival_airport,
-                    departure_time: departure_time,
-                    arrival_time: arrival_time,
+                    "airline": airline,
+                    "flight_number": flight_number,
+                    "departure_airport": departure_airport,
+                    "arrival_airport": arrival_airport,
+                    "departure_time": departure_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                    "arrival_time": arrival_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                 },
                 param_types={
-                    airline: param_types.STRING,
-                    flight_number: param_types.STRING,
-                    departure_airport: param_types.STRING,
-                    arrival_airport: param_types.STRING,
-                    departure_time: param_types.STRING,
-                    arrival_time: param_types.STRING,
+                    "airline": param_types.STRING,
+                    "flight_number": param_types.STRING,
+                    "departure_airport": param_types.STRING,
+                    "arrival_airport": param_types.STRING,
+                    "departure_time": param_types.STRING,
+                    "arrival_time": param_types.STRING,
                 },
             )
-        if len(results) == 1:
+
+        flights = [x for x in results]
+
+        if len(flights) == 1:
             return True
+
         return False
 
     async def insert_ticket(
@@ -751,8 +871,13 @@ class Client(datastore.Client[Config]):
             departure_time (str): The departure time of the flight.
             arrival_time (str): The arrival time of the flight.
         """
-        departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
-        arrival_time_datetime = datetime.strptime(arrival_time, "%Y-%m-%d %H:%M:%S")
+        departure_time_datetime = datetime.datetime.strptime(
+            departure_time, "%Y-%m-%dT%H:%M:%S.%fZ"
+        )
+        arrival_time_datetime = datetime.datetime.strptime(
+            arrival_time, "%Y-%m-%dT%H:%M:%S.%fZ"
+        )
+
         if not await self.validate_ticket(
             airline,
             flight_number,
@@ -799,13 +924,8 @@ class Client(datastore.Client[Config]):
         """
         Retrieves a list of tickets for a user.
 
-        This method is not implemented.
-
         Args:
             user_id (str): The ID of the user.
-
-        Raises:
-            NotImplementedError: This method is not implemented.
         """
         with self.__database.snapshot() as snapshot:
             # Spread SQL query for readability
@@ -814,13 +934,35 @@ class Client(datastore.Client[Config]):
                 SELECT * FROM tickets
                 WHERE user_id = @user_id
                 """,
-                params={user_id: user_id},
-                param_types={user_id: param_types.STRING},
+                params={"user_id": user_id},
+                param_types={"user_id": param_types.STRING},
             )
 
         # Convert query results to model instances using model_validate method
-        res = [models.Ticket.model_validate(r) for r in results]
-        return res
+        tickets = [
+            models.Ticket.model_validate(
+                {
+                    key: value
+                    for key, value in zip(
+                        [
+                            "user_id",
+                            "user_name",
+                            "user_email",
+                            "airline",
+                            "flight_number",
+                            "departure_airport",
+                            "arrival_airport",
+                            "departure_time",
+                            "arrival_time",
+                        ],
+                        a,
+                    )
+                }
+            )
+            for a in results
+        ]
+
+        return tickets
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
@@ -837,16 +979,15 @@ class Client(datastore.Client[Config]):
             list[models.Policy]: A list of Policy model instances matching the search criteria.
         """
         with self.__database.snapshot() as snapshot:
-            # Spread SQL query for readability
             query = """
                 SELECT id, content
                 FROM (
-                    SELECT id, content, 1 - (embedding <=> @query_embedding) AS similarity
+                    SELECT id, content,  COSINE_DISTANCE(embedding, @query_embedding) AS similarity
                     FROM policies 
-                    WHERE 1 - (embedding <=> @query_embedding) > @similarity_threshold
-                    ORDER BY similarity DESC
-                    LIMIT @top_k
                 ) AS sorted_policies
+                WHERE (2 - similarity) > @similarity_threshold
+                ORDER BY similarity DESC
+                LIMIT @top_k
             """
 
             # Execute SQL query with parameters
@@ -864,9 +1005,15 @@ class Client(datastore.Client[Config]):
                 },
             )
 
-        # Convert query results to model instances using model_validate method
-        res = [models.Policy.model_validate(r) for r in results]
-        return res
+        # Convert query result to model instance using model_validate method
+        policies = [
+            models.Policy.model_validate(
+                {key: value for key, value in zip(self.POLICIES_COLUMNS, a)}
+            )
+            for a in results
+        ]
+
+        return policies
 
     async def close(self):
         """
