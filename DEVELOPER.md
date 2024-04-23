@@ -99,11 +99,11 @@
 1. Open a local connection to your database by starting the [AlloyDB Auth Proxy][alloydb-proxy] or [Cloud SQL Auth Proxy][cloudsql-proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance (for non-cloud postgres such as AlloyDB Omni).
 1. Set environment variables (different provider requires different environment variables):
 
-    | provider                               |
+    | Datastore                               |
     |----------------------------------------|
-    | [alloydb](./docs/datastore/alloydb.md#test-environment-variables) |
-    | [cloudsql_postgres](./docs/datastore/cloudsql_postgres.md#test-environment-variables) |
-    | [non-cloud postgres (AlloyDB Omni)](./docs/datastore/postgres.md#test-environment-variables) |
+    | [AlloyDB](./docs/datastore/alloydb.md#test-environment-variables) |
+    | [Cloud SQL for Postgres](./docs/datastore/cloudsql_postgres.md#test-environment-variables) |
+    | [Non-cloud Postgres (e.g. AlloyDB Omni)](./docs/datastore/postgres.md#test-environment-variables) |
 
 1. Run pytest to automatically run all tests:
 
