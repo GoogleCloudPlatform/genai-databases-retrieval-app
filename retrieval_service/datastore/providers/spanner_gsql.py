@@ -14,7 +14,6 @@
 
 import asyncio
 import datetime
-from datetime import datetime
 from typing import Any, Dict, Literal, Optional
 
 from google.cloud import spanner  # type: ignore
@@ -98,9 +97,9 @@ class Client(datastore.Client[Config]):
         Returns:
             Client: Initialized Spanner client.
         """
-        # credentials = service_account.Credentials.from_service_account_file(config.service_account_key_file)
+        credentials = service_account.Credentials.from_service_account_file(config.service_account_key_file)
 
-        client = spanner.Client(project=config.project)
+        client = spanner.Client(project=config.project, credentials=credentials)
 
         instance_id = config.instance
         instance = client.instance(instance_id)
@@ -246,6 +245,7 @@ class Client(datastore.Client[Config]):
 
         print("Waiting for schema update operation to complete...")
         operation.result(self.OPERATION_TIMEOUT_SECONDS)
+        print("Schema update operation completed")
 
         # Insert data into 'airports' table using batch operation
         columns = ["id", "iata", "name", "city", "country"]
