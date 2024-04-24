@@ -24,7 +24,7 @@ from app import init_app
 async def main():
     PORT = int(os.getenv("PORT", default=8081))
     HOST = os.getenv("HOST", default="0.0.0.0")
-    ORCHESTRATION_TYPE = os.getenv("ORCHESTRATION_TYPE")
+    ORCHESTRATION_TYPE = os.getenv("ORCHESTRATION_TYPE", default="langchain-tools")
     CLIENT_ID = os.getenv("CLIENT_ID")
     SECRET_KEY = os.getenv("SECRET_KEY")
     app = init_app(ORCHESTRATION_TYPE, client_id=CLIENT_ID, secret_key=SECRET_KEY)

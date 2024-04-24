@@ -302,20 +302,16 @@ class Client(datastore.Client[Config]):
     ]:
         async with self.__pool.connect() as conn:
             airport_task = asyncio.create_task(
-                conn.execute(text("""SELECT * FROM airports"""))
+                conn.execute(text("""SELECT * FROM airports ORDER BY id ASC"""))
             )
-
             amenity_task = asyncio.create_task(
-                conn.execute(text("""SELECT * FROM amenities"""))
+                conn.execute(text("""SELECT * FROM amenities ORDER BY id ASC"""))
             )
             flights_task = asyncio.create_task(
-                conn.execute(text("""SELECT * FROM flights"""))
+                conn.execute(text("""SELECT * FROM flights ORDER BY id ASC"""))
             )
             policy_task = asyncio.create_task(
-                conn.execute(text("""SELECT * FROM policies"""))
-            )
-            policy_task = asyncio.create_task(
-                conn.execute(text("""SELECT * FROM policies"""))
+                conn.execute(text("""SELECT * FROM policies ORDER BY id ASC"""))
             )
 
             airport_results = (await airport_task).mappings().fetchall()

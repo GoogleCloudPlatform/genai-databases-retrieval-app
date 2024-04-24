@@ -61,25 +61,25 @@ class BaseOrchestrator(ABC):
     async def user_session_insert_ticket(self, uuid: str, params: str) -> Any:
         raise NotImplementedError("Subclass should implement this!")
 
+    @abstractmethod
+    async def user_session_signout(self, uuid: str):
+        """Sign out from user session. Clear and restart session."""
+        raise NotImplementedError("Subclass should implement this!")
+
     def set_user_session_header(self, uuid: str, user_id_token: str):
         user_session = self.get_user_session(uuid)
         user_session.client.headers["User-Id-Token"] = f"Bearer {user_id_token}"
 
     def get_user_id_token(self, uuid: str) -> Optional[str]:
-        user_session = self.get_user_session(uuid)
-        if user_session.client and "User-Id-Token" in user_session.client.headers:
-            token = user_session.client.headers["User-Id-Token"]
-            parts = str(token).split(" ")
-            if len(parts) != 2 or parts[0] != "Bearer":
-                raise Exception("Invalid ID token")
-            return parts[1]
+        if self.user_session_exist(uuid):
+            user_session = self.get_user_session(uuid)
+            if user_session.client and "User-Id-Token" in user_session.client.headers:
+                token = user_session.client.headers["User-Id-Token"]
+                parts = str(token).split(" ")
+                if len(parts) != 2 or parts[0] != "Bearer":
+                    raise Exception("Invalid ID token")
+                return parts[1]
         return None
-
-    async def user_session_signout(self, uuid: str):
-        """Sign out from user session. Clear and restart session."""
-        user_session = self.get_user_session(uuid)
-        await user_session.close()
-        del user_session
 
 
 def createOrchestrator(orchestration_type: str) -> "BaseOrchestrator":

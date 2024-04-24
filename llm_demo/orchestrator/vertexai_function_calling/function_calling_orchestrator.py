@@ -228,6 +228,12 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
             return base_history
         return BASE_HISTORY
 
+    async def user_session_signout(self, uuid: str):
+        user_session = self.get_user_session(uuid)
+        if user_session:
+            await user_session.close()
+            del self._user_sessions[uuid]
+
     def close_clients(self):
         close_client_tasks = [
             asyncio.create_task(a.close()) for a in self._user_sessions.values()
