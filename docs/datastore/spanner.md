@@ -107,8 +107,8 @@
 
 Clean up after completing the demo.
 
-1. Delete the Cloud SQL instance:
+1. Delete the Cloud Spanner instance:
 
     ```bash
-    gcloud sql instances delete $INSTANCE
+    gcloud spanner instances delete $INSTANCE
     ```
