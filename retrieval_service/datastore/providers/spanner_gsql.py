@@ -136,7 +136,9 @@ class Client(datastore.Client[Config]):
         Returns:
             Client: Initialized Spanner client.
         """
-        credentials = service_account.Credentials.from_service_account_file(config.service_account_key_file)
+        credentials = service_account.Credentials.from_service_account_file(
+            config.service_account_key_file
+        )
 
         client = spanner.Client(project=config.project, credentials=credentials)
 
