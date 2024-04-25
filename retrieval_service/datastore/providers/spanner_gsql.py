@@ -136,11 +136,15 @@ class Client(datastore.Client[Config]):
         Returns:
             Client: Initialized Spanner client.
         """
-        credentials = service_account.Credentials.from_service_account_file(
-            config.service_account_key_file
-        )
+        client: spanner.Client
 
-        client = spanner.Client(project=config.project, credentials=credentials)
+        if config.service_account_key_file is not None:
+            credentials = service_account.Credentials.from_service_account_file(
+                config.service_account_key_file
+            )
+            client = spanner.Client(project=config.project, credentials=credentials)
+        else:
+            client = spanner.Client(project=config.project)
 
         instance_id = config.instance
         instance = client.instance(instance_id)
@@ -377,10 +381,10 @@ class Client(datastore.Client[Config]):
         Returns:
             tuple: A tuple containing lists of airports, amenities, flights, and policies.
         """
-        airports = []
-        amenities = []
-        flights = []
-        policies = []
+        airports: list = []
+        amenities: list = []
+        flights: list = []
+        policies: list = []
 
         try:
             with self.__database.snapshot() as snapshot:
