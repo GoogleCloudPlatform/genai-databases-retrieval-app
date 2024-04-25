@@ -64,6 +64,24 @@
         --instance=$INSTANCE \
         --sql="SELECT 1"
     ```
+
+## Create a Service Account
+1. Create a Service Account: Use the gcloud iam service-accounts create command to create a new service account. Replace [SA_NAME] with the desired name for your service account.
+    ```bash
+    gcloud iam service-accounts create [SA_NAME] --description="Service account for Cloud Spanner" --display-name="Cloud Spanner Service Account"
+    ```
+
+2. Grant Required Permissions: Assign the necessary roles to the service account. For Cloud Spanner read and write access, you can grant the roles/spanner.databaseUser and roles/spanner.databaseAdmin roles. Use the gcloud projects add-iam-policy-binding command to grant these roles. Replace [SA_EMAIL] with the email address of the service account you created in the previous step.
+```bash
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:[SA_EMAIL]" --role="roles/spanner.databaseUser"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:[SA_EMAIL]" --role="roles/spanner.databaseAdmin"
+```
+3. Generate a key file for the service account. This key file will be used for authentication when accessing GCP resources programmatically. Replace [SA_EMAIL] with the email address of the service
+    ```bash
+    gcloud iam service-accounts keys create key.json --iam-account [SA_EMAIL]
+    ```
+4. Use the generated key file (key.json) to authenticate your application when accessing Cloud Spanner.
+
 ## Initialize data
 
 1. Change into the retrieval service directory:
@@ -92,9 +110,9 @@
         # Example for Spanner
         kind: "spanner-gsql"
         project: <YOUR_PROJECT_ID>
-        instance: <YOUR_INSTANCE>
-        database: <YOUR_DATABASE>
-        service_account_key_file: <PATH_TO_SERVICE_ACCOUNTS_CREDENTIALS>
+        instance: my-spanner-instance
+        database: my-spanner-database
+        service_account_key_file: <PATH_TO_SERVICE_ACCOUNT_KEY_FILE>
     ```
 
 1. Populate data into database:
