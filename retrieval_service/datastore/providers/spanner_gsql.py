@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 import datetime
 from typing import Any, Dict, Literal, Optional
 
@@ -20,7 +19,7 @@ from google.cloud import spanner  # type: ignore
 from google.cloud.spanner_v1 import JsonObject, param_types
 from google.cloud.spanner_v1.database import Database
 from google.cloud.spanner_v1.instance import Instance
-from google.oauth2 import service_account
+from google.oauth2 import service_account  # type: ignore
 from pydantic import BaseModel
 
 import models
