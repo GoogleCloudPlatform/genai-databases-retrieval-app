@@ -1,0 +1,8 @@
+host: 0.0.0.0
+datastore:
+  # Example for Spanner
+  kind: "spanner-gsql"
+  project: "my-project"
+  instance: "my-instance"
+  database: "my_database"
+  service_account_key_file: "my-service-account-key/service_accounts_credentials.json"
