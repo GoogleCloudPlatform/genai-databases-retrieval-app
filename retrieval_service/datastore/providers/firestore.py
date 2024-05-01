@@ -14,7 +14,7 @@
 
 import asyncio
 from datetime import datetime, timedelta
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from google.cloud.firestore import AsyncClient  # type: ignore
 from google.cloud.firestore_v1.async_collection import AsyncCollectionReference
@@ -234,7 +234,7 @@ class Client(datastore.Client[Config]):
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Amenity]:
+    ) -> list[Any]:
         raise NotImplementedError("Semantic search not yet supported in Firestore.")
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
@@ -311,7 +311,7 @@ class Client(datastore.Client[Config]):
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Policy]:
+    ) -> list[str]:
         raise NotImplementedError("Semantic search not yet supported in Firestore.")
 
     async def close(self):
