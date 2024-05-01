@@ -22,6 +22,7 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 from pydantic import BaseModel
 
 import models
+from helpers import UIFriendlyLogger
 
 from .. import datastore
 
@@ -184,7 +185,9 @@ class Client(datastore.Client[Config]):
             policies.append(models.Policy.model_validate(policy_dict))
         return airports, amenities, flights, policies
 
-    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+    async def get_airport_by_id(
+        self, id: int, ufl: UIFriendlyLogger
+    ) -> Optional[models.Airport]:
         query = self.__client.collection("airports").where(
             filter=FieldFilter("id", "==", id)
         )
@@ -192,7 +195,9 @@ class Client(datastore.Client[Config]):
         airport_dict = airport_doc.to_dict() | {"id": airport_doc.id}
         return models.Airport.model_validate(airport_dict)
 
-    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+    async def get_airport_by_iata(
+        self, iata: str, ufl: UIFriendlyLogger
+    ) -> Optional[models.Airport]:
         query = self.__client.collection("airports").where(
             filter=FieldFilter("iata", "==", iata)
         )
@@ -202,6 +207,7 @@ class Client(datastore.Client[Config]):
 
     async def search_airports(
         self,
+        ufl: UIFriendlyLogger,
         country: Optional[str] = None,
         city: Optional[str] = None,
         name: Optional[str] = None,
@@ -226,7 +232,9 @@ class Client(datastore.Client[Config]):
             airports.append(models.Airport.model_validate(airport_dict))
         return airports
 
-    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
+    async def get_amenity(
+        self, id: int, ufl: UIFriendlyLogger
+    ) -> Optional[models.Amenity]:
         query = self.__client.collection("amenities").where(
             filter=FieldFilter("id", "==", id)
         )
@@ -235,11 +243,18 @@ class Client(datastore.Client[Config]):
         return models.Amenity.model_validate(amenity_dict)
 
     async def amenities_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query: str,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        ufl: UIFriendlyLogger,
     ) -> list[Any]:
         raise NotImplementedError("Semantic search not yet supported in Firestore.")
 
-    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+    async def get_flight(
+        self, flight_id: int, ufl: UIFriendlyLogger
+    ) -> Optional[models.Flight]:
         query = self.__client.collection("flights").where(
             filter=FieldFilter("id", "==", flight_id)
         )
@@ -251,6 +266,7 @@ class Client(datastore.Client[Config]):
         self,
         airline: str,
         number: str,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Flight]:
         query = (
             self.__client.collection("flights")
@@ -269,6 +285,7 @@ class Client(datastore.Client[Config]):
     async def search_flights_by_airports(
         self,
         date: str,
+        ufl: UIFriendlyLogger,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
     ) -> list[models.Flight]:
@@ -304,17 +321,24 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
+        ufl: UIFriendlyLogger,
     ):
         raise NotImplementedError("Not Implemented")
 
     async def list_tickets(
         self,
         user_id: str,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Ticket]:
         raise NotImplementedError("Not Implemented")
 
     async def policies_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query: str,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        ufl: UIFriendlyLogger,
     ) -> list[str]:
         raise NotImplementedError("Semantic search not yet supported in Firestore.")
 

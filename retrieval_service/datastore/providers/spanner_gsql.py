@@ -23,6 +23,7 @@ from google.oauth2 import service_account  # type: ignore
 from pydantic import BaseModel
 
 import models
+from helpers import UIFriendlyLogger
 
 from .. import datastore
 
@@ -475,7 +476,9 @@ class Client(datastore.Client[Config]):
 
         return airports, amenities, flights, policies
 
-    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+    async def get_airport_by_id(
+        self, id: int, ufl: UIFriendlyLogger
+    ) -> Optional[models.Airport]:
         """
         Retrieve an airport by its ID.
 
@@ -507,7 +510,9 @@ class Client(datastore.Client[Config]):
 
         return airports[0]
 
-    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+    async def get_airport_by_iata(
+        self, iata: str, ufl: UIFriendlyLogger
+    ) -> Optional[models.Airport]:
         """
         Retrieve an airport by its IATA code.
 
@@ -541,6 +546,7 @@ class Client(datastore.Client[Config]):
 
     async def search_airports(
         self,
+        ufl: UIFriendlyLogger,
         country: Optional[str] = None,
         city: Optional[str] = None,
         name: Optional[str] = None,
@@ -591,7 +597,9 @@ class Client(datastore.Client[Config]):
 
         return airports
 
-    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
+    async def get_amenity(
+        self, id: int, ufl: UIFriendlyLogger
+    ) -> Optional[models.Amenity]:
         """
         Retrieves an amenity by its ID.
 
@@ -627,7 +635,12 @@ class Client(datastore.Client[Config]):
         return amenities[0]
 
     async def amenities_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query: str,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        ufl: UIFriendlyLogger,
     ) -> list[Any]:
         """
         Search for amenities based on similarity to a query embedding.
@@ -677,7 +690,9 @@ class Client(datastore.Client[Config]):
 
         return amenities
 
-    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+    async def get_flight(
+        self, flight_id: int, ufl: UIFriendlyLogger
+    ) -> Optional[models.Flight]:
         """
         Retrieves a flight by its ID.
 
@@ -715,6 +730,7 @@ class Client(datastore.Client[Config]):
         self,
         airline: str,
         number: str,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Flight]:
         """
         Search for flights by airline and flight number.
@@ -755,6 +771,7 @@ class Client(datastore.Client[Config]):
     async def search_flights_by_airports(
         self,
         date: str,
+        ufl: UIFriendlyLogger,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
     ) -> list[models.Flight]:
@@ -813,6 +830,7 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: datetime.datetime,
         arrival_time: datetime.datetime,
+        ufl: UIFriendlyLogger,
     ) -> bool:
         with self.__database.snapshot() as snapshot:
             # Spread SQL query for readability
@@ -862,6 +880,7 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
+        ufl: UIFriendlyLogger,
     ):
         """
         Inserts a ticket into the database.
@@ -891,6 +910,7 @@ class Client(datastore.Client[Config]):
             arrival_airport,
             departure_time_datetime,
             arrival_time_datetime,
+            ufl,
         ):
             raise Exception("Flight information not in database")
 
@@ -926,6 +946,7 @@ class Client(datastore.Client[Config]):
     async def list_tickets(
         self,
         user_id: str,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Ticket]:
         """
         Retrieves a list of tickets for a user.
@@ -971,7 +992,12 @@ class Client(datastore.Client[Config]):
         return tickets
 
     async def policies_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query: str,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        ufl: UIFriendlyLogger,
     ) -> list[str]:
         """
         Search for policies based on similarity to a query embedding.

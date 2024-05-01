@@ -21,6 +21,7 @@ from google.oauth2 import id_token  # type:ignore
 from langchain_core.embeddings import Embeddings
 
 import datastore
+from helpers import UIFriendlyLogger
 
 routes = APIRouter()
 
@@ -37,6 +38,13 @@ def _ParseUserIdToken(headers: Mapping[str, Any]) -> Optional[str]:
         raise Exception("Invalid ID token")
 
     return parts[1]
+
+
+def build_result(results, ufl: UIFriendlyLogger | None = None):
+    result = {"result": results}
+    if ufl is not None and ufl.get_log() != "":
+        result["trace"] = ufl.get_log()
+    return result
 
 
 async def get_user_info(request):
@@ -68,17 +76,19 @@ async def get_airport(
     id: Optional[int] = None,
     iata: Optional[str] = None,
 ):
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header("Attempting to search for airport")
     ds: datastore.Client = request.app.state.datastore
     if id:
-        results = await ds.get_airport_by_id(id)
+        results = await ds.get_airport_by_id(id, ufl)
     elif iata:
-        results = await ds.get_airport_by_iata(iata)
+        results = await ds.get_airport_by_iata(iata, ufl)
     else:
         raise HTTPException(
             status_code=422,
             detail="Request requires query params: airport id or iata",
         )
-    return results
+    return build_result(results, ufl)
 
 
 @routes.get("/airports/search")
@@ -94,34 +104,42 @@ async def search_airports(
             detail="Request requires at least one query params: country, city, or airport name",
         )
 
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header("Attempting to search for airport")
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.search_airports(country, city, name)
-    return results
+    results = await ds.search_airports(ufl, country, city, name)
+    return build_result(results, ufl)
 
 
 @routes.get("/amenities")
 async def get_amenity(id: int, request: Request):
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header("Attempting to search for amenity")
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.get_amenity(id)
-    return results
+    results = await ds.get_amenity(id, ufl)
+    return build_result(results, ufl)
 
 
 @routes.get("/amenities/search")
 async def amenities_search(query: str, top_k: int, request: Request):
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header("Attempting to use vector / embedding search for amenities")
     ds: datastore.Client = request.app.state.datastore
 
     embed_service: Embeddings = request.app.state.embed_service
     query_embedding = embed_service.embed_query(query)
 
-    results = await ds.amenities_search(query_embedding, 0.5, top_k)
-    return results
+    results = await ds.amenities_search(query, query_embedding, 0.5, top_k, ufl)
+    return build_result(results, ufl)
 
 
 @routes.get("/flights")
 async def get_flight(flight_id: int, request: Request):
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header("Attempting to search for flight")
     ds: datastore.Client = request.app.state.datastore
-    flights = await ds.get_flight(flight_id)
-    return flights
+    results = await ds.get_flight(flight_id, ufl)
+    return build_result(results, ufl)
 
 
 @routes.get("/flights/search")
@@ -133,19 +151,21 @@ async def search_flights(
     airline: Optional[str] = None,
     flight_number: Optional[str] = None,
 ):
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header("Attempting to search for flight")
     ds: datastore.Client = request.app.state.datastore
     if date and (arrival_airport or departure_airport):
-        flights = await ds.search_flights_by_airports(
-            date, departure_airport, arrival_airport
+        results = await ds.search_flights_by_airports(
+            date, ufl, departure_airport, arrival_airport
         )
     elif airline and flight_number:
-        flights = await ds.search_flights_by_number(airline, flight_number)
+        results = await ds.search_flights_by_number(airline, flight_number, ufl)
     else:
         raise HTTPException(
             status_code=422,
             detail="Request requires query params: arrival_airport, departure_airport, date, or both airline and flight_number",
         )
-    return flights
+    return build_result(results, ufl)
 
 
 @routes.post("/tickets/insert")
@@ -158,6 +178,10 @@ async def insert_ticket(
     departure_time: str,
     arrival_time: str,
 ):
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header(
+        "Attempting to insert the requested ticket into the database"
+    )
     user_info = await get_user_info(request)
     if user_info is None:
         raise HTTPException(
@@ -175,14 +199,17 @@ async def insert_ticket(
         arrival_airport,
         departure_time,
         arrival_time,
+        ufl,
     )
-    return result
+    return build_result(result, ufl)
 
 
 @routes.get("/tickets/list")
 async def list_tickets(
     request: Request,
 ):
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header("Attempting to search for tickets associated with the user")
     user_info = await get_user_info(request)
     if user_info is None:
         raise HTTPException(
@@ -190,16 +217,18 @@ async def list_tickets(
             detail="User login required for data insertion",
         )
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.list_tickets(user_info["user_id"])
-    return results
+    results = await ds.list_tickets(user_info["user_id"], ufl)
+    return build_result(results, ufl)
 
 
 @routes.get("/policies/search")
 async def policies_search(query: str, top_k: int, request: Request):
+    ufl = UIFriendlyLogger()
+    ufl.log_section_header("Attempting to use vector / embedding search for policies")
     ds: datastore.Client = request.app.state.datastore
 
     embed_service: Embeddings = request.app.state.embed_service
     query_embedding = embed_service.embed_query(query)
 
-    results = await ds.policies_search(query_embedding, 0.5, top_k)
-    return results
+    results = await ds.policies_search(query, query_embedding, 0.5, top_k, ufl)
+    return build_result(results, ufl)
