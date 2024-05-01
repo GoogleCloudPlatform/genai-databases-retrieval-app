@@ -18,6 +18,8 @@ import os
 import aiohttp
 from vertexai.preview import generative_models  # type: ignore
 
+from ..helpers import ToolTrace
+
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 CREDENTIALS = None
 
@@ -187,7 +189,9 @@ list_tickets_func = generative_models.FunctionDeclaration(
 )
 
 
-async def insert_ticket(client: aiohttp.ClientSession, params: str):
+async def insert_ticket(
+    client: aiohttp.ClientSession, params: str, tool_trace: ToolTrace
+):
     ticket_info = json.loads(params)
     response = await client.post(
         url=f"{BASE_URL}/tickets/insert",
@@ -201,8 +205,10 @@ async def insert_ticket(client: aiohttp.ClientSession, params: str):
         },
         headers=get_headers(client),
     )
-    response = await response.json()
-    return response
+    response_json = await response.json()
+    if response_json.get("trace"):
+        tool_trace.add_message(response_json.get("trace"))
+    return response_json.get("result")
 
 
 def get_id_token():
