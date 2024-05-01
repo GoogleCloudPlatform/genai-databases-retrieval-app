@@ -86,12 +86,13 @@ def generate_search_airports(client: aiohttp.ClientSession):
         if len(response_json) < 1:
             return "There are no airports matching that query. Let the user know there are no results."
         elif len(response_json) > num:
-            return (
-                f"There are {len(response_json)} airports matching that query. Here are the first {num} results:\n"
-                + " ".join([f"{response_json[i]}" for i in range(num)])
-            )
+            res = [response_json[i] for i in range(num)]
+            return {
+                "total results": len(response_json),
+                f"first {num} results": res,
+            }
         else:
-            return "\n".join([f"{r}" for r in response_json])
+            return response_json
 
     return search_airports
 
@@ -144,12 +145,13 @@ def generate_list_flights(client: aiohttp.ClientSession):
         if len(response_json) < 1:
             return "There are no flights matching that query. Let the user know there are no results."
         elif len(response_json) > num:
-            return (
-                f"There are {len(response_json)} flights matching that query. Here are the first {num} results:\n"
-                + " ".join([f"{response_json[i]}" for i in range(num)])
-            )
+            res = [response_json[i] for i in range(num)]
+            return {
+                "total results": len(response_json),
+                f"first {num} results": res,
+            }
         else:
-            return "\n".join([f"{r}" for r in response_json])
+            return response_json
 
     return list_flights
 
