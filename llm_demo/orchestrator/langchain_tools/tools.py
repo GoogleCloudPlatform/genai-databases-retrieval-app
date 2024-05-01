@@ -25,6 +25,8 @@ from langchain.agents.agent import ExceptionTool  # type: ignore
 from langchain.tools import StructuredTool
 from pydantic.v1 import BaseModel, Field
 
+from ..helpers import ToolTrace
+
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 CREDENTIALS = None
 
@@ -68,7 +70,7 @@ class AirportSearchInput(BaseModel):
     name: Optional[str] = Field(description="Airport name")
 
 
-def generate_search_airports(client: aiohttp.ClientSession):
+def generate_search_airports(client: aiohttp.ClientSession, tool_trace: ToolTrace):
     async def search_airports(country: str, city: str, name: str):
         params = {
             "country": country,
@@ -83,15 +85,18 @@ def generate_search_airports(client: aiohttp.ClientSession):
 
         num = 2
         response_json = await response.json()
-        if len(response_json) < 1:
+        if response_json.get("trace"):
+            tool_trace.add_message(response_json.get("trace"))
+        response_results = response_json.get("result")
+        if len(response_results) < 1:
             return "There are no airports matching that query. Let the user know there are no results."
-        elif len(response_json) > num:
+        elif len(response_results) > num:
             return (
-                f"There are {len(response_json)} airports matching that query. Here are the first {num} results:\n"
-                + " ".join([f"{response_json[i]}" for i in range(num)])
+                f"There are {len(response_results)} airports matching that query. Here are the first {num} results:\n"
+                + " ".join([f"{response_results[i]}" for i in range(num)])
             )
         else:
-            return "\n".join([f"{r}" for r in response_json])
+            return "\n".join([f"{r}" for r in response_results])
 
     return search_airports
 
@@ -101,7 +106,9 @@ class FlightNumberInput(BaseModel):
     flight_number: str = Field(description="1 to 4 digit number")
 
 
-def generate_search_flights_by_number(client: aiohttp.ClientSession):
+def generate_search_flights_by_number(
+    client: aiohttp.ClientSession, tool_trace: ToolTrace
+):
     async def search_flights_by_number(airline: str, flight_number: str):
         response = await client.get(
             url=f"{BASE_URL}/flights/search",
@@ -109,7 +116,10 @@ def generate_search_flights_by_number(client: aiohttp.ClientSession):
             headers=get_headers(client),
         )
 
-        return await response.json()
+        response_json = await response.json()
+        if response_json.get("trace"):
+            tool_trace.add_message(response_json.get("trace"))
+        return response_json.get("result")
 
     return search_flights_by_number
 
@@ -122,7 +132,7 @@ class ListFlights(BaseModel):
     date: str = Field(description="Date of flight departure")
 
 
-def generate_list_flights(client: aiohttp.ClientSession):
+def generate_list_flights(client: aiohttp.ClientSession, tool_trace: ToolTrace):
     async def list_flights(
         departure_airport: str,
         arrival_airport: str,
@@ -141,15 +151,19 @@ def generate_list_flights(client: aiohttp.ClientSession):
 
         num = 2
         response_json = await response.json()
-        if len(response_json) < 1:
+        response_json = await response.json()
+        if response_json.get("trace"):
+            tool_trace.add_message(response_json.get("trace"))
+        response_results = response_json.get("result")
+        if len(response_results) < 1:
             return "There are no flights matching that query. Let the user know there are no results."
-        elif len(response_json) > num:
+        elif len(response_results) > num:
             return (
-                f"There are {len(response_json)} flights matching that query. Here are the first {num} results:\n"
-                + " ".join([f"{response_json[i]}" for i in range(num)])
+                f"There are {len(response_results)} flights matching that query. Here are the first {num} results:\n"
+                + " ".join([f"{response_results[i]}" for i in range(num)])
             )
         else:
-            return "\n".join([f"{r}" for r in response_json])
+            return "\n".join([f"{r}" for r in response_results])
 
     return list_flights
 
@@ -158,7 +172,7 @@ class QueryInput(BaseModel):
     query: str = Field(description="Search query")
 
 
-def generate_search_amenities(client: aiohttp.ClientSession):
+def generate_search_amenities(client: aiohttp.ClientSession, tool_trace: ToolTrace):
     async def search_amenities(query: str):
         response = await client.get(
             url=f"{BASE_URL}/amenities/search",
@@ -166,13 +180,15 @@ def generate_search_amenities(client: aiohttp.ClientSession):
             headers=get_headers(client),
         )
 
-        response = await response.json()
-        return response
+        response_json = await response.json()
+        if response_json.get("trace"):
+            tool_trace.add_message(response_json.get("trace"))
+        return response_json.get("result")
 
     return search_amenities
 
 
-def generate_search_policies(client: aiohttp.ClientSession):
+def generate_search_policies(client: aiohttp.ClientSession, tool_trace: ToolTrace):
     async def search_policies(query: str):
         response = await client.get(
             url=f"{BASE_URL}/policies/search",
@@ -180,8 +196,10 @@ def generate_search_policies(client: aiohttp.ClientSession):
             headers=get_headers(client),
         )
 
-        response = await response.json()
-        return response
+        response_json = await response.json()
+        if response_json.get("trace"):
+            tool_trace.add_message(response_json.get("trace"))
+        return response_json.get("result")
 
     return search_policies
 
@@ -197,7 +215,7 @@ class TicketInput(BaseModel):
     arrival_time: datetime = Field(description="Flight arrival datetime")
 
 
-def generate_insert_ticket(client: aiohttp.ClientSession):
+def generate_insert_ticket(client: aiohttp.ClientSession, tool_trace: ToolTrace):
     async def insert_ticket(
         airline: str,
         flight_number: str,
@@ -211,7 +229,9 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
     return insert_ticket
 
 
-async def insert_ticket(client: aiohttp.ClientSession, params: str):
+async def insert_ticket(
+    client: aiohttp.ClientSession, params: str, tool_trace: ToolTrace
+):
     ticket_info = json.loads(params)
     response = await client.post(
         url=f"{BASE_URL}/tickets/insert",
@@ -225,28 +245,32 @@ async def insert_ticket(client: aiohttp.ClientSession, params: str):
         },
         headers=get_headers(client),
     )
-    response = await response.json()
-    return response
+    response_json = await response.json()
+    if response_json.get("trace"):
+        tool_trace.add_message(response_json.get("trace"))
+    return response_json.get("result")
 
 
-def generate_list_tickets(client: aiohttp.ClientSession):
+def generate_list_tickets(client: aiohttp.ClientSession, tool_trace: ToolTrace):
     async def list_tickets():
         response = await client.get(
             url=f"{BASE_URL}/tickets/list",
             headers=get_headers(client),
         )
 
-        response = await response.json()
-        return response
+        response_json = await response.json()
+        if response_json.get("trace"):
+            tool_trace.add_message(response_json.get("trace"))
+        return response_json.get("result")
 
     return list_tickets
 
 
 # Tools for agent
-async def initialize_tools(client: aiohttp.ClientSession):
+async def initialize_tools(client: aiohttp.ClientSession, tool_trace: ToolTrace):
     return [
         StructuredTool.from_function(
-            coroutine=generate_search_airports(client),
+            coroutine=generate_search_airports(client, tool_trace),
             name="Search Airport",
             description="""
                         Use this tool to list all airports matching search criteria.
@@ -275,7 +299,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             args_schema=AirportSearchInput,
         ),
         StructuredTool.from_function(
-            coroutine=generate_search_flights_by_number(client),
+            coroutine=generate_search_flights_by_number(client, tool_trace),
             name="Search Flights By Flight Number",
             description="""
                         Use this tool to get information for a specific flight.
@@ -300,7 +324,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             args_schema=FlightNumberInput,
         ),
         StructuredTool.from_function(
-            coroutine=generate_list_flights(client),
+            coroutine=generate_list_flights(client, tool_trace),
             name="List Flights",
             description="""
                         Use this tool to list flights information matching search criteria.
@@ -331,7 +355,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             args_schema=ListFlights,
         ),
         StructuredTool.from_function(
-            coroutine=generate_search_amenities(client),
+            coroutine=generate_search_amenities(client, tool_trace),
             name="Search Amenities",
             description="""
                         Use this tool to search amenities by name or to recommended airport amenities at SFO.
@@ -345,7 +369,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             args_schema=QueryInput,
         ),
         StructuredTool.from_function(
-            coroutine=generate_search_policies(client),
+            coroutine=generate_search_policies(client, tool_trace),
             name="Search Policies",
             description="""
 						Use this tool to search for cymbal air passenger policy.
@@ -356,7 +380,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             args_schema=QueryInput,
         ),
         StructuredTool.from_function(
-            coroutine=generate_insert_ticket(client),
+            coroutine=generate_insert_ticket(client, tool_trace),
             name="Insert Ticket",
             description="""
                         Use this tool to book a flight ticket for the user.
@@ -391,7 +415,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
             args_schema=TicketInput,
         ),
         StructuredTool.from_function(
-            coroutine=generate_list_tickets(client),
+            coroutine=generate_list_tickets(client, tool_trace),
             name="List Tickets",
             description="""
                         Use this tool to list a user's flight tickets.

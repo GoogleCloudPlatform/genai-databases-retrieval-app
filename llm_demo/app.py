@@ -154,12 +154,17 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     response = await orchestrator.user_session_invoke(request.session["uuid"], prompt)
     output = response.get("output")
     confirmation = response.get("confirmation")
+    trace = response.get("trace")
     # Return assistant response
     if confirmation:
-        return json.dumps({"type": "confirmation", "content": confirmation})
+        return json.dumps(
+            {"type": "confirmation", "content": confirmation, "trace": trace}
+        )
     else:
         request.session["history"].append({"type": "ai", "data": {"content": output}})
-        return json.dumps({"type": "message", "content": markdown(output)})
+        return json.dumps(
+            {"type": "message", "content": markdown(output), "trace": trace}
+        )
 
 
 @routes.post("/book/flight", response_class=PlainTextResponse)
@@ -180,7 +185,7 @@ async def book_flight(request: Request, params: str = Body(embed=True)):
     request.session["history"].append(
         {"type": "ai", "data": {"content": "I have booked your ticket."}}
     )
-    return response
+    return json.dumps(response)
 
 
 @routes.post("/book/flight/decline", response_class=PlainTextResponse)
@@ -198,7 +203,7 @@ async def decline_flight(request: Request):
 
 
 @routes.post("/reset")
-def reset(request: Request):
+async def reset(request: Request):
     """Reset user session"""
 
     if "uuid" not in request.session:
@@ -209,7 +214,7 @@ def reset(request: Request):
     if not orchestrator.user_session_exist(uuid):
         raise HTTPException(status_code=500, detail=f"Current user session not found")
 
-    orchestrator.user_session_reset(request.session, uuid)
+    await orchestrator.user_session_reset(request.session, uuid)
 
 
 def get_user_info(user_id_token: str, client_id: str) -> dict[str, str]:

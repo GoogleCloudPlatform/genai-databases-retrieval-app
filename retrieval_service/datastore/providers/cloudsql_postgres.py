@@ -25,6 +25,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 import models
+from helpers import UIFriendlyLogger
 
 from .. import datastore
 
@@ -326,7 +327,9 @@ class Client(datastore.Client[Config]):
 
             return airports, amenities, flights, policies
 
-    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+    async def get_airport_by_id(
+        self, id: int, ufl: UIFriendlyLogger
+    ) -> Optional[models.Airport]:
         async with self.__pool.connect() as conn:
             s = text("""SELECT * FROM airports WHERE id=:id""")
             params = {"id": id}
@@ -338,7 +341,9 @@ class Client(datastore.Client[Config]):
         res = models.Airport.model_validate(result)
         return res
 
-    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+    async def get_airport_by_iata(
+        self, iata: str, ufl: UIFriendlyLogger
+    ) -> Optional[models.Airport]:
         async with self.__pool.connect() as conn:
             s = text("""SELECT * FROM airports WHERE iata ILIKE :iata""")
             params = {"iata": iata}
@@ -352,6 +357,7 @@ class Client(datastore.Client[Config]):
 
     async def search_airports(
         self,
+        ufl: UIFriendlyLogger,
         country: Optional[str] = None,
         city: Optional[str] = None,
         name: Optional[str] = None,
@@ -375,7 +381,9 @@ class Client(datastore.Client[Config]):
         res = [models.Airport.model_validate(r) for r in results]
         return res
 
-    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
+    async def get_amenity(
+        self, id: int, ufl: UIFriendlyLogger
+    ) -> Optional[models.Amenity]:
         async with self.__pool.connect() as conn:
             s = text(
                 """
@@ -393,7 +401,12 @@ class Client(datastore.Client[Config]):
         return res
 
     async def amenities_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query: str,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Amenity]:
         async with self.__pool.connect() as conn:
             s = text(
@@ -419,7 +432,9 @@ class Client(datastore.Client[Config]):
         res = [models.Amenity.model_validate(r) for r in results]
         return res
 
-    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+    async def get_flight(
+        self, flight_id: int, ufl: UIFriendlyLogger
+    ) -> Optional[models.Flight]:
         async with self.__pool.connect() as conn:
             s = text(
                 """
@@ -440,6 +455,7 @@ class Client(datastore.Client[Config]):
         self,
         airline: str,
         number: str,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Flight]:
         async with self.__pool.connect() as conn:
             s = text(
@@ -461,6 +477,7 @@ class Client(datastore.Client[Config]):
     async def search_flights_by_airports(
         self,
         date: str,
+        ufl: UIFriendlyLogger,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
     ) -> list[models.Flight]:
@@ -496,17 +513,24 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
+        ufl: UIFriendlyLogger,
     ):
         raise NotImplementedError("Not Implemented")
 
     async def list_tickets(
         self,
         user_id: str,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Ticket]:
         raise NotImplementedError("Not Implemented")
 
     async def policies_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query: str,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Policy]:
         async with self.__pool.connect() as conn:
             s = text(

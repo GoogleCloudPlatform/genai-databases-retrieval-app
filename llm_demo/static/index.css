@@ -164,6 +164,19 @@ div.chat-wrapper div.chat-content div.ai span {
     border-radius: 10px;
 }
 
+div.chat-wrapper div.chat-content div.ai span .innermsg {
+    padding-right: 25px;
+}
+
+div.chat-wrapper div.chat-content div.ai span .info-icon {
+    position: absolute;
+    right: 13px;
+    top: 12px;
+    font-size: 20px;
+    color: #585858;
+    cursor: pointer;
+}
+
 div.chat-wrapper div.chat-content div.ai div.ticket-confirmation {
     position: relative;
     width: 70%;
@@ -240,6 +253,10 @@ div.chat-wrapper div.chat-content div.human span {
     border-radius: 10px;
 }
 
+div.chat-wrapper div.chat-content div.human span .info-icon {
+    display: none;
+}
+
 div.chat-wrapper div.chat-content div.human .sender-icon {
     display: none;
 }
@@ -314,3 +331,68 @@ div.chat-wrapper div.chat-content div#loader-container span {
       60%{background-position:0%  50%, 50% 100%,100%   0%}
       80%{background-position:0%  50%, 50%  50%,100% 100%}
   }
+
+#trace {
+    position: absolute;
+    width: 400px;
+    min-height: 200px;
+    max-height: 400px;
+    background: #f8f8f8;
+    padding: 10px;
+    border-radius: 11px;
+    overflow-y: scroll;
+    text-wrap: pretty;
+    word-break: break-word;
+    box-shadow: rgba(0, 0, 0, 0.3) 0 2px 10px;
+    padding-bottom: 10px;
+}
+
+#trace .header {
+    font-weight: 900;
+    border-bottom: 1px dashed #b8b8b8;
+}
+
+#trace .codeblock {
+    padding-left: 20px;
+    font-family: monospace;
+    font-size: 13px;
+    color: #317b10;
+    background: #f2f2f2;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    text-wrap: nowrap;
+    overflow: scroll;
+}
+
+#trace .codeblock .indent {
+    display: inline-block;
+    width: 4px;
+}
+
+#trace .results {
+    background: #ececec;
+    padding: 10px;
+    max-height: 200px;
+    overflow: scroll;
+    white-space: nowrap;
+}
+
+#trace .results th, td {
+    border: 0;
+    border-right: 1px solid #b5b5b5;
+    text-align: left;
+    padding-right: 10px;
+    padding-left: 5px;
+}
+
+#trace .results th:last-child, td:last-child {
+    border-right: 0px;
+}
+
+#trace .results th:first-child, td:first-child {
+    padding-left: 0px;
+}
+
+#trace .results table {
+    border: 0;
+}

@@ -30,6 +30,7 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_google_vertexai import VertexAI
 from pytz import timezone
 
+from ..helpers import ToolTrace
 from ..orchestrator import BaseOrchestrator, classproperty
 from .tools import get_confirmation_needing_tools, initialize_tools, insert_ticket
 
@@ -93,8 +94,13 @@ class UserAgent:
             raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
         return response
 
-    async def insert_ticket(self, params: str):
-        return await insert_ticket(self.client, params)
+    def update_tools(self, tools: List[StructuredTool]):
+        self.agent.tools = tools
+
+    async def insert_ticket(self, params: str, tool_trace: ToolTrace):
+        result = await insert_ticket(self.client, params, tool_trace)
+        trace = tool_trace.flush()
+        return {"result": result, "trace": trace}
 
     def reset_memory(self, base_message: List[BaseMessage]):
         self.memory.clear()
@@ -103,11 +109,13 @@ class UserAgent:
 
 class LangChainToolsOrchestrator(BaseOrchestrator):
     _user_sessions: Dict[str, UserAgent]
+    _user_traces: Dict[str, ToolTrace]
     # aiohttp context
     connector = None
 
     def __init__(self):
         self._user_sessions = {}
+        self._user_traces = {}
 
     @classproperty
     def kind(cls):
@@ -118,7 +126,8 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
 
     async def user_session_insert_ticket(self, uuid: str, params: str) -> Any:
         user_session = self.get_user_session(uuid)
-        response = await user_session.insert_ticket(params)
+        user_traces = self.get_user_traces(uuid)
+        response = await user_session.insert_ticket(params, user_traces)
         return response
 
     def check_and_add_confirmations(cls, response: Dict[str, Any]):
@@ -142,10 +151,12 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
             session["history"] = [BASE_HISTORY]
         history = self.parse_messages(session["history"])
         client = await self.create_client_session()
-        tools = await initialize_tools(client)
+        tool_trace = ToolTrace()
+        tools = await initialize_tools(client, tool_trace)
         prompt = self.create_prompt_template(tools)
         agent = UserAgent.initialize_agent(client, tools, history, prompt, self.MODEL)
         self._user_sessions[id] = agent
+        self._user_traces[id] = tool_trace
         self.confirmation_needing_tools = get_confirmation_needing_tools()
         self.client = client
 
@@ -160,18 +171,36 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         response["output"] = agent_response.get("output")
         if confirmation:
             response["confirmation"] = confirmation
+        response["trace"] = self.flush_user_trace(uuid)
         return response
 
-    def user_session_reset(self, session: dict[str, Any], uuid: str):
+    async def user_session_reset(self, session: dict[str, Any], uuid: str):
         user_session = self.get_user_session(uuid)
+
+        # clear session history
         del session["history"]
         base_history = self.get_base_history(session)
         session["history"] = [base_history]
         history = self.parse_messages(session["history"])
         user_session.reset_memory(history)
 
+        # clear session traces
+        del self._user_traces[uuid]
+        tool_trace = ToolTrace()
+        self._user_traces[uuid] = tool_trace
+
+        tools = await initialize_tools(self.client, tool_trace)
+        user_session.update_tools(tools)
+
     def get_user_session(self, uuid: str) -> UserAgent:
         return self._user_sessions[uuid]
+
+    def get_user_traces(self, uuid: str) -> ToolTrace:
+        return self._user_traces[uuid]
+
+    def flush_user_trace(self, uuid: str) -> str:
+        tool_trace = self.get_user_traces(uuid)
+        return tool_trace.flush()
 
     async def get_connector(self) -> TCPConnector:
         if self.connector is None:

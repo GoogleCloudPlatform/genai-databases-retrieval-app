@@ -22,6 +22,7 @@ from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 
 import models
+from helpers import UIFriendlyLogger
 
 from .. import datastore
 
@@ -275,11 +276,16 @@ class Client(datastore.Client[Config]):
         policies = [models.Policy.model_validate(dict(p)) for p in await policy_task]
         return airports, amenities, flights, policies
 
-    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
-        result = await self.__pool.fetchrow(
-            """
+    async def get_airport_by_id(
+        self, id: int, ufl: UIFriendlyLogger
+    ) -> Optional[models.Airport]:
+        ufl.log_header("Running SQL:")
+        get_query = """
               SELECT * FROM airports WHERE id=$1
-            """,
+            """
+        ufl.log_SQL(get_query, (id,))
+        result = await self.__pool.fetchrow(
+            get_query,
             id,
         )
 
@@ -287,13 +293,20 @@ class Client(datastore.Client[Config]):
             return None
 
         result = models.Airport.model_validate(dict(result))
+        ufl.log_header("Found following airport:")
+        ufl.log_list_dict_as_result([result])
         return result
 
-    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
-        result = await self.__pool.fetchrow(
-            """
+    async def get_airport_by_iata(
+        self, iata: str, ufl: UIFriendlyLogger
+    ) -> Optional[models.Airport]:
+        ufl.log_header("Running SQL:")
+        get_query = """
               SELECT * FROM airports WHERE iata ILIKE $1
-            """,
+            """
+        ufl.log_SQL(get_query, (iata,))
+        result = await self.__pool.fetchrow(
+            get_query,
             iata,
         )
 
@@ -301,36 +314,52 @@ class Client(datastore.Client[Config]):
             return None
 
         result = models.Airport.model_validate(dict(result))
+        ufl.log_header("Found following airport:")
+        ufl.log_list_dict_as_result([result])
         return result
 
     async def search_airports(
         self,
+        ufl: UIFriendlyLogger,
         country: Optional[str] = None,
         city: Optional[str] = None,
         name: Optional[str] = None,
     ) -> list[models.Airport]:
-        results = await self.__pool.fetch(
-            """
+        ufl.log_header("Running SQL:")
+        search_query = """
             SELECT * FROM airports
             WHERE ($1::TEXT IS NULL OR country ILIKE $1)
             AND ($2::TEXT IS NULL OR city ILIKE $2)
             AND ($3::TEXT IS NULL OR name ILIKE '%' || $3 || '%')
-            """,
+            """
+        search_query_params = (
             country,
             city,
             name,
+        )
+        ufl.log_SQL(search_query, search_query_params)
+        results = await self.__pool.fetch(
+            search_query,
+            *search_query_params,
             timeout=10,
         )
 
         results = [models.Airport.model_validate(dict(r)) for r in results]
+        ufl.log_header("Found following airports:")
+        ufl.log_list_dict_as_result(results)
         return results
 
-    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
-        result = await self.__pool.fetchrow(
-            """
+    async def get_amenity(
+        self, id: int, ufl: UIFriendlyLogger
+    ) -> Optional[models.Amenity]:
+        ufl.log_header("Running SQL:")
+        get_query = """
             SELECT id, name, description, location, terminal, category, hour
             FROM amenities WHERE id=$1
-            """,
+            """
+        ufl.log_SQL(get_query, (id,))
+        result = await self.__pool.fetchrow(
+            get_query,
             id,
         )
 
@@ -338,13 +367,19 @@ class Client(datastore.Client[Config]):
             return None
 
         result = models.Amenity.model_validate(dict(result))
+        ufl.log_header("Found following amenity:")
+        ufl.log_list_dict_as_result([result])
         return result
 
     async def amenities_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query: str,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Amenity]:
-        results = await self.__pool.fetch(
-            """
+        search_query = f"""
             SELECT id, name, description, location, terminal, category, hour
             FROM (
                 SELECT id, name, description, location, terminal, category,
@@ -354,22 +389,45 @@ class Client(datastore.Client[Config]):
                 ORDER BY similarity DESC
                 LIMIT $3
             ) AS sorted_amenities
-            """,
+            """
+        search_query_params = (
             query_embedding,
             similarity_threshold,
             top_k,
+        )
+        # Mocking the logging of code due to not using embeddings on the server currently
+        ufl.log_SQL(
+            search_query.replace(
+                "embedding", "embedding('textembedding-gecko@001', description)"
+            ),
+            (
+                f"embedding('textembedding-gecko@001', '{query}')",
+                search_query_params[1],
+                search_query_params[2],
+            ),
+        )
+        results = await self.__pool.fetch(
+            search_query,
+            *search_query_params,
             timeout=10,
         )
 
         results = [models.Amenity.model_validate(dict(r)) for r in results]
+        ufl.log_header("Found following amenities:")
+        ufl.log_list_dict_as_result(results)
         return results
 
-    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
-        result = await self.__pool.fetchrow(
-            """
+    async def get_flight(
+        self, flight_id: int, ufl: UIFriendlyLogger
+    ) -> Optional[models.Flight]:
+        ufl.log_header("Running SQL:")
+        get_query = """
                 SELECT * FROM flights
                 WHERE id = $1
-            """,
+            """
+        ufl.log_SQL(get_query, (flight_id,))
+        result = await self.__pool.fetchrow(
+            get_query,
             flight_id,
             timeout=10,
         )
@@ -378,46 +436,66 @@ class Client(datastore.Client[Config]):
             return None
 
         result = models.Flight.model_validate(dict(result))
+        ufl.log_header("Found following flight:")
+        ufl.log_list_dict_as_result([result])
         return result
 
     async def search_flights_by_number(
         self,
         airline: str,
         number: str,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Flight]:
-        results = await self.__pool.fetch(
-            """
+        ufl.log_header("Running SQL:")
+        search_query = """
                 SELECT * FROM flights
                 WHERE airline = $1
                 AND flight_number = $2;
-            """,
+            """
+        search_query_params = (
             airline,
             number,
+        )
+        ufl.log_SQL(search_query, search_query_params)
+        results = await self.__pool.fetch(
+            search_query,
+            *search_query_params,
             timeout=10,
         )
         results = [models.Flight.model_validate(dict(r)) for r in results]
+        ufl.log_header("Found following flights:")
+        ufl.log_list_dict_as_result(results)
         return results
 
     async def search_flights_by_airports(
         self,
         date: str,
+        ufl: UIFriendlyLogger,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
     ) -> list[models.Flight]:
-        results = await self.__pool.fetch(
-            """
+        ufl.log_header("Running SQL:")
+        search_query = """
                 SELECT * FROM flights
                 WHERE ($1::TEXT IS NULL OR departure_airport ILIKE $1)
                 AND ($2::TEXT IS NULL OR arrival_airport ILIKE $2)
                 AND departure_time >= $3::timestamp
                 AND departure_time < $3::timestamp + interval '1 day';
-            """,
+            """
+        search_query_params = (
             departure_airport,
             arrival_airport,
             datetime.strptime(date, "%Y-%m-%d"),
+        )
+        ufl.log_SQL(search_query, search_query_params)
+        results = await self.__pool.fetch(
+            search_query,
+            *search_query_params,
             timeout=10,
         )
         results = [models.Flight.model_validate(dict(r)) for r in results]
+        ufl.log_header("Found following flights:")
+        ufl.log_list_dict_as_result(results)
         return results
 
     async def validate_ticket(
@@ -428,9 +506,10 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: datetime,
         arrival_time: datetime,
+        ufl: UIFriendlyLogger,
     ) -> bool:
-        results = await self.__pool.fetch(
-            """
+        ufl.log_header("Running query to determine if flight requested exists:")
+        query = """
                 SELECT * FROM flights
                 WHERE airline ILIKE $1
                 AND flight_number ILIKE $2
@@ -438,16 +517,22 @@ class Client(datastore.Client[Config]):
                 AND arrival_airport ILIKE $4
                 AND departure_time = $5::timestamp
                 AND arrival_time = $6::timestamp;
-            """,
+            """
+        query_params = (
             airline,
             flight_number,
             departure_airport,
             arrival_airport,
             departure_time,
             arrival_time,
+        )
+        results = await self.__pool.fetch(
+            query,
+            *query_params,
             timeout=10,
         )
         if len(results) == 1:
+            ufl.log("Determined that flight exists.")
             return True
         return False
 
@@ -462,6 +547,7 @@ class Client(datastore.Client[Config]):
         arrival_airport: str,
         departure_time: str,
         arrival_time: str,
+        ufl: UIFriendlyLogger,
     ):
         departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
         arrival_time_datetime = datetime.strptime(arrival_time, "%Y-%m-%d %H:%M:%S")
@@ -472,10 +558,11 @@ class Client(datastore.Client[Config]):
             arrival_airport,
             departure_time_datetime,
             arrival_time_datetime,
+            ufl,
         ):
             raise Exception("Flight information not in database")
-        results = await self.__pool.execute(
-            """
+        ufl.log_header("Inserting confirmed ticket into tickets table:")
+        ticket_insertion_query = """
                 INSERT INTO tickets (
                     user_id,
                     user_name,
@@ -489,7 +576,8 @@ class Client(datastore.Client[Config]):
                 ) VALUES (
                    $1, $2, $3, $4, $5, $6, $7, $8, $9
                 );
-            """,
+            """
+        ticket_insertion_query_params = (
             user_id,
             user_name,
             user_email,
@@ -499,31 +587,53 @@ class Client(datastore.Client[Config]):
             arrival_airport,
             departure_time_datetime,
             arrival_time_datetime,
-            timeout=10,
         )
-        if results != "INSERT 0 1":
+        ufl.log_SQL(ticket_insertion_query, ticket_insertion_query_params)
+        async with self.__pool.acquire() as conn:
+            async with conn.transaction():
+                ticket_booking_result = await conn.fetchrow(
+                    ticket_insertion_query,
+                    *ticket_insertion_query_params,
+                    timeout=10,
+                )
+        if ticket_booking_result:
+            ticket_id = ticket_booking_result["id"]
+            ufl.log(f"Confirmed insertion of ticket. Id:{ticket_id}")
+        else:
             raise Exception("Ticket Insertion failure")
 
     async def list_tickets(
         self,
         user_id: str,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Ticket]:
-        results = await self.__pool.fetch(
-            """
+        ufl.log_header("Running SQL:")
+        query = """
                 SELECT * FROM tickets
                 WHERE user_id = $1
-            """,
-            user_id,
+            """
+        query_params = (user_id,)
+        ufl.log_SQL(query, query_params)
+        results = await self.__pool.fetch(
+            query,
+            *query_params,
             timeout=10,
         )
         results = [models.Ticket.model_validate(dict(r)) for r in results]
+        ufl.log_header("Found following tickets:")
+        ufl.log_list_dict_as_result(results)
         return results
 
     async def policies_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+        self,
+        query: str,
+        query_embedding: list[float],
+        similarity_threshold: float,
+        top_k: int,
+        ufl: UIFriendlyLogger,
     ) -> list[models.Policy]:
-        results = await self.__pool.fetch(
-            """
+        ufl.log_header("Running similarity search:")
+        search_query = """
             SELECT id, content
             FROM (
                 SELECT id, content, 1 - (embedding <=> $1) AS similarity
@@ -532,14 +642,29 @@ class Client(datastore.Client[Config]):
                 ORDER BY similarity DESC
                 LIMIT $3
             ) AS sorted_policies
-            """,
+            """
+        search_query_params = (
             query_embedding,
             similarity_threshold,
             top_k,
+        )
+        ufl.log_SQL(
+            search_query,
+            (
+                f"embedding('textembedding-gecko@001', '{query}')",
+                search_query_params[1],
+                search_query_params[2],
+            ),
+        )
+        results = await self.__pool.fetch(
+            search_query,
+            *search_query_params,
             timeout=10,
         )
 
         results = [models.Policy.model_validate(dict(r)) for r in results]
+        ufl.log_header("Found following policies:")
+        ufl.log_list_dict_as_result(results)
         return results
 
     async def close(self):
