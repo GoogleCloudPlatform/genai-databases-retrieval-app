@@ -29,7 +29,7 @@ import models
 from .. import datastore
 
 # Identifier for Spanner
-SPANNER_IDENTIFIER = "spanner-gsql"
+SPANNER_IDENTIFIER = "spanner"
 
 
 class DialectSemantics(ABC):
@@ -332,7 +332,7 @@ class Config(BaseModel, datastore.AbstractConfig):
         service_account_key_file (str): Service Account Key File.
     """
 
-    kind: Literal["spanner-gsql"]
+    kind: Literal["spanner"]
     project: str
     instance: str
     database: str

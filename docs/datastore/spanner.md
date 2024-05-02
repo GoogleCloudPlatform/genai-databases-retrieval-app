@@ -108,7 +108,7 @@ gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:[SA_
       host: 0.0.0.0
       datastore:
         # Example for Spanner
-        kind: "spanner-gsql"
+        kind: "spanner"
         project: <YOUR_PROJECT_ID>
         instance: my-spanner-instance
         database: my-spanner-database
