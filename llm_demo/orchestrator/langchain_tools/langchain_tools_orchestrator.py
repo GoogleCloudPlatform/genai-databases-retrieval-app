@@ -333,7 +333,7 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         return prompt
 
     def get_datetime(self):
-        formatter = "%A, %Y-%m-%d, %H:%M:%S"
+        formatter = "%Y-%m-%d"
         now = datetime.now(timezone("US/Pacific"))
         return now.strftime(formatter)
 
