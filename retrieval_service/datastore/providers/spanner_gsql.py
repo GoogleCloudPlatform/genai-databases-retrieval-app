@@ -13,9 +13,11 @@
 # limitations under the License.
 
 import datetime
+from abc import ABC, abstractmethod
 from typing import Any, Dict, Literal, Optional
 
 from google.cloud import spanner  # type: ignore
+from google.cloud.spanner_admin_database_v1.types import DatabaseDialect
 from google.cloud.spanner_v1 import JsonObject, param_types
 from google.cloud.spanner_v1.database import Database
 from google.cloud.spanner_v1.instance import Instance
@@ -30,153 +32,54 @@ from .. import datastore
 SPANNER_IDENTIFIER = "spanner-gsql"
 
 
-# Configuration model for Spanner
-class Config(BaseModel, datastore.AbstractConfig):
+class DialectSemantics(ABC):
     """
-    Configuration model for Spanner.
-
-    Attributes:
-        kind (Literal["spanner"]): Type of datastore.
-        project (str): Google Cloud project ID.
-        instance (str): ID of the Spanner instance.
-        database (str): ID of the Spanner database.
-        service_account_key_file (str): Service Account Key File.
+    Abstract base class for dialect semantics.
     """
 
-    kind: Literal["spanner-gsql"]
-    project: str
-    instance: str
-    database: str
-    service_account_key_file: str
-
-
-# Client class for interacting with Spanner
-class Client(datastore.Client[Config]):
-    OPERATION_TIMEOUT_SECONDS = 240
-    BATCH_SIZE = 1000
-    AIRPORT_COLUMNS = ["id", "iata", "name", "city", "country"]
-    AMENITIES_COLUMNS = [
-        "id",
-        "name",
-        "description",
-        "location",
-        "terminal",
-        "category",
-        "hour",
-        "sunday_start_hour",
-        "sunday_end_hour",
-        "monday_start_hour",
-        "monday_end_hour",
-        "tuesday_start_hour",
-        "tuesday_end_hour",
-        "wednesday_start_hour",
-        "wednesday_end_hour",
-        "thursday_start_hour",
-        "thursday_end_hour",
-        "friday_start_hour",
-        "friday_end_hour",
-        "saturday_start_hour",
-        "saturday_end_hour",
-        "content",
-        "embedding",
-    ]
-    FLIGHTS_COLUMNS = [
-        "id",
-        "airline",
-        "flight_number",
-        "departure_airport",
-        "arrival_airport",
-        "departure_time",
-        "arrival_time",
-        "departure_gate",
-        "arrival_gate",
-    ]
-
-    POLICIES_COLUMNS = ["id", "content", "embedding"]
-    """
-    Client class for interacting with Spanner.
-
-    Attributes:
-        __client (spanner.Client): Spanner client instance.
-        __instance_id (str): ID of the Spanner instance.
-        __database_id (str): ID of the Spanner database.
-        __instance (Instance): Spanner instance.
-        __database (Database): Spanner database.
-    """
-
-    @datastore.classproperty
-    def kind(cls):
-        return SPANNER_IDENTIFIER
-
-    def __init__(self, client: spanner.Client, instance_id: str, database_id: str):
+    def get_database_ddl(self) -> list[str]:
         """
-        Initialize the Spanner client.
-
-        Args:
-            client (spanner.Client): Spanner client instance.
-            instance_id (str): ID of the Spanner instance.
-            database_id (str): ID of the Spanner database.
-        """
-        self.__client = client
-        self.__instance_id = instance_id
-        self.__database_id = database_id
-
-        self.__instance = self.__client.instance(self.__instance_id)
-        self.__database = self.__instance.database(self.__database_id)
-
-    @classmethod
-    async def create(cls, config: Config) -> "Client":
-        """
-        Create a Spanner client.
-
-        Args:
-            config (Config): Configuration for creating the client.
+        Abstract method to get the Data Definition Language (DDL) statements for the database.
 
         Returns:
-            Client: Initialized Spanner client.
+            list[str]: List of DDL statements.
         """
-        client: spanner.Client
+        raise NotImplementedError(
+            "get_database_ddl method must be implemented by subclass."
+        )
 
-        if config.service_account_key_file is not None:
-            credentials = service_account.Credentials.from_service_account_file(
-                config.service_account_key_file
-            )
-            client = spanner.Client(project=config.project, credentials=credentials)
-        else:
-            client = spanner.Client(project=config.project)
-
-        instance_id = config.instance
-        instance = client.instance(instance_id)
-
-        if not instance.exists():
-            raise Exception(f"Instance with id: {instance_id} doesn't exist.")
-
-        database_id = config.database
-        database = instance.database(database_id)
-
-        if not database.exists():
-            raise Exception(f"Database with id: {database_id} doesn't exist.")
-
-        return cls(client, instance_id, database_id)
-
-    async def initialize_data(
-        self,
-        airports: list[models.Airport],
-        amenities: list[models.Amenity],
-        flights: list[models.Flight],
-        policies: list[models.Policy],
-    ) -> None:
+    def get_query_placeholder(self, num: int) -> list:
         """
-        Initialize data in the Spanner database by creating tables and inserting records.
+        Abstract method to get placeholders for query parameters.
 
         Args:
-            airports (list[models.Airport]): list of airports to be initialized.
-            amenities (list[models.Amenity]): list of amenities to be initialized.
-            flights (list[models.Flight]): list of flights to be initialized.
-            policies (list[models.Policy]): list of policies to be initialized.
+            num (int): Number of placeholders to generate.
+
         Returns:
-            None
+            list: List of placeholders.
         """
+        raise NotImplementedError(
+            "get_query_placeholder method must be implemented by subclass."
+        )
+
+    def get_distance_function(self) -> str:
+        """
+        Abstract method to get the distance function for similarity search.
+
+        Returns:
+            str: The distance function.
+        """
+        raise NotImplementedError(
+            "get_distance_function method must be implemented by subclass."
+        )
+
+
+class GoogleSqlSemantics(DialectSemantics):
+    """
+    Implementation of dialect semantics for Google SQL.
+    """
+
+    def get_database_ddl(self) -> list[str]:
         # Initialize a list to store Data Definition Language (DDL) statements
         ddl = []
 
@@ -284,8 +187,303 @@ class Client(datastore.Client[Config]):
             """
         )
 
+        return ddl
+
+    def get_query_placeholder(self, num: int) -> list:
+        return [("@param" + str(i), "param" + str(i)) for i in range(1, num + 1)]
+
+    def get_distance_function(self) -> str:
+        return "COSINE_DISTANCE"
+
+
+class PGSqlSemantics(DialectSemantics):
+    """
+    Implementation of dialect semantics for PGSQL.
+    """
+
+    def get_database_ddl(self) -> list[str]:
+        # Initialize a list to store Data Definition Language (DDL) statements
+        ddl = []
+
+        # Create DDL statement to drop the 'airports' table if it exists
+        ddl.append("DROP TABLE IF EXISTS airports")
+
+        # Create DDL statement to create the 'airports' table
+        ddl.append(
+            """
+            CREATE TABLE airports(
+                id BIGINT PRIMARY KEY,
+                iata VARCHAR,
+                name VARCHAR,
+                city VARCHAR,
+                country VARCHAR
+            )
+            """
+        )
+
+        # Create DDL statement to drop the 'amenities' table if it exists
+        ddl.append("DROP TABLE IF EXISTS amenities")
+
+        # Create DDL statement to create the 'amenities' table
+        ddl.append(
+            """
+            CREATE TABLE amenities(
+                id BIGINT PRIMARY KEY,
+                name VARCHAR,
+                description VARCHAR,
+                location VARCHAR,
+                terminal VARCHAR,
+                category VARCHAR,
+                hour VARCHAR,
+                sunday_start_hour VARCHAR,
+                sunday_end_hour VARCHAR,
+                monday_start_hour VARCHAR,
+                monday_end_hour VARCHAR,
+                tuesday_start_hour VARCHAR,
+                tuesday_end_hour VARCHAR,
+                wednesday_start_hour VARCHAR,
+                wednesday_end_hour VARCHAR,
+                thursday_start_hour VARCHAR,
+                thursday_end_hour VARCHAR,
+                friday_start_hour VARCHAR,
+                friday_end_hour VARCHAR,
+                saturday_start_hour VARCHAR,
+                saturday_end_hour VARCHAR,
+                content VARCHAR NOT NULL,
+                embedding FLOAT8[] NOT NULL
+            )
+            """
+        )
+
+        # Create DDL statement to drop the 'flights' table if it exists
+        ddl.append("DROP TABLE IF EXISTS flights")
+
+        # Create DDL statement to create the 'flights' table
+        ddl.append(
+            """
+            CREATE TABLE flights(
+                id BIGINT PRIMARY KEY,
+                airline VARCHAR,
+                flight_number VARCHAR,
+                departure_airport VARCHAR,
+                arrival_airport VARCHAR,
+                departure_time VARCHAR(100),
+                arrival_time VARCHAR(100),
+                departure_gate VARCHAR,
+                arrival_gate VARCHAR
+            )
+            """
+        )
+
+        # Create DDL statement to drop the 'policies' table if it exists
+        ddl.append("DROP TABLE IF EXISTS policies")
+
+        # Create DDL statement to create the 'policies' table
+        ddl.append(
+            """
+            CREATE TABLE policies(
+                id BIGINT PRIMARY KEY,
+                content VARCHAR NOT NULL,
+                embedding FLOAT8[] NOT NULL
+            )
+            """
+        )
+
+        # Create DDL statement to drop the 'tickets' table if it exists
+        ddl.append("DROP TABLE IF EXISTS tickets")
+
+        # Create DDL statement to create the 'tickets' table
+        ddl.append(
+            """
+            CREATE TABLE tickets(
+                user_id VARCHAR,
+                user_name VARCHAR,
+                user_email VARCHAR,
+                airline VARCHAR,
+                flight_number VARCHAR,
+                departure_airport VARCHAR,
+                arrival_airport VARCHAR,
+                departure_time VARCHAR(100),
+                arrival_time VARCHAR(100),
+                PRIMARY KEY(user_id, airline, flight_number, departure_time)
+            )
+            """
+        )
+
+        return ddl
+
+    def get_query_placeholder(self, num: int) -> list:
+        return [("$" + str(i), "p" + str(i)) for i in range(1, num + 1)]
+
+    def get_distance_function(self) -> str:
+        return "spanner.cosine_distance"
+
+
+# Configuration model for Spanner
+class Config(BaseModel, datastore.AbstractConfig):
+    """
+    Configuration model for Spanner.
+
+    Attributes:
+        kind (Literal["spanner"]): Type of datastore.
+        project (str): Google Cloud project ID.
+        instance (str): ID of the Spanner instance.
+        database (str): ID of the Spanner database.
+        service_account_key_file (str): Service Account Key File.
+    """
+
+    kind: Literal["spanner-gsql"]
+    project: str
+    instance: str
+    database: str
+    service_account_key_file: str
+
+
+# Client class for interacting with Spanner
+class Client(datastore.Client[Config]):
+    """
+    Client class for interacting with Spanner.
+
+    Attributes:
+        __client (spanner.Client): Spanner client instance.
+        __instance_id (str): ID of the Spanner instance.
+        __database_id (str): ID of the Spanner database.
+        __instance (Instance): Spanner instance.
+        __database (Database): Spanner database.
+    """
+
+    OPERATION_TIMEOUT_SECONDS = 240
+    BATCH_SIZE = 1000
+    AIRPORT_COLUMNS = ["id", "iata", "name", "city", "country"]
+    AMENITIES_COLUMNS = [
+        "id",
+        "name",
+        "description",
+        "location",
+        "terminal",
+        "category",
+        "hour",
+        "sunday_start_hour",
+        "sunday_end_hour",
+        "monday_start_hour",
+        "monday_end_hour",
+        "tuesday_start_hour",
+        "tuesday_end_hour",
+        "wednesday_start_hour",
+        "wednesday_end_hour",
+        "thursday_start_hour",
+        "thursday_end_hour",
+        "friday_start_hour",
+        "friday_end_hour",
+        "saturday_start_hour",
+        "saturday_end_hour",
+        "content",
+        "embedding",
+    ]
+    FLIGHTS_COLUMNS = [
+        "id",
+        "airline",
+        "flight_number",
+        "departure_airport",
+        "arrival_airport",
+        "departure_time",
+        "arrival_time",
+        "departure_gate",
+        "arrival_gate",
+    ]
+
+    POLICIES_COLUMNS = ["id", "content", "embedding"]
+
+    @datastore.classproperty
+    def kind(cls):
+        return SPANNER_IDENTIFIER
+
+    def __init__(self, client: spanner.Client, instance_id: str, database_id: str):
+        """
+        Initialize the Spanner client.
+
+        Args:
+            client (spanner.Client): Spanner client instance.
+            instance_id (str): ID of the Spanner instance.
+            database_id (str): ID of the Spanner database.
+        """
+        self.__client = client
+        self.__instance_id = instance_id
+        self.__database_id = database_id
+
+        self.__instance = self.__client.instance(self.__instance_id)
+        self.__database = self.__instance.database(self.__database_id)
+
+        self._dialect_semantics: DialectSemantics
+
+        if self.__database.database_dialect == DatabaseDialect.POSTGRESQL:
+            self._dialect_semantics = PGSqlSemantics()
+        else:
+            self._dialect_semantics = GoogleSqlSemantics()
+
+        self._placeholders = self._dialect_semantics.get_query_placeholder(20)
+
+    @classmethod
+    async def create(cls, config: Config) -> "Client":
+        """
+        Create a Spanner client.
+
+        Args:
+            config (Config): Configuration for creating the client.
+
+        Returns:
+            Client: Initialized Spanner client.
+        """
+        client: spanner.Client
+
+        if (
+            config.service_account_key_file is not None
+            and config.service_account_key_file.strip() != ""
+        ):
+            credentials = service_account.Credentials.from_service_account_file(
+                config.service_account_key_file
+            )
+            client = spanner.Client(project=config.project, credentials=credentials)
+        else:
+            client = spanner.Client(project=config.project)
+
+        instance_id = config.instance
+        instance = client.instance(instance_id)
+
+        if not instance.exists():
+            raise Exception(f"Instance with id: {instance_id} doesn't exist.")
+
+        database_id = config.database
+        database = instance.database(database_id)
+
+        if not database.exists():
+            raise Exception(f"Database with id: {database_id} doesn't exist.")
+
+        return cls(client, instance_id, database_id)
+
+    async def initialize_data(
+        self,
+        airports: list[models.Airport],
+        amenities: list[models.Amenity],
+        flights: list[models.Flight],
+        policies: list[models.Policy],
+    ) -> None:
+        """
+        Initialize data in the Spanner database by creating tables and inserting records.
+
+        Args:
+            airports (list[models.Airport]): list of airports to be initialized.
+            amenities (list[models.Amenity]): list of amenities to be initialized.
+            flights (list[models.Flight]): list of flights to be initialized.
+            policies (list[models.Policy]): list of policies to be initialized.
+        Returns:
+            None
+        """
+
         # Update the schema using DDL statements
-        operation = self.__database.update_ddl(ddl)
+        operation = self.__database.update_ddl(
+            self._dialect_semantics.get_database_ddl()
+        )
 
         print("Waiting for schema update operation to complete...")
         operation.result(self.OPERATION_TIMEOUT_SECONDS)
@@ -495,9 +693,11 @@ class Client(datastore.Client[Config]):
         with self.__database.snapshot() as snapshot:
             # Execute SQL query to fetch airport by ID
             result = snapshot.execute_sql(
-                sql="SELECT * FROM airports WHERE id = @id",
-                params={"id": id},
-                param_types={"id": param_types.INT64},
+                sql="SELECT * FROM airports WHERE id = {}".format(
+                    self._placeholders[0][0]
+                ),
+                params={self._placeholders[0][1]: id},
+                param_types={self._placeholders[0][1]: param_types.INT64},
             )
 
         # Check if result is None
@@ -527,9 +727,11 @@ class Client(datastore.Client[Config]):
         with self.__database.snapshot() as snapshot:
             # Execute SQL query to fetch airport by ID
             result = snapshot.execute_sql(
-                sql="SELECT * FROM airports WHERE LOWER(iata) LIKE LOWER(@iata)",
-                params={"iata": iata},
-                param_types={"iata": param_types.STRING},
+                sql="SELECT * FROM airports WHERE LOWER(iata) LIKE LOWER({})".format(
+                    self._placeholders[0][0]
+                ),
+                params={self._placeholders[0][1]: iata},
+                param_types={self._placeholders[0][1]: param_types.STRING},
             )
 
         # Check if result is None
@@ -567,23 +769,27 @@ class Client(datastore.Client[Config]):
             # Construct SQL query based on provided parameters
             query = """
                 SELECT * FROM airports
-                  WHERE (@country IS NULL OR LOWER(country) LIKE LOWER(@country))
-                  AND (@city IS NULL OR LOWER(city) LIKE LOWER(@city))
-                  AND (@name IS NULL OR LOWER(name) LIKE '%' || LOWER(@name) || '%')
-                """
+                  WHERE (COALESCE({country}) IS NULL OR LOWER(country) LIKE LOWER({country}))
+                  AND (COALESCE({city}) IS NULL OR LOWER(city) LIKE LOWER({city}))
+                  AND (COALESCE({name}) IS NULL OR LOWER(name) LIKE '%' || LOWER({name}) || '%')
+                """.format(
+                country=self._placeholders[0][0],
+                city=self._placeholders[1][0],
+                name=self._placeholders[2][0],
+            )
 
             # Execute SQL query with parameters
             results = snapshot.execute_sql(
                 sql=query,
                 params={
-                    "country": country,
-                    "city": city,
-                    "name": name,
+                    self._placeholders[0][1]: country,
+                    self._placeholders[1][1]: city,
+                    self._placeholders[2][1]: name,
                 },
                 param_types={
-                    "country": param_types.STRING,
-                    "city": param_types.STRING,
-                    "name": param_types.STRING,
+                    self._placeholders[0][1]: param_types.STRING,
+                    self._placeholders[1][1]: param_types.STRING,
+                    self._placeholders[2][1]: param_types.STRING,
                 },
             )
 
@@ -607,15 +813,18 @@ class Client(datastore.Client[Config]):
         Returns:
             Optional[models.Amenity]: An Amenity model instance if found, else None.
         """
+
         with self.__database.snapshot() as snapshot:
             # Spread SQL query for readability
             result = snapshot.execute_sql(
                 sql="""
                 SELECT * FROM amenities
-                WHERE id = @id
-                """,
-                params={"id": id},
-                param_types={"id": param_types.INT64},
+                WHERE id = {}
+                """.format(
+                    self._placeholders[0][0]
+                ),
+                params={self._placeholders[0][1]: id},
+                param_types={self._placeholders[0][1]: param_types.INT64},
             )
 
         # Check if result is None
@@ -652,26 +861,31 @@ class Client(datastore.Client[Config]):
                 SELECT id, name, description, location, terminal, category, hour
                 FROM (
                     SELECT id, name, description, location, terminal, category, hour,
-                       COSINE_DISTANCE(embedding, @query_embedding) AS similarity
+                       {distance}(embedding, {query_embedding}) AS similarity
                     FROM amenities
                 ) AS sorted_amenities
-                WHERE (1 - similarity) > @similarity_threshold
+                WHERE (1 - similarity) > {similarity_threshold}
                 ORDER BY similarity
-                LIMIT @top_k
-            """
+                LIMIT {top_k}
+            """.format(
+                distance=self._dialect_semantics.get_distance_function(),
+                query_embedding=self._placeholders[0][0],
+                similarity_threshold=self._placeholders[1][0],
+                top_k=self._placeholders[2][0],
+            )
 
             # Execute SQL query with parameters
             results = snapshot.execute_sql(
                 sql=query,
                 params={
-                    "query_embedding": query_embedding,
-                    "similarity_threshold": similarity_threshold,
-                    "top_k": top_k,
+                    self._placeholders[0][1]: query_embedding,
+                    self._placeholders[1][1]: similarity_threshold,
+                    self._placeholders[2][1]: top_k,
                 },
                 param_types={
-                    "query_embedding": param_types.Array(param_types.FLOAT64),
-                    "similarity_threshold": param_types.FLOAT64,
-                    "top_k": param_types.INT64,
+                    self._placeholders[0][1]: param_types.Array(param_types.FLOAT64),
+                    self._placeholders[1][1]: param_types.FLOAT64,
+                    self._placeholders[2][1]: param_types.INT64,
                 },
             )
 
@@ -700,10 +914,12 @@ class Client(datastore.Client[Config]):
             result = snapshot.execute_sql(
                 sql="""
                 SELECT * FROM flights
-                WHERE id = @flight_id
-                """,
-                params={"flight_id": flight_id},
-                param_types={"flight_id": param_types.INT64},
+                WHERE id = {}
+                """.format(
+                    self._placeholders[0][0]
+                ),
+                params={self._placeholders[0][1]: flight_id},
+                param_types={self._placeholders[0][1]: param_types.INT64},
             )
         # Check if result is None
         if result is None:
@@ -739,13 +955,18 @@ class Client(datastore.Client[Config]):
             results = snapshot.execute_sql(
                 sql="""
                 SELECT * FROM flights
-                WHERE airline = @airline
-                AND flight_number = @number
-                """,
-                params={"airline": airline, "number": number},
+                WHERE airline = {}
+                AND flight_number = {}
+                """.format(
+                    self._placeholders[0][0], self._placeholders[1][0]
+                ),
+                params={
+                    self._placeholders[0][1]: airline,
+                    self._placeholders[1][1]: number,
+                },
                 param_types={
-                    "airline": param_types.STRING,
-                    "number": param_types.STRING,
+                    self._placeholders[0][1]: param_types.STRING,
+                    self._placeholders[1][1]: param_types.STRING,
                 },
             )
 
@@ -780,24 +1001,39 @@ class Client(datastore.Client[Config]):
             # Spread SQL query for readability
             query = """
                 SELECT * FROM flights
-                WHERE (@departure_airport IS NULL OR LOWER(departure_airport) LIKE LOWER(@departure_airport))
-                AND (@arrival_airport IS NULL OR LOWER(arrival_airport) LIKE LOWER(@arrival_airport))
-                AND cast(departure_time as TIMESTAMP) >= CAST(@datetime AS TIMESTAMP)
-                AND cast(departure_time as TIMESTAMP) < TIMESTAMP_ADD(CAST(@datetime AS TIMESTAMP), INTERVAL 1 DAY)
-            """
+                WHERE (COALESCE({departure_airport}) IS NULL OR LOWER(departure_airport) LIKE LOWER({departure_airport}))
+                AND (COALESCE({arrival_airport}) IS NULL OR LOWER(arrival_airport) LIKE LOWER({arrival_airport}))
+                AND cast(departure_time as TIMESTAMP) >= CAST({datetime} AS TIMESTAMP)
+                AND cast(departure_time as TIMESTAMP) < TIMESTAMP_ADD(CAST({datetime} AS TIMESTAMP), INTERVAL 1 DAY)
+                """
+
+            if isinstance(self._dialect_semantics, PGSqlSemantics):
+                query = """
+                SELECT * FROM flights
+                WHERE (COALESCE({departure_airport}) IS NULL OR LOWER(departure_airport) LIKE LOWER({departure_airport}))
+                AND (COALESCE({arrival_airport}) IS NULL OR LOWER(arrival_airport) LIKE LOWER({arrival_airport}))
+                AND CAST(departure_time as timestamptz) >= CAST({datetime} AS timestamptz)
+                AND cast(departure_time as timestamptz) < spanner.timestamptz_add(CAST({datetime} AS timestamptz), '1 day')
+                """
+
+            query = query.format(
+                departure_airport=self._placeholders[0][0],
+                arrival_airport=self._placeholders[1][0],
+                datetime=self._placeholders[2][0],
+            )
 
             # Execute SQL query with parameters
             results = snapshot.execute_sql(
                 sql=query,
                 params={
-                    "departure_airport": departure_airport,
-                    "arrival_airport": arrival_airport,
-                    "datetime": date,
+                    self._placeholders[0][1]: departure_airport,
+                    self._placeholders[1][1]: arrival_airport,
+                    self._placeholders[2][1]: date,
                 },
                 param_types={
-                    "departure_airport": param_types.STRING,
-                    "arrival_airport": param_types.STRING,
-                    "datetime": param_types.STRING,
+                    self._placeholders[0][1]: param_types.STRING,
+                    self._placeholders[1][1]: param_types.STRING,
+                    self._placeholders[2][1]: param_types.STRING,
                 },
             )
 
@@ -825,28 +1061,39 @@ class Client(datastore.Client[Config]):
             results = snapshot.execute_sql(
                 sql="""
                     SELECT * FROM flights
-                    WHERE LOWER(airline) LIKE LOWER(@airline)
-                    AND LOWER(flight_number) LIKE LOWER(@flight_number)
-                    AND LOWER(departure_airport) LIKE LOWER(@departure_airport)
-                    AND LOWER(arrival_airport) LIKE LOWER(@arrival_airport)
-                    AND departure_time = @departure_time
-                    AND arrival_time = @arrival_time
-                """,
+                    WHERE LOWER(airline) LIKE LOWER({})
+                    AND LOWER(flight_number) LIKE LOWER({})
+                    AND LOWER(departure_airport) LIKE LOWER({})
+                    AND LOWER(arrival_airport) LIKE LOWER({})
+                    AND departure_time = {}
+                    AND arrival_time = {}
+                """.format(
+                    self._placeholders[0][0],
+                    self._placeholders[1][0],
+                    self._placeholders[2][0],
+                    self._placeholders[3][0],
+                    self._placeholders[4][0],
+                    self._placeholders[5][0],
+                ),
                 params={
-                    "airline": airline,
-                    "flight_number": flight_number,
-                    "departure_airport": departure_airport,
-                    "arrival_airport": arrival_airport,
-                    "departure_time": departure_time.strftime("%Y-%m-%d %H:%M:%S"),
-                    "arrival_time": arrival_time.strftime("%Y-%m-%d %H:%M:%S"),
+                    self._placeholders[0][1]: airline,
+                    self._placeholders[1][1]: flight_number,
+                    self._placeholders[2][1]: departure_airport,
+                    self._placeholders[3][1]: arrival_airport,
+                    self._placeholders[4][1]: departure_time.strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    ),
+                    self._placeholders[5][1]: arrival_time.strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    ),
                 },
                 param_types={
-                    "airline": param_types.STRING,
-                    "flight_number": param_types.STRING,
-                    "departure_airport": param_types.STRING,
-                    "arrival_airport": param_types.STRING,
-                    "departure_time": param_types.STRING,
-                    "arrival_time": param_types.STRING,
+                    self._placeholders[0][1]: param_types.STRING,
+                    self._placeholders[1][1]: param_types.STRING,
+                    self._placeholders[2][1]: param_types.STRING,
+                    self._placeholders[3][1]: param_types.STRING,
+                    self._placeholders[4][1]: param_types.STRING,
+                    self._placeholders[5][1]: param_types.STRING,
                 },
             )
 
@@ -944,10 +1191,12 @@ class Client(datastore.Client[Config]):
             results = snapshot.execute_sql(
                 sql="""
                 SELECT * FROM tickets
-                WHERE user_id = @user_id
-                """,
-                params={"user_id": user_id},
-                param_types={"user_id": param_types.STRING},
+                WHERE user_id = {}
+                """.format(
+                    self._placeholders[0][0]
+                ),
+                params={self._placeholders[0][1]: user_id},
+                param_types={self._placeholders[0][1]: param_types.STRING},
             )
 
         # Convert query results to model instances using model_validate method
@@ -994,26 +1243,31 @@ class Client(datastore.Client[Config]):
             query = """
                 SELECT id, content
                 FROM (
-                    SELECT id, content,  COSINE_DISTANCE(embedding, @query_embedding) AS similarity
+                    SELECT id, content,  {distance}(embedding, {query_embedding}) AS similarity
                     FROM policies 
                 ) AS sorted_policies
-                WHERE (1 - similarity) > @similarity_threshold
+                WHERE (1 - similarity) > {similarity_threshold}
                 ORDER BY similarity
-                LIMIT @top_k
-            """
+                LIMIT {top_k}
+            """.format(
+                distance=self._dialect_semantics.get_distance_function(),
+                query_embedding=self._placeholders[0][0],
+                similarity_threshold=self._placeholders[1][0],
+                top_k=self._placeholders[2][0],
+            )
 
             # Execute SQL query with parameters
             results = snapshot.execute_sql(
                 sql=query,
                 params={
-                    "query_embedding": query_embedding,
-                    "similarity_threshold": similarity_threshold,
-                    "top_k": top_k,
+                    self._placeholders[0][1]: query_embedding,
+                    self._placeholders[1][1]: similarity_threshold,
+                    self._placeholders[2][1]: top_k,
                 },
                 param_types={
-                    "query_embedding": param_types.Array(param_types.FLOAT64),
-                    "similarity_threshold": param_types.FLOAT64,
-                    "top_k": param_types.INT64,
+                    self._placeholders[0][1]: param_types.Array(param_types.FLOAT64),
+                    self._placeholders[1][1]: param_types.FLOAT64,
+                    self._placeholders[2][1]: param_types.INT64,
                 },
             )
 

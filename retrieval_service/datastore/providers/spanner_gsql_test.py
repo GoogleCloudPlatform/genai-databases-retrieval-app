@@ -20,6 +20,7 @@ import pytest
 import pytest_asyncio
 from csv_diff import compare, load_csv  # type: ignore
 from google.cloud import spanner  # type: ignore
+from google.cloud.spanner_admin_database_v1.types import DatabaseDialect
 from google.cloud.spanner_v1 import JsonObject, param_types
 from google.cloud.spanner_v1.database import Database
 from google.cloud.spanner_v1.instance import Instance
@@ -45,16 +46,17 @@ pytestmark = pytest.mark.asyncio(scope="module")
 def db_project() -> str:
     return get_env_var("DB_PROJECT", "Google Cloud Project")
 
-
 @pytest.fixture(scope="module")
 def db_instance() -> str:
     return get_env_var("DB_INSTANCE", "Spanner Instance")
-
 
 @pytest.fixture(scope="module")
 def db_name() -> str:
     return get_env_var("DB_NAME", "Spanner Database")
 
+@pytest.fixture(scope="module")
+def create_pg_database() -> str:
+    return get_env_var("CREATE_PG_DB", "Create PG database or not")
 
 @pytest.fixture(scope="module")
 def service_accounts_file_path() -> str:
@@ -62,10 +64,13 @@ def service_accounts_file_path() -> str:
         "SERVICE_ACCOUNT_KEY_FILE", "Service account with permission to spanner"
     )
 
-
 @pytest.fixture(scope="module")
 async def create_db(
-    db_project: str, db_instance: str, db_name: str, service_accounts_file_path: str
+    db_project: str,
+    db_instance: str,
+    db_name: str,
+    service_accounts_file_path: str,
+    create_pg_database: str,
 ) -> AsyncGenerator[str, None]:
     credentials = service_account.Credentials.from_service_account_file(
         service_accounts_file_path
@@ -74,7 +79,16 @@ async def create_db(
     client = spanner.Client(project=db_project, credentials=credentials)
     instance = client.instance(db_instance)
 
-    database = instance.database(db_name)
+    create_pg_database_flag = create_pg_database.lower() in ["true", "t", "1", "yes"]
+
+    database = instance.database(
+        db_name,
+        database_dialect=(
+            DatabaseDialect.POSTGRESQL
+            if create_pg_database_flag
+            else DatabaseDialect.GOOGLE_STANDARD_SQL
+        ),
+    )
 
     database.create()
 
@@ -112,6 +126,7 @@ async def ds(
         flights_ds_path,
         policies_ds_path,
     )
+
     await ds.initialize_data(airports, amenities, flights, policies)
 
     if ds is None:
