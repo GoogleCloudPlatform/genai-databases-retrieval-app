@@ -14,19 +14,18 @@
 
 import asyncio
 from datetime import datetime
-from ipaddress import IPv4Address
 from typing import Any, AsyncGenerator, List
 
 import asyncpg
 import pytest
 import pytest_asyncio
 from csv_diff import compare, load_csv  # type: ignore
-from google.cloud.sql.connector import Connector
+from google.cloud.alloydb.connector import AsyncConnector
 
 import models
 
 from .. import datastore
-from . import cloudsql_postgres
+from . import alloydb
 from .test_data import (
     amenities_query_embedding1,
     amenities_query_embedding2,
@@ -56,38 +55,49 @@ def db_project() -> str:
 
 @pytest.fixture(scope="module")
 def db_region() -> str:
-    return get_env_var("DB_REGION", "region for cloud sql instance")
+    return get_env_var("DB_REGION", "region for alloydb instance")
+
+
+@pytest.fixture(scope="module")
+def db_cluster() -> str:
+    return get_env_var("DB_CLUSTER", "cluster for alloydb")
 
 
 @pytest.fixture(scope="module")
 def db_instance() -> str:
-    return get_env_var("DB_INSTANCE", "instance for cloud sql")
+    return get_env_var("DB_INSTANCE", "instance for alloydb")
 
 
 @pytest.fixture(scope="module")
 async def create_db(
-    db_user: str, db_pass: str, db_project: str, db_region: str, db_instance: str
+    db_user: str,
+    db_pass: str,
+    db_project: str,
+    db_region: str,
+    db_cluster: str,
+    db_instance: str,
 ) -> AsyncGenerator[str, None]:
     db_name = get_env_var("DB_NAME", "name of a postgres database")
-    loop = asyncio.get_running_loop()
-    connector = Connector(loop=loop)
+    connector = AsyncConnector()
     # Database does not exist, create it.
-    sys_conn: asyncpg.Connection = await connector.connect_async(
-        f"{db_project}:{db_region}:{db_instance}",
+    sys_conn: asyncpg.Connection = await connector.connect(
+        f"projects/{db_project}/locations/{db_region}/clusters/{db_cluster}/instances/{db_instance}",
         "asyncpg",
         user=f"{db_user}",
         password=f"{db_pass}",
         db="postgres",
+        ip_type="PUBLIC",
     )
     await sys_conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
     await sys_conn.execute(f'CREATE DATABASE "{db_name}";')
     await sys_conn.close()
-    conn: asyncpg.Connection = await connector.connect_async(
-        f"{db_project}:{db_region}:{db_instance}",
+    conn: asyncpg.Connection = await connector.connect(
+        f"projects/{db_project}/locations/{db_region}/clusters/{db_cluster}/instances/{db_instance}",
         "asyncpg",
         user=f"{db_user}",
         password=f"{db_pass}",
         db=f"{db_name}",
+        ip_type="PUBLIC",
     )
     await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
     yield db_name
@@ -102,16 +112,18 @@ async def ds(
     db_pass: str,
     db_project: str,
     db_region: str,
+    db_cluster: str,
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
     db_name = await create_db.__anext__()
-    cfg = cloudsql_postgres.Config(
-        kind="cloudsql-postgres",
+    cfg = alloydb.Config(
+        kind="alloydb-postgres",
         user=db_user,
         password=db_pass,
         database=db_name,
         project=db_project,
         region=db_region,
+        cluster=db_cluster,
         instance=db_instance,
     )
     t = create_db
@@ -143,7 +155,7 @@ def check_file_diff(file_diff):
     assert file_diff["columns_removed"] == []
 
 
-async def test_export_dataset(ds: cloudsql_postgres.Client):
+async def test_export_dataset(ds: alloydb.Client):
     airports, amenities, flights, policies = await ds.export_data()
 
     airports_ds_path = "../data/airport_dataset.csv"
@@ -190,7 +202,7 @@ async def test_export_dataset(ds: cloudsql_postgres.Client):
     check_file_diff(diff_policies)
 
 
-async def test_get_airport_by_id(ds: cloudsql_postgres.Client):
+async def test_get_airport_by_id(ds: alloydb.Client):
     res = await ds.get_airport_by_id(1)
     expected = models.Airport(
         id=1,
@@ -209,7 +221,7 @@ async def test_get_airport_by_id(ds: cloudsql_postgres.Client):
         pytest.param("sfo", id="lower_case"),
     ],
 )
-async def test_get_airport_by_iata(ds: cloudsql_postgres.Client, iata: str):
+async def test_get_airport_by_iata(ds: alloydb.Client, iata: str):
     res = await ds.get_airport_by_iata(iata)
     expected = models.Airport(
         id=3270,
@@ -293,7 +305,7 @@ search_airports_test_data = [
 
 @pytest.mark.parametrize("country, city, name, expected", search_airports_test_data)
 async def test_search_airports(
-    ds: cloudsql_postgres.Client,
+    ds: alloydb.Client,
     country: str,
     city: str,
     name: str,
@@ -303,7 +315,7 @@ async def test_search_airports(
     assert res == expected
 
 
-async def test_get_amenity(ds: cloudsql_postgres.Client):
+async def test_get_amenity(ds: alloydb.Client):
     res = await ds.get_amenity(0)
     expected = models.Amenity(
         id=0,
@@ -440,7 +452,7 @@ amenities_search_test_data = [
     "query_embedding, similarity_threshold, top_k, expected", amenities_search_test_data
 )
 async def test_amenities_search(
-    ds: cloudsql_postgres.Client,
+    ds: alloydb.Client,
     query_embedding: List[float],
     similarity_threshold: float,
     top_k: int,
@@ -450,7 +462,7 @@ async def test_amenities_search(
     assert res == expected
 
 
-async def test_get_flight(ds: cloudsql_postgres.Client):
+async def test_get_flight(ds: alloydb.Client):
     res = await ds.get_flight(1)
     expected = models.Flight(
         id=1,
@@ -517,7 +529,7 @@ search_flights_by_number_test_data = [
     "airline, number, expected", search_flights_by_number_test_data
 )
 async def test_search_flights_by_number(
-    ds: cloudsql_postgres.Client,
+    ds: alloydb.Client,
     airline: str,
     number: str,
     expected: List[models.Flight],
@@ -640,7 +652,7 @@ search_flights_by_airports_test_data = [
     search_flights_by_airports_test_data,
 )
 async def test_search_flights_by_airports(
-    ds: cloudsql_postgres.Client,
+    ds: alloydb.Client,
     date: str,
     departure_airport: str,
     arrival_airport: str,
@@ -699,7 +711,7 @@ policies_search_test_data = [
     "query_embedding, similarity_threshold, top_k, expected", policies_search_test_data
 )
 async def test_policies_search(
-    ds: cloudsql_postgres.Client,
+    ds: alloydb.Client,
     query_embedding: List[float],
     similarity_threshold: float,
     top_k: int,
