@@ -135,6 +135,14 @@ async def ds(
     await ds.close()
 
 
+def check_file_diff(file_diff):
+    assert file_diff["added"] == []
+    assert file_diff["removed"] == []
+    assert file_diff["changed"] == []
+    assert file_diff["columns_added"] == []
+    assert file_diff["columns_removed"] == []
+
+
 async def test_export_dataset(ds: cloudsql_postgres.Client):
     airports, amenities, flights, policies = await ds.export_data()
 
@@ -162,40 +170,24 @@ async def test_export_dataset(ds: cloudsql_postgres.Client):
     diff_airports = compare(
         load_csv(open(airports_ds_path), "id"), load_csv(open(airports_new_path), "id")
     )
-    assert diff_airports["added"] == []
-    assert diff_airports["removed"] == []
-    assert diff_airports["changed"] == []
-    assert diff_airports["columns_added"] == []
-    assert diff_airports["columns_removed"] == []
+    check_file_diff(diff_airports)
 
     diff_amenities = compare(
         load_csv(open(amenities_ds_path), "id"),
         load_csv(open(amenities_new_path), "id"),
     )
-    assert diff_amenities["added"] == []
-    assert diff_amenities["removed"] == []
-    assert diff_amenities["changed"] == []
-    assert diff_amenities["columns_added"] == []
-    assert diff_amenities["columns_removed"] == []
+    check_file_diff(diff_amenities)
 
     diff_flights = compare(
         load_csv(open(flights_ds_path), "id"), load_csv(open(flights_new_path), "id")
     )
-    assert diff_flights["added"] == []
-    assert diff_flights["removed"] == []
-    assert diff_flights["changed"] == []
-    assert diff_flights["columns_added"] == []
-    assert diff_flights["columns_removed"] == []
+    check_file_diff(diff_flights)
 
     diff_policies = compare(
         load_csv(open(policies_ds_path), "id"),
         load_csv(open(policies_new_path), "id"),
     )
-    assert diff_policies["added"] == []
-    assert diff_policies["removed"] == []
-    assert diff_policies["changed"] == []
-    assert diff_policies["columns_added"] == []
-    assert diff_policies["columns_removed"] == []
+    check_file_diff(diff_policies)
 
 
 async def test_get_airport_by_id(ds: cloudsql_postgres.Client):
