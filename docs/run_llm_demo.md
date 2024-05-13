@@ -31,6 +31,7 @@
     | orchestration-type            | Description                                 |
     |-------------------------------|---------------------------------------------|
     | langchain-tools               | LangChain tools orchestrator.               |
+    | vertexai-function-calling     | VertexAI Function Calling orchestrator.     |
 
     ```bash
     export ORCHESTRATION_TYPE=<orchestration-type>

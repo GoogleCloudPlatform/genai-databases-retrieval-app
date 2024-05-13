@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import cloudsql_postgres, firestore, postgres, spanner_gsql
+from . import alloydb, cloudsql_postgres, firestore, postgres, spanner_gsql
 
-__ALL__ = [postgres, cloudsql_postgres, firestore, spanner_gsql]
+__ALL__ = [alloydb, postgres, cloudsql_postgres, firestore, spanner_gsql]

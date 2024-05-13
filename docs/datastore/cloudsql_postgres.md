@@ -89,6 +89,27 @@
     psql "host=127.0.0.1 port=5432 sslmode=disable user=$DB_USER"
     ```
 
+## Update config
+
+Update `config.yml` with your database information.
+
+```bash
+host: 0.0.0.0
+datastore:
+    # Example for cloudsql_postgres.py provider
+    kind: "cloudsql-postgres"
+    # Update this with your project ID
+    project: <PROJECT_ID>
+    region: us-central1
+    instance: my-cloudsql-instance
+    # Update this with the database name
+    database: "assistantdemo"
+    # Update with database user, the default is `postgres`
+    user: "postgres"
+    # Update with database user password
+    password: "my-cloudsql-pass"
+```
+
 ## Initialize data
 
 1. While connected using `psql`, create a database and switch to it:
@@ -122,25 +143,6 @@
     cp example-config.yml config.yml
     ```
 
-1. Update `config.yml` with your database information.
-
-    ```bash
-    host: 0.0.0.0
-    datastore:
-      # Example for cloudsql_postgres.py provider
-      kind: "cloudsql-postgres"
-      # Update this with your project ID
-      project: <PROJECT_ID>
-      region: us-central1
-      instance: my-cloudsql-instance
-      # Update this with the database name
-      database: "assistantdemo"
-      # Update with database user, the default is `postgres`
-      user: "postgres"
-      # Update with database user password
-      password: "my-cloudsql-pass"
-    ```
-
 1. Populate data into database:
 
     ```bash
@@ -158,3 +160,30 @@ Clean up after completing the demo.
     ```bash
     gcloud sql instances delete my-cloudsql-instance
     ```
+
+## Developer information
+
+This section is for developers that want to develop and run the app locally.
+
+### Test Environment Variables
+
+Set environment variables:
+
+```bash
+export DB_USER=""
+export DB_PASS=""
+export DB_PROJECT=""
+export DB_REGION=""
+export DB_INSTANCE=""
+```
+
+### Run tests
+
+Run retrieval service unit tests:
+
+```bash
+gcloud builds submit --config retrieval_service/cloudsql.tests.cloudbuild.yaml \
+    --substitutions _DATABASE_NAME=$DB_NAME,_DATABASE_USER=$DB_USER,_CLOUDSQL_REGION=$DB_REGION,_CLOUDSQL_INSTANCE=$DB_INSTANCE
+```
+
+Where `$DB_NAME`,`$DB_USER`,`$DB_REGION`,`$DB_CLUSTER`,`$DB_INSTANCE` are environment variables with your database values.
