@@ -35,8 +35,7 @@ limitations under the License.
 <body>
     <div class="container">
         <div class="chat-header">
-            <span class="material-symbols-outlined" id="menuButton">menu</span>
-            <span class="title">Cymbal Air</span>
+            <img class="header-logo" src="static/logo-header.png">
             <span class="material-symbols-outlined" id="resetButton">refresh</span>
         </div>
         <div id="g_id_onload"
@@ -45,8 +44,10 @@ limitations under the License.
             data-auto_prompt="false">
         {% if user_img %}
             <div class="chat-user-state">
-                <img class="chat-user-image" src="{{ user_img }}" alt="user image"></img>
-                <button type="button" class="btn btn-default chat-signout-btn" id="signoutButton" onclick="signout()">Sign out</button>
+                <img class="chat-user-image" onclick="showSignOut()" src="{{ user_img }}" alt="user image"/>
+                <div class="popup-signout">
+                    <a type="button" class="btn btn-default chat-signout-btn" id="signoutButton" onclick="signout()">Sign out</a>
+                </div>
             </div>
         {% else %}
             <div class="g_id_signin"
@@ -65,7 +66,19 @@ limitations under the License.
                 {# Add Chat history #}
                 {% if messages %}
                     {% for message in messages %}
-                    <div class="chat-bubble {{ message["type"] }}"><div class="sender-icon"><img src="static/logo.png"></div><span>{{ message["data"]["content"] | safe }}</span></div>
+                    <div class="chat-bubble {{ message["type"] }}">
+                        {% if message["type"] == "ai" %}
+                            <div class="sender-icon">
+                                <img src="static/logo.png">
+                            </div>
+                        {% elif message["type"] == "human" and user_img %}
+                            <div class="sender-icon">
+                                <img class="chat-user-image" src="{{ user_img }}" alt="user image"/>
+                            </div>
+                        {% else %}
+                        {% endif %}
+                        <span>{{ message["data"]["content"] | safe }}</span>
+                    </div>
                     {% endfor %}
                 {% endif %}
                 </div>
@@ -76,6 +89,8 @@ limitations under the License.
                     </span>
                 </div>
             </div>
+        </div>
+        <div class="chat-bar-wrapper">
             <div class="chat-bar">
                 <div class="mdl-progress mdl-js-progress mdl-progress__indeterminate"></div>
                 <div class="chat-input-container">
