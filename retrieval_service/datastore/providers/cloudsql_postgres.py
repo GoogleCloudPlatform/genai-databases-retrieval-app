@@ -363,6 +363,7 @@ class Client(datastore.Client[Config]):
                   WHERE (CAST(:country AS TEXT) IS NULL OR country ILIKE :country)
                   AND (CAST(:city AS TEXT) IS NULL OR city ILIKE :city)
                   AND (CAST(:name AS TEXT) IS NULL OR name ILIKE '%' || :name || '%')
+                  LIMIT 10
                 """
             )
             params = {
@@ -443,6 +444,7 @@ class Client(datastore.Client[Config]):
                 SELECT * FROM flights
                   WHERE airline = :airline
                   AND flight_number = :number
+                  LIMIT 10
                 """
             )
             params = {
@@ -468,6 +470,7 @@ class Client(datastore.Client[Config]):
                   AND (CAST(:arrival_airport AS TEXT) IS NULL OR arrival_airport ILIKE :arrival_airport)
                   AND departure_time >= CAST(:datetime AS timestamp)
                   AND departure_time < CAST(:datetime AS timestamp) + interval '1 day'
+                  LIMIT 10
                 """
             )
             params = {

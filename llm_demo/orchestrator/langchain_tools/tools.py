@@ -81,16 +81,9 @@ def generate_search_airports(client: aiohttp.ClientSession):
             headers=get_headers(client),
         )
 
-        num = 2
         response_json = await response.json()
         if len(response_json) < 1:
             return "There are no airports matching that query. Let the user know there are no results."
-        elif len(response_json) > num:
-            res = [response_json[i] for i in range(num)]
-            return {
-                "total results": len(response_json),
-                f"first {num} results": res,
-            }
         else:
             return response_json
 
@@ -140,16 +133,9 @@ def generate_list_flights(client: aiohttp.ClientSession):
             headers=get_headers(client),
         )
 
-        num = 2
         response_json = await response.json()
         if len(response_json) < 1:
             return "There are no flights matching that query. Let the user know there are no results."
-        elif len(response_json) > num:
-            res = [response_json[i] for i in range(num)]
-            return {
-                "total results": len(response_json),
-                f"first {num} results": res,
-            }
         else:
             return response_json
 
