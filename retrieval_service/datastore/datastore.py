@@ -15,7 +15,7 @@
 import csv
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Generic, List, Optional, TypeVar
+from typing import Any, Generic, List, Optional, TypeVar
 
 import models
 
@@ -197,7 +197,7 @@ class Client(ABC, Generic[C]):
     @abstractmethod
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Amenity]:
+    ) -> list[Any]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
@@ -246,7 +246,7 @@ class Client(ABC, Generic[C]):
     @abstractmethod
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Policy]:
+    ) -> list[str]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod

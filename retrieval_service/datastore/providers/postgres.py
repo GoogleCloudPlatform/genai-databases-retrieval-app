@@ -15,7 +15,7 @@
 import asyncio
 from datetime import datetime
 from ipaddress import IPv4Address, IPv6Address
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 import asyncpg
 from pgvector.asyncpg import register_vector
@@ -342,18 +342,14 @@ class Client(datastore.Client[Config]):
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Amenity]:
+    ) -> list[Any]:
         results = await self.__pool.fetch(
             """
-            SELECT id, name, description, location, terminal, category, hour
-            FROM (
-                SELECT id, name, description, location, terminal, category,
-                  hour, 1 - (embedding <=> $1) AS similarity
-                FROM amenities
-                WHERE 1 - (embedding <=> $1) > $2
-                ORDER BY similarity DESC
-                LIMIT $3
-            ) AS sorted_amenities
+            SELECT name, description, location, terminal, category, hour
+            FROM amenities
+            WHERE (embedding <=> $1) < $2
+            ORDER BY (embedding <=> $1)
+            LIMIT $3
             """,
             query_embedding,
             similarity_threshold,
@@ -361,7 +357,7 @@ class Client(datastore.Client[Config]):
             timeout=10,
         )
 
-        results = [models.Amenity.model_validate(dict(r)) for r in results]
+        results = [dict(r) for r in results]
         return results
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
@@ -521,17 +517,14 @@ class Client(datastore.Client[Config]):
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Policy]:
+    ) -> list[str]:
         results = await self.__pool.fetch(
             """
-            SELECT id, content
-            FROM (
-                SELECT id, content, 1 - (embedding <=> $1) AS similarity
-                FROM policies
-                WHERE 1 - (embedding <=> $1) > $2
-                ORDER BY similarity DESC
-                LIMIT $3
-            ) AS sorted_policies
+            SELECT content
+            FROM policies
+            WHERE (embedding <=> $1) < $2
+            ORDER BY (embedding <=> $1)
+            LIMIT $3
             """,
             query_embedding,
             similarity_threshold,
@@ -539,7 +532,7 @@ class Client(datastore.Client[Config]):
             timeout=10,
         )
 
-        results = [models.Policy.model_validate(dict(r)) for r in results]
+        results = [r["content"] for r in results]
         return results
 
     async def close(self):
