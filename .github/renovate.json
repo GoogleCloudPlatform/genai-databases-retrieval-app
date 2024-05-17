@@ -29,14 +29,14 @@
       ]
     },
     {
-      "groupname": "pytest",
+      "groupName": "pytest",
       "matchPackageNames": [
         "pytest",
         "pytest-asyncio"
       ]
     },
     {
-      "groupname": "langchain",
+      "groupName": "langchain",
       "matchPackageNames": [
         "langchain",
         "langchain-google-vertexai",
