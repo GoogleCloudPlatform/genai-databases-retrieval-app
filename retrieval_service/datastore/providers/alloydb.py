@@ -394,19 +394,15 @@ class Client(datastore.Client[Config]):
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Amenity]:
+    ) -> list[Any]:
         async with self.__pool.connect() as conn:
             s = text(
                 """
-                SELECT id, name, description, location, terminal, category, hour
-                  FROM (
-                      SELECT id, name, description, location, terminal, category, hour,
-                        1 - (embedding <=> :query_embedding) AS similarity
-                      FROM amenities
-                      WHERE 1 - (embedding <=> :query_embedding) > :similarity_threshold
-                      ORDER BY similarity DESC
-                      LIMIT :top_k
-                  ) AS sorted_amenities
+                SELECT name, description, location, terminal, category, hour
+                FROM amenities
+                WHERE (embedding <=> $1) < $2
+                ORDER BY (embedding <=> $1)
+                LIMIT $3
                 """
             )
             params = {
@@ -416,8 +412,8 @@ class Client(datastore.Client[Config]):
             }
             results = (await conn.execute(s, params)).mappings().fetchall()
 
-        res = [models.Amenity.model_validate(r) for r in results]
-        return res
+        results = [dict(r) for r in results]
+        return results
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
         async with self.__pool.connect() as conn:
@@ -606,18 +602,15 @@ class Client(datastore.Client[Config]):
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Policy]:
+    ) -> list[str]:
         async with self.__pool.connect() as conn:
             s = text(
                 """
-                SELECT id, content
-                  FROM (
-                      SELECT id, content, 1 - (embedding <=> :query_embedding) AS similarity
-                      FROM policies
-                      WHERE 1 - (embedding <=> :query_embedding) > :similarity_threshold
-                      ORDER BY similarity DESC
-                      LIMIT :top_k
-                  ) AS sorted_policies
+                SELECT content
+                FROM policies
+                WHERE (embedding <=> $1) < $2
+                ORDER BY (embedding <=> $1)
+                LIMIT $3
                 """
             )
             params = {
@@ -627,8 +620,8 @@ class Client(datastore.Client[Config]):
             }
             results = (await conn.execute(s, params)).mappings().fetchall()
 
-        res = [models.Policy.model_validate(r) for r in results]
-        return res
+        results = [r["content"] for r in results]
+        return results
 
     async def close(self):
         await self.__pool.dispose()
