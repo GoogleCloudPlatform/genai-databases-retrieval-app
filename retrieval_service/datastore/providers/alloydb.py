@@ -400,9 +400,9 @@ class Client(datastore.Client[Config]):
                 """
                 SELECT name, description, location, terminal, category, hour
                 FROM amenities
-                WHERE (embedding <=> $1) < $2
-                ORDER BY (embedding <=> $1)
-                LIMIT $3
+                WHERE (embedding <=> :query_embedding) < :similarity_threshold
+                ORDER BY (embedding <=> :query_embedding)
+                LIMIT :top_k
                 """
             )
             params = {
@@ -412,8 +412,8 @@ class Client(datastore.Client[Config]):
             }
             results = (await conn.execute(s, params)).mappings().fetchall()
 
-        results = [dict(r) for r in results]
-        return results
+        res = [r for r in results]
+        return res
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
         async with self.__pool.connect() as conn:
@@ -608,9 +608,9 @@ class Client(datastore.Client[Config]):
                 """
                 SELECT content
                 FROM policies
-                WHERE (embedding <=> $1) < $2
-                ORDER BY (embedding <=> $1)
-                LIMIT $3
+                WHERE (embedding <=> :query_embedding) < :similarity_threshold
+                ORDER BY (embedding <=> :query_embedding)
+                LIMIT :top_k
                 """
             )
             params = {
@@ -620,8 +620,8 @@ class Client(datastore.Client[Config]):
             }
             results = (await conn.execute(s, params)).mappings().fetchall()
 
-        results = [r["content"] for r in results]
-        return results
+        res = [r["content"] for r in results]
+        return res
 
     async def close(self):
         await self.__pool.dispose()
