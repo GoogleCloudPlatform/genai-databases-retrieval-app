@@ -563,6 +563,7 @@ class Client(datastore.Client[Config]):
                   WHERE (@country IS NULL OR country LIKE @country)
                   AND (@city IS NULL OR city LIKE @city)
                   AND (@name IS NULL OR name LIKE '%' || @name || '%')
+                  LIMIT 10
                 """
 
             # Execute SQL query with parameters
@@ -732,6 +733,7 @@ class Client(datastore.Client[Config]):
                 SELECT * FROM flights
                 WHERE airline = @airline
                 AND flight_number = @number
+                LIMIT 10
                 """,
                 params={"airline": airline, "number": number},
                 param_types={
@@ -775,6 +777,7 @@ class Client(datastore.Client[Config]):
                 AND (@arrival_airport IS NULL OR arrival_airport LIKE @arrival_airport)
                 AND cast(departure_time as TIMESTAMP) >= CAST(@datetime AS TIMESTAMP)
                 AND cast(departure_time as TIMESTAMP) < TIMESTAMP_ADD(CAST(@datetime AS TIMESTAMP), INTERVAL 1 DAY)
+                LIMIT 10
             """
 
             # Execute SQL query with parameters

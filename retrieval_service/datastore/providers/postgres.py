@@ -315,6 +315,7 @@ class Client(datastore.Client[Config]):
             WHERE ($1::TEXT IS NULL OR country ILIKE $1)
             AND ($2::TEXT IS NULL OR city ILIKE $2)
             AND ($3::TEXT IS NULL OR name ILIKE '%' || $3 || '%')
+            LIMIT 10
             """,
             country,
             city,
@@ -385,7 +386,8 @@ class Client(datastore.Client[Config]):
             """
                 SELECT * FROM flights
                 WHERE airline = $1
-                AND flight_number = $2;
+                AND flight_number = $2
+                LIMIT 10
             """,
             airline,
             number,
@@ -406,7 +408,8 @@ class Client(datastore.Client[Config]):
                 WHERE ($1::TEXT IS NULL OR departure_airport ILIKE $1)
                 AND ($2::TEXT IS NULL OR arrival_airport ILIKE $2)
                 AND departure_time >= $3::timestamp
-                AND departure_time < $3::timestamp + interval '1 day';
+                AND departure_time < $3::timestamp + interval '1 day'
+                LIMIT 10
             """,
             departure_airport,
             arrival_airport,

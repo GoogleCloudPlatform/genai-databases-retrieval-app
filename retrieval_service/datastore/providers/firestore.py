@@ -217,6 +217,8 @@ class Client(datastore.Client[Config]):
         if name is not None:
             query = query.where("name", ">=", name).where("name", "<=", name + "\uf8ff")
 
+        query = query.limit(10)
+
         docs = query.stream()
         airports = []
         async for doc in docs:
@@ -254,6 +256,7 @@ class Client(datastore.Client[Config]):
             self.__client.collection("flights")
             .where(filter=FieldFilter("airline", "==", airline))
             .where(filter=FieldFilter("flight_number", "==", number))
+            .limit(10)
         )
 
         docs = query.stream()
@@ -275,6 +278,7 @@ class Client(datastore.Client[Config]):
             self.__client.collection("flights")
             .where("departure_time", ">=", date_timestamp)
             .where("departure_time", "<", date_timestamp + timedelta(days=1))
+            .limit(10)
         )
 
         if departure_airport is None:
