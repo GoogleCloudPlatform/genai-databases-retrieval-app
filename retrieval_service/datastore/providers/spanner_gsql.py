@@ -47,7 +47,7 @@ class Config(BaseModel, datastore.AbstractConfig):
     project: str
     instance: str
     database: str
-    service_account_key_file: str
+    service_account_key_file: Optional[str] = None
 
 
 # Client class for interacting with Spanner
