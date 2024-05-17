@@ -16,16 +16,19 @@
 
 1. Navigate to the Cloud Firestore section of the Firebase console. You'll be prompted to select an existing Firebase project. Follow the database creation workflow.
 
+## Update config
+
+Update `config.yml` with your database information.
+
+```bash
+host: 0.0.0.0
+datastore:
+    kind: "firestore"
+    projectId: <YOUR_GCP_PROJECT_ID> # (Optional) default to env variable `GCLOUD_PROJECT`
+```
+
+
 ## Initialize data in Firestore
-
-1. Create or edit your existing `retrieval_service/config.yml`:
-
-    ```bash
-    host: 0.0.0.0
-    datastore:
-        kind: "firestore"
-        projectId: <YOUR_GCP_PROJECT_ID> # (Optional) default to env variable `GCLOUD_PROJECT`
-    ```
 
 1. Change to the `retrieval_service` directory:
 
