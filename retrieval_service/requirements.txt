@@ -9,7 +9,7 @@ pgvector==0.2.5
 pydantic==2.6.1
 uvicorn[standard]==0.27.0.post1
 cloud-sql-python-connector==1.6.0
-google-cloud-alloydb-connector[asyncpg]==1.0.0
+google-cloud-alloydb-connector[asyncpg]==1.1.1
 sqlalchemy==2.0.25
 pandas==2.2.2
 pandas-stubs==2.2.1.240316
