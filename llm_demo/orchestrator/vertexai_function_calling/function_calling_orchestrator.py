@@ -21,7 +21,7 @@ from typing import Any, Dict, List
 from aiohttp import ClientSession, TCPConnector
 from fastapi import HTTPException
 from google.auth.transport.requests import Request  # type: ignore
-from google.protobuf.json_format import MessageToDict
+from google.protobuf.json_format import MessageToDict  # type: ignore
 from pytz import timezone
 from vertexai.preview.generative_models import (  # type: ignore
     ChatSession,

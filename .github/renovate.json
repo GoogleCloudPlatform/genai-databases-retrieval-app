@@ -41,7 +41,8 @@
         "langchain",
         "langchain-google-vertexai",
         "langchain-core",
-        "google-cloud-aiplatform"
+        "google-cloud-aiplatform",
+        "langchain-text-splitters"
       ]
     }
   ]
