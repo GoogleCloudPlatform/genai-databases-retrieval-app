@@ -20,6 +20,7 @@ class ToolTrace:
     Tool Trace is used to track the traces associated with a specific user.
     These traces are flushed to the UI as part of response after response is generated.
     """
+
     curr_log: List[str] = []
 
     def __init__(self):

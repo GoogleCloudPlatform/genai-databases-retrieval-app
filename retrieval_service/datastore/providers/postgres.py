@@ -630,7 +630,7 @@ class Client(datastore.Client[Config]):
         similarity_threshold: float,
         top_k: int,
         ufl: UIFriendlyLogger,
-    ) -> list[models.Policy]:
+    ) -> list[str]:
         ufl.log_header("Running similarity search:")
         search_query = """
             SELECT content
