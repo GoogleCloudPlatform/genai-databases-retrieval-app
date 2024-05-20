@@ -33,15 +33,6 @@ routes = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # FastAPI app startup event
-    print("Loading application...")
-    yield
-    # FastAPI app shutdown event
-    app.state.orchestrator.close_clients()
-
-
 @routes.get("/")
 @routes.post("/")
 async def index(request: Request):
@@ -237,7 +228,7 @@ def init_app(
     # FastAPI setup
     if orchestration_type is None:
         raise HTTPException(status_code=500, detail="Orchestrator not found")
-    app = FastAPI(lifespan=lifespan)
+    app = FastAPI()
     app.state.client_id = client_id
     app.state.orchestrator = createOrchestrator(orchestration_type)
     app.include_router(routes)
