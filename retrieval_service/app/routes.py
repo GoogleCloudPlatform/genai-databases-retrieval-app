@@ -45,7 +45,7 @@ def build_result(results, ufl: UIFriendlyLogger | None = None):
     result = {"result": results}
     if ufl is not None and ufl.get_log() != "":
         result["trace"] = ufl.get_log()
-    return json.dumps(result)
+    return result
 
 
 async def get_user_info(request):
