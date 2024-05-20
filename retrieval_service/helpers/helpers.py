@@ -19,6 +19,9 @@ import sqlparse
 
 
 class UIFriendlyLogger:
+    """
+    Convert retrieved log information to UI friendly logger.
+    """
     friendly_log: str = ""
 
     def log(self, message: str):

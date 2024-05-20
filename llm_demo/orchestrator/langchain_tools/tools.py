@@ -84,8 +84,9 @@ def generate_search_airports(client: aiohttp.ClientSession, tool_trace: ToolTrac
         )
 
         response_json = await response.json()
-        if response_json.get("trace"):
-            tool_trace.add_message(response_json.get("trace"))
+        trace = response_json.get("trace")
+        if trace:
+            tool_trace.add_message(trace)
         response_results = response_json.get("result")
         if len(response_results) < 1:
             return "There are no airports matching that query. Let the user know there are no results."
@@ -111,8 +112,9 @@ def generate_search_flights_by_number(
         )
 
         response_json = await response.json()
-        if response_json.get("trace"):
-            tool_trace.add_message(response_json.get("trace"))
+        trace = response_json.get("trace")
+        if trace:
+            tool_trace.add_message(trace)
         return response_json.get("result")
 
     return search_flights_by_number
@@ -144,9 +146,9 @@ def generate_list_flights(client: aiohttp.ClientSession, tool_trace: ToolTrace):
         )
 
         response_json = await response.json()
-        response_json = await response.json()
-        if response_json.get("trace"):
-            tool_trace.add_message(response_json.get("trace"))
+        trace = response_json.get("trace")
+        if trace:
+            tool_trace.add_message(trace)
         response_results = response_json.get("result")
         if len(response_results) < 1:
             return "There are no flights matching that query. Let the user know there are no results."
@@ -169,8 +171,9 @@ def generate_search_amenities(client: aiohttp.ClientSession, tool_trace: ToolTra
         )
 
         response_json = await response.json()
-        if response_json.get("trace"):
-            tool_trace.add_message(response_json.get("trace"))
+        trace = response_json.get("trace")
+        if trace:
+            tool_trace.add_message(trace)
         return response_json.get("result")
 
     return search_amenities
@@ -185,8 +188,9 @@ def generate_search_policies(client: aiohttp.ClientSession, tool_trace: ToolTrac
         )
 
         response_json = await response.json()
-        if response_json.get("trace"):
-            tool_trace.add_message(response_json.get("trace"))
+        trace = response_json.get("trace")
+        if trace:
+            tool_trace.add_message(trace)
         return response_json.get("result")
 
     return search_policies
@@ -234,8 +238,9 @@ async def insert_ticket(
         headers=get_headers(client),
     )
     response_json = await response.json()
-    if response_json.get("trace"):
-        tool_trace.add_message(response_json.get("trace"))
+    trace = response_json.get("trace")
+    if trace:
+        tool_trace.add_message(trace)
     return response_json.get("result")
 
 
@@ -247,8 +252,9 @@ def generate_list_tickets(client: aiohttp.ClientSession, tool_trace: ToolTrace):
         )
 
         response_json = await response.json()
-        if response_json.get("trace"):
-            tool_trace.add_message(response_json.get("trace"))
+        trace = response_json.get("trace")
+        if trace:
+            tool_trace.add_message(trace)
         return response_json.get("result")
 
     return list_tickets

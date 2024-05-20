@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import json
 from typing import Any, Mapping, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -44,7 +45,7 @@ def build_result(results, ufl: UIFriendlyLogger | None = None):
     result = {"result": results}
     if ufl is not None and ufl.get_log() != "":
         result["trace"] = ufl.get_log()
-    return result
+    return json.dumps(result)
 
 
 async def get_user_info(request):
