@@ -31,12 +31,12 @@ branchProtectionRules:
       - "cla/google"
       - "retrieval_service"
       - "llm_demo"
-      - "retrieval-service-app-pr (extension-demo-testing)"
-      - "retrieval-service-postgres-pr (extension-demo-testing)"
-      - "retrieval-service-alloydb-pr (extension-demo-testing)"
-      - "retrieval-service-cloudsql-pr (extension-demo-testing)"
-      - "llm-demo-langchain-tools-pr (extension-demo-testing)"
-      - "llm-demo-vertexai-fc-pr (extension-demo-testing)"
+      - "retrieval-service-app-pr (retrieval-app-testing)"
+      - "retrieval-service-postgres-pr (retrieval-app-testing)"
+      - "retrieval-service-alloydb-pr (retrieval-app-testing)"
+      - "retrieval-service-cloudsql-pr (retrieval-app-testing)"
+      - "llm-demo-langchain-tools-pr (retrieval-app-testing)"
+      - "llm-demo-vertexai-fc-pr (retrieval-app-testing)"
   - pattern: demo
     isAdminEnforced: true
     requiredApprovingReviewCount: 1
