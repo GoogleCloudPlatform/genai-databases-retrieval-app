@@ -83,10 +83,10 @@ connect to your VPC. You should only need to do this once per VPC (per project).
    `$DB_PASS` and note it for future use:
 
     ```bash
-    export CLUSTER=my-alloydb-cluster
-    export DB_PASS=my-alloydb-pass
-    export INSTANCE=my-alloydb-instance
+    export CLUSTER=my-postgres-cluster
+    export INSTANCE=my-postgres-instance
     export REGION=us-central1
+    export DB_PASS=my-postgres-pass
     ```
 
 1. Create an AlloyDB cluster:
@@ -138,7 +138,7 @@ Private IP.
     ```bash
     export ZONE=us-central1-a
     export PROJECT_NUM=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
-    export VM_INSTANCE=alloydb-proxy-vm
+    export VM_INSTANCE=postgres-proxy-vm
     ```
 
 1. Create a Compute Engine VM:
@@ -196,7 +196,7 @@ datastore:
     # Update with database user, the default is `postgres`
     user: "postgres"
     # Update with database user password
-    password: "my-alloydb-pass"
+    password: "my-postgres-pass"
 ```
 
 ## Initialize data in AlloyDB
@@ -253,8 +253,8 @@ Clean up after completing the demo.
 1. Set environment variables:
 
     ```bash
-    export VM_INSTANCE=alloydb-proxy-vm
-    export CLUSTER=my-alloydb-cluster
+    export VM_INSTANCE=postgres-proxy-vm
+    export CLUSTER=my-postgres-cluster
     export REGION=us-central1
     export RANGE_NAME=my-allocated-range-default
     ```

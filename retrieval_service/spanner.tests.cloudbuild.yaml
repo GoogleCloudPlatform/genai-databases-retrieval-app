@@ -36,9 +36,6 @@ steps:
       - "DB_PROJECT=$PROJECT_ID"
       - "DB_INSTANCE=${_SPANNER_INSTANCE}"
       - "DB_NAME=${_DATABASE_NAME}"
-    secretEnv:
-      - DB_USER
-      - DB_PASS
     script: |
         #!/usr/bin/env bash
         python -m pytest datastore/providers/spanner_gsql_test.py

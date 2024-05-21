@@ -22,6 +22,10 @@
 
     ```bash
     gcloud services enable alloydb.googleapis.com \
+                           compute.googleapis.com \
+                           cloudresourcemanager.googleapis.com \
+                           servicenetworking.googleapis.com \
+                           vpcaccess.googleapis.com \
                            aiplatform.googleapis.com
     ```
 
@@ -43,6 +47,41 @@
 [install-alloydb-auth-proxy]: https://cloud.google.com/alloydb/docs/auth-proxy/connect#install
 
 
+## Enable private services access
+
+Currently, AlloyDB doesn't support creating new instance with public IP enabled. We will have to create an instance (with private IP), then update the instance to enable public IP.
+
+In this step, we will enable Private Services Access so that AlloyDB is able to
+connect to your VPC. You should only need to do this once per VPC (per project).
+
+1. Set environment variables:
+
+    ```bash
+    export RANGE_NAME=my-allocated-range-default
+    export DESCRIPTION="peering range for alloydb-service"
+    ```
+
+1. Create an allocated IP address range:
+
+    ```bash
+    gcloud compute addresses create $RANGE_NAME \
+        --global \
+        --purpose=VPC_PEERING \
+        --prefix-length=16 \
+        --description="$DESCRIPTION" \
+        --network=default
+    ```
+
+1. Create a private connection:
+
+    ```bash
+    gcloud services vpc-peerings connect \
+        --service=servicenetworking.googleapis.com \
+        --ranges="$RANGE_NAME" \
+        --network=default
+    ```
+
+
 ## Create a AlloyDB cluster
 
 1. Set environment variables. For security reasons, use a different password for
@@ -50,9 +89,10 @@
 
     ```bash
     export CLUSTER=my-alloydb-cluster
-    export DB_PASS=my-alloydb-pass
     export INSTANCE=my-alloydb-instance
     export REGION=us-central1
+    export DB_USER=postgres
+    export DB_PASS=my-alloydb-pass
     ```
 
 1. Create an AlloyDB cluster:
