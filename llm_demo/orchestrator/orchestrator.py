@@ -68,13 +68,15 @@ class BaseOrchestrator(ABC):
 
     def set_user_session_header(self, uuid: str, user_id_token: str):
         user_session = self.get_user_session(uuid)
-        user_session.client.headers["User-Id-Token"] = f"Bearer {user_id_token}"
+        def get_id_token_header():
+            return f"Bearer {user_id_token}"
+        user_session.headers["User-Id-Token"] = get_id_token_header
 
     def get_user_id_token(self, uuid: str) -> Optional[str]:
         if self.user_session_exist(uuid):
             user_session = self.get_user_session(uuid)
-            if user_session.client and "User-Id-Token" in user_session.client.headers:
-                token = user_session.client.headers["User-Id-Token"]
+            if user_session.headers and "User-Id-Token" in user_session.headers:
+                token = user_session.headers["User-Id-Token"]()
                 parts = str(token).split(" ")
                 if len(parts) != 2 or parts[0] != "Bearer":
                     raise Exception("Invalid ID token")

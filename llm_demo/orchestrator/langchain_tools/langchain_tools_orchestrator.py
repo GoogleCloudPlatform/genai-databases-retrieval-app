@@ -16,7 +16,7 @@ import asyncio
 import os
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List, Mapping
 
 from fastapi import HTTPException
 from langchain.agents import AgentType, initialize_agent
@@ -31,7 +31,7 @@ from pytz import timezone
 
 from google_cloud_toolbox import load_toolbox
 from ..orchestrator import BaseOrchestrator, classproperty
-from .tools import get_confirmation_needing_tools, initialize_tools, insert_ticket
+from .tools import add_auth_header, get_confirmation_needing_tools
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
 BASE_HISTORY = {
@@ -48,6 +48,7 @@ class UserAgent:
         agent: AgentExecutor,
         memory: ConversationBufferMemory,
     ):
+        self.headers = {}
         self.agent = agent
         self.memory = memory
 
@@ -85,9 +86,6 @@ class UserAgent:
         except Exception as err:
             raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
         return response
-
-    async def insert_ticket(self, params: str):
-        return await insert_ticket(params)
 
     def reset_memory(self, base_message: List[BaseMessage]):
         self.memory.clear()
@@ -132,11 +130,16 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         if "history" not in session:
             session["history"] = [BASE_HISTORY]
         history = self.parse_messages(session["history"])
-        tools = load_toolbox("http://127.0.0.1:8080")
+        headers = {
+            "Authorization": add_auth_header,
+            "User-Id-Token": add_auth_header,
+        }
+        tools = load_toolbox("http://localhost:8080", headers=headers)
         prompt = self.create_prompt_template(tools)
         agent = UserAgent.initialize_agent(tools, history, prompt, self.MODEL)
         self._user_sessions[id] = agent
         self.confirmation_needing_tools = get_confirmation_needing_tools()
+        agent.headers = headers
 
     async def user_session_invoke(self, uuid: str, prompt: str) -> dict[str, Any]:
         user_session = self.get_user_session(uuid)
