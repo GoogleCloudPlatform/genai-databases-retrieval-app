@@ -17,3 +17,4 @@ langchain-text-splitters==0.2.0
 langchain-google-vertexai==1.0.4
 asyncio==3.4.3
 datetime==5.5
+sqlparse==0.5.0

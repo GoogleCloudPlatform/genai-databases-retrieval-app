@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from datetime import datetime, time
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -102,7 +103,7 @@ def test_get_airport(m_datastore, app, method_name, params, mock_return, expecte
                 params=params,
             )
     assert response.status_code == 200
-    output = response.json()
+    output = response.json().get("result")
     assert output == expected
     assert models.Airport.model_validate(output)
 
@@ -221,7 +222,7 @@ def test_search_airports(m_datastore, app, method_name, params, mock_return, exp
                 params=params,
             )
     assert response.status_code == 200
-    output = response.json()
+    output = response.json().get("result")
     assert output == expected
     assert models.Airport.model_validate(output[0])
 
@@ -298,7 +299,7 @@ def test_get_amenity(m_datastore, app, method_name, params, mock_return, expecte
                 },
             )
     assert response.status_code == 200
-    output = response.json()
+    output = response.json().get("result")
     assert output == expected
     assert models.Amenity.model_validate(output)
 
@@ -400,7 +401,7 @@ def test_amenities_search(m_datastore, app, method_name, params, mock_return, ex
                 params=params,
             )
     assert response.status_code == 200
-    output = response.json()
+    output = response.json().get("result")
     assert len(output) == params["top_k"]
     assert output == expected
     assert models.Amenity.model_validate(output[0])
@@ -453,7 +454,7 @@ def test_get_flight(m_datastore, app, method_name, params, mock_return, expected
                 params=params,
             )
     assert response.status_code == 200
-    output = response.json()
+    output = response.json().get("result")
     assert output == expected
     assert models.Flight.model_validate(output)
 
@@ -617,7 +618,7 @@ def test_search_flights(m_datastore, app, method_name, params, mock_return, expe
         ) as mock_method:
             response = client.get("/flights/search", params=params)
     assert response.status_code == 200
-    output = response.json()
+    output = response.json().get("result")
     assert output == expected
     assert models.Flight.model_validate(output[0])
 
@@ -696,7 +697,7 @@ def test_policies_search(m_datastore, app, method_name, params, mock_return, exp
                 params=params,
             )
     assert response.status_code == 200
-    output = response.json()
+    output = response.json().get("result")
     assert len(output) == params["top_k"]
     assert output == expected
     assert models.Policy.model_validate(output[0])
