@@ -56,8 +56,8 @@ substitutions:
   _DATABASE_NAME: test_${SHORT_SHA}
   _DATABASE_USER: postgres
   _ALLOYDB_REGION: "us-central1"
-  _ALLOYDB_CLUSTER: "my-public-alloydb-cluster"
-  _ALLOYDB_INSTANCE: "my-public-alloydb-instance"
+  _ALLOYDB_CLUSTER: "my-alloydb-cluster"
+  _ALLOYDB_INSTANCE: "my-alloydb-instance"
 
 availableSecrets:
   secretManager:
