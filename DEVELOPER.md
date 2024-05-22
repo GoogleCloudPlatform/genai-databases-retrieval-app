@@ -183,6 +183,17 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 
 To run Cloud Build tests on GitHub from external contributors, ie RenovateBot, comment: `/gcbrun`.
 
+#### Code Coverage
+Please make sure your code is fully tested. The Cloud Build integration tests are run with the `pytest-cov` code coverage plugin. They fail for PRs with a code coverage less than the threshold specified in `retrieval_service/coverage/.<test>-coveragerc`.  If your file is inside the main module and should be ignored by code coverage check, add it to the `omit` section of `retrieval_service/coverage/.<test>-coveragerc`.
+
+Check for code coverage report any Cloud Build integration test log. 
+Here is a breakdown of the report:
+- `Stmts`:  lines of executable code (statements).
+- `Miss`: number of lines not covered by tests.
+- `Branch`: branches of executable code (e.g an if-else clause may count as 1 statement but 2 branches; test for both conditions to have both branches covered).
+- `BrPart`: number of branches not covered by tests.
+- `Cover`: average coverage of files.
+- `Missing`: lines that are not covered by tests.
 
 [alloydb-proxy]: https://cloud.google.com/alloydb/docs/auth-proxy/connect
 [cloudsql-proxy]: https://cloud.google.com/sql/docs/mysql/sql-proxy

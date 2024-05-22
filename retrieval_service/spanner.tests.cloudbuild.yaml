@@ -38,7 +38,7 @@ steps:
       - "DB_NAME=${_DATABASE_NAME}"
     script: |
         #!/usr/bin/env bash
-        python -m pytest datastore/providers/spanner_gsql_test.py
+        python -m pytest --cov=datastore.providers.spanner_gsql --cov-config=coverage/.spanner-coveragerc datastore/providers/spanner_gsql_test.py
 
 substitutions:
   _DATABASE_NAME: test_${SHORT_SHA}

@@ -50,7 +50,7 @@ steps:
       - DB_PASS
     script: |
         #!/usr/bin/env bash
-        python -m pytest datastore/providers/alloydb_test.py
+        python -m pytest --cov=datastore.providers.alloydb --cov-config=coverage/.alloydb-coveragerc datastore/providers/alloydb_test.py
 
 substitutions:
   _DATABASE_NAME: test_${SHORT_SHA}
