@@ -37,20 +37,6 @@ branchProtectionRules:
       - "retrieval-service-cloudsql-pr (retrieval-app-testing)"
       - "llm-demo-langchain-tools-pr (retrieval-app-testing)"
       - "llm-demo-vertexai-fc-pr (retrieval-app-testing)"
-  - pattern: demo
-    isAdminEnforced: true
-    requiredApprovingReviewCount: 1
-    requiresCodeOwnerReviews: true
-    requiresStrictStatusChecks: true
-    requiredStatusCheckContexts:
-      - "cla/google"
-      - "retrieval_service"
-      - "llm_demo"
-      - "retrieval-service-app-pr (genai-databases-retrevial-demo)"
-      - "retrieval-service-alloydb-pr (genai-databases-retrevial-demo)"
-      - "retrieval-service-cloudsql-pr (genai-databases-retrevial-demo)"
-      - "llm-demo-langchain-tools-pr (genai-databases-retrevial-demo)"
-      - "llm-demo-vertexai-fc-pr (genai-databases-retrevial-demo)"
 # Set team access
 permissionRules:
   - team: senseai-eco
