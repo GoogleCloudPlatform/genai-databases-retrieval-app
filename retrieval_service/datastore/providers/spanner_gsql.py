@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import datetime
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Literal, Optional
 
 from google.cloud import spanner  # type: ignore
 from google.cloud.spanner_v1 import JsonObject, param_types

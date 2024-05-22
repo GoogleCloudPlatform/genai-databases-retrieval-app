@@ -14,7 +14,6 @@
 
 import asyncio
 from datetime import datetime
-from ipaddress import IPv4Address
 from typing import Any, AsyncGenerator, List
 
 import asyncpg
