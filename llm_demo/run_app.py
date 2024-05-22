@@ -26,8 +26,7 @@ async def main():
     HOST = os.getenv("HOST", default="0.0.0.0")
     ORCHESTRATION_TYPE = os.getenv("ORCHESTRATION_TYPE", default="langchain-tools")
     CLIENT_ID = os.getenv("CLIENT_ID")
-    SECRET_KEY = os.getenv("SECRET_KEY")
-    app = init_app(ORCHESTRATION_TYPE, client_id=CLIENT_ID, secret_key=SECRET_KEY)
+    app = init_app(ORCHESTRATION_TYPE, client_id=CLIENT_ID)
     if app is None:
         raise TypeError("app not instantiated")
     server = uvicorn.Server(uvicorn.Config(app, host=HOST, port=PORT, log_level="info"))
