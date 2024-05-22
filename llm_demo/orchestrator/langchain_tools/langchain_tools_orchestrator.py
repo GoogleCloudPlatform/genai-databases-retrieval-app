@@ -12,14 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 import os
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from aiohttp import ClientSession, TCPConnector
+import google.auth  # type: ignore
+import google.oauth2.id_token  # type: ignore
 from fastapi import HTTPException
+from google.auth import compute_engine  # type: ignore
+from google.auth.transport.requests import Request  # type: ignore
+from google_cloud_toolbox import load_toolbox
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent import AgentExecutor
 from langchain.globals import set_verbose  # type: ignore
@@ -30,24 +33,58 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_google_vertexai import VertexAI
 from pytz import timezone
+from requests import Session
 
 from ..orchestrator import BaseOrchestrator, classproperty
-from .tools import get_confirmation_needing_tools, initialize_tools, insert_ticket
 
 set_verbose(bool(os.getenv("DEBUG", default=False)))
 BASE_HISTORY = {
     "type": "ai",
     "data": {"content": "Welcome to Cymbal Air!  How may I assist you?"},
 }
+BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
+CREDENTIALS = None
+
+
+def get_id_token():
+    global CREDENTIALS
+    if CREDENTIALS is None:
+        CREDENTIALS, _ = google.auth.default()
+        if not hasattr(CREDENTIALS, "id_token"):
+            # Use Compute Engine default credential
+            CREDENTIALS = compute_engine.IDTokenCredentials(
+                request=Request(),
+                target_audience=BASE_URL,
+                use_metadata_identity_endpoint=True,
+            )
+    if not CREDENTIALS.valid:
+        CREDENTIALS.refresh(Request())
+    if hasattr(CREDENTIALS, "id_token"):
+        return CREDENTIALS.id_token
+    else:
+        return CREDENTIALS.token
+
+
+def get_headers(client: Session):
+    """Helper method to generate ID tokens for authenticated requests"""
+    headers = client.headers
+    if not "http://" in BASE_URL:
+        # Append ID Token to make authenticated requests to Cloud Run services
+        headers["Authorization"] = f"Bearer {get_id_token()}"
+    return headers
+
+
+def get_confirmation_needing_tools():
+    return ["Insert Ticket"]
 
 
 class UserAgent:
-    client: ClientSession
+    client: Session
     agent: AgentExecutor
 
     def __init__(
         self,
-        client: ClientSession,
+        client: Session,
         agent: AgentExecutor,
         memory: ConversationBufferMemory,
     ):
@@ -58,7 +95,7 @@ class UserAgent:
     @classmethod
     def initialize_agent(
         cls,
-        client: ClientSession,
+        client: Session,
         tools: List[StructuredTool],
         history: List[BaseMessage],
         prompt: ChatPromptTemplate,
@@ -84,18 +121,12 @@ class UserAgent:
         agent.agent.llm_chain.prompt = prompt  # type: ignore
         return UserAgent(client, agent, memory)
 
-    async def close(self):
-        await self.client.close()
-
     async def invoke(self, prompt: str) -> Dict[str, Any]:
         try:
             response = await self.agent.ainvoke({"input": prompt})
         except Exception as err:
             raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
         return response
-
-    async def insert_ticket(self, params: str):
-        return await insert_ticket(self.client, params)
 
     def reset_memory(self, base_message: List[BaseMessage]):
         self.memory.clear()
@@ -142,8 +173,9 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         if "history" not in session:
             session["history"] = [BASE_HISTORY]
         history = self.parse_messages(session["history"])
-        client = await self.create_client_session()
-        tools = await initialize_tools(client)
+        client = Session()
+        client.headers = get_headers(client)
+        tools = load_toolbox(BASE_URL, client)
         prompt = self.create_prompt_template(tools)
         agent = UserAgent.initialize_agent(client, tools, history, prompt, self.MODEL)
         self._user_sessions[id] = agent
@@ -173,19 +205,6 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
 
     def get_user_session(self, uuid: str) -> UserAgent:
         return self._user_sessions[uuid]
-
-    async def get_connector(self) -> TCPConnector:
-        if self.connector is None:
-            self.connector = TCPConnector(limit=100)
-        return self.connector
-
-    async def create_client_session(self) -> ClientSession:
-        return ClientSession(
-            connector=await self.get_connector(),
-            connector_owner=False,
-            headers={},
-            raise_for_status=True,
-        )
 
     def create_prompt_template(self, tools: List[StructuredTool]) -> ChatPromptTemplate:
         # Create new prompt template
@@ -245,14 +264,7 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
     async def user_session_signout(self, uuid: str):
         user_session = self.get_user_session(uuid)
         if user_session:
-            await user_session.close()
             del self._user_sessions[uuid]
-
-    def close_clients(self):
-        close_client_tasks = [
-            asyncio.create_task(a.close()) for a in self._user_sessions.values()
-        ]
-        asyncio.gather(*close_client_tasks)
 
 
 PREFIX = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
