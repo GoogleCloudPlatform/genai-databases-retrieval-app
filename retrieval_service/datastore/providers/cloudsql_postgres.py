@@ -14,10 +14,9 @@
 
 import asyncio
 from datetime import datetime
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Literal, Optional
 
 import asyncpg
-import sqlalchemy
 from google.cloud.sql.connector import Connector
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel

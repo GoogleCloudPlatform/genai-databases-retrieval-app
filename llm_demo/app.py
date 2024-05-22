@@ -27,7 +27,7 @@ from google.oauth2 import id_token  # type:ignore
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
-from orchestrator import BaseOrchestrator, createOrchestrator
+from orchestrator import createOrchestrator
 
 routes = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -128,7 +128,7 @@ async def logout_google(
 ):
     """Logout google account from user session and clear user session"""
     if "uuid" not in request.session:
-        raise HTTPException(status_code=400, detail=f"No session to reset.")
+        raise HTTPException(status_code=400, detail="No session to reset.")
 
     uuid = request.session["uuid"]
     orchestrator = request.app.state.orchestrator
@@ -202,12 +202,12 @@ def reset(request: Request):
     """Reset user session"""
 
     if "uuid" not in request.session:
-        raise HTTPException(status_code=400, detail=f"No session to reset.")
+        raise HTTPException(status_code=400, detail="No session to reset.")
 
     uuid = request.session["uuid"]
     orchestrator = request.app.state.orchestrator
     if not orchestrator.user_session_exist(uuid):
-        raise HTTPException(status_code=500, detail=f"Current user session not found")
+        raise HTTPException(status_code=500, detail="Current user session not found")
 
     orchestrator.user_session_reset(request.session, uuid)
 
