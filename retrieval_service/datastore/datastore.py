@@ -14,7 +14,6 @@
 
 import csv
 from abc import ABC, abstractmethod
-from datetime import datetime
 from typing import Any, Generic, List, Optional, TypeVar
 
 import models
@@ -31,7 +30,7 @@ class classproperty:
     def __init__(self, func):
         self.fget = func
 
-    def __get__(self, instance, owner):
+    def __get__(self, _, owner):
         return self.fget(owner)
 
 

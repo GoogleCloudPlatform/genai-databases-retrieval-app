@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 from typing import Any, Mapping, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 from google.auth.transport import requests  # type:ignore
 from google.oauth2 import id_token  # type:ignore
 from langchain_core.embeddings import Embeddings
