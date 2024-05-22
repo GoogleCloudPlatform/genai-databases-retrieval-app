@@ -56,7 +56,7 @@ steps:
       - DB_PASS
     script: |
         #!/usr/bin/env bash
-        python -m pytest datastore/providers/postgres_test.py
+        python -m pytest --cov=datastore.providers.postgres --cov-config=coverage/.postgres-coveragerc datastore/providers/postgres_test.py
 
   - id: Clean database
     name: postgres

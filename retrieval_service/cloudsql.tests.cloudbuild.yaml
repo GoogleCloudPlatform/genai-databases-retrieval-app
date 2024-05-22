@@ -48,7 +48,7 @@ steps:
       - DB_PASS
     script: |
         #!/usr/bin/env bash
-        python -m pytest datastore/providers/cloudsql_postgres_test.py
+        python -m pytest --cov=datastore.providers.cloudsql_postgres --cov-config=coverage/.cloudsql-coveragerc datastore/providers/cloudsql_postgres_test.py
 
 substitutions:
   _DATABASE_NAME: test_${SHORT_SHA}
