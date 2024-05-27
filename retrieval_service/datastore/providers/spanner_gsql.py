@@ -677,7 +677,7 @@ class Client(datastore.Client[Config]):
 
         # Convert query result to model instance using model_validate method
         amenities = [
-            {key: value for key, value in zip(self.AMENITIES_COLUMNS, a)}
+            {key: value for key, value in zip(self.AMENITIES_COLUMNS[1:], a)}
             for a in results
         ]
 
