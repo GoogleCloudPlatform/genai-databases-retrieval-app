@@ -14,7 +14,7 @@
 
 import asyncio
 from datetime import datetime, timedelta
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from google.cloud.firestore import AsyncClient  # type: ignore
 from google.cloud.firestore_v1.async_collection import AsyncCollectionReference
@@ -217,6 +217,8 @@ class Client(datastore.Client[Config]):
         if name is not None:
             query = query.where("name", ">=", name).where("name", "<=", name + "\uf8ff")
 
+        query = query.limit(10)
+
         docs = query.stream()
         airports = []
         async for doc in docs:
@@ -234,7 +236,7 @@ class Client(datastore.Client[Config]):
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Amenity]:
+    ) -> list[Any]:
         raise NotImplementedError("Semantic search not yet supported in Firestore.")
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
@@ -254,6 +256,7 @@ class Client(datastore.Client[Config]):
             self.__client.collection("flights")
             .where(filter=FieldFilter("airline", "==", airline))
             .where(filter=FieldFilter("flight_number", "==", number))
+            .limit(10)
         )
 
         docs = query.stream()
@@ -275,6 +278,7 @@ class Client(datastore.Client[Config]):
             self.__client.collection("flights")
             .where("departure_time", ">=", date_timestamp)
             .where("departure_time", "<", date_timestamp + timedelta(days=1))
+            .limit(10)
         )
 
         if departure_airport is None:
@@ -311,7 +315,7 @@ class Client(datastore.Client[Config]):
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Policy]:
+    ) -> list[str]:
         raise NotImplementedError("Semantic search not yet supported in Firestore.")
 
     async def close(self):

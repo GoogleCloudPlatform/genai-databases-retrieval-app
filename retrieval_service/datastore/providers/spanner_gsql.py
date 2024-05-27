@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import datetime
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Literal, Optional
 
 from google.cloud import spanner  # type: ignore
 from google.cloud.spanner_v1 import JsonObject, param_types
@@ -47,7 +47,7 @@ class Config(BaseModel, datastore.AbstractConfig):
     project: str
     instance: str
     database: str
-    service_account_key_file: str
+    service_account_key_file: Optional[str] = None
 
 
 # Client class for interacting with Spanner
@@ -634,7 +634,7 @@ class Client(datastore.Client[Config]):
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Amenity]:
+    ) -> list[Any]:
         """
         Search for amenities based on similarity to a query embedding.
 
@@ -649,9 +649,9 @@ class Client(datastore.Client[Config]):
         with self.__database.snapshot() as snapshot:
             # Spread SQL query for readability
             query = """
-                SELECT id, name, description, location, terminal, category, hour
+                SELECT name, description, location, terminal, category, hour
                 FROM (
-                    SELECT id, name, description, location, terminal, category, hour,
+                    SELECT name, description, location, terminal, category, hour,
                        COSINE_DISTANCE(embedding, @query_embedding) AS similarity
                     FROM amenities
                 ) AS sorted_amenities
@@ -677,9 +677,7 @@ class Client(datastore.Client[Config]):
 
         # Convert query result to model instance using model_validate method
         amenities = [
-            models.Amenity.model_validate(
-                {key: value for key, value in zip(self.AMENITIES_COLUMNS, a)}
-            )
+            {key: value for key, value in zip(self.AMENITIES_COLUMNS, a)}
             for a in results
         ]
 
@@ -741,6 +739,7 @@ class Client(datastore.Client[Config]):
                 SELECT * FROM flights
                 WHERE airline = @airline
                 AND flight_number = @number
+                LIMIT 10
                 """,
                 params={"airline": airline, "number": number},
                 param_types={
@@ -784,6 +783,7 @@ class Client(datastore.Client[Config]):
                 AND (@arrival_airport IS NULL OR LOWER(arrival_airport) LIKE LOWER(@arrival_airport))
                 AND cast(departure_time as TIMESTAMP) >= CAST(@datetime AS TIMESTAMP)
                 AND cast(departure_time as TIMESTAMP) < TIMESTAMP_ADD(CAST(@datetime AS TIMESTAMP), INTERVAL 1 DAY)
+                LIMIT 10
             """
 
             # Execute SQL query with parameters
@@ -978,7 +978,7 @@ class Client(datastore.Client[Config]):
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Policy]:
+    ) -> list[str]:
         """
         Search for policies based on similarity to a query embedding.
 
@@ -992,9 +992,9 @@ class Client(datastore.Client[Config]):
         """
         with self.__database.snapshot() as snapshot:
             query = """
-                SELECT id, content
+                SELECT content
                 FROM (
-                    SELECT id, content,  COSINE_DISTANCE(embedding, @query_embedding) AS similarity
+                    SELECT content,  COSINE_DISTANCE(embedding, @query_embedding) AS similarity
                     FROM policies 
                 ) AS sorted_policies
                 WHERE (1 - similarity) > @similarity_threshold
@@ -1018,12 +1018,7 @@ class Client(datastore.Client[Config]):
             )
 
         # Convert query result to model instance using model_validate method
-        policies = [
-            models.Policy.model_validate(
-                {key: value for key, value in zip(self.POLICIES_COLUMNS, a)}
-            )
-            for a in results
-        ]
+        policies = [a[0] for a in results]
 
         return policies
 

@@ -14,11 +14,9 @@
 
 import ast
 import datetime
-import json
-from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, FieldValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class Airport(BaseModel):
@@ -78,7 +76,7 @@ class Amenity(BaseModel):
 
     @field_validator("embedding", mode="before")
     def validate(cls, v):
-        if type(v) == str:
+        if isinstance(v, str):
             v = ast.literal_eval(v)
             v = [float(f) for f in v]
         return v
@@ -115,7 +113,7 @@ class Policy(BaseModel):
 
     @field_validator("embedding", mode="before")
     def validate(cls, v):
-        if type(v) == str:
+        if isinstance(v, str):
             v = ast.literal_eval(v)
             v = [float(f) for f in v]
         return v

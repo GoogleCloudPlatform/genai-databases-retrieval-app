@@ -27,7 +27,7 @@ from google.oauth2 import id_token  # type:ignore
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
-from orchestrator import BaseOrchestrator, createOrchestrator
+from orchestrator import createOrchestrator
 
 routes = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -128,7 +128,7 @@ async def logout_google(
 ):
     """Logout google account from user session and clear user session"""
     if "uuid" not in request.session:
-        raise HTTPException(status_code=400, detail=f"No session to reset.")
+        raise HTTPException(status_code=400, detail="No session to reset.")
 
     uuid = request.session["uuid"]
     orchestrator = request.app.state.orchestrator
@@ -202,12 +202,12 @@ def reset(request: Request):
     """Reset user session"""
 
     if "uuid" not in request.session:
-        raise HTTPException(status_code=400, detail=f"No session to reset.")
+        raise HTTPException(status_code=400, detail="No session to reset.")
 
     uuid = request.session["uuid"]
     orchestrator = request.app.state.orchestrator
     if not orchestrator.user_session_exist(uuid):
-        raise HTTPException(status_code=500, detail=f"Current user session not found")
+        raise HTTPException(status_code=500, detail="Current user session not found")
 
     orchestrator.user_session_reset(request.session, uuid)
 
@@ -232,7 +232,7 @@ def clear_user_info(session: dict[str, Any]):
 def init_app(
     orchestration_type: Optional[str],
     client_id: Optional[str],
-    secret_key: Optional[str],
+    client_secret: Optional[str],
 ) -> FastAPI:
     # FastAPI setup
     if orchestration_type is None:
@@ -242,7 +242,7 @@ def init_app(
     app.state.orchestrator = createOrchestrator(orchestration_type)
     app.include_router(routes)
     app.mount("/static", StaticFiles(directory="static"), name="static")
-    app.add_middleware(SessionMiddleware, secret_key=secret_key)
+    app.add_middleware(SessionMiddleware, secret_key=client_secret)
     return app
 
 
@@ -251,8 +251,8 @@ if __name__ == "__main__":
     HOST = os.getenv("HOST", default="0.0.0.0")
     ORCHESTRATION_TYPE = os.getenv("ORCHESTRATION_TYPE", default="langchain-tools")
     CLIENT_ID = os.getenv("CLIENT_ID")
-    SECRET_KEY = os.getenv("SECRET_KEY")
-    app = init_app(ORCHESTRATION_TYPE, client_id=CLIENT_ID, secret_key=SECRET_KEY)
+    CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+    app = init_app(ORCHESTRATION_TYPE, client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
     if app is None:
         raise TypeError("app not instantiated")
     uvicorn.run(app, host=HOST, port=PORT)

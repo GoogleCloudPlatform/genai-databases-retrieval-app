@@ -94,9 +94,16 @@ async function signout() {
 }
 
 function buildMessage(name, msg) {
+    let image = ''
+    if (name === "ai"){
+        image = '<div class="sender-icon"><img src="static/logo.png"></div>'
+    } else if(name === "human" && $('.chat-user-image').first().attr('src')){
+        image = `<div class="sender-icon"><img src="${$('.chat-user-image').first().attr('src')}"></div>`
+    }
     let message = `<div class="chat-bubble ${name}">
-    <div class="sender-icon"><img src="static/logo.png"></div>
-    <span>${msg}</span></div>`;
+    ${image}
+    <span><div class="innermsg">${msg}</div></span>
+    </div>`;
     return message;
 }
 
@@ -133,8 +140,8 @@ function buildConfirmation(confirmation, messageId) {
             ${buildBox('right', 133, 35, 15, "Arrival", arrival_time.replace('T', ' '))}
             ${buildBox('left', 205, 35, 15, "Flight", flight)}
             ${buildBox('left', 265, 35, 15, "Passenger", userName, "")}
-            ${buildButton("Looks good to me. Book it!", 342, "#FFF", "#1b980f", "confirmTicket('" + messageId + "')")}
-            ${buildButton("I changed my mind.", 395, "#FFF", "#181a23", "cancelTicket('" + messageId + "')")}
+            ${buildButton("Looks good to me. Book it!", 342, "#805e9d", "#FFF", "confirmTicket('" + messageId + "')")}
+            ${buildButton("I changed my mind.", 395, "#f8f8f8", "#181a23", "cancelTicket('" + messageId + "')")}
         </div></div>`;
         $('.inner-content').append(message);
         $('.chat-content').scrollTop($('.chat-content').prop("scrollHeight"));
@@ -202,4 +209,26 @@ async function confirmTicket(id) {
 
 function generateRandomID(length) {
     return Math.random().toString(36).substring(2, 2 + length);
+}
+
+function showSignOut(){
+
+    $('.popup-signout').show()
+
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+
+    overlay.addEventListener('click', function() {
+        $('.popup-signout').hide()
+        if (overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
+      });
+
+    document.body.appendChild(overlay);
 }

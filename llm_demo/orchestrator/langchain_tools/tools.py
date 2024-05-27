@@ -15,13 +15,12 @@
 import json
 import os
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Optional
 
 import aiohttp
 import google.oauth2.id_token  # type: ignore
 from google.auth import compute_engine  # type: ignore
 from google.auth.transport.requests import Request  # type: ignore
-from langchain.agents.agent import ExceptionTool  # type: ignore
 from langchain.tools import StructuredTool
 from pydantic.v1 import BaseModel, Field
 
@@ -81,17 +80,11 @@ def generate_search_airports(client: aiohttp.ClientSession):
             headers=get_headers(client),
         )
 
-        num = 2
         response_json = await response.json()
         if len(response_json) < 1:
             return "There are no airports matching that query. Let the user know there are no results."
-        elif len(response_json) > num:
-            return (
-                f"There are {len(response_json)} airports matching that query. Here are the first {num} results:\n"
-                + " ".join([f"{response_json[i]}" for i in range(num)])
-            )
         else:
-            return "\n".join([f"{r}" for r in response_json])
+            return response_json
 
     return search_airports
 
@@ -139,17 +132,11 @@ def generate_list_flights(client: aiohttp.ClientSession):
             headers=get_headers(client),
         )
 
-        num = 2
         response_json = await response.json()
         if len(response_json) < 1:
             return "There are no flights matching that query. Let the user know there are no results."
-        elif len(response_json) > num:
-            return (
-                f"There are {len(response_json)} flights matching that query. Here are the first {num} results:\n"
-                + " ".join([f"{response_json[i]}" for i in range(num)])
-            )
         else:
-            return "\n".join([f"{r}" for r in response_json])
+            return response_json
 
     return list_flights
 

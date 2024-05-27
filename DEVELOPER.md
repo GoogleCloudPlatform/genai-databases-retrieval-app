@@ -29,7 +29,7 @@
     cd retrieval_service
     ```
 
-1. Open a local connection to your database by starting the [Cloud SQL Auth Proxy][proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance.
+1. Open a local connection to your database by starting the [AlloyDB Auth Proxy][alloydb-proxy] or [Cloud SQL Auth Proxy][cloudsql-proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance (for non-cloud postgres such as AlloyDB Omni).
 
 1. You should already have a [`config.yml` created with your database config][config]. Continue to use `host: 127.0.0.1` and `port: 5432`, unless you instruct the proxy to listen or the SSH tunnel to forward to a different address.
 
@@ -70,7 +70,12 @@
     export DEBUG=True
     ```
 
-1. Set orchestration type environment variable (e.g. langchain-tools):
+1. Set orchestration type environment variable:
+
+    | orchestration-type            | Description                                 |
+    |-------------------------------|---------------------------------------------|
+    | langchain-tools               | LangChain tools orchestrator.               |
+    | vertexai-function-calling     | VertexAI Function Calling orchestrator.     |
 
     ```bash
     export ORCHESTRATION_TYPE=<orchestration-type>
@@ -91,14 +96,14 @@
 ### Run tests locally
 
 1. Change into the `retrieval_service` directory
-1. Open a local connection to your database by starting the [Cloud SQL Auth Proxy][proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance.
-1. Set environment variables:
+1. Open a local connection to your database by starting the [AlloyDB Auth Proxy][alloydb-proxy] or [Cloud SQL Auth Proxy][cloudsql-proxy] or a [SSH tunnel][tunnel] to your AlloyDB instance (for non-cloud postgres such as AlloyDB Omni).
+1. Set environment variables (different provider requires different environment variables):
 
-    ```bash
-    export DB_USER=""
-    export DB_PASS=""
-    export DB_NAME=""
-    ```
+    | Datastore                               |
+    |----------------------------------------|
+    | [AlloyDB](./docs/datastore/alloydb.md#test-environment-variables) |
+    | [Cloud SQL for Postgres](./docs/datastore/cloudsql_postgres.md#test-environment-variables) |
+    | [Non-cloud Postgres (e.g. AlloyDB Omni)](./docs/datastore/postgres.md#test-environment-variables) |
 
 1. Run pytest to automatically run all tests:
 
@@ -127,13 +132,13 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 * Config: Cloud Build configuration file
   * Location: Repository (add path to file)
 * Substitution variables:
-  * Add `_DATABASE_HOST` for AlloyDB IP address
+  * Add `_DATABASE_HOST` for non-cloud postgres
 * Service account: set for demo service to enable ID token creation to use to authenticated services
 
 #### Project Setup
 
 1. Follow instructions to setup the test project:
-    * [Set up and configure AlloyDB](./docs/datastore/alloydb.md)
+    * [Set up and configure database](./README.md#setting-up-your-database)
     * [Instructions for deploying the retrieval service](./docs/deploy_retrieval_service.md)
 1. Setup Cloud Build triggers (above)
 
@@ -141,8 +146,14 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 
 1. Create a Cloud Build private pool
 1. Enable Secret Manager API
-1. Create secret, `alloy_db_pass`, with your AlloyDB password
-1. Create secret, `alloy_db_user`, with your AlloyDB user
+1. Create secret, `db_user` and `db_pass`, with your database user and database password defined here:
+
+    | provider                               |
+    |----------------------------------------|
+    | [AlloyDB](./docs/datastore/alloydb.md#create-a-alloydb-cluster) |
+    | [Cloud SQL for Postgres](./docs/datastore/cloudsql_postgres.md#create-a-cloud-sql-for-postgresql-instance) |
+    | [Non-cloud Postgres (e.g. AlloyDB Omni)](./docs/datastore/postgres.md#create-a-alloydb-cluster) |
+
 1. Allow Cloud Build to access secret
 1. Add role Vertex AI User (roles/aiplatform.user) to Cloud Build Service account. Needed to run database init script.
 
@@ -160,11 +171,11 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 
 * Run retrieval service unit tests:
 
-    ```bash
-    gcloud builds submit --config retrieval_service/alloydb.tests.cloudbuild.yaml \
-        --substitutions _DATABASE_HOST=$DB_HOST,_DATABASE_NAME=$DB_NAME,_DATABASE_USER=$DB_USER
-    ```
-    Where `$DB_HOST`,`$DB_NAME`,`$DB_USER` are environment variables with your database values.
+    | provider                               |
+    |----------------------------------------|
+    | [AlloyDB](./docs/datastore/alloydb.md#run-tests) |
+    | [Cloud SQL for Postgres](./docs/datastore/cloudsql_postgres.md#run-tests) |
+    | [Non-cloud Postgres (e.g. AlloyDB Omni)](./docs/datastore/postgres.md#run-tests) |
 
     Note: Make sure to setup secrets describe in [Setup for retrieval service](#setup-for-retrieval-service)
 
@@ -172,8 +183,20 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 
 To run Cloud Build tests on GitHub from external contributors, ie RenovateBot, comment: `/gcbrun`.
 
+#### Code Coverage
+Please make sure your code is fully tested. The Cloud Build integration tests are run with the `pytest-cov` code coverage plugin. They fail for PRs with a code coverage less than the threshold specified in `retrieval_service/coverage/.<test>-coveragerc`.  If your file is inside the main module and should be ignored by code coverage check, add it to the `omit` section of `retrieval_service/coverage/.<test>-coveragerc`.
 
-[proxy]: https://cloud.google.com/sql/docs/mysql/sql-proxy
+Check for code coverage report any Cloud Build integration test log. 
+Here is a breakdown of the report:
+- `Stmts`:  lines of executable code (statements).
+- `Miss`: number of lines not covered by tests.
+- `Branch`: branches of executable code (e.g an if-else clause may count as 1 statement but 2 branches; test for both conditions to have both branches covered).
+- `BrPart`: number of branches not covered by tests.
+- `Cover`: average coverage of files.
+- `Missing`: lines that are not covered by tests.
+
+[alloydb-proxy]: https://cloud.google.com/alloydb/docs/auth-proxy/connect
+[cloudsql-proxy]: https://cloud.google.com/sql/docs/mysql/sql-proxy
 [tunnel]: https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/blob/main/docs/datastore/alloydb.md#set-up-connection-to-alloydb
 [config]: https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/blob/main/docs/datastore/alloydb.md#initialize-data-in-alloydb
 [triggers]: https://console.cloud.google.com/cloud-build/triggers?e=13802955&project=extension-demo-testing
