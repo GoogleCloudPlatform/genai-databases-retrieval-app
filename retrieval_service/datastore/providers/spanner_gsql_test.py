@@ -23,7 +23,6 @@ from google.cloud import spanner  # type: ignore
 from google.cloud.spanner_v1 import JsonObject, param_types
 from google.cloud.spanner_v1.database import Database
 from google.cloud.spanner_v1.instance import Instance
-from google.oauth2 import service_account  # type: ignore
 
 import models
 
@@ -57,21 +56,10 @@ def db_name() -> str:
 
 
 @pytest.fixture(scope="module")
-def service_accounts_file_path() -> str:
-    return get_env_var(
-        "SERVICE_ACCOUNT_KEY_FILE", "Service account with permission to spanner"
-    )
-
-
-@pytest.fixture(scope="module")
 async def create_db(
-    db_project: str, db_instance: str, db_name: str, service_accounts_file_path: str
+    db_project: str, db_instance: str, db_name: str
 ) -> AsyncGenerator[str, None]:
-    credentials = service_account.Credentials.from_service_account_file(
-        service_accounts_file_path
-    )
-
-    client = spanner.Client(project=db_project, credentials=credentials)
+    client = spanner.Client(project=db_project)
     instance = client.instance(db_instance)
 
     database = instance.database(db_name)
@@ -89,7 +77,6 @@ async def ds(
     create_db: AsyncGenerator[str, None],
     db_project: str,
     db_instance: str,
-    service_accounts_file_path: str,
 ) -> AsyncGenerator[datastore.Client, None]:
     db_name = await create_db.__anext__()
     cfg = spanner_gsql.Config(
@@ -97,7 +84,6 @@ async def ds(
         project=db_project,
         instance=db_instance,
         database=db_name,
-        service_account_key_file=service_accounts_file_path,
     )
 
     ds = await datastore.create(cfg)
