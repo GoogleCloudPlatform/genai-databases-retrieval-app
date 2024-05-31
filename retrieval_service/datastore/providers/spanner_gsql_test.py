@@ -23,7 +23,7 @@ from google.cloud import spanner  # type: ignore
 from google.cloud.spanner_v1 import JsonObject, param_types
 from google.cloud.spanner_v1.database import Database
 from google.cloud.spanner_v1.instance import Instance
-from google.oauth2 import service_account
+from google.oauth2 import service_account  # type: ignore
 
 import models
 
