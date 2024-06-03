@@ -88,10 +88,10 @@ async def ds(
 
     ds = await datastore.create(cfg)
 
-    airports_ds_path = "../../../data/airport_dataset.csv"
-    amenities_ds_path = "../../../data/amenity_dataset.csv"
-    flights_ds_path = "../../../data/flights_dataset.csv"
-    policies_ds_path = "../../../data/cymbalair_policy.csv"
+    airports_ds_path = "../data/airport_dataset.csv"
+    amenities_ds_path = "../data/amenity_dataset.csv"
+    flights_ds_path = "../data/flights_dataset.csv"
+    policies_ds_path = "../data/cymbalair_policy.csv"
     airports, amenities, flights, policies = await ds.load_dataset(
         airports_ds_path,
         amenities_ds_path,
