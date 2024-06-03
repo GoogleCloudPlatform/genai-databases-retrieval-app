@@ -119,15 +119,15 @@ def check_file_diff(file_diff):
 async def test_export_dataset(ds: spanner_gsql.Client):
     airports, amenities, flights, policies = await ds.export_data()
 
-    airports_ds_path = "../../../data/airport_dataset.csv"
-    amenities_ds_path = "../../../data/amenity_dataset.csv"
-    flights_ds_path = "../../../data/flights_dataset.csv"
-    policies_ds_path = "../../../data/cymbalair_policy.csv"
+    airports_ds_path = "../data/airport_dataset.csv"
+    amenities_ds_path = "../data/amenity_dataset.csv"
+    flights_ds_path = "../data/flights_dataset.csv"
+    policies_ds_path = "../data/cymbalair_policy.csv"
 
-    airports_new_path = "../../../data/airport_dataset.csv.new"
-    amenities_new_path = "../../../data/amenity_dataset.csv.new"
-    flights_new_path = "../../../data/flights_dataset.csv.new"
-    policies_new_path = "../../../data/cymbalair_policy.csv.new"
+    airports_new_path = "../data/airport_dataset.csv.new"
+    amenities_new_path = "../data/amenity_dataset.csv.new"
+    flights_new_path = "../data/flights_dataset.csv.new"
+    policies_new_path = "../data/cymbalair_policy.csv.new"
 
     await ds.export_dataset(
         airports,
