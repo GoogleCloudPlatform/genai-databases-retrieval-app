@@ -45,7 +45,7 @@
 1. Change into the demo directory:
 
     ```bash
-    cd llm_demo 
+    cd llm_demo
     ```
 
 1. To use a live retrieval service on Cloud Run:
@@ -186,7 +186,7 @@ To run Cloud Build tests on GitHub from external contributors, ie RenovateBot, c
 #### Code Coverage
 Please make sure your code is fully tested. The Cloud Build integration tests are run with the `pytest-cov` code coverage plugin. They fail for PRs with a code coverage less than the threshold specified in `retrieval_service/coverage/.<test>-coveragerc`.  If your file is inside the main module and should be ignored by code coverage check, add it to the `omit` section of `retrieval_service/coverage/.<test>-coveragerc`.
 
-Check for code coverage report any Cloud Build integration test log. 
+Check for code coverage report any Cloud Build integration test log.
 Here is a breakdown of the report:
 - `Stmts`:  lines of executable code (statements).
 - `Miss`: number of lines not covered by tests.
@@ -194,6 +194,14 @@ Here is a breakdown of the report:
 - `BrPart`: number of branches not covered by tests.
 - `Cover`: average coverage of files.
 - `Missing`: lines that are not covered by tests.
+
+## Versioning
+
+This app will be released based on version number MAJOR.MINOR.PATCH:
+
+- MAJOR: Breaking change is made, requiring user to redeploy all or some of the app.
+- MINOR: Backward compatible feature change or addition that doesn't require redeploying.
+- PATCH: Backward compatible bug fixes and minor updates
 
 [alloydb-proxy]: https://cloud.google.com/alloydb/docs/auth-proxy/connect
 [cloudsql-proxy]: https://cloud.google.com/sql/docs/mysql/sql-proxy
