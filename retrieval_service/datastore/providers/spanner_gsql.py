@@ -1004,14 +1004,16 @@ class Client(datastore.Client[Config]):
                 AND cast(departure_time as TIMESTAMP) >= CAST({datetime} AS TIMESTAMP)
                 AND cast(departure_time as TIMESTAMP) < TIMESTAMP_ADD(CAST({datetime} AS TIMESTAMP), INTERVAL 1 DAY)
                 LIMIT 10
-            """if isinstance(self._dialect_semantics, PGSqlSemantics):
+            """
+
+            if isinstance(self._dialect_semantics, PGSqlSemantics):
                 query = """
-                SELECT * FROM flights
-                WHERE (COALESCE({departure_airport}) IS NULL OR LOWER(departure_airport) LIKE LOWER({departure_airport}))
-                AND (COALESCE({arrival_airport}) IS NULL OR LOWER(arrival_airport) LIKE LOWER({arrival_airport}))
-                AND CAST(departure_time as timestamptz) >= CAST({datetime} AS timestamptz)
-                AND cast(departure_time as timestamptz) < spanner.timestamptz_add(CAST({datetime} AS timestamptz), '1 day')
-                """
+                    SELECT * FROM flights
+                    WHERE (COALESCE({departure_airport}) IS NULL OR LOWER(departure_airport) LIKE LOWER({departure_airport}))
+                    AND (COALESCE({arrival_airport}) IS NULL OR LOWER(arrival_airport) LIKE LOWER({arrival_airport}))
+                    AND CAST(departure_time as timestamptz) >= CAST({datetime} AS timestamptz)
+                    AND cast(departure_time as timestamptz) < spanner.timestamptz_add(CAST({datetime} AS timestamptz), '1 day')
+                    """
 
             query = query.format(
                 departure_airport=self._placeholders[0][0],
