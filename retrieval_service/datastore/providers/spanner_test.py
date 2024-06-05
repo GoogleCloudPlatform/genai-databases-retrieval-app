@@ -17,18 +17,19 @@ from datetime import datetime
 from ipaddress import IPv4Address
 from typing import Any, AsyncGenerator, List, Optional
 
-import models
 import pytest
 import pytest_asyncio
 from csv_diff import compare, load_csv  # type: ignore
-from google.cloud import spanner  # type: ignore
+from google.cloud import spanner as spanner_client  # type: ignore
 from google.cloud.spanner_admin_database_v1.types import DatabaseDialect
 from google.cloud.spanner_v1 import JsonObject, param_types
 from google.cloud.spanner_v1.database import Database
 from google.cloud.spanner_v1.instance import Instance
 
+import models
+
 from .. import datastore
-from . import spanner_gsql
+from . import spanner
 from .test_data import (
     amenities_query_embedding1,
     amenities_query_embedding2,
@@ -68,7 +69,7 @@ async def create_db(
     db_name: str,
     create_pg_database: str,
 ) -> AsyncGenerator[str, None]:
-    client = spanner.Client(project=db_project)
+    client = spanner_client.Client(project=db_project)
     instance = client.instance(db_instance)
 
     create_pg_database_flag = create_pg_database.lower() in ["true", "t", "1", "yes"]
@@ -97,7 +98,7 @@ async def ds(
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
     db_name = await create_db.__anext__()
-    cfg = spanner_gsql.Config(
+    cfg = spanner.Config(
         kind="spanner",
         project=db_project,
         instance=db_instance,
@@ -135,7 +136,7 @@ def check_file_diff(file_diff):
     assert file_diff["columns_removed"] == []
 
 
-async def test_export_dataset(ds: spanner_gsql.Client):
+async def test_export_dataset(ds: spanner.Client):
     airports, amenities, flights, policies = await ds.export_data()
 
     airports_ds_path = "../data/airport_dataset.csv"
@@ -182,7 +183,7 @@ async def test_export_dataset(ds: spanner_gsql.Client):
     check_file_diff(diff_policies)
 
 
-async def test_get_airport_by_id(ds: spanner_gsql.Client):
+async def test_get_airport_by_id(ds: spanner.Client):
     res = await ds.get_airport_by_id(1)
     expected = models.Airport(
         id=1,
@@ -201,7 +202,7 @@ async def test_get_airport_by_id(ds: spanner_gsql.Client):
         pytest.param("sfo", id="lower_case"),
     ],
 )
-async def test_get_airport_by_iata(ds: spanner_gsql.Client, iata: str):
+async def test_get_airport_by_iata(ds: spanner.Client, iata: str):
     res = await ds.get_airport_by_iata(iata)
     expected = models.Airport(
         id=3270,
@@ -285,7 +286,7 @@ search_airports_test_data = [
 
 @pytest.mark.parametrize("country, city, name, expected", search_airports_test_data)
 async def test_search_airports(
-    ds: spanner_gsql.Client,
+    ds: spanner.Client,
     country: str,
     city: str,
     name: str,
@@ -295,7 +296,7 @@ async def test_search_airports(
     assert res == expected
 
 
-async def test_get_amenity(ds: spanner_gsql.Client):
+async def test_get_amenity(ds: spanner.Client):
     res: Optional[models.Amenity] = await ds.get_amenity(0)
     expected = models.Amenity(
         id=0,
@@ -388,7 +389,7 @@ amenities_search_test_data = [
     "query_embedding, similarity_threshold, top_k, expected", amenities_search_test_data
 )
 async def test_amenities_search(
-    ds: spanner_gsql.Client,
+    ds: spanner.Client,
     query_embedding: List[float],
     similarity_threshold: float,
     top_k: int,
@@ -398,7 +399,7 @@ async def test_amenities_search(
     assert res == expected
 
 
-async def test_get_flight(ds: spanner_gsql.Client):
+async def test_get_flight(ds: spanner.Client):
     res = await ds.get_flight(1)
     expected = models.Flight(
         id=1,
@@ -465,7 +466,7 @@ search_flights_by_number_test_data = [
     "airline, number, expected", search_flights_by_number_test_data
 )
 async def test_search_flights_by_number(
-    ds: spanner_gsql.Client,
+    ds: spanner.Client,
     airline: str,
     number: str,
     expected: List[models.Flight],
@@ -588,7 +589,7 @@ search_flights_by_airports_test_data = [
     search_flights_by_airports_test_data,
 )
 async def test_search_flights_by_airports(
-    ds: spanner_gsql.Client,
+    ds: spanner.Client,
     date: str,
     departure_airport: str,
     arrival_airport: str,
@@ -635,7 +636,7 @@ policies_search_test_data = [
     "query_embedding, similarity_threshold, top_k, expected", policies_search_test_data
 )
 async def test_policies_search(
-    ds: spanner_gsql.Client,
+    ds: spanner.Client,
     query_embedding: List[float],
     similarity_threshold: float,
     top_k: int,
