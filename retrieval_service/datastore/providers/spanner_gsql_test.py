@@ -29,9 +29,13 @@ from google.cloud.spanner_v1.instance import Instance
 
 from .. import datastore
 from . import spanner_gsql
-from .test_data import (amenities_query_embedding1, amenities_query_embedding2,
-                        foobar_query_embedding, policies_query_embedding1,
-                        policies_query_embedding2)
+from .test_data import (
+    amenities_query_embedding1,
+    amenities_query_embedding2,
+    foobar_query_embedding,
+    policies_query_embedding1,
+    policies_query_embedding2,
+)
 from .utils import get_env_var
 
 pytestmark = pytest.mark.asyncio(scope="module")
@@ -41,17 +45,21 @@ pytestmark = pytest.mark.asyncio(scope="module")
 def db_project() -> str:
     return get_env_var("DB_PROJECT", "Google Cloud Project")
 
+
 @pytest.fixture(scope="module")
 def db_instance() -> str:
     return get_env_var("DB_INSTANCE", "Spanner Instance")
+
 
 @pytest.fixture(scope="module")
 def db_name() -> str:
     return get_env_var("DB_NAME", "Spanner Database")
 
+
 @pytest.fixture(scope="module")
 def create_pg_database() -> str:
     return os.getenv("CREATE_PG_DB", "false")
+
 
 @pytest.fixture(scope="module")
 async def create_db(
