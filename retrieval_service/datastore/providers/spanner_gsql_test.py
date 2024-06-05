@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from datetime import datetime
 from ipaddress import IPv4Address
 from typing import Any, AsyncGenerator, List, Optional
 
+import models
 import pytest
 import pytest_asyncio
 from csv_diff import compare, load_csv  # type: ignore
@@ -25,17 +27,11 @@ from google.cloud.spanner_v1 import JsonObject, param_types
 from google.cloud.spanner_v1.database import Database
 from google.cloud.spanner_v1.instance import Instance
 
-import models
-
 from .. import datastore
 from . import spanner_gsql
-from .test_data import (
-    amenities_query_embedding1,
-    amenities_query_embedding2,
-    foobar_query_embedding,
-    policies_query_embedding1,
-    policies_query_embedding2,
-)
+from .test_data import (amenities_query_embedding1, amenities_query_embedding2,
+                        foobar_query_embedding, policies_query_embedding1,
+                        policies_query_embedding2)
 from .utils import get_env_var
 
 pytestmark = pytest.mark.asyncio(scope="module")
@@ -55,7 +51,7 @@ def db_name() -> str:
 
 @pytest.fixture(scope="module")
 def create_pg_database() -> str:
-    return get_env_var("CREATE_PG_DB", "Create PG database or not")
+    return os.getenv("CREATE_PG_DB", "false")
 
 @pytest.fixture(scope="module")
 async def create_db(
