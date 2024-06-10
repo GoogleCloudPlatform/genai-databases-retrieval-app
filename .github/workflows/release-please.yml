@@ -27,6 +27,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: release-please-action
-        uses: googleapis/release-please-action@f3969c04a4ec81d7a9aa4010d84ae6a7602f86a7 # v4.1.1
+        uses: googleapis/release-please-action@3f4784dbc19347947972489b7ed79193ff704b10 # v4.1.2
         with:
           release-type: simple
