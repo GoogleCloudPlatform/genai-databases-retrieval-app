@@ -488,10 +488,9 @@ class Client(datastore.Client[Config]):
         airline: str,
         flight_number: str,
         departure_airport: str,
-        arrival_airport: str,
-        departure_time: datetime,
-        arrival_time: datetime,
-    ) -> bool:
+        departure_time: str,
+    ) -> Optional[models.Flight]:
+        departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
         async with self.__pool.connect() as conn:
             s = text(
                 """
@@ -499,24 +498,21 @@ class Client(datastore.Client[Config]):
                     WHERE airline ILIKE :airline
                     AND flight_number ILIKE :flight_number
                     AND departure_airport ILIKE :departure_airport
-                    AND arrival_airport ILIKE :arrival_airport
                     AND departure_time = :departure_time
-                    AND arrival_time = :arrival_time
                 """
             )
             params = {
                 "airline": airline,
                 "flight_number": flight_number,
                 "departure_airport": departure_airport,
-                "arrival_airport": arrival_airport,
-                "departure_time": departure_time,
-                "arrival_time": arrival_time,
+                "departure_time": departure_time_datetime,
             }
-            results = (await conn.execute(s, params)).mappings().fetchall()
+            result = (await conn.execute(s, params)).mappings().fetchone()
 
-        if len(results) == 1:
-            return True
-        return False
+        if result is None:
+            return None
+        res = models.Flight.model_validate(result)
+        return res
 
     async def insert_ticket(
         self,
@@ -532,15 +528,6 @@ class Client(datastore.Client[Config]):
     ):
         departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
         arrival_time_datetime = datetime.strptime(arrival_time, "%Y-%m-%d %H:%M:%S")
-        if not await self.validate_ticket(
-            airline,
-            flight_number,
-            departure_airport,
-            arrival_airport,
-            departure_time_datetime,
-            arrival_time_datetime,
-        ):
-            raise Exception("Flight information not in database")
 
         async with self.__pool.connect() as conn:
             s = text(

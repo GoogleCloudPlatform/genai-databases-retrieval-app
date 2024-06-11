@@ -816,10 +816,11 @@ class Client(datastore.Client[Config]):
         airline: str,
         flight_number: str,
         departure_airport: str,
-        arrival_airport: str,
-        departure_time: datetime.datetime,
-        arrival_time: datetime.datetime,
-    ) -> bool:
+        departure_time: str,
+    ) -> Optional[models.Flight]:
+        departure_time_datetime = datetime.datetime.strptime(
+            departure_time, "%Y-%m-%d %H:%M:%S"
+        )
         with self.__database.snapshot() as snapshot:
             # Spread SQL query for readability
             results = snapshot.execute_sql(
@@ -828,34 +829,32 @@ class Client(datastore.Client[Config]):
                     WHERE LOWER(airline) LIKE LOWER(@airline)
                     AND LOWER(flight_number) LIKE LOWER(@flight_number)
                     AND LOWER(departure_airport) LIKE LOWER(@departure_airport)
-                    AND LOWER(arrival_airport) LIKE LOWER(@arrival_airport)
                     AND departure_time = @departure_time
-                    AND arrival_time = @arrival_time
                 """,
                 params={
                     "airline": airline,
                     "flight_number": flight_number,
                     "departure_airport": departure_airport,
-                    "arrival_airport": arrival_airport,
-                    "departure_time": departure_time.strftime("%Y-%m-%d %H:%M:%S"),
-                    "arrival_time": arrival_time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "departure_time": departure_time_datetime,
                 },
                 param_types={
                     "airline": param_types.STRING,
                     "flight_number": param_types.STRING,
                     "departure_airport": param_types.STRING,
-                    "arrival_airport": param_types.STRING,
                     "departure_time": param_types.STRING,
-                    "arrival_time": param_types.STRING,
                 },
             )
 
-        flights = [x for x in results]
+        if results is None:
+            return None
 
-        if len(flights) == 1:
-            return True
-
-        return False
+        flights = [
+            models.Flight.model_validate(
+                {key: value for key, value in zip(self.FLIGHTS_COLUMNS, a)}
+            )
+            for a in results
+        ]
+        return flights[0]
 
     async def insert_ticket(
         self,
@@ -889,16 +888,6 @@ class Client(datastore.Client[Config]):
         arrival_time_datetime = datetime.datetime.strptime(
             arrival_time, "%Y-%m-%d %H:%M:%S"
         )
-
-        if not await self.validate_ticket(
-            airline,
-            flight_number,
-            departure_airport,
-            arrival_airport,
-            departure_time_datetime,
-            arrival_time_datetime,
-        ):
-            raise Exception("Flight information not in database")
 
         with self.__database.batch() as batch:
             batch.insert(

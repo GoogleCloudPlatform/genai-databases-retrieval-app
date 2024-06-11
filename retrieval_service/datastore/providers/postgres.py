@@ -424,31 +424,29 @@ class Client(datastore.Client[Config]):
         airline: str,
         flight_number: str,
         departure_airport: str,
-        arrival_airport: str,
-        departure_time: datetime,
-        arrival_time: datetime,
-    ) -> bool:
-        results = await self.__pool.fetch(
+        departure_time: str,
+    ) -> Optional[models.Flight]:
+        departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
+        result = await self.__pool.fetchrow(
             """
                 SELECT * FROM flights
                 WHERE airline ILIKE $1
                 AND flight_number ILIKE $2
                 AND departure_airport ILIKE $3
-                AND arrival_airport ILIKE $4
-                AND departure_time = $5::timestamp
-                AND arrival_time = $6::timestamp;
+                AND departure_time::date = $4::date
             """,
             airline,
             flight_number,
             departure_airport,
-            arrival_airport,
-            departure_time,
-            arrival_time,
+            departure_time_datetime,
             timeout=10,
         )
-        if len(results) == 1:
-            return True
-        return False
+
+        if result is None:
+            return None
+
+        res = models.Flight.model_validate(dict(result))
+        return res
 
     async def insert_ticket(
         self,
@@ -464,15 +462,6 @@ class Client(datastore.Client[Config]):
     ):
         departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
         arrival_time_datetime = datetime.strptime(arrival_time, "%Y-%m-%d %H:%M:%S")
-        if not await self.validate_ticket(
-            airline,
-            flight_number,
-            departure_airport,
-            arrival_airport,
-            departure_time_datetime,
-            arrival_time_datetime,
-        ):
-            raise Exception("Flight information not in database")
         results = await self.__pool.execute(
             """
                 INSERT INTO tickets (

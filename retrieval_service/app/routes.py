@@ -178,6 +178,24 @@ async def insert_ticket(
     return result
 
 
+@routes.get("/tickets/validate")
+async def validate_ticket(
+    request: Request,
+    airline: str,
+    flight_number: str,
+    departure_airport: str,
+    departure_time: str,
+):
+    ds: datastore.Client = request.app.state.datastore
+    result = await ds.validate_ticket(
+        airline,
+        flight_number,
+        departure_airport,
+        departure_time,
+    )
+    return result
+
+
 @routes.get("/tickets/list")
 async def list_tickets(
     request: Request,
