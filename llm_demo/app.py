@@ -252,7 +252,9 @@ if __name__ == "__main__":
     ORCHESTRATION_TYPE = os.getenv("ORCHESTRATION_TYPE", default="langchain-tools")
     CLIENT_ID = os.getenv("CLIENT_ID")
     MIDDLEWARE_SECRET = os.getenv("MIDDLEWARE_SECRET", default="this is a secret")
-    app = init_app(ORCHESTRATION_TYPE, client_id=CLIENT_ID, middleware_secret=MIDDLEWARE_SECRET)
+    app = init_app(
+        ORCHESTRATION_TYPE, client_id=CLIENT_ID, middleware_secret=MIDDLEWARE_SECRET
+    )
     if app is None:
         raise TypeError("app not instantiated")
     uvicorn.run(app, host=HOST, port=PORT)
