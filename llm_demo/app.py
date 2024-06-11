@@ -232,7 +232,7 @@ def clear_user_info(session: dict[str, Any]):
 def init_app(
     orchestration_type: Optional[str],
     client_id: Optional[str],
-    client_secret: Optional[str],
+    middleware_secret: Optional[str],
 ) -> FastAPI:
     # FastAPI setup
     if orchestration_type is None:
@@ -242,7 +242,7 @@ def init_app(
     app.state.orchestrator = createOrchestrator(orchestration_type)
     app.include_router(routes)
     app.mount("/static", StaticFiles(directory="static"), name="static")
-    app.add_middleware(SessionMiddleware, secret_key=client_secret)
+    app.add_middleware(SessionMiddleware, secret_key=middleware_secret)
     return app
 
 
@@ -251,8 +251,10 @@ if __name__ == "__main__":
     HOST = os.getenv("HOST", default="0.0.0.0")
     ORCHESTRATION_TYPE = os.getenv("ORCHESTRATION_TYPE", default="langchain-tools")
     CLIENT_ID = os.getenv("CLIENT_ID")
-    CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-    app = init_app(ORCHESTRATION_TYPE, client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
+    MIDDLEWARE_SECRET = os.getenv("MIDDLEWARE_SECRET", default="this is a secret")
+    app = init_app(
+        ORCHESTRATION_TYPE, client_id=CLIENT_ID, middleware_secret=MIDDLEWARE_SECRET
+    )
     if app is None:
         raise TypeError("app not instantiated")
     uvicorn.run(app, host=HOST, port=PORT)
