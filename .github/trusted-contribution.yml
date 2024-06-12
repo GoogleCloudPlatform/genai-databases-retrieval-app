@@ -2,7 +2,7 @@ annotations:
   - type: comment
     text: "/gcbrun"
   - type: label
-    text: "tests: run"
+    text: "lint: run"
 trustedContributors:
   - renovate-bot
   - dependabot[bot]
