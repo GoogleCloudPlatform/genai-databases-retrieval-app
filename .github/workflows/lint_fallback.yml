@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: tests
+name: lint 
 on:
   pull_request:
     paths:
@@ -30,4 +30,4 @@ jobs:
       contents: none
 
     steps:
-      - run: echo "No tests required."
+      - run: echo "No lint required."
