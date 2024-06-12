@@ -20,7 +20,7 @@ steps:
 
   - id: Run retrieval service app tests
     name: python:3.11
-    dir: retrieval_service/app
+    dir: retrieval_service
     script: |
         #!/usr/bin/env bash
-        python -m pytest app_test.py
+        python -m pytest --cov=app --cov-config=coverage/.app-coveragerc app/app_test.py

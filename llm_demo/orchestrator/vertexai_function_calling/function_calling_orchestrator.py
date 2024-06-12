@@ -16,17 +16,15 @@ import asyncio
 import os
 import uuid
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from aiohttp import ClientSession, TCPConnector
 from fastapi import HTTPException
-from google.auth.transport.requests import Request  # type: ignore
-from google.protobuf.json_format import MessageToDict
+from google.protobuf.json_format import MessageToDict  # type: ignore
 from pytz import timezone
 from vertexai.preview.generative_models import (  # type: ignore
-    ChatSession,
     Content,
-    GenerationResponse,
+    GenerationConfig,
     GenerativeModel,
     Part,
 )
@@ -48,35 +46,43 @@ BASE_HISTORY = {
 }
 
 
-class UserChatModel:
+class UserModel:
     client: ClientSession
-    chat: ChatSession
+    model: GenerativeModel
+    history: List[Content]
 
-    def __init__(self, client: ClientSession, chat: ChatSession):
+    def __init__(self, client: ClientSession, model: GenerativeModel):
         self.client = client
-        self.chat = chat
+        self.model = model
+        self.history = []
 
     @classmethod
-    def initialize_chat_model(
-        cls, client: ClientSession, model: str
-    ) -> "UserChatModel":
-        chat_model = GenerativeModel(model, tools=[assistant_tool()])
-        function_calling_session = chat_model.start_chat()
-        return UserChatModel(client, function_calling_session)
+    def initialize_model(cls, client: ClientSession, model: str) -> "UserModel":
+        model = GenerativeModel(model, tools=[assistant_tool()])
+        return UserModel(client, model)
 
     async def close(self):
         await self.client.close()
 
     async def invoke(self, input_prompt: str) -> Dict[str, Any]:
         prompt = self.get_prompt()
-        model_response = self.request_chat_model(prompt + input_prompt)
+        user_prompt_content = Content(
+            role="user",
+            parts=[
+                Part.from_text(prompt + input_prompt),
+            ],
+        )
+        self.history.append(user_prompt_content)
+        model_response = await self.request_model(user_prompt_content)
         self.debug_log(f"Prompt:\n{prompt}\n\nQuestion: {input_prompt}.")
         self.debug_log(f"\nFunction call response:\n{model_response}")
-        part_response = model_response.candidates[0].content.parts[0]
+        response_function_call_content = model_response.candidates[0].content
+        part_response = response_function_call_content.parts[0]
         confirmation = None
 
         # implement multi turn chat with while loop
         while "function_call" in part_response._raw_part:
+            self.history.append(response_function_call_content)
             function_call = MessageToDict(part_response.function_call._pb)
             function_name = function_call.get("name")
             if function_name in get_confirmation_needing_tools():
@@ -96,13 +102,25 @@ class UserChatModel:
                     "content": function_response,
                 },
             )
-            model_response = self.request_chat_model(part)
-            part_response = model_response.candidates[0].content.parts[0]
+            content = Content(
+                parts=[part],
+            )
+            self.history.append(content)
+            model_response = self.request_model(self.history)
+            response_function_call_content = model_response.candidates[0].content
+            part_response = response_function_call_content.parts[0]
 
         if "text" in part_response._raw_part:
-            content = part_response.text
-            self.debug_log(f"Output content: {content}")
-            return {"output": content, "confirmation": confirmation}
+            model_text = part_response.text
+            model_content = Content(
+                role="model",
+                parts=[
+                    Part.from_text(model_text),
+                ],
+            )
+            self.history.append(model_content)
+            self.debug_log(f"Output content: {model_text}")
+            return {"output": model_text, "confirmation": confirmation}
         else:
             raise HTTPException(
                 status_code=500, detail="Error: Chat model response unknown"
@@ -118,11 +136,11 @@ class UserChatModel:
         if DEBUG:
             print(output)
 
-    def request_chat_model(self, prompt: str):
+    async def request_model(self, contents: List[Content]):
         try:
-            model_response = self.chat.send_message(
-                prompt,
-                generation_config={"temperature": 0},
+            model_response = await self.model.generate_content_async(
+                contents,
+                generation_config=GenerationConfig(temperature=0),
             )
         except Exception as err:
             raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
@@ -150,13 +168,12 @@ class UserChatModel:
 
     def reset_memory(self, model: str):
         """reinitiate chat model to reset memory."""
-        del self.chat
-        chat_model = GenerativeModel(model, tools=[assistant_tool()])
-        self.chat = chat_model.start_chat()
+        del self.history
+        self.history = []
 
 
 class FunctionCallingOrchestrator(BaseOrchestrator):
-    _user_sessions: Dict[str, UserChatModel]
+    _user_sessions: Dict[str, UserModel]
     # aiohttp context
     connector = None
 
@@ -184,8 +201,8 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
         if "history" not in session:
             session["history"] = [BASE_HISTORY]
         client = await self.create_client_session()
-        chat = UserChatModel.initialize_chat_model(client, self.MODEL)
-        self._user_sessions[id] = chat
+        model = UserModel.initialize_model(client, self.MODEL)
+        self._user_sessions[id] = model
         self.client = client
 
     async def user_session_invoke(self, uuid: str, prompt: str) -> dict[str, Any]:
@@ -201,7 +218,7 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
         session["history"] = [base_history]
         user_session.reset_memory(self.MODEL)
 
-    def get_user_session(self, uuid: str) -> UserChatModel:
+    def get_user_session(self, uuid: str) -> UserModel:
         return self._user_sessions[uuid]
 
     async def get_connector(self) -> TCPConnector:

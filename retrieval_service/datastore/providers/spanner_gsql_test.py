@@ -12,20 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 from datetime import datetime
-from typing import Any, AsyncGenerator, List
+from ipaddress import IPv4Address
+from typing import Any, AsyncGenerator, List, Optional
 
-import asyncpg
 import pytest
 import pytest_asyncio
 from csv_diff import compare, load_csv  # type: ignore
-from google.cloud.sql.connector import Connector
+from google.cloud import spanner  # type: ignore
+from google.cloud.spanner_v1 import JsonObject, param_types
+from google.cloud.spanner_v1.database import Database
+from google.cloud.spanner_v1.instance import Instance
 
 import models
 
 from .. import datastore
-from . import cloudsql_postgres
+from . import spanner_gsql
 from .test_data import (
     amenities_query_embedding1,
     amenities_query_embedding2,
@@ -39,81 +41,51 @@ pytestmark = pytest.mark.asyncio(scope="module")
 
 
 @pytest.fixture(scope="module")
-def db_user() -> str:
-    return get_env_var("DB_USER", "name of a postgres user")
-
-
-@pytest.fixture(scope="module")
-def db_pass() -> str:
-    return get_env_var("DB_PASS", "password for the postgres user")
-
-
-@pytest.fixture(scope="module")
 def db_project() -> str:
-    return get_env_var("DB_PROJECT", "project id for google cloud")
-
-
-@pytest.fixture(scope="module")
-def db_region() -> str:
-    return get_env_var("DB_REGION", "region for cloud sql instance")
+    return get_env_var("DB_PROJECT", "Google Cloud Project")
 
 
 @pytest.fixture(scope="module")
 def db_instance() -> str:
-    return get_env_var("DB_INSTANCE", "instance for cloud sql")
+    return get_env_var("DB_INSTANCE", "Spanner Instance")
+
+
+@pytest.fixture(scope="module")
+def db_name() -> str:
+    return get_env_var("DB_NAME", "Spanner Database")
 
 
 @pytest.fixture(scope="module")
 async def create_db(
-    db_user: str, db_pass: str, db_project: str, db_region: str, db_instance: str
+    db_project: str, db_instance: str, db_name: str
 ) -> AsyncGenerator[str, None]:
-    db_name = get_env_var("DB_NAME", "name of a postgres database")
-    loop = asyncio.get_running_loop()
-    connector = Connector(loop=loop)
-    # Database does not exist, create it.
-    sys_conn: asyncpg.Connection = await connector.connect_async(
-        f"{db_project}:{db_region}:{db_instance}",
-        "asyncpg",
-        user=f"{db_user}",
-        password=f"{db_pass}",
-        db="postgres",
-    )
-    await sys_conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
-    await sys_conn.execute(f'CREATE DATABASE "{db_name}";')
-    await sys_conn.close()
-    conn: asyncpg.Connection = await connector.connect_async(
-        f"{db_project}:{db_region}:{db_instance}",
-        "asyncpg",
-        user=f"{db_user}",
-        password=f"{db_pass}",
-        db=f"{db_name}",
-    )
-    await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+    client = spanner.Client(project=db_project)
+    instance = client.instance(db_instance)
+
+    database = instance.database(db_name)
+
+    database.create()
+
     yield db_name
-    await conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
-    await conn.close()
+
+    database.drop()
+    client.close()
 
 
 @pytest_asyncio.fixture(scope="module")
 async def ds(
     create_db: AsyncGenerator[str, None],
-    db_user: str,
-    db_pass: str,
     db_project: str,
-    db_region: str,
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
     db_name = await create_db.__anext__()
-    cfg = cloudsql_postgres.Config(
-        kind="cloudsql-postgres",
-        user=db_user,
-        password=db_pass,
-        database=db_name,
+    cfg = spanner_gsql.Config(
+        kind="spanner-gsql",
         project=db_project,
-        region=db_region,
         instance=db_instance,
+        database=db_name,
     )
-    t = create_db
+
     ds = await datastore.create(cfg)
 
     airports_ds_path = "../data/airport_dataset.csv"
@@ -130,7 +102,9 @@ async def ds(
 
     if ds is None:
         raise TypeError("datastore creation failure")
+
     yield ds
+
     await ds.close()
 
 
@@ -142,7 +116,7 @@ def check_file_diff(file_diff):
     assert file_diff["columns_removed"] == []
 
 
-async def test_export_dataset(ds: cloudsql_postgres.Client):
+async def test_export_dataset(ds: spanner_gsql.Client):
     airports, amenities, flights, policies = await ds.export_data()
 
     airports_ds_path = "../data/airport_dataset.csv"
@@ -189,7 +163,7 @@ async def test_export_dataset(ds: cloudsql_postgres.Client):
     check_file_diff(diff_policies)
 
 
-async def test_get_airport_by_id(ds: cloudsql_postgres.Client):
+async def test_get_airport_by_id(ds: spanner_gsql.Client):
     res = await ds.get_airport_by_id(1)
     expected = models.Airport(
         id=1,
@@ -208,7 +182,7 @@ async def test_get_airport_by_id(ds: cloudsql_postgres.Client):
         pytest.param("sfo", id="lower_case"),
     ],
 )
-async def test_get_airport_by_iata(ds: cloudsql_postgres.Client, iata: str):
+async def test_get_airport_by_iata(ds: spanner_gsql.Client, iata: str):
     res = await ds.get_airport_by_iata(iata)
     expected = models.Airport(
         id=3270,
@@ -292,7 +266,7 @@ search_airports_test_data = [
 
 @pytest.mark.parametrize("country, city, name, expected", search_airports_test_data)
 async def test_search_airports(
-    ds: cloudsql_postgres.Client,
+    ds: spanner_gsql.Client,
     country: str,
     city: str,
     name: str,
@@ -302,8 +276,8 @@ async def test_search_airports(
     assert res == expected
 
 
-async def test_get_amenity(ds: cloudsql_postgres.Client):
-    res = await ds.get_amenity(0)
+async def test_get_amenity(ds: spanner_gsql.Client):
+    res: Optional[models.Amenity] = await ds.get_amenity(0)
     expected = models.Amenity(
         id=0,
         name="Coffee Shop 732",
@@ -327,14 +301,21 @@ async def test_get_amenity(ds: cloudsql_postgres.Client):
         saturday_start_hour=None,
         saturday_end_hour=None,
     )
-    assert res == expected
+
+    assert res is not None
+    assert res.name == expected.name
+    assert res.description == expected.description
+    assert res.location == expected.location
+    assert res.terminal == expected.terminal
+    assert res.category == expected.category
+    assert res.hour == expected.hour
 
 
 amenities_search_test_data = [
     pytest.param(
         # "Where can I get coffee near gate A6?"
         amenities_query_embedding1,
-        0.35,
+        0.65,
         1,
         [
             {
@@ -351,7 +332,7 @@ amenities_search_test_data = [
     pytest.param(
         # "Where can I look for luxury goods?"
         amenities_query_embedding2,
-        0.35,
+        0.65,
         2,
         [
             {
@@ -376,7 +357,7 @@ amenities_search_test_data = [
     pytest.param(
         # "FOO BAR"
         foobar_query_embedding,
-        0.1,
+        0.9,
         1,
         [],
         id="no_results",
@@ -388,17 +369,17 @@ amenities_search_test_data = [
     "query_embedding, similarity_threshold, top_k, expected", amenities_search_test_data
 )
 async def test_amenities_search(
-    ds: cloudsql_postgres.Client,
+    ds: spanner_gsql.Client,
     query_embedding: List[float],
     similarity_threshold: float,
     top_k: int,
-    expected: List[Any],
+    expected: List[models.Amenity],
 ):
     res = await ds.amenities_search(query_embedding, similarity_threshold, top_k)
     assert res == expected
 
 
-async def test_get_flight(ds: cloudsql_postgres.Client):
+async def test_get_flight(ds: spanner_gsql.Client):
     res = await ds.get_flight(1)
     expected = models.Flight(
         id=1,
@@ -465,7 +446,7 @@ search_flights_by_number_test_data = [
     "airline, number, expected", search_flights_by_number_test_data
 )
 async def test_search_flights_by_number(
-    ds: cloudsql_postgres.Client,
+    ds: spanner_gsql.Client,
     airline: str,
     number: str,
     expected: List[models.Flight],
@@ -588,7 +569,7 @@ search_flights_by_airports_test_data = [
     search_flights_by_airports_test_data,
 )
 async def test_search_flights_by_airports(
-    ds: cloudsql_postgres.Client,
+    ds: spanner_gsql.Client,
     date: str,
     departure_airport: str,
     arrival_airport: str,
@@ -602,7 +583,7 @@ policies_search_test_data = [
     pytest.param(
         # "What is the fee for extra baggage?"
         policies_query_embedding1,
-        0.35,
+        0.65,
         1,
         [
             "## Baggage\nChecked Baggage: Economy passengers are allowed 2 checked bags. Business class and First class passengers are allowed 4 checked bags. Additional baggage will cost $70 and a $30 fee applies for all checked bags over 50 lbs. Cymbal Air cannot accept checked bags over 100 lbs. We only accept checked bags up to 115 inches in total dimensions (length + width + height), and oversized baggage will cost $30. Checked bags above 160 inches in total dimensions will not be accepted.",
@@ -612,7 +593,7 @@ policies_search_test_data = [
     pytest.param(
         # "Can I change my flight?"
         policies_query_embedding2,
-        0.35,
+        0.65,
         2,
         [
             "Changes: Changes to tickets are permitted at any time until 60 minutes prior to scheduled departure. There are no fees for changes as long as the new ticket is on Cymbal Air and is at an equal or lower price.  If the new ticket has a higher price, the customer must pay the difference between the new and old fares.  Changes to a non-Cymbal-Air flight include a $100 change fee.",
@@ -623,7 +604,7 @@ policies_search_test_data = [
     pytest.param(
         # "FOO BAR"
         foobar_query_embedding,
-        0.35,
+        0.65,
         1,
         [],
         id="no_results",
@@ -635,11 +616,11 @@ policies_search_test_data = [
     "query_embedding, similarity_threshold, top_k, expected", policies_search_test_data
 )
 async def test_policies_search(
-    ds: cloudsql_postgres.Client,
+    ds: spanner_gsql.Client,
     query_embedding: List[float],
     similarity_threshold: float,
     top_k: int,
-    expected: List[str],
+    expected: List[models.Policy],
 ):
     res = await ds.policies_search(query_embedding, similarity_threshold, top_k)
     assert res == expected

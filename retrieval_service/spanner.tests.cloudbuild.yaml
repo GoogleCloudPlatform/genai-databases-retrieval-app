@@ -21,47 +21,28 @@ steps:
   - id: Update config
     name: python:3.11
     dir: retrieval_service
-    secretEnv:
-      - DB_USER
-      - DB_PASS
     script: |
         #!/usr/bin/env bash
         # Create config
-        cp example-config-cloudsql.yml config.yml
-        sed -i "s/my_database/${_DATABASE_NAME}/g" config.yml
-        sed -i "s/my-user/$$DB_USER/g" config.yml
-        sed -i "s/my-password/$$DB_PASS/g" config.yml
+        cp example-config-spanner.yml config.yml
         sed -i "s/my-project/$PROJECT_ID/g" config.yml
-        sed -i "s/my-region/${_CLOUDSQL_REGION}/g" config.yml
-        sed -i "s/my-instance/${_CLOUDSQL_INSTANCE}/g" config.yml
+        sed -i "s/my-instance/${_SPANNER_INSTANCE}/g" config.yml
+        sed -i "s/my_database/${_DATABASE_NAME}/g" config.yml
 
-  - id: Run Cloud SQL DB integration tests
+  - id: Run Spanner with gsql integration tests
     name: python:3.11
     dir: retrieval_service
     env: # Set env var expected by tests
-      - "DB_NAME=${_DATABASE_NAME}"
       - "DB_PROJECT=$PROJECT_ID"
-      - "DB_REGION=${_CLOUDSQL_REGION}"
-      - "DB_INSTANCE=${_CLOUDSQL_INSTANCE}"
-    secretEnv:
-      - DB_USER
-      - DB_PASS
+      - "DB_INSTANCE=${_SPANNER_INSTANCE}"
+      - "DB_NAME=${_DATABASE_NAME}"
     script: |
         #!/usr/bin/env bash
-        python -m pytest --cov=datastore.providers.cloudsql_postgres --cov-config=coverage/.cloudsql-coveragerc datastore/providers/cloudsql_postgres_test.py
+        python -m pytest datastore/providers/spanner_gsql_test.py
 
 substitutions:
   _DATABASE_NAME: test_${SHORT_SHA}
-  _DATABASE_USER: postgres
-  _CLOUDSQL_REGION: "us-central1"
-  _CLOUDSQL_INSTANCE: "my-cloudsql-instance"
-
-availableSecrets:
-  secretManager:
-    - versionName: projects/$PROJECT_ID/secrets/cloudsql_pass/versions/latest
-      env: DB_PASS
-    - versionName: projects/$PROJECT_ID/secrets/cloudsql_user/versions/latest
-      env: DB_USER
+  _SPANNER_INSTANCE: "my-spanner-instance"
 
 options:
   automapSubstitutions: true

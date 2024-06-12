@@ -1,4 +1,4 @@
-# Setup and configure AlloyDB (with Public IP)
+# Setup and configure non-cloud postgres (such as AlloyDB Omni)
 
 ## Before you begin
 
@@ -39,17 +39,12 @@
 
 1. Download and install [postgres-client cli (`psql`)][install-psql].
 
-1. Install the [AlloyDB Auth Proxy][install-alloydb-auth-proxy].
-
 [install-python]: https://cloud.google.com/python/docs/setup#installing_python
 [venv]: https://cloud.google.com/python/docs/setup#installing_and_using_virtualenv
 [install-psql]: https://www.timescale.com/blog/how-to-install-psql-on-mac-ubuntu-debian-windows/
-[install-alloydb-auth-proxy]: https://cloud.google.com/alloydb/docs/auth-proxy/connect#install
 
 
 ## Enable private services access
-
-Currently, AlloyDB doesn't support creating new instance with public IP enabled. We will have to create an instance (with private IP), then update the instance to enable public IP.
 
 In this step, we will enable Private Services Access so that AlloyDB is able to
 connect to your VPC. You should only need to do this once per VPC (per project).
@@ -88,11 +83,10 @@ connect to your VPC. You should only need to do this once per VPC (per project).
    `$DB_PASS` and note it for future use:
 
     ```bash
-    export CLUSTER=my-alloydb-cluster
-    export INSTANCE=my-alloydb-instance
+    export CLUSTER=my-postgres-cluster
+    export INSTANCE=my-postgres-instance
     export REGION=us-central1
-    export DB_USER=postgres
-    export DB_PASS=my-alloydb-pass
+    export DB_PASS=my-postgres-pass
     ```
 
 1. Create an AlloyDB cluster:
@@ -117,55 +111,95 @@ connect to your VPC. You should only need to do this once per VPC (per project).
         --ssl-mode=ALLOW_UNENCRYPTED_AND_ENCRYPTED
     ```
 
-1. Enable public IP on instance:
+1. Get AlloyDB IP address:
 
     ```bash
-    gcloud beta alloydb instances update $INSTANCE \
-        --cluster=$CLUSTER  \
-        --region=$REGION  \
-        --assign-inbound-public-ip=ASSIGN_IPV4
+    export ALLOYDB_IP=$(gcloud alloydb instances describe $INSTANCE \
+        --cluster=$CLUSTER \
+        --region=$REGION \
+        --format 'value(ipAddress)')
     ```
 
-
-## Connect to the AlloyDB instance
-
-1. Connect to instance using AlloyDB auth proxy:
+1. Note the AlloyDB IP address for later use:
 
     ```bash
-    ./alloydb-auth-proxy --public-ip \
-        "projects/$PROJECT_ID/locations/$REGION/clusters/$CLUSTER/instances/$INSTANCE"
+    echo $ALLOYDB_IP
     ```
+
+## Set up connection to AlloyDB
+
+AlloyDB supports network connectivity through private, internal IP addresses
+only. For this section, we will create a Google Cloud Engine VM in the same VPC as the
+AlloyDB cluster. We can use this VM to connect to our AlloyDB cluster using
+Private IP.
+
+1. Set environment variables:
+
+    ```bash
+    export ZONE=us-central1-a
+    export PROJECT_NUM=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
+    export VM_INSTANCE=postgres-proxy-vm
+    ```
+
+1. Create a Compute Engine VM:
+
+    ```bash
+    gcloud compute instances create $VM_INSTANCE \
+        --project=$PROJECT_ID \
+        --zone=$ZONE \
+        --machine-type=e2-medium \
+        --network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=default \
+        --maintenance-policy=MIGRATE \
+        --provisioning-model=STANDARD \
+        --service-account=$PROJECT_NUM-compute@developer.gserviceaccount.com \
+        --scopes=https://www.googleapis.com/auth/cloud-platform \
+        --create-disk=auto-delete=yes,boot=yes,device-name=$VM_INSTANCE,image-family=ubuntu-2004-lts,image-project=ubuntu-os-cloud,mode=rw,size=10,type=projects/$PROJECT_ID/zones/$ZONE/diskTypes/pd-balanced \
+        --no-shielded-secure-boot \
+        --shielded-vtpm \
+        --shielded-integrity-monitoring \
+        --labels=goog-ec-src=vm_add-gcloud \
+        --reservation-affinity=any
+    ```
+
+1. Create an SSH tunnel through your GCE VM using port forwarding. This will
+   listen to `127.0.0.1:5432` and forward through the GCE VM to your AlloyDB
+   instance:
+
+    ```bash
+    gcloud compute ssh --project=$PROJECT_ID --zone=$ZONE $VM_INSTANCE \
+                       -- -NL 5432:$ALLOYDB_IP:5432
+    ```
+
+    You will need to allow this command to run while you are connecting to
+    AlloyDB. You may wish to open a new terminal to connect with.
 
 1. Verify you can connect to your instance with the `psql` tool. Enter
    password for AlloyDB (`$DB_PASS` environment variable set above) when prompted:
 
     ```bash
-    psql -h 127.0.0.1 -p 5432 -U $DB_USER
+    psql -h 127.0.0.1 -U postgres
     ```
 
 ## Update config
 
-Update `config.yml` with your database information.
+Update `config.yml` with your database information. Keep using `127.0.0.1` as the datastore host IP address for port forwarding.
 
 ```bash
 host: 0.0.0.0
 datastore:
-    # Example for alloydb.py provider
-    kind: "alloydb-postgres"
-    # Update this with your project ID
-    project: <PROJECT_ID>
-    region: us-central1
-    cluster: my-alloydb-cluster
-    instance: my-alloydb-instance
+    # Example for postgres.py provider
+    kind: "postgres"
+    host: 127.0.0.1
+    port: 5432
     # Update this with the database name
     database: "assistantdemo"
     # Update with database user, the default is `postgres`
     user: "postgres"
     # Update with database user password
-    password: "my-alloydb-pass"
+    password: "my-postgres-pass"
 ```
 
-## Initialize data
+## Initialize data in AlloyDB
 
 1. While connected using `psql`, create a database and switch to it:
 
@@ -178,6 +212,12 @@ datastore:
 
     ```bash
     CREATE EXTENSION vector;
+    ```
+
+1. Exit from `psql`:
+
+    ```bash
+    exit
     ```
 
 1. Change into the retrieval service directory:
@@ -195,7 +235,7 @@ datastore:
 1. Make a copy of `example-config.yml` and name it `config.yml`.
 
     ```bash
-    cp example-config-alloydb.yml config.yml
+    cp example-config.yml config.yml
     ```
 
 1. Populate data into database:
@@ -213,8 +253,16 @@ Clean up after completing the demo.
 1. Set environment variables:
 
     ```bash
-    export CLUSTER=my-alloydb-cluster
+    export VM_INSTANCE=postgres-proxy-vm
+    export CLUSTER=my-postgres-cluster
     export REGION=us-central1
+    export RANGE_NAME=my-allocated-range-default
+    ```
+
+1. Delete Compute Engine VM:
+
+    ```bash
+    gcloud compute instances delete $VM_INSTANCE
     ```
 
 1. Delete AlloyDB cluster that contains instances:
@@ -224,6 +272,13 @@ Clean up after completing the demo.
         --force \
         --region=$REGION \
         --project=$PROJECT_ID
+    ```
+
+1. Delete an allocated IP address range:
+
+    ```bash
+    gcloud compute addresses delete $RANGE_NAME \
+        --global
     ```
 
 ## Developer information
@@ -237,10 +292,8 @@ Set environment variables:
 ```bash
 export DB_USER=""
 export DB_PASS=""
-export DB_PROJECT=""
-export DB_REGION=""
-export DB_CLUSTER=""
-export DB_INSTANCE=""
+export DB_NAME=""
+export DB_HOST=""
 ```
 
 ### Run tests
@@ -248,8 +301,8 @@ export DB_INSTANCE=""
 Run retrieval service unit tests:
 
 ```bash
-gcloud builds submit --config retrieval_service/alloydb.tests.cloudbuild.yaml \
-    --substitutions _DATABASE_NAME=$DB_NAME,_DATABASE_USER=$DB_USER,_ALLOYDB_REGION=$DB_REGION,_ALLOYDB_CLUSTER=$DB_CLUSTER,_ALLOYDB_INSTANCE=$DB_INSTANCE
+gcloud builds submit --config retrieval_service/postgres.tests.cloudbuild.yaml \
+    --substitutions _DATABASE_HOST=$DB_HOST,_DATABASE_NAME=$DB_NAME,_DATABASE_USER=$DB_USER
 ```
 
-Where `$DB_NAME`,`$DB_USER`,`$DB_REGION`,`$DB_CLUSTER`,`$DB_INSTANCE` are environment variables with your database values.
+Where `$DB_HOST`,`$DB_NAME`,`$DB_USER` are environment variables with your database values.

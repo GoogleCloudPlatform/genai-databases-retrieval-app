@@ -15,7 +15,6 @@
 import asyncio
 
 import datastore
-import models
 from app import parse_config
 
 

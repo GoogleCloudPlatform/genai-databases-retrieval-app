@@ -31,6 +31,7 @@
     | orchestration-type            | Description                                 |
     |-------------------------------|---------------------------------------------|
     | langchain-tools               | LangChain tools orchestrator.               |
+    | vertexai-function-calling     | VertexAI Function Calling orchestrator.     |
 
     ```bash
     export ORCHESTRATION_TYPE=<orchestration-type>
@@ -49,6 +50,11 @@
     export CLIENT_ID=<Your Client ID>
     ```
 
+1. [Optional] To make session information readable but not modifiable, you can customized the signed cookie-based HTTP sessions. Defaulted to "this is a secret". More information available [here](https://www.starlette.io/middleware/#sessionmiddleware).
+
+    ```bash
+    export MIDDLEWARE_SECRET=<random string>
+    ```
 
 ## Running the Demo
 

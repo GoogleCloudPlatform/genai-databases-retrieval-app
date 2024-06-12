@@ -15,13 +15,12 @@
 import json
 import os
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Optional
 
 import aiohttp
 import google.oauth2.id_token  # type: ignore
 from google.auth import compute_engine  # type: ignore
 from google.auth.transport.requests import Request  # type: ignore
-from langchain.agents.agent import ExceptionTool  # type: ignore
 from langchain.tools import StructuredTool
 from pydantic.v1 import BaseModel, Field
 
@@ -81,17 +80,11 @@ def generate_search_airports(client: aiohttp.ClientSession):
             headers=get_headers(client),
         )
 
-        num = 2
         response_json = await response.json()
         if len(response_json) < 1:
             return "There are no airports matching that query. Let the user know there are no results."
-        elif len(response_json) > num:
-            return (
-                f"There are {len(response_json)} airports matching that query. Here are the first {num} results:\n"
-                + " ".join([f"{response_json[i]}" for i in range(num)])
-            )
         else:
-            return "\n".join([f"{r}" for r in response_json])
+            return response_json
 
     return search_airports
 
@@ -139,17 +132,11 @@ def generate_list_flights(client: aiohttp.ClientSession):
             headers=get_headers(client),
         )
 
-        num = 2
         response_json = await response.json()
         if len(response_json) < 1:
             return "There are no flights matching that query. Let the user know there are no results."
-        elif len(response_json) > num:
-            return (
-                f"There are {len(response_json)} flights matching that query. Here are the first {num} results:\n"
-                + " ".join([f"{response_json[i]}" for i in range(num)])
-            )
         else:
-            return "\n".join([f"{r}" for r in response_json])
+            return response_json
 
     return list_flights
 
@@ -341,6 +328,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
                         Find amenities close to the user by matching the terminal and then comparing
                         the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
                         B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
+                        Input of this tool must be in JSON format and include one `query` input.
                         """,
             args_schema=QueryInput,
         ),
@@ -348,10 +336,11 @@ async def initialize_tools(client: aiohttp.ClientSession):
             coroutine=generate_search_policies(client),
             name="Search Policies",
             description="""
-						Use this tool to search for cymbal air passenger policy.
-						Policy that are listed is unchangeable.
-						You will not answer any questions outside of the policy given.
-						Policy includes information on ticket purchase and changes, baggage, check-in and boarding, special assistance, overbooking, flight delays and cancellations.
+                        Use this tool to search for cymbal air passenger policy.
+                        Policy that are listed is unchangeable.
+                        You will not answer any questions outside of the policy given.
+                        Policy includes information on ticket purchase and changes, baggage, check-in and boarding, special assistance, overbooking, flight delays and cancellations.
+                        Input of this tool must be in JSON format and include one `query` input.
                         """,
             args_schema=QueryInput,
         ),

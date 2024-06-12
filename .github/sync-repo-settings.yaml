@@ -31,25 +31,12 @@ branchProtectionRules:
       - "cla/google"
       - "retrieval_service"
       - "llm_demo"
-      - "retrieval-service-app-pr (extension-demo-testing)"
-      - "retrieval-service-alloydb-pr (extension-demo-testing)"
-      - "retrieval-service-cloudsql-pr (extension-demo-testing)"
-      - "llm-demo-langchain-tools-pr (extension-demo-testing)"
-      - "llm-demo-vertexai-fc-pr (extension-demo-testing)"
-  - pattern: demo
-    isAdminEnforced: true
-    requiredApprovingReviewCount: 1
-    requiresCodeOwnerReviews: true
-    requiresStrictStatusChecks: true
-    requiredStatusCheckContexts:
-      - "cla/google"
-      - "retrieval_service"
-      - "llm_demo"
-      - "retrieval-service-app-pr (genai-databases-retrevial-demo)"
-      - "retrieval-service-alloydb-pr (genai-databases-retrevial-demo)"
-      - "retrieval-service-cloudsql-pr (genai-databases-retrevial-demo)"
-      - "llm-demo-langchain-tools-pr (genai-databases-retrevial-demo)"
-      - "llm-demo-vertexai-fc-pr (genai-databases-retrevial-demo)"
+      - "retrieval-service-app-pr (retrieval-app-testing)"
+      - "retrieval-service-postgres-pr (retrieval-app-testing)"
+      - "retrieval-service-alloydb-pr (retrieval-app-testing)"
+      - "retrieval-service-cloudsql-pr (retrieval-app-testing)"
+      - "llm-demo-langchain-tools-pr (retrieval-app-testing)"
+      - "llm-demo-vertexai-fc-pr (retrieval-app-testing)"
 # Set team access
 permissionRules:
   - team: senseai-eco

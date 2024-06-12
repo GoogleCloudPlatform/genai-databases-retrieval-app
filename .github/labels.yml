@@ -15,9 +15,9 @@
 - name: duplicate
   color: ededed
   description: ""
-- name: "tests: run"
+- name: "lint: run"
   color: 70dc70
-  description: Trigger tests for external contributors
+  description: Trigger lint for external contributors
 
 - name: "type: bug"
   color: db4437

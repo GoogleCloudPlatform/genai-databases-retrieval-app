@@ -1,4 +1,4 @@
-# Copyright 2023 Google LLC
+# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Any, Literal, Optional
 
 import asyncpg
-from google.cloud.sql.connector import Connector
+from google.cloud.alloydb.connector import AsyncConnector
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -27,13 +27,14 @@ import models
 
 from .. import datastore
 
-POSTGRES_IDENTIFIER = "cloudsql-postgres"
+POSTGRES_IDENTIFIER = "alloydb-postgres"
 
 
 class Config(BaseModel, datastore.AbstractConfig):
-    kind: Literal["cloudsql-postgres"]
+    kind: Literal["alloydb-postgres"]
     project: str
     region: str
+    cluster: str
     instance: str
     user: str
     password: str
@@ -45,24 +46,23 @@ class Client(datastore.Client[Config]):
 
     @datastore.classproperty
     def kind(cls):
-        return "cloudsql-postgres"
+        return "alloydb-postgres"
 
     def __init__(self, pool: AsyncEngine):
         self.__pool = pool
 
     @classmethod
     async def create(cls, config: Config) -> "Client":
-        loop = asyncio.get_running_loop()
-
         async def getconn() -> asyncpg.Connection:
-            async with Connector(loop=loop) as connector:
-                conn: asyncpg.Connection = await connector.connect_async(
-                    # Cloud SQL instance connection name
-                    f"{config.project}:{config.region}:{config.instance}",
+            async with AsyncConnector() as connector:
+                conn: asyncpg.Connection = await connector.connect(
+                    # Alloydb instance connection name
+                    f"projects/{config.project}/locations/{config.region}/clusters/{config.cluster}/instances/{config.instance}",
                     "asyncpg",
                     user=f"{config.user}",
                     password=f"{config.password}",
                     db=f"{config.database}",
+                    ip_type="PUBLIC",
                 )
             await register_vector(conn)
             return conn
@@ -399,10 +399,10 @@ class Client(datastore.Client[Config]):
             s = text(
                 """
                 SELECT name, description, location, terminal, category, hour
-                  FROM amenities
-                  WHERE (embedding <=> :query_embedding) < :similarity_threshold
-                  ORDER BY (embedding <=> :query_embedding)
-                  LIMIT :top_k
+                FROM amenities
+                WHERE (embedding <=> :query_embedding) < :similarity_threshold
+                ORDER BY (embedding <=> :query_embedding)
+                LIMIT :top_k
                 """
             )
             params = {
@@ -483,6 +483,41 @@ class Client(datastore.Client[Config]):
         res = [models.Flight.model_validate(r) for r in results]
         return res
 
+    async def validate_ticket(
+        self,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        arrival_airport: str,
+        departure_time: datetime,
+        arrival_time: datetime,
+    ) -> bool:
+        async with self.__pool.connect() as conn:
+            s = text(
+                """
+                    SELECT * FROM flights
+                    WHERE airline ILIKE :airline
+                    AND flight_number ILIKE :flight_number
+                    AND departure_airport ILIKE :departure_airport
+                    AND arrival_airport ILIKE :arrival_airport
+                    AND departure_time = :departure_time
+                    AND arrival_time = :arrival_time
+                """
+            )
+            params = {
+                "airline": airline,
+                "flight_number": flight_number,
+                "departure_airport": departure_airport,
+                "arrival_airport": arrival_airport,
+                "departure_time": departure_time,
+                "arrival_time": arrival_time,
+            }
+            results = (await conn.execute(s, params)).mappings().fetchall()
+
+        if len(results) == 1:
+            return True
+        return False
+
     async def insert_ticket(
         self,
         user_id: str,
@@ -495,13 +530,77 @@ class Client(datastore.Client[Config]):
         departure_time: str,
         arrival_time: str,
     ):
-        raise NotImplementedError("Not Implemented")
+        departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
+        arrival_time_datetime = datetime.strptime(arrival_time, "%Y-%m-%d %H:%M:%S")
+        if not await self.validate_ticket(
+            airline,
+            flight_number,
+            departure_airport,
+            arrival_airport,
+            departure_time_datetime,
+            arrival_time_datetime,
+        ):
+            raise Exception("Flight information not in database")
+
+        async with self.__pool.connect() as conn:
+            s = text(
+                """
+                INSERT INTO tickets (
+                    user_id,
+                    user_name,
+                    user_email,
+                    airline,
+                    flight_number,
+                    departure_airport,
+                    arrival_airport,
+                    departure_time,
+                    arrival_time
+                ) VALUES (
+                    :user_id,
+                    :user_name,
+                    :user_email,
+                    :airline,
+                    :flight_number,
+                    :departure_airport,
+                    :arrival_airport,
+                    :departure_time,
+                    :arrival_time
+                );
+            """
+            )
+            params = {
+                "user_id": user_id,
+                "user_name": user_name,
+                "user_email": user_email,
+                "airline": airline,
+                "flight_number": flight_number,
+                "departure_airport": departure_airport,
+                "arrival_airport": arrival_airport,
+                "departure_time": departure_time,
+                "arrival_time": arrival_time,
+            }
+            results = (await conn.execute(s, params)).mappings().fetchall()
+            if results != "INSERT 0 1":
+                raise Exception("Ticket Insertion failure")
 
     async def list_tickets(
         self,
         user_id: str,
     ) -> list[models.Ticket]:
-        raise NotImplementedError("Not Implemented")
+        async with self.__pool.connect() as conn:
+            s = text(
+                """
+                    SELECT * FROM tickets
+                    WHERE user_id = :user_id
+                """
+            )
+            params = {
+                "user_id": user_id,
+            }
+            results = (await conn.execute(s, params)).mappings().fetchall()
+
+        res = [models.Ticket.model_validate(r) for r in results]
+        return res
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
@@ -510,10 +609,10 @@ class Client(datastore.Client[Config]):
             s = text(
                 """
                 SELECT content
-                  FROM policies 
-                  WHERE (embedding <=> :query_embedding) < :similarity_threshold
-                  ORDER BY (embedding <=> :query_embedding)
-                  LIMIT :top_k
+                FROM policies
+                WHERE (embedding <=> :query_embedding) < :similarity_threshold
+                ORDER BY (embedding <=> :query_embedding)
+                LIMIT :top_k
                 """
             )
             params = {

@@ -16,16 +16,17 @@ import asyncio
 import os
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from aiohttp import ClientSession, TCPConnector
 from fastapi import HTTPException
 from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent import AgentExecutor
 from langchain.globals import set_verbose  # type: ignore
-from langchain.memory import ChatMessageHistory, ConversationBufferMemory
+from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
 from langchain.tools import StructuredTool
+from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_google_vertexai import VertexAI
 from pytz import timezone
@@ -202,7 +203,6 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
                 current_datetime,
                 TOOLS_PREFIX,
                 tool_strings,
-                MULTITURN_PROMPT,
                 format_instructions,
                 SUFFIX,
             ]
@@ -265,7 +265,8 @@ Cymbal Air Customer Service Assistant (or just "Assistant" for short) is designe
 with a wide range of tasks, from answering simple questions to complex multi-query questions that
 require passing results from one query to another. Using the latest AI models, Assistant is able to
 generate human-like text based on the input it receives, allowing it to engage in natural-sounding
-conversations and provide responses that are coherent and relevant to the topic at hand.
+conversations and provide responses that are coherent and relevant to the topic at hand. The assistant should 
+not answer questions about other peoples information for privacy reasons. 
 
 Assistant is a powerful tool that can help answer a wide range of questions pertaining to travel on Cymbal Air
 as well as ammenities of San Francisco Airport."""
@@ -308,14 +309,6 @@ Action:
   "action_input": "Final response to human"
 }}}}
 ```"""
-
-MULTITURN_PROMPT = """Assistant will judge if multiple action need to be taken before returning final response to human.
-For example, if user ask 'Where can I get a snack near the gate for flight CY 123?'
-Actions that will be taken by the assistant is as below:
-First, assistant will first complete action for "Search Flights By Flight Number".
-Next, assistant will complete action for "Search Amenities" based on the gate for that flight.
-Lastly, assistant will return final response to human.
-"""
 
 SUFFIX = """Begin! Use tools if necessary. Respond directly if appropriate.
 If using a tool, reminder to ALWAYS respond with a valid json blob of a single action.
