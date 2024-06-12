@@ -64,6 +64,6 @@
     python run_app.py
     ```
 
-    Note: for hot reloading of the app use: `uvicorn main:app --host 0.0.0.0 --reload`
+    Note: for hot reloading of the app use: `python run_app.py --reload`
 
 1. View app at `http://localhost:8081/`

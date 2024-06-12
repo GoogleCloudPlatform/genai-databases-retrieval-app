@@ -15,7 +15,7 @@ fictional passenger airline. The assistant is an AI chatbot that helps
 travellers manage flights and look up information about Cymbal Air's hub
 at San Francisco International Airport (SFO).
 
-It can help answer users questions like:
+It can help answer users' questions like:
 * Are there any luxury shops?
 * Where can I get coffee near gate A6?
 * Where can I find a gift?
@@ -81,9 +81,9 @@ and decide when it needs to access it.
 ![Overview](./architecture.svg)
 
 This demo contains 3 key parts:
-1. **Application** -- The LLM-based app that acts as orchestrates layer for the
+1. **Application** -- The LLM-based app that acts as the orchestrating layer for the
    interaction with the LLM.
-1. **Retrieval Service** -- The retrieval service provides the application
+1. **Retrieval Service** -- The retrieval service provides the application with
    concrete, discrete actions that allow the LLM to interact with the Database.
 1. **Database** -- The database containing the data the LLM can use to answer
    questions. For this application, the database used was intentionally designed
@@ -98,7 +98,7 @@ help address a number of challenges
    leverage it successfully.
 1. **Better scalability** - Running the retrieval as a separate service both
    allows multiple different LLMs to leverage it, as well as allowing it to
-   scale independently. It allows allows production best practices such as
+   scale independently. It allows for production best practices such as
    connection pooling or caching.
 1. **Better security** - LLMs are susceptible to attacks such as "jailbreaking"
    to circumvent safety measures that are put in place. Using an intermediary
@@ -124,7 +124,7 @@ git clone https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app.g
 ### Setting up your Database
 
 The retrieval service uses an interchangeable 'datastore' interface. Choose one
-of any of the database's listed below to set up and initialize your database:
+of the databases listed below to set up and initialize your database:
 
 * [Set up and configure AlloyDB with public IP](./docs/datastore/alloydb.md)
 * [Set up and configure Cloud SQL](./docs/datastore/cloudsql_postgres.md)
@@ -151,7 +151,7 @@ service. The directory is organized into the following folders:
 | Directory                                    | Description                                                                           |
 |----------------------------------------------|---------------------------------------------------------------------------------------|
 | [`data`](/data)                              | Contains CSV files with the dataset for a working demo.                               |
-| [`llm_demo`](/llm_demo) | Contains an LLM-based application that that uses the retrieval service via multiple orchestrator (e.g. LangChain, VertexAI). |
+| [`llm_demo`](/llm_demo) | Contains an LLM-based application that uses the retrieval service via multiple orchestrator (e.g. LangChain, VertexAI). |
 | [`retrieval_service`](/retrieval_service)    | Contains the service for extending an LLM with information from the database.         |
 
 You can copy or fork the `retrieval_service` folder to customize it to your
