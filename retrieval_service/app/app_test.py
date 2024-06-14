@@ -657,6 +657,66 @@ def test_search_flights_with_bad_params(m_datastore, app, params):
     assert response.status_code == 422
 
 
+validate_ticket_params = [
+    pytest.param(
+        "validate_ticket",
+        {
+            "airline": "CY",
+            "flight_number": "888",
+            "departure_airport": "LAX",
+            "departure_time": "2024-01-01 08:08:08",
+        },
+        [
+            models.Flight(
+                id=1,
+                airline="validate_ticket",
+                flight_number="FOOBAR",
+                departure_airport="FOO",
+                arrival_airport="BAR",
+                departure_time=datetime.strptime(
+                    "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                arrival_time=datetime.strptime(
+                    "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                departure_gate="BAZ",
+                arrival_gate="QUX",
+            )
+        ],
+        [
+            {
+                "id": 1,
+                "airline": "validate_ticket",
+                "flight_number": "FOOBAR",
+                "departure_airport": "FOO",
+                "arrival_airport": "BAR",
+                "departure_time": "2023-01-01T05:57:00",
+                "arrival_time": "2023-01-01T12:13:00",
+                "departure_gate": "BAZ",
+                "arrival_gate": "QUX",
+            }
+        ],
+        id="validate_ticket",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "method_name, params, mock_return, expected", validate_ticket_params
+)
+@patch.object(datastore, "create")
+def test_validate_ticket(m_datastore, app, method_name, params, mock_return, expected):
+    with TestClient(app) as client:
+        with patch.object(
+            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+        ) as mock_method:
+            response = client.get("/tickets/validate", params=params)
+    assert response.status_code == 200
+    output = response.json()
+    assert output == expected
+    assert models.Flight.model_validate(output[0])
+
+
 policies_search_params = [
     pytest.param(
         "policies_search",

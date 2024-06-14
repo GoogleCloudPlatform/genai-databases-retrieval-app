@@ -14,8 +14,8 @@
 
 import json
 import os
-from datetime import datetime
-from typing import Optional
+from datetime import date, datetime
+from typing import Any, Dict, Optional
 
 import aiohttp
 import google.oauth2.id_token  # type: ignore
@@ -28,7 +28,7 @@ BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 CREDENTIALS = None
 
 
-def filter_none_values(params: dict) -> dict:
+def filter_none_values(params: Dict) -> Dict:
     return {key: value for key, value in params.items() if value is not None}
 
 
@@ -179,19 +179,19 @@ class TicketInput(BaseModel):
     departure_airport: str = Field(
         description="Departure airport 3-letter code",
     )
-    arrival_airport: str = Field(description="Arrival airport 3-letter code")
     departure_time: datetime = Field(description="Flight departure datetime")
-    arrival_time: datetime = Field(description="Flight arrival datetime")
+    arrival_airport: Optional[str] = Field(description="Arrival airport 3-letter code")
+    arrival_time: Optional[datetime] = Field(description="Flight arrival datetime")
 
 
 def generate_insert_ticket(client: aiohttp.ClientSession):
     async def insert_ticket(
-        airline: str,
-        flight_number: str,
-        departure_airport: str,
-        arrival_airport: str,
-        departure_time: datetime,
-        arrival_time: datetime,
+        airline: str | None = None,
+        flight_number: str | None = None,
+        departure_airport: str | None = None,
+        arrival_airport: str | None = None,
+        departure_time: datetime | date | None = None,
+        arrival_time: datetime | date | None = None,
     ):
         return f"Booking ticket on {airline} {flight_number}"
 
@@ -214,6 +214,34 @@ async def insert_ticket(client: aiohttp.ClientSession, params: str):
     )
     response = await response.json()
     return response
+
+
+async def validate_ticket(client: aiohttp.ClientSession, ticket_info: Dict[Any, Any]):
+    response = await client.get(
+        url=f"{BASE_URL}/tickets/validate",
+        params=filter_none_values(
+            {
+                "airline": ticket_info.get("airline"),
+                "flight_number": ticket_info.get("flight_number"),
+                "departure_airport": ticket_info.get("departure_airport"),
+                "departure_time": ticket_info.get("departure_time", "").replace(
+                    "T", " "
+                ),
+            }
+        ),
+        headers=get_headers(client),
+    )
+    response_json = await response.json()
+
+    flight_info = {
+        "airline": response_json.get("airline"),
+        "flight_number": response_json.get("flight_number"),
+        "departure_airport": response_json.get("departure_airport"),
+        "arrival_airport": response_json.get("arrival_airport"),
+        "departure_time": response_json.get("departure_time"),
+        "arrival_time": response_json.get("arrival_time"),
+    }
+    return flight_info
 
 
 def generate_list_tickets(client: aiohttp.ClientSession):

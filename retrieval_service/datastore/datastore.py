@@ -221,6 +221,16 @@ class Client(ABC, Generic[C]):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
+    async def validate_ticket(
+        self,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        departure_time: str,
+    ) -> Optional[models.Flight]:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
     async def insert_ticket(
         self,
         user_id: str,
