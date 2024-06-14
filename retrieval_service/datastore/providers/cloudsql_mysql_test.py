@@ -136,15 +136,21 @@ async def ds(
     yield ds
     await ds.close()
 
+def only_embedding_changed(file_diff):
+    return all(
+        key == "embedding" 
+        for change in file_diff["changed"] 
+        for key in change["changes"]
+    )
+    
 
-def check_file_diff(file_diff, has_embedding_column=False):
+
+def check_file_diff(file_diff):
     assert file_diff["added"] == []
     assert file_diff["removed"] == []
     assert file_diff["columns_added"] == []
     assert file_diff["columns_removed"] == []
-    # MySQL rounds embedding values, so column will appear 'changed'
-    if not has_embedding_column:
-        assert file_diff["changed"] == []
+    assert file_diff["changed"] == [] or only_embedding_changed(file_diff)
 
 
 async def test_export_dataset(ds: cloudsql_mysql.Client):
@@ -180,7 +186,7 @@ async def test_export_dataset(ds: cloudsql_mysql.Client):
         load_csv(open(amenities_ds_path), "id"),
         load_csv(open(amenities_new_path), "id"),
     )
-    check_file_diff(diff_amenities, True)
+    check_file_diff(diff_amenities)
 
     diff_flights = compare(
         load_csv(open(flights_ds_path), "id"), load_csv(open(flights_new_path), "id")
@@ -192,7 +198,7 @@ async def test_export_dataset(ds: cloudsql_mysql.Client):
         load_csv(open(policies_new_path), "id"),
     )
 
-    check_file_diff(diff_policies, True)
+    check_file_diff(diff_policies)
 
 
 async def test_get_airport_by_id(ds: cloudsql_mysql.Client):
