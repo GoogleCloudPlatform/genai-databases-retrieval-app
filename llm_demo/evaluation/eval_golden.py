@@ -23,7 +23,6 @@ goldens = [
                         "arguments": {"city": "san francisco"},
                     },
                 ],
-                "reset": True,
             },
             {
                 "query": "Tell me more about denver international airport?",
@@ -36,7 +35,6 @@ goldens = [
                         },
                     },
                 ],
-                "reset": True,
             },
         ]
     },
@@ -53,7 +51,6 @@ goldens = [
                         },
                     },
                 ],
-                "reset": True,
             },
             {
                 "query": "What is flight CY 888 flying to?",
@@ -66,7 +63,6 @@ goldens = [
                         },
                     },
                 ],
-                "reset": True,
             },
         ]
     },
@@ -83,20 +79,10 @@ goldens = [
                         },
                     },
                 ],
-                "reset": True,
             },
             {
                 "query": "Is there any flight from SFO to DEN?",
-                "tool_calls": [
-                    {
-                        "name": "List Flights",
-                        "arguments": {
-                            "departure_airport": "SFO",
-                            "arrival_airport": "DEN",
-                        },
-                    },
-                ],
-                "reset": True,
+                "output": "I will need the date to retrieve relevant flights.",
             },
         ]
     },
@@ -112,7 +98,6 @@ goldens = [
                         },
                     },
                 ],
-                "reset": True,
             },
             {
                 "query": "Where can I get coffee near gate A6?",
@@ -124,7 +109,6 @@ goldens = [
                         },
                     },
                 ],
-                "reset": True,
             },
         ]
     },
@@ -140,7 +124,6 @@ goldens = [
                         },
                     },
                 ],
-                "reset": True,
             },
             {
                 "query": "How many checked bags can I bring?",
@@ -152,7 +135,6 @@ goldens = [
                         },
                     },
                 ],
-                "reset": True,
             },
         ]
     },
@@ -171,7 +153,6 @@ goldens = [
                         },
                     },
                 ],
-                "reset": True,
             },
             {
                 "query": "What flights are headed from SFO to DEN today?",
@@ -202,7 +183,6 @@ goldens = [
                         },
                     },
                 ],
-                "reset": True,
             },
         ]
     },
@@ -215,7 +195,6 @@ goldens = [
                         "name": "List Tickets",
                     },
                 ],
-                "reset": True,
             },
             {
                 "query": "When is my next flight?",
@@ -224,7 +203,6 @@ goldens = [
                         "name": "List Tickets",
                     },
                 ],
-                "reset": True,
             },
         ]
     },
@@ -233,12 +211,10 @@ goldens = [
             {
                 "query": "What is Cymbal Air?",
                 "output": "Cymbal Air is a passenger airline offering convenient flights to many cities around the world from its hub in San Francisco.",
-                "reset": True,
             },
             {
                 "query": "Where is the hub of cymbal air?",
                 "output": "The hub of Cymbal Air is in San Francisco.",
-                "reset": True,
             },
         ]
     },
@@ -247,12 +223,10 @@ goldens = [
             {
                 "query": "What can you help me with?",
                 "output": "I can help to book flights and answer a wide range of questions pertaining to travel on Cymbal Air, as well as amenities of San Francisco Airport.",
-                "reset": True,
             },
             {
                 "query": "Can you help me book tickets?",
                 "output": "Yes, I can help with several tools such as search airports, list tickets, book tickets.",
-                "reset": True,
             },
         ]
     },
@@ -261,12 +235,10 @@ goldens = [
             {
                 "query": "Can you help me solve math problems?",
                 "output": "Sorry, I am not given the tools for this.",
-                "reset": True,
             },
             {
                 "query": "Who is the CEO of Google?",
                 "output": "Sorry, I am not given the tools for this.",
-                "reset": True,
             },
         ]
     },
@@ -289,7 +261,6 @@ goldens = [
                         },
                     },
                 ],
-                "reset": True,
             },
             {
                 "query": "What are some flights from SFO to Chicago tomorrow?",
@@ -309,7 +280,6 @@ goldens = [
                         },
                     },
                 ],
-                "reset": True,
             },
         ]
     },
