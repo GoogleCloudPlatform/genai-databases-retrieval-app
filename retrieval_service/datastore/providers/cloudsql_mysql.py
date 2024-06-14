@@ -56,11 +56,11 @@ class Client(datastore.Client[Config]):
             with Connector() as connector:
                 conn: pymysql.Connection = connector.connect(
                     # Cloud SQL instance connection name
-                    "juliaofferman-playground:us-central1:my-vector-app",
+                    f"{config.project}:{config.region}:{config.instance}",
                     "pymysql",
-                    user="mysql",
-                    password="my-cloudsql-pass",
-                    db="assistantdemo",
+                    user=f"{config.user}",
+                    password=f"{config.password}",
+                    db=f"{config.database}",
                     autocommit=True,
                 )
             return conn
