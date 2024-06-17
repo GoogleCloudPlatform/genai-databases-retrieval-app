@@ -49,9 +49,7 @@ class Client(datastore.Client[Config]):
         self.__pool = pool
 
     @classmethod
-    async def create(cls, config: Config) -> "Client":
-        loop = asyncio.get_running_loop()
-
+    def create_sync(cls, config: Config) -> "Client":
         def getconn() -> pymysql.Connection:
             with Connector() as connector:
                 conn: pymysql.Connection = connector.connect(
@@ -73,7 +71,15 @@ class Client(datastore.Client[Config]):
             raise TypeError("pool not instantiated")
         return cls(pool)
 
-    async def initialize_data(
+
+    @classmethod
+    async def create(cls, config: Config) -> "Client":
+        loop = asyncio.get_running_loop()
+
+        pool = await loop.run_in_executor(None, cls.create_sync, config)
+        return pool
+
+    def initialize_data_sync(
         self,
         airports: list[models.Airport],
         amenities: list[models.Amenity],
@@ -278,7 +284,18 @@ class Client(datastore.Client[Config]):
             # Create a vector index on the embedding column
             conn.execute(text("CALL mysql.create_vector_index('policies_index', 'assistantdemo.policies', 'embedding', '')"))
 
-    async def export_data(
+
+    async def initialize_data(
+        self,
+        airports: list[models.Airport],
+        amenities: list[models.Amenity],
+        flights: list[models.Flight],
+        policies: list[models.Policy],
+    ) -> None:
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, self.initialize_data_sync, airports, amenities, flights, policies)
+
+    def export_data_sync(
         self,
     ) -> tuple[
         list[models.Airport],
@@ -328,8 +345,20 @@ class Client(datastore.Client[Config]):
             policies = [models.Policy.model_validate(p) for p in policy_results]
 
             return airports, amenities, flights, policies
-
-    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+        
+    async def export_data(
+        self,
+    ) -> tuple[
+        list[models.Airport],
+        list[models.Amenity],
+        list[models.Flight],
+        list[models.Policy],
+    ]:
+        loop = asyncio.get_running_loop()
+        res = await loop.run_in_executor(None, self.export_data_sync)
+        return res
+    
+    def get_airport_by_id_sync(self, id: int) -> Optional[models.Airport]:
         with self.__pool.connect() as conn:
             s = text("""SELECT * FROM airports WHERE id=:id""")
             params = {"id" : id}
@@ -340,8 +369,13 @@ class Client(datastore.Client[Config]):
 
         res = models.Airport.model_validate(result)
         return res
+    
+    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+        loop = asyncio.get_running_loop()
+        res = await loop.run_in_executor(None, self.get_airport_by_id_sync, id)
+        return res
 
-    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+    def get_airport_by_iata_sync(self, iata: str) -> Optional[models.Airport]:
         with self.__pool.connect() as conn:
             s = text("""SELECT * FROM airports WHERE LOWER(iata) LIKE LOWER(:iata)""")
             params = {"iata": iata}
@@ -353,7 +387,12 @@ class Client(datastore.Client[Config]):
         res = models.Airport.model_validate(result)
         return res
 
-    async def search_airports(
+    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+        loop = asyncio.get_running_loop()
+        res = await loop.run_in_executor(None, self.get_airport_by_iata_sync, iata)
+        return res
+    
+    def search_airports_sync(
         self,
         country: Optional[str] = None,
         city: Optional[str] = None,
@@ -379,7 +418,17 @@ class Client(datastore.Client[Config]):
         res = [models.Airport.model_validate(r) for r in results]
         return res
 
-    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
+    async def search_airports(
+        self,
+        country: Optional[str] = None,
+        city: Optional[str] = None,
+        name: Optional[str] = None,
+    ) -> list[models.Airport]:
+        loop = asyncio.get_running_loop()
+        res = await loop.run_in_executor(None, self.search_airports_sync, country, city, name)
+        return res
+
+    def get_amenity_sync(self, id: int) -> Optional[models.Amenity]:
         with self.__pool.connect() as conn:
             s = text(
                 """
@@ -396,7 +445,12 @@ class Client(datastore.Client[Config]):
         res = models.Amenity.model_validate(result)
         return res
 
-    async def amenities_search(
+    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
+        loop = asyncio.get_running_loop()
+        res = await loop.run_in_executor(None, self.get_amenity_sync, id)
+        return res
+
+    def amenities_search_sync(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[Any]:
         with self.__pool.connect() as conn:
@@ -416,7 +470,14 @@ class Client(datastore.Client[Config]):
         res = [r for r in results]
         return res
 
-    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+    async def amenities_search(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> list[Any]:
+        loop = asyncio.get_running_loop()
+        res = await loop.run_in_executor(None, self.amenities_search_sync, query_embedding, similarity_threshold, top_k)
+        return res
+    
+    def get_flight_sync(self, flight_id: int) -> Optional[models.Flight]:
         with self.__pool.connect() as conn:
             s = text(
                 """
@@ -432,8 +493,13 @@ class Client(datastore.Client[Config]):
 
         res = models.Flight.model_validate(result)
         return res
-
-    async def search_flights_by_number(
+        
+    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+        loop = asyncio.get_running_loop()
+        res = await loop.run_in_executor(None, self.get_flight_sync, flight_id)
+        return res
+        
+    def search_flights_by_number_sync(
         self,
         airline: str,
         number: str,
@@ -455,8 +521,17 @@ class Client(datastore.Client[Config]):
 
         res = [models.Flight.model_validate(r) for r in results]
         return res
-
-    async def search_flights_by_airports(
+    
+    async def search_flights_by_number(
+        self,
+        airline: str,
+        number: str,
+    ) -> list[models.Flight]:
+        loop = asyncio.get_running_loop()
+        res = await loop.run_in_executor(None, self.search_flights_by_number_sync, airline, number)
+        return res
+    
+    def search_flights_by_airports_sync(
         self,
         date: str,
         departure_airport: Optional[str] = None,
@@ -484,7 +559,17 @@ class Client(datastore.Client[Config]):
         res = [models.Flight.model_validate(r) for r in results]
         return res
     
-    async def validate_ticket(
+    async def search_flights_by_airports(
+        self,
+        date: str,
+        departure_airport: Optional[str] = None,
+        arrival_airport: Optional[str] = None,
+    ) -> list[models.Flight]:
+        loop = asyncio.get_running_loop()
+        res = await loop.run_in_executor(None, self.search_flights_by_airports_sync, date, departure_airport, arrival_airport)
+        return res 
+    
+    def validate_ticket_sync(
         self,
         airline: str,
         flight_number: str,
@@ -492,6 +577,17 @@ class Client(datastore.Client[Config]):
         departure_time: str,
     ) -> Optional[models.Flight]:
         raise NotImplementedError("Not Implemented")
+
+    async def validate_ticket(
+        self,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        departure_time: str,
+    ) -> Optional[models.Flight]:
+        loop = asyncio.get_running_loop()
+        res = await loop.run_in_executor(None, self.validate_ticket_sync, airline, flight_number, departure_airport, departure_time)
+        return res 
 
     async def insert_ticket(
         self,
@@ -513,7 +609,7 @@ class Client(datastore.Client[Config]):
     ) -> list[models.Ticket]:
         raise NotImplementedError("Not Implemented")
 
-    async def policies_search(
+    def policies_search_sync(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[str]:
         with self.__pool.connect() as conn:
@@ -534,6 +630,13 @@ class Client(datastore.Client[Config]):
         res = [r["content"] for r in results]
         return res
 
+    async def policies_search(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> list[str]:
+        loop = asyncio.get_running_loop()
+        res = await loop.run_in_executor(None, self.policies_search_sync, query_embedding, similarity_threshold, top_k)
+        return res 
+    
     async def close(self):
         with self.__pool.connect() as conn:
             s = text(
