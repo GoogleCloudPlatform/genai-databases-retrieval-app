@@ -71,7 +71,6 @@ class Client(datastore.Client[Config]):
             raise TypeError("pool not instantiated")
         return cls(pool)
 
-
     @classmethod
     async def create(cls, config: Config) -> "Client":
         loop = asyncio.get_running_loop()
@@ -283,7 +282,6 @@ class Client(datastore.Client[Config]):
             
             # Create a vector index on the embedding column
             conn.execute(text("CALL mysql.create_vector_index('policies_index', 'assistantdemo.policies', 'embedding', '')"))
-
 
     async def initialize_data(
         self,
@@ -638,6 +636,7 @@ class Client(datastore.Client[Config]):
         return res 
     
     async def close(self):
+        # Vector indexes must be dropped before any DDLs on the base table are permitted
         with self.__pool.connect() as conn:
             s = text(
                 """

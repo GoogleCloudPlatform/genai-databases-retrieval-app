@@ -96,7 +96,6 @@ async def create_db(
     await conn.close()
 
 
-
 @pytest_asyncio.fixture(scope="module")
 async def ds(
     create_db: AsyncGenerator[str, None],
@@ -143,7 +142,6 @@ def only_embedding_changed(file_diff):
         for key in change["changes"]
     )
     
-
 
 def check_file_diff(file_diff):
     assert file_diff["added"] == []
