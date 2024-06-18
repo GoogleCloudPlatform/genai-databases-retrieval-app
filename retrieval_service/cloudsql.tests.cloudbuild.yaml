@@ -45,8 +45,8 @@ steps:
       - "DB_REGION=${_CLOUDSQL_REGION}"
       - "DB_INSTANCE=${_CLOUDSQL_INSTANCE}"
     secretEnv:
-      - DB_USER
-      - DB_PASS
+      - DB_USER_PG
+      - DB_PASS_PG
     script: |
         #!/usr/bin/env bash
         python -m pytest --cov=datastore.providers.cloudsql_postgres --cov-config=coverage/.cloudsql-pg-coveragerc datastore/providers/cloudsql_postgres_test.py
@@ -78,8 +78,8 @@ steps:
       - "DB_REGION=${_CLOUDSQL_REGION}"
       - "DB_INSTANCE=${_CLOUDSQL_INSTANCE}"
     secretEnv:
-      - DB_USER
-      - DB_PASS
+      - DB_USER_MYSQL
+      - DB_PASS_MYSQL
     script: |
         #!/usr/bin/env bash
         python -m pytest --cov=datastore.providers.cloudsql_mysql --cov-config=coverage/.cloudsql-mysql-coveragerc datastore/providers/cloudsql_mysql_test.py

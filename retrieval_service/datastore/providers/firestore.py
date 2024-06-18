@@ -25,6 +25,8 @@ import models
 
 from .. import datastore
 
+DB_IDENTIFIER = "firestore"
+
 
 class Config(BaseModel, datastore.AbstractConfig):
     kind: Literal["firestore"]
@@ -36,7 +38,7 @@ class Client(datastore.Client[Config]):
 
     @datastore.classproperty
     def kind(cls):
-        return "firestore"
+        return DB_IDENTIFIER
 
     def __init__(self, client: AsyncClient):
         self.__client = client

@@ -40,12 +40,12 @@ pytestmark = pytest.mark.asyncio(scope="module")
 
 @pytest.fixture(scope="module")
 def db_user() -> str:
-    return get_env_var("DB_USER", "name of a postgres user")
+    return get_env_var("DB_USER_PG", "name of a postgres user")
 
 
 @pytest.fixture(scope="module")
 def db_pass() -> str:
-    return get_env_var("DB_PASS", "password for the postgres user")
+    return get_env_var("DB_PASS_PG", "password for the postgres user")
 
 
 @pytest.fixture(scope="module")

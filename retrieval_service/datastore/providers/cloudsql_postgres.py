@@ -45,7 +45,7 @@ class Client(datastore.Client[Config]):
 
     @datastore.classproperty
     def kind(cls):
-        return "cloudsql-postgres"
+        return POSTGRES_IDENTIFIER
 
     def __init__(self, pool: AsyncEngine):
         self.__pool = pool
