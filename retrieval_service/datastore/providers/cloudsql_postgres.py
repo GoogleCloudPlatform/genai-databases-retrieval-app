@@ -27,7 +27,7 @@ import models
 
 from .. import datastore
 
-POSTGRES_IDENTIFIER = "cloudsql-postgres"
+CLOUD_SQL_PG_IDENTIFIER = "cloudsql-postgres"
 
 
 class Config(BaseModel, datastore.AbstractConfig):
@@ -45,7 +45,7 @@ class Client(datastore.Client[Config]):
 
     @datastore.classproperty
     def kind(cls):
-        return POSTGRES_IDENTIFIER
+        return CLOUD_SQL_PG_IDENTIFIER
 
     def __init__(self, pool: AsyncEngine):
         self.__pool = pool

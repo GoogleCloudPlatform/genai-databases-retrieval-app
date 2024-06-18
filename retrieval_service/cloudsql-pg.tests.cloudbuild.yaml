@@ -28,7 +28,7 @@ steps:
         #!/usr/bin/env bash
         # Create config
         cp example-config-cloudsql.yml config.yml
-        sed -i "s/cloudsql-dialect/cloudsql-postgres/g" config.yml
+        sed -i "s/cloudsql-engine/cloudsql-postgres/g" config.yml
         sed -i "s/my_database/${_DATABASE_NAME}/g" config.yml
         sed -i "s/my-user/$$DB_USER/g" config.yml
         sed -i "s/my-password/$$DB_PASS/g" config.yml
