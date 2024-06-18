@@ -1,7 +1,7 @@
 host: 0.0.0.0
 datastore:
   # Example for Cloud SQL
-  kind: "cloudsql-postgres"
+  kind: "cloudsql-dialect"
   project: "my-project"
   region: "my-region"
   instance: "my-instance"
