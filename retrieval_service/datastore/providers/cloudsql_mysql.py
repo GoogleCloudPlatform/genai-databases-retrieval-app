@@ -44,7 +44,7 @@ class Client(datastore.Client[Config]):
 
     @datastore.classproperty
     def kind(cls):
-        return "cloudsql-mysql"
+        return MYSQL_IDENTIFIER
 
     def __init__(self, pool: Engine, db_name: str):
         self.__pool = pool
@@ -76,7 +76,7 @@ class Client(datastore.Client[Config]):
     @classmethod
     async def create(cls, config: Config) -> "Client":
         loop = asyncio.get_running_loop()
-        
+
         pool = await loop.run_in_executor(None, cls.create_sync, config)
         return pool
 
