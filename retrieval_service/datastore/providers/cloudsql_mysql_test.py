@@ -40,34 +40,34 @@ pytestmark = pytest.mark.asyncio(scope="module")
 
 @pytest.fixture(scope="module")
 def db_user() -> str:
-    return "mysql"
+    return get_env_var("DB_USER", "name of a mysql user")
 
 
 @pytest.fixture(scope="module")
 def db_pass() -> str:
-    return "my-cloudsql-pass"
+    return get_env_var("DB_PASS", "password for the mysql user")
 
 
 @pytest.fixture(scope="module")
 def db_project() -> str:
-    return "juliaofferman-playground"
+    return get_env_var("DB_PROJECT", "project id for google cloud")
 
 
 @pytest.fixture(scope="module")
 def db_region() -> str:
-    return "us-central1"
+    return get_env_var("DB_REGION", "region for cloud sql instance")
 
 
 @pytest.fixture(scope="module")
 def db_instance() -> str:
-    return "my-vector-app"
+    return get_env_var("DB_INSTANCE", "instance for cloud sql")
 
 
 @pytest.fixture(scope="module")
 async def create_db(
     db_user: str, db_pass: str, db_project: str, db_region: str, db_instance: str
 ) -> AsyncGenerator[str, None]:
-    db_name = "assistantdemo"
+    db_name = get_env_var("DB_NAME", "name of a postgres database")
     loop = asyncio.get_running_loop()
     connector = Connector(loop=loop)
     # Database does not exist, create it.
@@ -77,12 +77,12 @@ async def create_db(
                 "pymysql",
                 user=f"{db_user}",
                 password=f"{db_pass}",
-                db=f"{db_name}",
+                db="mysql",
             )
     cursor = sys_conn.cursor()
     
-    cursor.execute(f'DROP DATABASE IF EXISTS assistantdemo;')
-    cursor.execute(f'CREATE DATABASE assistantdemo;')
+    cursor.execute(f'DROP DATABASE IF EXISTS {db_name};')
+    cursor.execute(f'CREATE DATABASE {db_name};')
     cursor.close()
     conn: pymysql.Connection = await connector.connect_async(
                 # Cloud SQL instance connection name

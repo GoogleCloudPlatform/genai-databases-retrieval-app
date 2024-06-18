@@ -8,3 +8,4 @@ datastore:
   database: "my_database"
   user: "my-user"
   password: "my-password"
+  

@@ -40,13 +40,15 @@ class Config(BaseModel, datastore.AbstractConfig):
 
 class Client(datastore.Client[Config]):
     __pool: Engine
+    __db_name: str
 
     @datastore.classproperty
     def kind(cls):
         return "cloudsql-mysql"
 
-    def __init__(self, pool: Engine):
+    def __init__(self, pool: Engine, db_name: str):
         self.__pool = pool
+        self.__db_name = db_name
 
     @classmethod
     def create_sync(cls, config: Config) -> "Client":
@@ -69,12 +71,12 @@ class Client(datastore.Client[Config]):
         )
         if pool is None:
             raise TypeError("pool not instantiated")
-        return cls(pool)
+        return cls(pool, config.database)
 
     @classmethod
     async def create(cls, config: Config) -> "Client":
         loop = asyncio.get_running_loop()
-
+        
         pool = await loop.run_in_executor(None, cls.create_sync, config)
         return pool
 
@@ -190,7 +192,7 @@ class Client(datastore.Client[Config]):
             )
 
             # Create a vector index for the embeddings column
-            conn.execute(text("CALL mysql.create_vector_index('amenities_index', 'assistantdemo.amenities', 'embedding', '')"))
+            conn.execute(text(f"CALL mysql.create_vector_index('amenities_index', '{self.__db_name}.amenities', 'embedding', '')"))
 
             # If the table already exists, drop it to avoid conflicts
             conn.execute(text("DROP TABLE IF EXISTS flights"))
@@ -281,7 +283,7 @@ class Client(datastore.Client[Config]):
                     } for p in policies])
             
             # Create a vector index on the embedding column
-            conn.execute(text("CALL mysql.create_vector_index('policies_index', 'assistantdemo.policies', 'embedding', '')"))
+            conn.execute(text(f"CALL mysql.create_vector_index('policies_index', '{self.__db_name}.policies', 'embedding', '')"))
 
     async def initialize_data(
         self,
@@ -644,8 +646,8 @@ class Client(datastore.Client[Config]):
                 """
             )
             params = [
-                {"index_name": "assistantdemo.amenities_index"},
-                {"index_name": "assistantdemo.policies_index"},
+                {"index_name": f"{self.__db_name}.amenities_index"},
+                {"index_name": f"{self.__db_name}.policies_index"},
             ]
 
             conn.execute(s, parameters=params)
