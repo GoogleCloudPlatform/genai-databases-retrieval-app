@@ -27,6 +27,7 @@ from orchestrator import BaseOrchestrator
 from .eval_golden import EvalData
 
 
+<<<<<<< HEAD
 async def run_llm_for_eval(
     eval_list: List[EvalData], orc: BaseOrchestrator, session: Dict, session_id: str
 ) -> List[EvalData]:
@@ -66,12 +67,31 @@ def evaluate_task(
         dataset=eval_dataset,
         metrics=metrics,
         experiment=experiment_name,
+=======
+class EvalData(BaseModel):
+    category: Optional[str] = Field(default=None, description="evaluation category")
+    query: Optional[str] = Field(default=None, description="user query")
+    instruction: Optional[str] = Field(
+        default=None, description="instruction to llm system"
+    )
+    content: Optional[str] = Field(default="")
+    tool_calls: Optional[List[Dict[str, Any]]] = Field(default=None)
+    context: Optional[str] = Field(
+        default=None, description="context given to llm in order to answer user query"
+    )
+    output: Optional[str] = Field(default=None)
+    prediction_tool_calls: Optional[List[Dict[str, Any]]] = Field(default=None)
+    prediction_output: Optional[str] = Field(default=None)
+    reset: bool = Field(
+        default=True, description="determine to reset the chat after invoke"
+>>>>>>> 0d37590 (chore: add retrieval phase evaluation)
     )
 
     eval_result = eval_task.evaluate()
     return eval_result
 
 
+<<<<<<< HEAD
 def evaluate_retrieval_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalResult:
     RETRIEVAL_EXPERIMENT_NAME = "retrieval-phase-eval"
     metrics = ["tool_call_quality"]
@@ -90,3 +110,68 @@ def evaluate_retrieval_phase(eval_datas: List[EvalData]) -> evaluation_base.Eval
     )
     eval_result = evaluate_task(eval_dataset, metrics, RETRIEVAL_EXPERIMENT_NAME)
     return eval_result
+=======
+    async def run_llm_for_eval(
+        self, eval_datas: List[EvalData], orc: BaseOrchestrator, session: Dict, uid: str
+    ) -> List[EvalData]:
+        """
+        Generate prediction_tool_calls and prediction_output for golden dataset query.
+        """
+        agent = orc.get_user_session(uid)
+        for eval_data in eval_datas:
+            query_response = await agent.invoke(eval_data.query)
+
+            # Retrieve prediction_tool_calls from query response
+            prediction_tool_calls = []
+            for step in query_response.get("intermediate_steps"):
+                called_tool = step[0]
+                tool_call = {
+                    "name": called_tool.tool,
+                    "arguments": called_tool.tool_input,
+                }
+                prediction_tool_calls.append(tool_call)
+
+            eval_data.prediction_tool_calls = prediction_tool_calls
+            eval_data.prediction_output = query_response.get("output")
+
+            if eval_data.reset:
+                orc.user_session_reset(session, uid)
+        return eval_datas
+
+    def evaluate_task(
+        self, eval_dataset: "pd.DataFrame", metrics: List[str], experiment_name: str
+    ) -> evaluation_base.EvalResult:
+        """
+        Run VertexAI Evaluation Task.
+        """
+        nest_asyncio.apply()
+        eval_task = EvalTask(
+            dataset=eval_dataset,
+            metrics=metrics,
+            experiment=experiment_name,
+        )
+        eval_result = eval_task.evaluate()
+        return eval_result
+
+    def evaluate_retrieval_phase(self, eval_datas: List[EvalData]):
+        RETRIEVAL_EXPERIMENT_NAME = "retrieval-phase-eval"
+        metrics = ["tool_call_quality"]
+        responses = []
+        references = []
+        for e in eval_datas:
+            responses.append(
+                json.dumps({"content": e.content, "tool_calls": e.tool_calls})
+            )
+            references.append(
+                json.dumps(
+                    {"content": e.content, "tool_calls": e.prediction_tool_calls}
+                )
+            )
+        eval_dataset = pd.DataFrame(
+            {
+                "response": responses,
+                "reference": references,
+            }
+        )
+        return self.evaluate_task(eval_dataset, metrics, RETRIEVAL_EXPERIMENT_NAME)
+>>>>>>> 0d37590 (chore: add retrieval phase evaluation)
