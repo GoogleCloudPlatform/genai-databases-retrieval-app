@@ -101,3 +101,27 @@ def evaluate_retrieval_phase(eval_datas: List[EvalData]) -> evaluation_base.Eval
         experiment=RETRIEVAL_EXPERIMENT_NAME,
     ).evaluate()
     return eval_result
+
+def evaluate_response_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalResult:
+    RESPONSE_EXPERIMENT_NAME = "response-phase-eval"
+    metrics = [
+        "text_generation_quality",
+        "text_generation_factuality",
+        "summarization_pointwise_reference_free",
+        "qa_pointwise_reference_free",
+    ]
+    instructions = [
+        e.instruction or "answer user query based on context given"
+        for e in eval_datas
+    ]
+    contexts = [e.context or "no data retrieved" for e in eval_datas]
+    responses = [e.prediction_output for e in eval_datas]
+    eval_dataset = pd.DataFrame(
+        {
+            "instruction": instructions,
+            "context": contexts,
+            "response": responses,
+        }
+    )
+    eval_result = evaluate_task(eval_dataset, metrics, RESPONSE_EXPERIMENT_NAME)
+    return eval_result
