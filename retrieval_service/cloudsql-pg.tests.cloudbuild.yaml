@@ -54,7 +54,7 @@ steps:
 substitutions:
   _DATABASE_NAME: test_${SHORT_SHA}
   _CLOUDSQL_REGION: "us-central1"
-  _CLOUDSQL_INSTANCE: "my-cloudsql-instance"
+  _CLOUDSQL_INSTANCE: "my-cloudsql-pg-instance"
 
 availableSecrets:
   secretManager:
