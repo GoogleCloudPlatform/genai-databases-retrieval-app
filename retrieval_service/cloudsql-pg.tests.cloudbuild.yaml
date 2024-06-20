@@ -18,7 +18,7 @@ steps:
     dir: retrieval_service
     script: pip install -r requirements.txt -r requirements-test.txt --user
 
-  - id: Update config
+  - id: Update config postgres
     name: python:3.11
     dir: retrieval_service
     secretEnv:
@@ -28,6 +28,7 @@ steps:
         #!/usr/bin/env bash
         # Create config
         cp example-config-cloudsql.yml config.yml
+        sed -i "s/cloudsql-engine/cloudsql-postgres/g" config.yml
         sed -i "s/my_database/${_DATABASE_NAME}/g" config.yml
         sed -i "s/my-user/$$DB_USER/g" config.yml
         sed -i "s/my-password/$$DB_PASS/g" config.yml
@@ -35,7 +36,7 @@ steps:
         sed -i "s/my-region/${_CLOUDSQL_REGION}/g" config.yml
         sed -i "s/my-instance/${_CLOUDSQL_INSTANCE}/g" config.yml
 
-  - id: Run Cloud SQL DB integration tests
+  - id: Run Cloud SQL postgres DB integration tests
     name: python:3.11
     dir: retrieval_service
     env: # Set env var expected by tests
@@ -48,19 +49,18 @@ steps:
       - DB_PASS
     script: |
         #!/usr/bin/env bash
-        python -m pytest --cov=datastore.providers.cloudsql_postgres --cov-config=coverage/.cloudsql-coveragerc datastore/providers/cloudsql_postgres_test.py
+        python -m pytest --cov=datastore.providers.cloudsql_postgres --cov-config=coverage/.cloudsql-pg-coveragerc datastore/providers/cloudsql_postgres_test.py
 
 substitutions:
   _DATABASE_NAME: test_${SHORT_SHA}
-  _DATABASE_USER: postgres
   _CLOUDSQL_REGION: "us-central1"
-  _CLOUDSQL_INSTANCE: "my-cloudsql-instance"
+  _CLOUDSQL_INSTANCE: "my-cloudsql-pg-instance"
 
 availableSecrets:
   secretManager:
-    - versionName: projects/$PROJECT_ID/secrets/cloudsql_pass/versions/latest
+    - versionName: projects/$PROJECT_ID/secrets/cloudsql_pg_pass/versions/latest
       env: DB_PASS
-    - versionName: projects/$PROJECT_ID/secrets/cloudsql_user/versions/latest
+    - versionName: projects/$PROJECT_ID/secrets/cloudsql_pg_user/versions/latest
       env: DB_USER
 
 options:

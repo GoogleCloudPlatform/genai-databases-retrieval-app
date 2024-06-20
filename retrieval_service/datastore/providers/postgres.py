@@ -42,7 +42,7 @@ class Client(datastore.Client[Config]):
 
     @datastore.classproperty
     def kind(cls):
-        return "postgres"
+        return POSTGRES_IDENTIFIER
 
     def __init__(self, pool: asyncpg.Pool):
         self.__pool = pool

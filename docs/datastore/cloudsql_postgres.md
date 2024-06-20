@@ -51,7 +51,7 @@
     ```bash
     export DB_PASS=my-cloudsql-pass
     export DB_USER=postgres
-    export INSTANCE=my-cloudsql-instance
+    export INSTANCE=my-cloudsql-pg-instance
     export REGION=us-central1
     ```
 
@@ -101,7 +101,7 @@ datastore:
     # Update this with your project ID
     project: <PROJECT_ID>
     region: us-central1
-    instance: my-cloudsql-instance
+    instance: my-cloudsql-pg-instance
     # Update this with the database name
     database: "assistantdemo"
     # Update with database user, the default is `postgres`
@@ -158,7 +158,7 @@ Clean up after completing the demo.
 1. Delete the Cloud SQL instance:
 
     ```bash
-    gcloud sql instances delete my-cloudsql-instance
+    gcloud sql instances delete my-cloudsql-pg-instance
     ```
 
 ## Developer information
