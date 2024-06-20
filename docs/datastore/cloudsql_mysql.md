@@ -105,7 +105,7 @@ datastore:
     instance: my-cloudsql-instance
     # Update this with the database name
     database: "assistantdemo"
-    # Update with database user, the default is `mysql`
+    # Update with database user, the default is `root`
     user: "root"
     # Update with database user password
     password: "my-cloudsql-pass"
