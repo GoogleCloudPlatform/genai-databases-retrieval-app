@@ -19,6 +19,9 @@ from typing import Any, Literal, Optional
 from google.cloud.firestore import AsyncClient  # type: ignore
 from google.cloud.firestore_v1.async_collection import AsyncCollectionReference
 from google.cloud.firestore_v1.base_query import FieldFilter
+from google.cloud.firestore_v1.vector import Vector
+from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
+
 from pydantic import BaseModel
 
 import models
@@ -46,6 +49,30 @@ class Client(datastore.Client[Config]):
     @classmethod
     async def create(cls, config: Config) -> "Client":
         return cls(AsyncClient(project=config.projectId))
+    
+    async def create_vector_composite_index(self, collection_group: str, vector_field: str, dimension: int, additional_fields: dict):
+        # Assume the default database ID
+        database_id = "'(default)'"
+
+        # Define the gcloud command for creating the composite vector index
+        create_index_command = [
+            "gcloud", "alpha", "firestore", "indexes", "composite", "create",
+            f"--collection-group={collection_group}",
+            "--query-scope=COLLECTION"
+        ]
+
+        # Add field configurations for the additional fields
+        for field_path, order in additional_fields.items():
+            create_index_command.append(f"--field-config=order={order},field-path={field_path}")
+
+        # Add the vector field configuration
+        create_index_command.append(f"--field-config=field-path={vector_field},vector-config='{{\"dimension\":\"{dimension}\", \"flat\": \"{{}}\"}}'")
+
+        # Add the database ID to the command
+        create_index_command.append(f"--database={database_id}")
+
+        await asyncio.create_subprocess_exec(*create_index_command)
+
 
     async def initialize_data(
         self,
@@ -55,7 +82,7 @@ class Client(datastore.Client[Config]):
         policies: list[models.Policy],
     ) -> None:
         async def delete_collections(collection_list: list[AsyncCollectionReference]):
-            # Checks if colelction exists and deletes all documents
+            # Checks if collection exists and deletes all documents
             delete_tasks = []
             for collection_ref in collection_list:
                 collection_exists = collection_ref.limit(1).stream()
@@ -74,6 +101,34 @@ class Client(datastore.Client[Config]):
         policies_ref = self.__client.collection("policies")
         await delete_collections(
             [airports_ref, amenities_ref, flights_ref, policies_ref]
+        )
+
+         # Create the vector composite index for the amenities collection
+        amenities_fields = {
+            "name": "ASCENDING",
+            "description": "ASCENDING",
+            "location": "ASCENDING",
+            "terminal": "ASCENDING",
+            "category": "ASCENDING",
+            "hour": "ASCENDING",
+            "content": "ASCENDING"
+        }
+        self.create_vector_composite_index(
+            collection_group="amenities",
+            vector_field="embedding",
+            dimension=768,  # Vector dimension for amenities
+            additional_fields=amenities_fields
+        )
+
+        # Create the vector composite index for the policies collection
+        policies_fields = {
+            "content": "ASCENDING"
+        }
+        self.create_vector_composite_index(
+            collection_group="policies",
+            vector_field="embedding",
+            dimension=768,  # Vector dimension for policies
+            additional_fields=policies_fields
         )
 
         # initialize collections
@@ -106,7 +161,7 @@ class Client(datastore.Client[Config]):
                         "category": amenity.category,
                         "hour": amenity.hour,
                         "content": amenity.content,
-                        "embedding": amenity.embedding,
+                        "embedding": Vector(amenity.embedding),
                     }
                 )
             )
@@ -142,7 +197,7 @@ class Client(datastore.Client[Config]):
                 .set(
                     {
                         "content": policy.content,
-                        "embedding": policy.embedding,
+                        "embedding": Vector(policy.embedding),
                     }
                 )
             )
@@ -235,11 +290,25 @@ class Client(datastore.Client[Config]):
         amenity_doc = await query.get()
         amenity_dict = amenity_doc.to_dict() | {"id": amenity_doc.id}
         return models.Amenity.model_validate(amenity_dict)
-
+    
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[Any]:
-        raise NotImplementedError("Semantic search not yet supported in Firestore.")
+    ) -> list[models.Amenity]:
+        collection = self.__client.collection("amenities")
+        query_vector = Vector(query_embedding)
+        distance_measure = DistanceMeasure.DOT_PRODUCT
+        query = collection.find_nearest(
+            vector_field="embedding",
+            query_vector=query_vector,
+            distance_measure=distance_measure,
+            limit=top_k,
+        )
+        
+        amenities = []
+        async for doc in query:
+            amenity_dict = doc.to_dict() | {"id": doc.id}
+            amenities.append(models.Amenities.model_validate(amenity_dict))
+        return amenities
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
         query = self.__client.collection("flights").where(
@@ -326,8 +395,22 @@ class Client(datastore.Client[Config]):
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[str]:
-        raise NotImplementedError("Semantic search not yet supported in Firestore.")
+    ) -> list[models.Policy]:
+        collection = self.__client.collection("policies")
+        query_vector = Vector(query_embedding) 
+        distance_measure = DistanceMeasure.DOT_PRODUCT
+        query = collection.find_nearest(
+            vector_field="embedding",
+            query_vector=query_vector,
+            distance_measure=distance_measure,
+            limit=top_k,
+        )
+        
+        policies = []
+        async for doc in query:
+            policy_dict = doc.to_dict() | {"id": doc.id}
+            policies.append(models.Policies.model_validate(policy_dict))
+        return policies
 
     async def close(self):
         self.__client.close()
