@@ -13,3 +13,4 @@ python-multipart==0.0.7
 pytz==2024.1
 types-pytz==2024.1.0.20240417
 nest_asyncio==1.6.0
+pandas-stubs==2.2.2.240603
