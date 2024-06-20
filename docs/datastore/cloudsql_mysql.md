@@ -50,7 +50,7 @@
 
     ```bash
     export DB_PASS=my-cloudsql-pass
-    export DB_USER=mysql
+    export DB_USER=root
     export INSTANCE=my-cloudsql-instance
     export REGION=us-central1
     ```
@@ -87,7 +87,7 @@
    password for Cloud SQL (`$DB_PASS` environment variable set above) when prompted:
 
     ```bash
-    mysql "host=127.0.0.1 port=5432 sslmode=disable user=$DB_USER"
+    mysql "host=127.0.0.1 port=3306 sslmode=disable user=$DB_USER"
     ```
 
 ## Update config
@@ -106,7 +106,7 @@ datastore:
     # Update this with the database name
     database: "assistantdemo"
     # Update with database user, the default is `mysql`
-    user: "mysql"
+    user: "root"
     # Update with database user password
     password: "my-cloudsql-pass"
 ```
@@ -175,7 +175,7 @@ export DB_INSTANCE=""
 Run retrieval service unit tests:
 
 ```bash
-gcloud builds submit --config retrieval_service/cloudsql.tests.cloudbuild.yaml \
+gcloud builds submit --config retrieval_service/cloudsql-mysql.tests.cloudbuild.yaml \
     --substitutions _DATABASE_NAME=$DB_NAME,_DATABASE_USER=$DB_USER,_CLOUDSQL_REGION=$DB_REGION,_CLOUDSQL_INSTANCE=$DB_INSTANCE
 ```
 

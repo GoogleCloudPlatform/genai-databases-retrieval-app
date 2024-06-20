@@ -576,7 +576,29 @@ class Client(datastore.Client[Config]):
         departure_airport: str,
         departure_time: str,
     ) -> Optional[models.Flight]:
-        raise NotImplementedError("Not Implemented")
+        with self.__pool.connect() as conn:
+            s = text(
+                """
+                SELECT * FROM flights
+                  WHERE LOWER(airline) LIKE LOWER(:airline)
+                  AND LOWER(flight_number) LIKE LOWER(:flight_number)
+                  AND LOWER(departure_airport) LIKE LOWER(:departure_airport)
+                  AND departure_time =  CAST(:departure_time AS DATETIME)
+                  LIMIT 10
+                """
+            )
+            params = {
+                "airline": airline,
+                "flight_number": flight_number,
+                "departure_airport": departure_airport,
+                "departure_time": departure_time,
+            }
+
+            result = (conn.execute(s, parameters=params)).mappings().fetchone()
+        if result is None:
+            return None
+        res = models.Flight.model_validate(result)
+        return res
 
     async def validate_ticket(
         self,
@@ -589,6 +611,58 @@ class Client(datastore.Client[Config]):
         res = await loop.run_in_executor(None, self.validate_ticket_sync, airline, flight_number, departure_airport, departure_time)
         return res 
 
+    def insert_ticket_sync(
+        self,
+        user_id: str,
+        user_name: str,
+        user_email: str,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        arrival_airport: str,
+        departure_time: str,
+        arrival_time: str,
+    ):
+        with self.__pool.connect() as conn:
+            s = text(
+                """
+                INSERT INTO tickets (
+                    user_id,
+                    user_name,
+                    user_email,
+                    airline,
+                    flight_number,
+                    departure_airport,
+                    arrival_airport,
+                    departure_time,
+                    arrival_time
+                ) VALUES (
+                    :user_id,
+                    :user_name,
+                    :user_email,
+                    :airline,
+                    :flight_number,
+                    :departure_airport,
+                    :arrival_airport,
+                    :departure_time,
+                    :arrival_time
+                );
+            """
+            )
+            params = {
+                "user_id": user_id,
+                "user_name": user_name,
+                "user_email": user_email,
+                "airline": airline,
+                "flight_number": flight_number,
+                "departure_airport": departure_airport,
+                "arrival_airport": arrival_airport,
+                "departure_time": departure_time,
+                "arrival_time": arrival_time,
+            }
+            conn.execute(s, params).mappings()
+
+        
     async def insert_ticket(
         self,
         user_id: str,
@@ -601,13 +675,36 @@ class Client(datastore.Client[Config]):
         departure_time: str,
         arrival_time: str,
     ):
-        raise NotImplementedError("Not Implemented")
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, self.insert_ticket_sync, user_id, user_name, user_email, airline, flight_number, departure_airport, arrival_airport, departure_time, arrival_time)
 
+    def list_tickets_sync(
+        self,
+        user_id: str,
+    ) -> list[models.Ticket]:
+        with self.__pool.connect() as conn:
+            s = text(
+                """
+                SELECT * FROM tickets
+                WHERE user_id = :user_id
+                """
+            )
+            params = {
+                "user_id": user_id,
+            }
+
+            results = (conn.execute(s, parameters=params)).mappings().fetchall()
+
+        res = [models.Ticket.model_validate(r) for r in results]
+        return res
+    
     async def list_tickets(
         self,
         user_id: str,
     ) -> list[models.Ticket]:
-        raise NotImplementedError("Not Implemented")
+        loop = asyncio.get_running_loop()
+        res = await loop.run_in_executor(None, self.list_tickets_sync, user_id)
+        return res 
 
     def policies_search_sync(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
