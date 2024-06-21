@@ -49,30 +49,6 @@ class Client(datastore.Client[Config]):
     @classmethod
     async def create(cls, config: Config) -> "Client":
         return cls(AsyncClient(project=config.projectId))
-    
-    async def create_vector_composite_index(self, collection_group: str, vector_field: str, dimension: int, additional_fields: dict):
-        # Assume the default database ID
-        database_id = "'(default)'"
-
-        # Define the gcloud command for creating the composite vector index
-        create_index_command = [
-            "gcloud", "alpha", "firestore", "indexes", "composite", "create",
-            f"--collection-group={collection_group}",
-            "--query-scope=COLLECTION"
-        ]
-
-        # Add field configurations for the additional fields
-        for field_path, order in additional_fields.items():
-            create_index_command.append(f"--field-config=order={order},field-path={field_path}")
-
-        # Add the vector field configuration
-        create_index_command.append(f"--field-config=field-path={vector_field},vector-config='{{\"dimension\":\"{dimension}\", \"flat\": \"{{}}\"}}'")
-
-        # Add the database ID to the command
-        create_index_command.append(f"--database={database_id}")
-
-        await asyncio.create_subprocess_exec(*create_index_command)
-
 
     async def initialize_data(
         self,
@@ -101,34 +77,6 @@ class Client(datastore.Client[Config]):
         policies_ref = self.__client.collection("policies")
         await delete_collections(
             [airports_ref, amenities_ref, flights_ref, policies_ref]
-        )
-
-         # Create the vector composite index for the amenities collection
-        amenities_fields = {
-            "name": "ASCENDING",
-            "description": "ASCENDING",
-            "location": "ASCENDING",
-            "terminal": "ASCENDING",
-            "category": "ASCENDING",
-            "hour": "ASCENDING",
-            "content": "ASCENDING"
-        }
-        self.create_vector_composite_index(
-            collection_group="amenities",
-            vector_field="embedding",
-            dimension=768,  # Vector dimension for amenities
-            additional_fields=amenities_fields
-        )
-
-        # Create the vector composite index for the policies collection
-        policies_fields = {
-            "content": "ASCENDING"
-        }
-        self.create_vector_composite_index(
-            collection_group="policies",
-            vector_field="embedding",
-            dimension=768,  # Vector dimension for policies
-            additional_fields=policies_fields
         )
 
         # initialize collections
@@ -202,6 +150,27 @@ class Client(datastore.Client[Config]):
                 )
             )
         await asyncio.gather(*create_policies_tasks)
+
+         # Initialize single-field vector indexes
+        create_amenities_vector_index = [
+            "gcloud", "alpha", "firestore", "indexes", "composite", "create",
+            "--collection-group=amenities",
+            "--query-scope=COLLECTION",
+            "--field-config=field-path=embedding,vector-config={\"dimension\":768,\"flat\":\"{}\"}",
+            "--database=(default)"
+        ]
+        create_amenities_process = await asyncio.create_subprocess_exec(*create_amenities_vector_index)
+        await create_amenities_process.wait()
+        
+        create_policies_vector_index = [
+            "gcloud", "alpha", "firestore", "indexes", "composite", "create",
+            "--collection-group=policies",
+            "--query-scope=COLLECTION",
+            "--field-config=field-path=embedding,vector-config={\"dimension\":768,\"flat\":\"{}\"}",
+            "--database=(default)"
+        ]
+        create_policies_process = await asyncio.create_subprocess_exec(*create_policies_vector_index)
+        await create_policies_process.wait()
 
     async def export_data(
         self,
