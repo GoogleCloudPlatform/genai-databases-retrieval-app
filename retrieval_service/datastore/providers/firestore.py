@@ -273,8 +273,9 @@ class Client(datastore.Client[Config]):
             limit=top_k,
         )
         
+        docs = query.stream()
         amenities = []
-        async for doc in query:
+        async for doc in docs:
             amenity_dict = doc.to_dict() | {"id": doc.id}
             amenities.append(models.Amenities.model_validate(amenity_dict))
         return amenities
@@ -375,8 +376,9 @@ class Client(datastore.Client[Config]):
             limit=top_k,
         )
         
+        docs = query.stream()
         policies = []
-        async for doc in query:
+        async for doc in docs:
             policy_dict = doc.to_dict() | {"id": doc.id}
             policies.append(models.Policies.model_validate(policy_dict))
         return policies
