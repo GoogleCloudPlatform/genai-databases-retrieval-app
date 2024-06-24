@@ -16,22 +16,22 @@ goldens = [
     {
         "Search Airport Tool": [
             {
-                "query": "What is the airport located in san francisco?",
+                "query": "What is the airport located in San Francisco?",
                 "tool_calls": [
                     {
                         "name": "Search Airport",
-                        "arguments": {"city": "san francisco"},
+                        "arguments": {"city": "San Francisco"},
                     },
                 ],
             },
             {
-                "query": "Tell me more about denver international airport?",
+                "query": "Tell me more about Denver International Airport?",
                 "tool_calls": [
                     {
                         "name": "Search Airport",
                         "arguments": {
-                            "city": "denver",
-                            "name": "denver international airport",
+                            "city": "Denver",
+                            "name": "Denver International Airport",
                         },
                     },
                 ],
