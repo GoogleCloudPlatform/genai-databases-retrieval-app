@@ -12,13 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-<<<<<<< HEAD
 from .eval_golden import goldens
 from .evaluation import run_llm_for_eval
 
 __ALL__ = ["run_llm_for_eval", "goldens"]
-=======
-from .evaluation import Evaluation
-
-__ALL__ = ["Evaluation"]
->>>>>>> 316470f (chore: get prediction for eval dataset)
