@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import json
 from typing import Dict, List
 
@@ -35,6 +36,7 @@ async def run_llm_for_eval(
     agent = orc.get_user_session(session_id)
     for eval_data in eval_list:
         query_response = await agent.invoke(eval_data.query)
+
         # Retrieve prediction_tool_calls from query response
         prediction_tool_calls = []
         for step in query_response.get("intermediate_steps"):
@@ -52,6 +54,7 @@ async def run_llm_for_eval(
             orc.user_session_reset(session, session_id)
     return eval_list
 
+
 def evaluate_task(
     eval_dataset: "pd.DataFrame", metrics: List[str], experiment_name: str
 ) -> evaluation_base.EvalResult:
@@ -64,8 +67,10 @@ def evaluate_task(
         metrics=metrics,
         experiment=experiment_name,
     )
+
     eval_result = eval_task.evaluate()
     return eval_result
+
 
 def evaluate_retrieval_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalResult:
     RETRIEVAL_EXPERIMENT_NAME = "retrieval-phase-eval"
@@ -73,13 +78,9 @@ def evaluate_retrieval_phase(eval_datas: List[EvalData]) -> evaluation_base.Eval
     responses = []
     references = []
     for e in eval_datas:
-        responses.append(
-            json.dumps({"content": e.content, "tool_calls": e.tool_calls})
-        )
+        responses.append(json.dumps({"content": e.content, "tool_calls": e.tool_calls}))
         references.append(
-            json.dumps(
-                {"content": e.content, "tool_calls": e.prediction_tool_calls}
-            )
+            json.dumps({"content": e.content, "tool_calls": e.prediction_tool_calls})
         )
     eval_dataset = pd.DataFrame(
         {

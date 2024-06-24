@@ -35,6 +35,7 @@ class EvalData(BaseModel):
         default=True, description="determine to reset the chat after invoke"
     )
 
+
 goldens = [
     EvalData(
         category="Search Airport Tool",

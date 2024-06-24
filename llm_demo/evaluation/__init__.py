@@ -13,6 +13,6 @@
 # limitations under the License.
 
 from .eval_golden import goldens
-from .evaluation import run_llm_for_eval
+from .evaluation import evaluate_retrieval_phase, run_llm_for_eval
 
-__ALL__ = ["run_llm_for_eval", "goldens"]
+__ALL__ = ["run_llm_for_eval", "goldens", "evaluate_retrieval_phase"]
