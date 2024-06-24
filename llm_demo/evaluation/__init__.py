@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .evaluation import Evaluation
+from .eval_golden import goldens
+from .evaluation import run_llm_for_eval
 
-__ALL__ = ["Evaluation"]
+__ALL__ = ["run_llm_for_eval", "goldens"]
