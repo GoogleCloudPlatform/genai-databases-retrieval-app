@@ -71,27 +71,27 @@ async def create_db(
     loop = asyncio.get_running_loop()
     connector = Connector(loop=loop)
     # Database does not exist, create it.
-    sys_conn:  pymysql.Connection = await connector.connect_async(
-                # Cloud SQL instance connection name
-                f"{db_project}:{db_region}:{db_instance}",
-                "pymysql",
-                user=f"{db_user}",
-                password=f"{db_pass}",
-                db="mysql",
-            )
+    sys_conn: pymysql.Connection = await connector.connect_async(
+        # Cloud SQL instance connection name
+        f"{db_project}:{db_region}:{db_instance}",
+        "pymysql",
+        user=f"{db_user}",
+        password=f"{db_pass}",
+        db="mysql",
+    )
     cursor = sys_conn.cursor()
-    
-    cursor.execute(f'DROP DATABASE IF EXISTS {db_name};')
-    cursor.execute(f'CREATE DATABASE {db_name};')
+
+    cursor.execute(f"DROP DATABASE IF EXISTS {db_name};")
+    cursor.execute(f"CREATE DATABASE {db_name};")
     cursor.close()
     conn: pymysql.Connection = await connector.connect_async(
-                # Cloud SQL instance connection name
-                f"{db_project}:{db_region}:{db_instance}",
-                "pymysql",
-                user=f"{db_user}",
-                password=f"{db_pass}",
-                db=f"{db_name}",
-            )
+        # Cloud SQL instance connection name
+        f"{db_project}:{db_region}:{db_instance}",
+        "pymysql",
+        user=f"{db_user}",
+        password=f"{db_pass}",
+        db=f"{db_name}",
+    )
     yield db_name
     await conn.close()
 
@@ -135,13 +135,14 @@ async def ds(
     yield ds
     await ds.close()
 
+
 def only_embedding_changed(file_diff):
     return all(
-        key == "embedding" 
-        for change in file_diff["changed"] 
+        key == "embedding"
+        for change in file_diff["changed"]
         for key in change["changes"]
     )
-    
+
 
 def check_file_diff(file_diff):
     assert file_diff["added"] == []
@@ -608,7 +609,18 @@ async def test_search_flights_by_airports(
 
 
 async def test_insert_ticket(ds: cloudsql_mysql.Client):
-    await ds.insert_ticket("1", "test", "test", "UA", "1532", "SFO", "DEN", "2024-01-01 05:50:00", "2024-01-01 09:23:00")
+    await ds.insert_ticket(
+        "1",
+        "test",
+        "test",
+        "UA",
+        "1532",
+        "SFO",
+        "DEN",
+        "2024-01-01 05:50:00",
+        "2024-01-01 09:23:00",
+    )
+
 
 async def test_list_tickets(ds: cloudsql_mysql.Client):
     res = await ds.list_tickets("1")
@@ -625,6 +637,7 @@ async def test_list_tickets(ds: cloudsql_mysql.Client):
     )
     assert res == [expected]
 
+
 async def test_validate_ticket(ds: cloudsql_mysql.Client):
     res = await ds.validate_ticket("UA", "1532", "SFO", "2024-01-01 05:50:00")
     expected = models.Flight(
@@ -639,7 +652,6 @@ async def test_validate_ticket(ds: cloudsql_mysql.Client):
         arrival_gate="D6",
     )
     assert res == expected
-
 
 
 policies_search_test_data = [

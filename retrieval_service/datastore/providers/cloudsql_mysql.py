@@ -16,17 +16,18 @@ import asyncio
 from datetime import datetime
 from typing import Any, Literal, Optional
 
+import pymysql
 from google.cloud.sql.connector import Connector
 from pydantic import BaseModel
-from sqlalchemy import text, create_engine, Engine
+from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.engine.base import Engine
 
-import pymysql
 import models
 
 from .. import datastore
 
 MYSQL_IDENTIFIER = "cloudsql-mysql"
+
 
 class Config(BaseModel, datastore.AbstractConfig):
     kind: Literal["cloudsql-mysql"]
@@ -108,18 +109,22 @@ class Client(datastore.Client[Config]):
             conn.execute(
                 text(
                     """INSERT INTO airports VALUES (:id, :iata, :name, :city, :country)"""
-                ),parameters=[{
+                ),
+                parameters=[
+                    {
                         "id": a.id,
                         "iata": a.iata,
                         "name": a.name,
                         "city": a.city,
                         "country": a.country,
-                    } for a in airports]
+                    }
+                    for a in airports
+                ],
             )
 
             # If the table already exists, drop it to avoid conflicts
             conn.execute(text("DROP TABLE IF EXISTS amenities CASCADE"))
-            
+
             # Create a new table
             conn.execute(
                 text(
@@ -152,7 +157,7 @@ class Client(datastore.Client[Config]):
                     """
                 )
             )
-    
+
             # Insert all the data
             conn.execute(
                 text(
@@ -164,7 +169,9 @@ class Client(datastore.Client[Config]):
                     :thursday_start_hour, :thursday_end_hour, :friday_start_hour,
                     :friday_end_hour, :saturday_start_hour, :saturday_end_hour, :content, string_to_vector(:embedding))
                     """
-                ),parameters=[{
+                ),
+                parameters=[
+                    {
                         "id": a.id,
                         "name": a.name,
                         "description": a.description,
@@ -188,11 +195,17 @@ class Client(datastore.Client[Config]):
                         "saturday_end_hour": a.saturday_end_hour,
                         "content": a.content,
                         "embedding": f"{a.embedding}",
-                    } for a in amenities]
+                    }
+                    for a in amenities
+                ],
             )
 
             # Create a vector index for the embeddings column
-            conn.execute(text(f"CALL mysql.create_vector_index('amenities_index', '{self.__db_name}.amenities', 'embedding', '')"))
+            conn.execute(
+                text(
+                    f"CALL mysql.create_vector_index('amenities_index', '{self.__db_name}.amenities', 'embedding', '')"
+                )
+            )
 
             # If the table already exists, drop it to avoid conflicts
             conn.execute(text("DROP TABLE IF EXISTS flights"))
@@ -222,7 +235,9 @@ class Client(datastore.Client[Config]):
                     :departure_airport, :arrival_airport, :departure_time,
                     :arrival_time, :departure_gate, :arrival_gate)
                     """
-                ),parameters=[{
+                ),
+                parameters=[
+                    {
                         "id": f.id,
                         "airline": f.airline,
                         "flight_number": f.flight_number,
@@ -232,7 +247,9 @@ class Client(datastore.Client[Config]):
                         "arrival_time": f.arrival_time,
                         "departure_gate": f.departure_gate,
                         "arrival_gate": f.arrival_gate,
-                    } for f in flights]
+                    }
+                    for f in flights
+                ],
             )
 
             # If the table already exists, drop it to avoid conflicts
@@ -276,14 +293,23 @@ class Client(datastore.Client[Config]):
                     """
                     INSERT INTO policies VALUES (:id, :content, string_to_vector(:embedding))
                     """
-                ),parameters=[{
+                ),
+                parameters=[
+                    {
                         "id": p.id,
                         "content": p.content,
                         "embedding": f"{p.embedding}",
-                    } for p in policies])
-            
+                    }
+                    for p in policies
+                ],
+            )
+
             # Create a vector index on the embedding column
-            conn.execute(text(f"CALL mysql.create_vector_index('policies_index', '{self.__db_name}.policies', 'embedding', '')"))
+            conn.execute(
+                text(
+                    f"CALL mysql.create_vector_index('policies_index', '{self.__db_name}.policies', 'embedding', '')"
+                )
+            )
 
     async def initialize_data(
         self,
@@ -293,7 +319,9 @@ class Client(datastore.Client[Config]):
         policies: list[models.Policy],
     ) -> None:
         loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self.initialize_data_sync, airports, amenities, flights, policies)
+        await loop.run_in_executor(
+            None, self.initialize_data_sync, airports, amenities, flights, policies
+        )
 
     def export_data_sync(
         self,
@@ -304,8 +332,12 @@ class Client(datastore.Client[Config]):
         list[models.Policy],
     ]:
         with self.__pool.connect() as conn:
-            airport_task = conn.execute(text("""SELECT * FROM airports ORDER BY id ASC"""))
-            amenity_task = conn.execute(text("""
+            airport_task = conn.execute(
+                text("""SELECT * FROM airports ORDER BY id ASC""")
+            )
+            amenity_task = conn.execute(
+                text(
+                    """
                                              SELECT id,
                                                     name,
                                                     description,
@@ -330,9 +362,17 @@ class Client(datastore.Client[Config]):
                                                     content,
                                                     vector_to_string(embedding) as embedding
                                               FROM amenities ORDER BY id ASC
-                                             """))
-            flights_task = conn.execute(text("""SELECT * FROM flights ORDER BY id ASC"""))
-            policy_task = conn.execute(text("""SELECT id, content, vector_to_string(embedding) as embedding FROM policies ORDER BY id ASC"""))
+                                             """
+                )
+            )
+            flights_task = conn.execute(
+                text("""SELECT * FROM flights ORDER BY id ASC""")
+            )
+            policy_task = conn.execute(
+                text(
+                    """SELECT id, content, vector_to_string(embedding) as embedding FROM policies ORDER BY id ASC"""
+                )
+            )
 
             airport_results = (airport_task).mappings().fetchall()
             amenity_results = (amenity_task).mappings().fetchall()
@@ -345,7 +385,7 @@ class Client(datastore.Client[Config]):
             policies = [models.Policy.model_validate(p) for p in policy_results]
 
             return airports, amenities, flights, policies
-        
+
     async def export_data(
         self,
     ) -> tuple[
@@ -357,11 +397,11 @@ class Client(datastore.Client[Config]):
         loop = asyncio.get_running_loop()
         res = await loop.run_in_executor(None, self.export_data_sync)
         return res
-    
+
     def get_airport_by_id_sync(self, id: int) -> Optional[models.Airport]:
         with self.__pool.connect() as conn:
             s = text("""SELECT * FROM airports WHERE id=:id""")
-            params = {"id" : id}
+            params = {"id": id}
             result = (conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
@@ -369,7 +409,7 @@ class Client(datastore.Client[Config]):
 
         res = models.Airport.model_validate(result)
         return res
-    
+
     async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
         loop = asyncio.get_running_loop()
         res = await loop.run_in_executor(None, self.get_airport_by_id_sync, id)
@@ -391,7 +431,7 @@ class Client(datastore.Client[Config]):
         loop = asyncio.get_running_loop()
         res = await loop.run_in_executor(None, self.get_airport_by_iata_sync, iata)
         return res
-    
+
     def search_airports_sync(
         self,
         country: Optional[str] = None,
@@ -425,7 +465,9 @@ class Client(datastore.Client[Config]):
         name: Optional[str] = None,
     ) -> list[models.Airport]:
         loop = asyncio.get_running_loop()
-        res = await loop.run_in_executor(None, self.search_airports_sync, country, city, name)
+        res = await loop.run_in_executor(
+            None, self.search_airports_sync, country, city, name
+        )
         return res
 
     def get_amenity_sync(self, id: int) -> Optional[models.Amenity]:
@@ -436,7 +478,7 @@ class Client(datastore.Client[Config]):
                 FROM amenities WHERE id=:id
                 """
             )
-            params = {"id" : id}
+            params = {"id": id}
             result = (conn.execute(s, parameters=params)).mappings().fetchone()
 
         if result is None:
@@ -462,9 +504,9 @@ class Client(datastore.Client[Config]):
                 """
             )
             params = {
-                    "query": f"{query_embedding}",
-                    "search_options": f"num_neighbors={top_k}"
-                }
+                "query": f"{query_embedding}",
+                "search_options": f"num_neighbors={top_k}",
+            }
             results = (conn.execute(s, parameters=params)).mappings().fetchall()
 
         res = [r for r in results]
@@ -474,9 +516,15 @@ class Client(datastore.Client[Config]):
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[Any]:
         loop = asyncio.get_running_loop()
-        res = await loop.run_in_executor(None, self.amenities_search_sync, query_embedding, similarity_threshold, top_k)
+        res = await loop.run_in_executor(
+            None,
+            self.amenities_search_sync,
+            query_embedding,
+            similarity_threshold,
+            top_k,
+        )
         return res
-    
+
     def get_flight_sync(self, flight_id: int) -> Optional[models.Flight]:
         with self.__pool.connect() as conn:
             s = text(
@@ -493,12 +541,12 @@ class Client(datastore.Client[Config]):
 
         res = models.Flight.model_validate(result)
         return res
-        
+
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
         loop = asyncio.get_running_loop()
         res = await loop.run_in_executor(None, self.get_flight_sync, flight_id)
         return res
-        
+
     def search_flights_by_number_sync(
         self,
         airline: str,
@@ -521,16 +569,18 @@ class Client(datastore.Client[Config]):
 
         res = [models.Flight.model_validate(r) for r in results]
         return res
-    
+
     async def search_flights_by_number(
         self,
         airline: str,
         number: str,
     ) -> list[models.Flight]:
         loop = asyncio.get_running_loop()
-        res = await loop.run_in_executor(None, self.search_flights_by_number_sync, airline, number)
+        res = await loop.run_in_executor(
+            None, self.search_flights_by_number_sync, airline, number
+        )
         return res
-    
+
     def search_flights_by_airports_sync(
         self,
         date: str,
@@ -558,7 +608,7 @@ class Client(datastore.Client[Config]):
 
         res = [models.Flight.model_validate(r) for r in results]
         return res
-    
+
     async def search_flights_by_airports(
         self,
         date: str,
@@ -566,9 +616,15 @@ class Client(datastore.Client[Config]):
         arrival_airport: Optional[str] = None,
     ) -> list[models.Flight]:
         loop = asyncio.get_running_loop()
-        res = await loop.run_in_executor(None, self.search_flights_by_airports_sync, date, departure_airport, arrival_airport)
-        return res 
-    
+        res = await loop.run_in_executor(
+            None,
+            self.search_flights_by_airports_sync,
+            date,
+            departure_airport,
+            arrival_airport,
+        )
+        return res
+
     def validate_ticket_sync(
         self,
         airline: str,
@@ -608,8 +664,15 @@ class Client(datastore.Client[Config]):
         departure_time: str,
     ) -> Optional[models.Flight]:
         loop = asyncio.get_running_loop()
-        res = await loop.run_in_executor(None, self.validate_ticket_sync, airline, flight_number, departure_airport, departure_time)
-        return res 
+        res = await loop.run_in_executor(
+            None,
+            self.validate_ticket_sync,
+            airline,
+            flight_number,
+            departure_airport,
+            departure_time,
+        )
+        return res
 
     def insert_ticket_sync(
         self,
@@ -662,7 +725,6 @@ class Client(datastore.Client[Config]):
             }
             conn.execute(s, params).mappings()
 
-        
     async def insert_ticket(
         self,
         user_id: str,
@@ -676,7 +738,19 @@ class Client(datastore.Client[Config]):
         arrival_time: str,
     ):
         loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self.insert_ticket_sync, user_id, user_name, user_email, airline, flight_number, departure_airport, arrival_airport, departure_time, arrival_time)
+        await loop.run_in_executor(
+            None,
+            self.insert_ticket_sync,
+            user_id,
+            user_name,
+            user_email,
+            airline,
+            flight_number,
+            departure_airport,
+            arrival_airport,
+            departure_time,
+            arrival_time,
+        )
 
     def list_tickets_sync(
         self,
@@ -697,14 +771,14 @@ class Client(datastore.Client[Config]):
 
         res = [models.Ticket.model_validate(r) for r in results]
         return res
-    
+
     async def list_tickets(
         self,
         user_id: str,
     ) -> list[models.Ticket]:
         loop = asyncio.get_running_loop()
         res = await loop.run_in_executor(None, self.list_tickets_sync, user_id)
-        return res 
+        return res
 
     def policies_search_sync(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
@@ -718,9 +792,9 @@ class Client(datastore.Client[Config]):
                 """
             )
             params = {
-                    "query": f"{query_embedding}",
-                    "search_options": f"num_neighbors={top_k}"
-                }
+                "query": f"{query_embedding}",
+                "search_options": f"num_neighbors={top_k}",
+            }
 
             results = (conn.execute(s, parameters=params)).mappings().fetchall()
 
@@ -731,9 +805,15 @@ class Client(datastore.Client[Config]):
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[str]:
         loop = asyncio.get_running_loop()
-        res = await loop.run_in_executor(None, self.policies_search_sync, query_embedding, similarity_threshold, top_k)
-        return res 
-    
+        res = await loop.run_in_executor(
+            None,
+            self.policies_search_sync,
+            query_embedding,
+            similarity_threshold,
+            top_k,
+        )
+        return res
+
     async def close(self):
         # Vector indexes must be dropped before any DDLs on the base table are permitted
         with self.__pool.connect() as conn:
