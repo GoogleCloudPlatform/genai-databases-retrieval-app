@@ -93,7 +93,7 @@ async def create_db(
         db=f"{db_name}",
     )
     yield db_name
-    await conn.close()
+    conn.close()
 
 
 @pytest_asyncio.fixture(scope="module")
