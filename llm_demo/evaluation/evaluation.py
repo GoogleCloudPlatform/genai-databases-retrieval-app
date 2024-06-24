@@ -102,6 +102,7 @@ def evaluate_retrieval_phase(eval_datas: List[EvalData]) -> evaluation_base.Eval
     ).evaluate()
     return eval_result
 
+
 def evaluate_response_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalResult:
     RESPONSE_EXPERIMENT_NAME = "response-phase-eval"
     metrics = [
@@ -111,8 +112,7 @@ def evaluate_response_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalR
         "qa_pointwise_reference_free",
     ]
     instructions = [
-        e.instruction or "answer user query based on context given"
-        for e in eval_datas
+        e.instruction or "answer user query based on context given" for e in eval_datas
     ]
     contexts = [e.context or "no data retrieved" for e in eval_datas]
     responses = [e.prediction_output for e in eval_datas]
