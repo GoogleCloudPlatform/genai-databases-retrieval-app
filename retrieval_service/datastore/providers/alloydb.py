@@ -327,46 +327,51 @@ class Client(datastore.Client[Config]):
 
             return airports, amenities, flights, policies
 
-    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+    async def get_airport_by_id(
+        self, id: int
+    ) -> tuple[Optional[models.Airport], Optional[str]]:
         async with self.__pool.connect() as conn:
-            s = text("""SELECT * FROM airports WHERE id=:id""")
+            sql = """SELECT * FROM airports WHERE id=:id"""
+            s = text(sql)
             params = {"id": id}
             result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
-            return None
+            return None, sql
 
         res = models.Airport.model_validate(result)
-        return res
+        return res, sql
 
-    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+    async def get_airport_by_iata(
+        self, iata: str
+    ) -> tuple[Optional[models.Airport], Optional[str]]:
         async with self.__pool.connect() as conn:
-            s = text("""SELECT * FROM airports WHERE iata ILIKE :iata""")
+            sql = """SELECT * FROM airports WHERE iata ILIKE :iata"""
+            s = text(sql)
             params = {"iata": iata}
             result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
-            return None
+            return None, sql
 
         res = models.Airport.model_validate(result)
-        return res
+        return res, sql
 
     async def search_airports(
         self,
         country: Optional[str] = None,
         city: Optional[str] = None,
         name: Optional[str] = None,
-    ) -> list[models.Airport]:
+    ) -> tuple[list[models.Airport], Optional[str]]:
         async with self.__pool.connect() as conn:
-            s = text(
-                """
+            sql = """
                 SELECT * FROM airports
                   WHERE (CAST(:country AS TEXT) IS NULL OR country ILIKE :country)
                   AND (CAST(:city AS TEXT) IS NULL OR city ILIKE :city)
                   AND (CAST(:name AS TEXT) IS NULL OR name ILIKE '%' || :name || '%')
                   LIMIT 10
                 """
-            )
+            s = text(sql)
             params = {
                 "country": country,
                 "city": city,
@@ -375,38 +380,38 @@ class Client(datastore.Client[Config]):
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [models.Airport.model_validate(r) for r in results]
-        return res
+        return res, sql
 
-    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
+    async def get_amenity(
+        self, id: int
+    ) -> tuple[Optional[models.Amenity], Optional[str]]:
         async with self.__pool.connect() as conn:
-            s = text(
-                """
+            sql = """
                 SELECT id, name, description, location, terminal, category, hour
                 FROM amenities WHERE id=:id
                 """
-            )
+            s = text(sql)
             params = {"id": id}
             result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
-            return None
+            return None, None
 
         res = models.Amenity.model_validate(result)
-        return res
+        return res, sql
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[Any]:
+    ) -> tuple[list[Any], Optional[str]]:
         async with self.__pool.connect() as conn:
-            s = text(
-                """
+            sql = """
                 SELECT name, description, location, terminal, category, hour
                 FROM amenities
                 WHERE (embedding <=> :query_embedding) < :similarity_threshold
                 ORDER BY (embedding <=> :query_embedding)
                 LIMIT :top_k
                 """
-            )
+            s = text(sql)
             params = {
                 "query_embedding": query_embedding,
                 "similarity_threshold": similarity_threshold,
@@ -415,39 +420,39 @@ class Client(datastore.Client[Config]):
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [r for r in results]
-        return res
+        return res, sql
 
-    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+    async def get_flight(
+        self, flight_id: int
+    ) -> tuple[Optional[models.Flight], Optional[str]]:
         async with self.__pool.connect() as conn:
-            s = text(
-                """
+            sql = """
                 SELECT * FROM flights
                   WHERE id = :flight_id
                 """
-            )
+            s = text(sql)
             params = {"flight_id": flight_id}
             result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
-            return None
+            return None, None
 
         res = models.Flight.model_validate(result)
-        return res
+        return res, sql
 
     async def search_flights_by_number(
         self,
         airline: str,
         number: str,
-    ) -> list[models.Flight]:
+    ) -> tuple[list[models.Flight], Optional[str]]:
         async with self.__pool.connect() as conn:
-            s = text(
-                """
+            sql = """
                 SELECT * FROM flights
                   WHERE airline = :airline
                   AND flight_number = :number
                   LIMIT 10
                 """
-            )
+            s = text(sql)
             params = {
                 "airline": airline,
                 "number": number,
@@ -455,17 +460,16 @@ class Client(datastore.Client[Config]):
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [models.Flight.model_validate(r) for r in results]
-        return res
+        return res, sql
 
     async def search_flights_by_airports(
         self,
         date: str,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
-    ) -> list[models.Flight]:
+    ) -> tuple[list[models.Flight], Optional[str]]:
         async with self.__pool.connect() as conn:
-            s = text(
-                """
+            sql = """
                 SELECT * FROM flights
                   WHERE (CAST(:departure_airport AS TEXT) IS NULL OR departure_airport ILIKE :departure_airport)
                   AND (CAST(:arrival_airport AS TEXT) IS NULL OR arrival_airport ILIKE :arrival_airport)
@@ -473,7 +477,7 @@ class Client(datastore.Client[Config]):
                   AND departure_time < CAST(:datetime AS timestamp) + interval '1 day'
                   LIMIT 10
                 """
-            )
+            s = text(sql)
             params = {
                 "departure_airport": departure_airport,
                 "arrival_airport": arrival_airport,
@@ -483,7 +487,7 @@ class Client(datastore.Client[Config]):
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [models.Flight.model_validate(r) for r in results]
-        return res
+        return res, sql
 
     async def validate_ticket(
         self,
@@ -491,18 +495,17 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         departure_time: str,
-    ) -> Optional[models.Flight]:
+    ) -> tuple[Optional[models.Flight], Optional[str]]:
         departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
         async with self.__pool.connect() as conn:
-            s = text(
-                """
+            sql = """
                     SELECT * FROM flights
                     WHERE airline ILIKE :airline
                     AND flight_number ILIKE :flight_number
                     AND departure_airport ILIKE :departure_airport
                     AND departure_time = :departure_time
                 """
-            )
+            s = text(sql)
             params = {
                 "airline": airline,
                 "flight_number": flight_number,
@@ -512,9 +515,9 @@ class Client(datastore.Client[Config]):
             result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
-            return None
+            return None, None
         res = models.Flight.model_validate(result)
-        return res
+        return res, sql
 
     async def insert_ticket(
         self,
@@ -576,35 +579,33 @@ class Client(datastore.Client[Config]):
     async def list_tickets(
         self,
         user_id: str,
-    ) -> list[models.Ticket]:
+    ) -> tuple[list[models.Ticket], Optional[str]]:
         async with self.__pool.connect() as conn:
-            s = text(
-                """
+            sql = """
                     SELECT * FROM tickets
                     WHERE user_id = :user_id
                 """
-            )
+            s = text(sql)
             params = {
                 "user_id": user_id,
             }
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [models.Ticket.model_validate(r) for r in results]
-        return res
+        return res, sql
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[str]:
+    ) -> tuple[list[str], Optional[str]]:
         async with self.__pool.connect() as conn:
-            s = text(
-                """
+            sql = """
                 SELECT content
                 FROM policies
                 WHERE (embedding <=> :query_embedding) < :similarity_threshold
                 ORDER BY (embedding <=> :query_embedding)
                 LIMIT :top_k
                 """
-            )
+            s = text(sql)
             params = {
                 "query_embedding": query_embedding,
                 "similarity_threshold": similarity_threshold,
@@ -613,7 +614,7 @@ class Client(datastore.Client[Config]):
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [r["content"] for r in results]
-        return res
+        return res, sql
 
     async def close(self):
         await self.__pool.dispose()
