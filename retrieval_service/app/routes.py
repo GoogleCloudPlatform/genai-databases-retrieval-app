@@ -77,7 +77,7 @@ async def get_airport(
             status_code=422,
             detail="Request requires query params: airport id or iata",
         )
-    return {"results": results, "sql": sql, "error": None}
+    return {"results": results, "sql": sql}
 
 
 @routes.get("/airports/search")
@@ -95,14 +95,14 @@ async def search_airports(
 
     ds: datastore.Client = request.app.state.datastore
     results, sql = await ds.search_airports(country, city, name)
-    return {"results": results, "sql": sql, "error": None}
+    return {"results": results, "sql": sql}
 
 
 @routes.get("/amenities")
 async def get_amenity(id: int, request: Request):
     ds: datastore.Client = request.app.state.datastore
     results, sql = await ds.get_amenity(id)
-    return {"results": results, "sql": sql, "error": None}
+    return {"results": results, "sql": sql}
 
 
 @routes.get("/amenities/search")
@@ -113,14 +113,14 @@ async def amenities_search(query: str, top_k: int, request: Request):
     query_embedding = embed_service.embed_query(query)
 
     results, sql = await ds.amenities_search(query_embedding, 0.5, top_k)
-    return {"results": results, "sql": sql, "error": None}
+    return {"results": results, "sql": sql}
 
 
 @routes.get("/flights")
 async def get_flight(flight_id: int, request: Request):
     ds: datastore.Client = request.app.state.datastore
     results, sql = await ds.get_flight(flight_id)
-    return {"results": results, "sql": sql, "error": None}
+    return {"results": results, "sql": sql}
 
 
 @routes.get("/flights/search")
@@ -144,7 +144,7 @@ async def search_flights(
             status_code=422,
             detail="Request requires query params: arrival_airport, departure_airport, date, or both airline and flight_number",
         )
-    return {"results": results, "sql": sql, "error": None}
+    return {"results": results, "sql": sql}
 
 
 @routes.post("/tickets/insert")
@@ -193,7 +193,7 @@ async def validate_ticket(
         departure_airport,
         departure_time,
     )
-    return {"results": results, "sql": sql, "error": None}
+    return {"results": results, "sql": sql}
 
 
 @routes.get("/tickets/list")
@@ -208,7 +208,7 @@ async def list_tickets(
         )
     ds: datastore.Client = request.app.state.datastore
     results, sql = await ds.list_tickets(user_info["user_id"])
-    return {"results": results, "sql": sql, "error": None}
+    return {"results": results, "sql": sql}
 
 
 @routes.get("/policies/search")
@@ -219,4 +219,4 @@ async def policies_search(query: str, top_k: int, request: Request):
     query_embedding = embed_service.embed_query(query)
 
     results, sql = await ds.policies_search(query_embedding, 0.5, top_k)
-    return {"results": results, "sql": sql, "error": None}
+    return {"results": results, "sql": sql}
