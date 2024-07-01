@@ -32,4 +32,4 @@ through this demo.
 * [Clean up Alloydb](./datastore/alloydb.md#clean-up-resources)
 * [Clean up Firestore](./datastore/firestore.md#clean-up-resources)
 * [Clean up Cloud SQL for Postgres](./datastore/cloudsql_postgres.md#clean-up-resources)
-* [Clean up Cloud SQL for MySQL](./datastore/cloudsql_mysqls.md#clean-up-resources)
+* [Clean up Cloud SQL for MySQL](./datastore/cloudsql_mysql.md#clean-up-resources)
