@@ -482,7 +482,9 @@ class Client(datastore.Client[Config]):
 
         return airports, amenities, flights, policies
 
-    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+    async def get_airport_by_id(
+        self, id: int
+    ) -> tuple[Optional[models.Airport], Optional[str]]:
         """
         Retrieve an airport by its ID.
 
@@ -502,7 +504,7 @@ class Client(datastore.Client[Config]):
 
         # Check if result is None
         if result is None:
-            return None
+            return None, None
 
         # Convert query result to model instance using model_validate method
         airports = [
@@ -512,9 +514,11 @@ class Client(datastore.Client[Config]):
             for a in result
         ]
 
-        return airports[0]
+        return airports[0], None
 
-    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+    async def get_airport_by_iata(
+        self, iata: str
+    ) -> tuple[Optional[models.Airport], Optional[str]]:
         """
         Retrieve an airport by its IATA code.
 
@@ -534,7 +538,7 @@ class Client(datastore.Client[Config]):
 
         # Check if result is None
         if result is None:
-            return None
+            return None, None
 
         # Convert query result to model instance using model_validate method
         airports = [
@@ -544,14 +548,14 @@ class Client(datastore.Client[Config]):
             for a in result
         ]
 
-        return airports[0]
+        return airports[0], None
 
     async def search_airports(
         self,
         country: Optional[str] = None,
         city: Optional[str] = None,
         name: Optional[str] = None,
-    ) -> list[models.Airport]:
+    ) -> tuple[list[models.Airport], Optional[str]]:
         """
         Search for airports based on optional parameters.
 
@@ -595,9 +599,11 @@ class Client(datastore.Client[Config]):
             for a in results
         ]
 
-        return airports
+        return airports, None
 
-    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
+    async def get_amenity(
+        self, id: int
+    ) -> tuple[Optional[models.Amenity], Optional[str]]:
         """
         Retrieves an amenity by its ID.
 
@@ -611,7 +617,7 @@ class Client(datastore.Client[Config]):
             # Spread SQL query for readability
             result = snapshot.execute_sql(
                 sql="""
-                SELECT * FROM amenities
+                SELECT id, name, description, location, terminal, category, hour FROM amenities
                 WHERE id = @id
                 """,
                 params={"id": id},
@@ -620,7 +626,7 @@ class Client(datastore.Client[Config]):
 
         # Check if result is None
         if result is None:
-            return None
+            return None, None
 
         # Convert query result to model instance using model_validate method
         amenities = [
@@ -630,11 +636,11 @@ class Client(datastore.Client[Config]):
             for a in result
         ]
 
-        return amenities[0]
+        return amenities[0], None
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[Any]:
+    ) -> tuple[list[Any], Optional[str]]:
         """
         Search for amenities based on similarity to a query embedding.
 
@@ -681,9 +687,11 @@ class Client(datastore.Client[Config]):
             for a in results
         ]
 
-        return amenities
+        return amenities, None
 
-    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+    async def get_flight(
+        self, flight_id: int
+    ) -> tuple[Optional[models.Flight], Optional[str]]:
         """
         Retrieves a flight by its ID.
 
@@ -705,7 +713,7 @@ class Client(datastore.Client[Config]):
             )
         # Check if result is None
         if result is None:
-            return None
+            return None, None
 
         # Convert query result to model instance using model_validate method
         flights = [
@@ -715,13 +723,13 @@ class Client(datastore.Client[Config]):
             for a in result
         ]
 
-        return flights[0]
+        return flights[0], None
 
     async def search_flights_by_number(
         self,
         airline: str,
         number: str,
-    ) -> list[models.Flight]:
+    ) -> tuple[list[models.Flight], Optional[str]]:
         """
         Search for flights by airline and flight number.
 
@@ -756,14 +764,14 @@ class Client(datastore.Client[Config]):
             for a in results
         ]
 
-        return flights
+        return flights, None
 
     async def search_flights_by_airports(
         self,
         date: str,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
-    ) -> list[models.Flight]:
+    ) -> tuple[list[models.Flight], Optional[str]]:
         """
         Search for flights by departure and/or arrival airports.
 
@@ -809,7 +817,7 @@ class Client(datastore.Client[Config]):
             for a in results
         ]
 
-        return flights
+        return flights, None
 
     async def validate_ticket(
         self,
@@ -817,7 +825,7 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         departure_time: str,
-    ) -> Optional[models.Flight]:
+    ) -> tuple[Optional[models.Flight], Optional[str]]:
         departure_time_datetime = datetime.datetime.strptime(
             departure_time, "%Y-%m-%d %H:%M:%S"
         )
@@ -846,7 +854,7 @@ class Client(datastore.Client[Config]):
             )
 
         if results is None:
-            return None
+            return None, None
 
         flights = [
             models.Flight.model_validate(
@@ -854,7 +862,7 @@ class Client(datastore.Client[Config]):
             )
             for a in results
         ]
-        return flights[0]
+        return flights[0], None
 
     async def insert_ticket(
         self,
@@ -921,7 +929,7 @@ class Client(datastore.Client[Config]):
     async def list_tickets(
         self,
         user_id: str,
-    ) -> list[models.Ticket]:
+    ) -> tuple[list[models.Ticket], Optional[str]]:
         """
         Retrieves a list of tickets for a user.
 
@@ -963,11 +971,11 @@ class Client(datastore.Client[Config]):
             for a in results
         ]
 
-        return tickets
+        return tickets, None
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[str]:
+    ) -> tuple[list[str], Optional[str]]:
         """
         Search for policies based on similarity to a query embedding.
 
@@ -1009,7 +1017,7 @@ class Client(datastore.Client[Config]):
         # Convert query result to model instance using model_validate method
         policies = [a[0] for a in results]
 
-        return policies
+        return policies, None
 
     async def close(self):
         """

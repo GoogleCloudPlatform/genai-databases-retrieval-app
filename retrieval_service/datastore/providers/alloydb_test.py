@@ -202,7 +202,7 @@ async def test_export_dataset(ds: alloydb.Client):
 
 
 async def test_get_airport_by_id(ds: alloydb.Client):
-    res = await ds.get_airport_by_id(1)
+    res, sql = await ds.get_airport_by_id(1)
     expected = models.Airport(
         id=1,
         iata="MAG",
@@ -211,6 +211,7 @@ async def test_get_airport_by_id(ds: alloydb.Client):
         country="Papua New Guinea",
     )
     assert res == expected
+    assert sql is not None
 
 
 @pytest.mark.parametrize(
@@ -221,7 +222,7 @@ async def test_get_airport_by_id(ds: alloydb.Client):
     ],
 )
 async def test_get_airport_by_iata(ds: alloydb.Client, iata: str):
-    res = await ds.get_airport_by_iata(iata)
+    res, sql = await ds.get_airport_by_iata(iata)
     expected = models.Airport(
         id=3270,
         iata="SFO",
@@ -230,6 +231,7 @@ async def test_get_airport_by_iata(ds: alloydb.Client, iata: str):
         country="United States",
     )
     assert res == expected
+    assert sql is not None
 
 
 search_airports_test_data = [
@@ -310,12 +312,13 @@ async def test_search_airports(
     name: str,
     expected: List[models.Airport],
 ):
-    res = await ds.search_airports(country, city, name)
+    res, sql = await ds.search_airports(country, city, name)
     assert res == expected
+    assert sql is not None
 
 
 async def test_get_amenity(ds: alloydb.Client):
-    res = await ds.get_amenity(0)
+    res, sql = await ds.get_amenity(0)
     expected = models.Amenity(
         id=0,
         name="Coffee Shop 732",
@@ -340,6 +343,7 @@ async def test_get_amenity(ds: alloydb.Client):
         saturday_end_hour=None,
     )
     assert res == expected
+    assert sql is not None
 
 
 amenities_search_test_data = [
@@ -406,12 +410,13 @@ async def test_amenities_search(
     top_k: int,
     expected: List[Any],
 ):
-    res = await ds.amenities_search(query_embedding, similarity_threshold, top_k)
+    res, sql = await ds.amenities_search(query_embedding, similarity_threshold, top_k)
     assert res == expected
+    assert sql is not None
 
 
 async def test_get_flight(ds: alloydb.Client):
-    res = await ds.get_flight(1)
+    res, sql = await ds.get_flight(1)
     expected = models.Flight(
         id=1,
         airline="UA",
@@ -424,6 +429,7 @@ async def test_get_flight(ds: alloydb.Client):
         arrival_gate="D30",
     )
     assert res == expected
+    assert sql is not None
 
 
 search_flights_by_number_test_data = [
@@ -482,8 +488,9 @@ async def test_search_flights_by_number(
     number: str,
     expected: List[models.Flight],
 ):
-    res = await ds.search_flights_by_number(airline, number)
+    res, sql = await ds.search_flights_by_number(airline, number)
     assert res == expected
+    assert sql is not None
 
 
 search_flights_by_airports_test_data = [
@@ -606,8 +613,11 @@ async def test_search_flights_by_airports(
     arrival_airport: str,
     expected: List[models.Flight],
 ):
-    res = await ds.search_flights_by_airports(date, departure_airport, arrival_airport)
+    res, sql = await ds.search_flights_by_airports(
+        date, departure_airport, arrival_airport
+    )
     assert res == expected
+    assert sql is not None
 
 
 policies_search_test_data = [
@@ -653,5 +663,6 @@ async def test_policies_search(
     top_k: int,
     expected: List[str],
 ):
-    res = await ds.policies_search(query_embedding, similarity_threshold, top_k)
+    res, sql = await ds.policies_search(query_embedding, similarity_threshold, top_k)
     assert res == expected
+    assert sql is not None

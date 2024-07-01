@@ -94,14 +94,17 @@ get_airport_params = [
 def test_get_airport(m_datastore, app, method_name, params, mock_return, expected):
     with TestClient(app) as client:
         with patch.object(
-            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+            m_datastore.return_value,
+            method_name,
+            AsyncMock(return_value=(mock_return, None)),
         ) as mock_method:
             response = client.get(
                 "/airports",
                 params=params,
             )
     assert response.status_code == 200
-    output = response.json()
+    res = response.json()
+    output = res["results"]
     assert output == expected
     assert models.Airport.model_validate(output)
 
@@ -213,14 +216,17 @@ search_airports_params = [
 def test_search_airports(m_datastore, app, method_name, params, mock_return, expected):
     with TestClient(app) as client:
         with patch.object(
-            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+            m_datastore.return_value,
+            method_name,
+            AsyncMock(return_value=(mock_return, None)),
         ) as mock_method:
             response = client.get(
                 "/airports/search",
                 params=params,
             )
     assert response.status_code == 200
-    output = response.json()
+    res = response.json()
+    output = res["results"]
     assert output == expected
     assert models.Airport.model_validate(output[0])
 
@@ -288,7 +294,9 @@ get_amenity_params = [
 def test_get_amenity(m_datastore, app, method_name, params, mock_return, expected):
     with TestClient(app) as client:
         with patch.object(
-            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+            m_datastore.return_value,
+            method_name,
+            AsyncMock(return_value=(mock_return, None)),
         ) as mock_method:
             response = client.get(
                 "/amenities",
@@ -297,7 +305,8 @@ def test_get_amenity(m_datastore, app, method_name, params, mock_return, expecte
                 },
             )
     assert response.status_code == 200
-    output = response.json()
+    res = response.json()
+    output = res["results"]
     assert output == expected
     assert models.Amenity.model_validate(output)
 
@@ -392,14 +401,17 @@ amenities_search_params = [
 def test_amenities_search(m_datastore, app, method_name, params, mock_return, expected):
     with TestClient(app) as client:
         with patch.object(
-            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+            m_datastore.return_value,
+            method_name,
+            AsyncMock(return_value=(mock_return, None)),
         ) as mock_method:
             response = client.get(
                 "/amenities/search",
                 params=params,
             )
     assert response.status_code == 200
-    output = response.json()
+    res = response.json()
+    output = res["results"]
     assert len(output) == params["top_k"]
     assert output == expected
     assert models.Amenity.model_validate(output[0])
@@ -445,14 +457,17 @@ get_flight_params = [
 def test_get_flight(m_datastore, app, method_name, params, mock_return, expected):
     with TestClient(app) as client:
         with patch.object(
-            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+            m_datastore.return_value,
+            method_name,
+            AsyncMock(return_value=(mock_return, None)),
         ) as mock_method:
             response = client.get(
                 "/flights",
                 params=params,
             )
     assert response.status_code == 200
-    output = response.json()
+    res = response.json()
+    output = res["results"]
     assert output == expected
     assert models.Flight.model_validate(output)
 
@@ -612,11 +627,14 @@ search_flights_params = [
 def test_search_flights(m_datastore, app, method_name, params, mock_return, expected):
     with TestClient(app) as client:
         with patch.object(
-            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+            m_datastore.return_value,
+            method_name,
+            AsyncMock(return_value=(mock_return, None)),
         ) as mock_method:
             response = client.get("/flights/search", params=params)
     assert response.status_code == 200
-    output = response.json()
+    res = response.json()
+    output = res["results"]
     assert output == expected
     assert models.Flight.model_validate(output[0])
 
@@ -708,11 +726,14 @@ validate_ticket_params = [
 def test_validate_ticket(m_datastore, app, method_name, params, mock_return, expected):
     with TestClient(app) as client:
         with patch.object(
-            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+            m_datastore.return_value,
+            method_name,
+            AsyncMock(return_value=(mock_return, None)),
         ) as mock_method:
             response = client.get("/tickets/validate", params=params)
     assert response.status_code == 200
-    output = response.json()
+    res = response.json()
+    output = res["results"]
     assert output == expected
     assert models.Flight.model_validate(output[0])
 
@@ -748,14 +769,17 @@ policies_search_params = [
 def test_policies_search(m_datastore, app, method_name, params, mock_return, expected):
     with TestClient(app) as client:
         with patch.object(
-            m_datastore.return_value, method_name, AsyncMock(return_value=mock_return)
+            m_datastore.return_value,
+            method_name,
+            AsyncMock(return_value=(mock_return, None)),
         ) as mock_method:
             response = client.get(
                 "/policies/search",
                 params=params,
             )
     assert response.status_code == 200
-    output = response.json()
+    res = response.json()
+    output = res["results"]
     assert len(output) == params["top_k"]
     assert output == expected
     assert models.Policy.model_validate(output[0])

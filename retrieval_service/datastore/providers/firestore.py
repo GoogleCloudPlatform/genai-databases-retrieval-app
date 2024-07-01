@@ -186,28 +186,32 @@ class Client(datastore.Client[Config]):
             policies.append(models.Policy.model_validate(policy_dict))
         return airports, amenities, flights, policies
 
-    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+    async def get_airport_by_id(
+        self, id: int
+    ) -> tuple[Optional[models.Airport], Optional[str]]:
         query = self.__client.collection("airports").where(
             filter=FieldFilter("id", "==", id)
         )
         airport_doc = await query.get()
         airport_dict = airport_doc.to_dict() | {"id": airport_doc.id}
-        return models.Airport.model_validate(airport_dict)
+        return models.Airport.model_validate(airport_dict), None
 
-    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+    async def get_airport_by_iata(
+        self, iata: str
+    ) -> tuple[Optional[models.Airport], Optional[str]]:
         query = self.__client.collection("airports").where(
             filter=FieldFilter("iata", "==", iata)
         )
         airport_doc = await query.get()
         airport_dict = airport_doc.to_dict() | {"id": airport_doc.id}
-        return models.Airport.model_validate(airport_dict)
+        return models.Airport.model_validate(airport_dict), None
 
     async def search_airports(
         self,
         country: Optional[str] = None,
         city: Optional[str] = None,
         name: Optional[str] = None,
-    ) -> list[models.Airport]:
+    ) -> tuple[list[models.Airport], Optional[str]]:
         query = self.__client.collection("airports")
 
         if country is not None:
@@ -226,34 +230,38 @@ class Client(datastore.Client[Config]):
         async for doc in docs:
             airport_dict = doc.to_dict() | {"id": doc.id}
             airports.append(models.Airport.model_validate(airport_dict))
-        return airports
+        return airports, None
 
-    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
+    async def get_amenity(
+        self, id: int
+    ) -> tuple[Optional[models.Amenity], Optional[str]]:
         query = self.__client.collection("amenities").where(
             filter=FieldFilter("id", "==", id)
         )
         amenity_doc = await query.get()
         amenity_dict = amenity_doc.to_dict() | {"id": amenity_doc.id}
-        return models.Amenity.model_validate(amenity_dict)
+        return models.Amenity.model_validate(amenity_dict), None
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[Any]:
+    ) -> tuple[list[Any], Optional[str]]:
         raise NotImplementedError("Semantic search not yet supported in Firestore.")
 
-    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+    async def get_flight(
+        self, flight_id: int
+    ) -> tuple[Optional[models.Flight], Optional[str]]:
         query = self.__client.collection("flights").where(
             filter=FieldFilter("id", "==", flight_id)
         )
         flight_doc = await query.get()
         flight_dict = flight_doc.to_dict() | {"id": flight_doc.id}
-        return models.Flight.model_validate(flight_dict)
+        return models.Flight.model_validate(flight_dict), None
 
     async def search_flights_by_number(
         self,
         airline: str,
         number: str,
-    ) -> list[models.Flight]:
+    ) -> tuple[list[models.Flight], Optional[str]]:
         query = (
             self.__client.collection("flights")
             .where(filter=FieldFilter("airline", "==", airline))
@@ -266,14 +274,14 @@ class Client(datastore.Client[Config]):
         async for doc in docs:
             flight_dict = doc.to_dict() | {"id": doc.id}
             flights.append(models.Flight.model_validate(flight_dict))
-        return flights
+        return flights, None
 
     async def search_flights_by_airports(
         self,
         date: str,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
-    ) -> list[models.Flight]:
+    ) -> tuple[list[models.Flight], Optional[str]]:
         date_obj = datetime.strptime(date, "%Y-%m-%d").date()
         date_timestamp = datetime.combine(date_obj, datetime.min.time())
         query = (
@@ -293,7 +301,7 @@ class Client(datastore.Client[Config]):
         async for doc in docs:
             flight_dict = doc.to_dict() | {"id": doc.id}
             flights.append(models.Flight.model_validate(flight_dict))
-        return flights
+        return flights, None
 
     async def validate_ticket(
         self,
@@ -301,7 +309,7 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         departure_time: str,
-    ) -> Optional[models.Flight]:
+    ) -> tuple[Optional[models.Flight], Optional[str]]:
         raise NotImplementedError("Not Implemented")
 
     async def insert_ticket(
@@ -321,12 +329,12 @@ class Client(datastore.Client[Config]):
     async def list_tickets(
         self,
         user_id: str,
-    ) -> list[models.Ticket]:
+    ) -> tuple[list[models.Ticket], Optional[str]]:
         raise NotImplementedError("Not Implemented")
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[str]:
+    ) -> tuple[list[str], Optional[str]]:
         raise NotImplementedError("Semantic search not yet supported in Firestore.")
 
     async def close(self):
