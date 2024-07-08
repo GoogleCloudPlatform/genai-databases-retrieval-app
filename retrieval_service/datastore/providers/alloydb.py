@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Any, Literal, Optional
 
 import asyncpg
-from google.cloud.alloydb.connector import AsyncConnector
+from google.cloud.alloydb.connector import AsyncConnector, RefreshStrategy
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -54,7 +54,9 @@ class Client(datastore.Client[Config]):
     @classmethod
     async def create(cls, config: Config) -> "Client":
         async def getconn() -> asyncpg.Connection:
-            async with AsyncConnector() as connector:
+            async with AsyncConnector(
+                refresh_strategy=RefreshStrategy.LAZY
+            ) as connector:
                 conn: asyncpg.Connection = await connector.connect(
                     # Alloydb instance connection name
                     f"projects/{config.project}/locations/{config.region}/clusters/{config.cluster}/instances/{config.instance}",

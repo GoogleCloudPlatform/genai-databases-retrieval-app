@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Any, Literal, Optional
 
 import pymysql
-from google.cloud.sql.connector import Connector
+from google.cloud.sql.connector import Connector, RefreshStrategy
 from pydantic import BaseModel
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.engine.base import Engine
@@ -54,7 +54,7 @@ class Client(datastore.Client[Config]):
     @classmethod
     def create_sync(cls, config: Config) -> "Client":
         def getconn() -> pymysql.Connection:
-            with Connector() as connector:
+            with Connector(refresh_strategy=RefreshStrategy.LAZY) as connector:
                 conn: pymysql.Connection = connector.connect(
                     # Cloud SQL instance connection name
                     f"{config.project}:{config.region}:{config.instance}",

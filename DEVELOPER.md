@@ -103,6 +103,7 @@
     |----------------------------------------|
     | [AlloyDB](./docs/datastore/alloydb.md#test-environment-variables) |
     | [Cloud SQL for Postgres](./docs/datastore/cloudsql_postgres.md#test-environment-variables) |
+    | [Cloud SQL for MySQL](./docs/datastore/cloudsql_mysql.md#test-environment-variables) |
     | [Non-cloud Postgres (e.g. AlloyDB Omni)](./docs/datastore/postgres.md#test-environment-variables) |
 
 1. Run pytest to automatically run all tests:
@@ -152,6 +153,7 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
     |----------------------------------------|
     | [AlloyDB](./docs/datastore/alloydb.md#create-a-alloydb-cluster) |
     | [Cloud SQL for Postgres](./docs/datastore/cloudsql_postgres.md#create-a-cloud-sql-for-postgresql-instance) |
+    | [Cloud SQL for MySQL](./docs/datastore/cloudsql_mysql.md#create-a-cloud-sql-for-mysql-instance) |
     | [Non-cloud Postgres (e.g. AlloyDB Omni)](./docs/datastore/postgres.md#create-a-alloydb-cluster) |
 
 1. Allow Cloud Build to access secret
@@ -175,6 +177,7 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
     |----------------------------------------|
     | [AlloyDB](./docs/datastore/alloydb.md#run-tests) |
     | [Cloud SQL for Postgres](./docs/datastore/cloudsql_postgres.md#run-tests) |
+    | [Cloud SQL for MySQL](./docs/datastore/cloudsql_mysql.md#run-tests) |
     | [Non-cloud Postgres (e.g. AlloyDB Omni)](./docs/datastore/postgres.md#run-tests) |
 
     Note: Make sure to setup secrets describe in [Setup for retrieval service](#setup-for-retrieval-service)
