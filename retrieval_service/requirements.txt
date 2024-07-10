@@ -1,6 +1,6 @@
 asyncpg==0.29.0
 fastapi==0.109.2
-google-auth==2.29.0
+google-auth==2.32.0
 google-cloud-firestore==2.14.0
 google-cloud-aiplatform==1.56.0
 google-cloud-spanner==3.46.0
