@@ -17,6 +17,13 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
+class ToolCall(BaseModel):
+    name: str
+    arguments: Dict[str, Any] = Field(
+        default={}, description="query arguments for tool call"
+    )
+
+
 class EvalData(BaseModel):
     category: Optional[str] = Field(default=None, description="evaluation category")
     query: Optional[str] = Field(default=None, description="user query")
@@ -24,12 +31,12 @@ class EvalData(BaseModel):
         default=None, description="instruction to llm system"
     )
     content: Optional[str] = Field(default=None)
-    tool_calls: Optional[List[Dict[str, Any]]] = Field(default=None)
+    tool_calls: Optional[List[ToolCall]] = Field(default=None)
     context: Optional[str] = Field(
         default=None, description="context given to llm in order to answer user query"
     )
     output: Optional[str] = Field(default=None)
-    prediction_tool_calls: Optional[List[Dict[str, Any]]] = Field(default=None)
+    prediction_tool_calls: Optional[List[ToolCall]] = Field(default=None)
     prediction_output: Optional[str] = Field(default=None)
     reset: bool = Field(
         default=True, description="determine to reset the chat after invoke"
@@ -41,62 +48,62 @@ goldens = [
         category="Search Airport Tool",
         query="What is the airport located in San Francisco?",
         tool_calls=[
-            {
-                "name": "Search Airport",
-                "arguments": {"city": "San Francisco"},
-            }
+            ToolCall(
+                name="Search Airport",
+                arguments={"city": "San Francisco"},
+            ),
         ],
     ),
     EvalData(
         category="Search Airport Tool",
         query="Tell me more about Denver International Airport?",
         tool_calls=[
-            {
-                "name": "Search Airport",
-                "arguments": {
+            ToolCall(
+                name="Search Airport",
+                arguments={
                     "city": "Denver",
                     "name": "Denver International Airport",
                 },
-            },
+            ),
         ],
     ),
     EvalData(
         category="Search Flights By Flight Number Tool",
         query="What is the departure gate for flight CY 922?",
         tool_calls=[
-            {
-                "name": "Search Flights By Flight Number",
-                "arguments": {
+            ToolCall(
+                name="Search Flights By Flight Number",
+                arguments={
                     "airline": "CY",
                     "flight_number": "922",
                 },
-            },
+            ),
         ],
     ),
     EvalData(
         category="Search Flights By Flight Number Tool",
         query="What is flight CY 888 flying to?",
         tool_calls=[
-            {
-                "name": "Search Flights By Flight Number",
-                "arguments": {
+            ToolCall(
+                name="Search Flights By Flight Number",
+                arguments={
                     "airline": "CY",
                     "flight_number": "888",
                 },
-            },
+            ),
         ],
     ),
     EvalData(
         category="List Flights Tool",
         query="What flights are headed to JFK tomorrow?",
         tool_calls=[
-            {
-                "name": "List Flights",
-                "arguments": {
+            ToolCall(
+                name="List Flights",
+                arguments={
                     "arrival_airport": "JFK",
                     "date": "2023-01-02",
                 },
-            },
+            ),
         ],
     ),
     EvalData(
@@ -108,77 +115,77 @@ goldens = [
         category="Search Amenities Tool",
         query="Are there any luxury shops?",
         tool_calls=[
-            {
-                "name": "Search Amenities",
-                "arguments": {
+            ToolCall(
+                name="Search Amenities",
+                arguments={
                     "query": "luxury shops",
                 },
-            },
+            ),
         ],
     ),
     EvalData(
         category="Search Amenities Tool",
         query="Where can I get coffee near gate A6?",
         tool_calls=[
-            {
-                "name": "Search Amenities",
-                "arguments": {
+            ToolCall(
+                name="Search Amenities",
+                arguments={
                     "query": "coffee near gate A6",
                 },
-            },
+            ),
         ],
     ),
     EvalData(
         category="Search Policies Tool",
         query="What is the flight cancellation policy?",
         tool_calls=[
-            {
-                "name": "Search Policies",
-                "arguments": {
+            ToolCall(
+                name="Search Policies",
+                arguments={
                     "query": "flight cancellation policy",
                 },
-            },
+            ),
         ],
     ),
     EvalData(
         category="Search Policies Tool",
         query="How many checked bags can I bring?",
         tool_calls=[
-            {
-                "name": "Search Policies",
-                "arguments": {
+            ToolCall(
+                name="Search Policies",
+                arguments={
                     "query": "checked bags",
                 },
-            },
+            ),
         ],
     ),
     EvalData(
         category="Insert Ticket",
         query="I would like to book flight CY 888 departing from SFO on 2024-01-01 at 6am.",
         tool_calls=[
-            {
-                "name": "Insert Ticket",
-                "arguments": {
+            ToolCall(
+                name="Insert Ticket",
+                arguments={
                     "airline": "CY",
                     "flight_number": "888",
                     "departure_airport": "SFO",
                     "departure_time": "2024-01-01 06:00:00",
                 },
-            },
+            ),
         ],
     ),
     EvalData(
         category="Insert Ticket",
         query="What flights are headed from SFO to DEN today?",
         tool_calls=[
-            {
-                "name": "List Flights",
-                "arguments": {
+            ToolCall(
+                name="List Flights",
+                arguments={
                     "departure_airport": "SFO",
                     "arrival_airport": "DEN",
                     "date": "2024-01-01",
                 },
-            },
+            ),
         ],
         reset=False,
     ),
@@ -186,9 +193,9 @@ goldens = [
         category="Insert Ticket",
         query="I would like to book the first flight.",
         tool_calls=[
-            {
-                "name": "Insert Ticket",
-                "arguments": {
+            ToolCall(
+                name="Insert Ticket",
+                arguments={
                     "airline": "CY",
                     "flight_number": "888",
                     "departure_airport": "SFO",
@@ -196,18 +203,18 @@ goldens = [
                     "departure_time": "2024-01-01 05:00:00",
                     "arrival_time": "2024-01-01 08:00:00",
                 },
-            },
+            ),
         ],
     ),
     EvalData(
         category="List Tickets",
         query="Do I have any tickets?",
-        tool_calls=[{"name": "List Tickets"}],
+        tool_calls=[ToolCall(name="List Tickets")],
     ),
     EvalData(
         category="List Tickets",
         query="When is my next flight?",
-        tool_calls=[{"name": "List Tickets"}],
+        tool_calls=[ToolCall(name="List Tickets")],
     ),
     EvalData(
         category="Airline Related Question",
@@ -243,39 +250,39 @@ goldens = [
         category="Multitool Selections",
         query="Where can I get a snack near the gate for flight CY 352?",
         tool_calls=[
-            {
-                "name": "Search Flights By Flight Number",
-                "arguments": {
+            ToolCall(
+                name="Search Flights By Flight Number",
+                arguments={
                     "airline": "CY",
                     "flight_number": "352",
                 },
-            },
-            {
-                "name": "Search Amenities",
-                "arguments": {
+            ),
+            ToolCall(
+                name="Search Amenities",
+                arguments={
                     "query": "snack near gate A2.",
                 },
-            },
+            ),
         ],
     ),
     EvalData(
         category="Multitool Selections",
         query="What are some flights from SFO to Chicago tomorrow?",
         tool_calls=[
-            {
-                "name": "Search Airport",
-                "arguments": {
+            ToolCall(
+                name="Search Airport",
+                arguments={
                     "city": "Chicago",
                 },
-            },
-            {
-                "name": "List Flights",
-                "arguments": {
+            ),
+            ToolCall(
+                name="List Flights",
+                arguments={
                     "departure_airport": "SFO",
                     "arrival_airport": "ORD",
                     "date": "2024-01-02",
                 },
-            },
+            ),
         ],
     ),
 ]
