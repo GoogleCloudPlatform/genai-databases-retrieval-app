@@ -32,7 +32,7 @@ class EvalData(BaseModel):
     )
     content: Optional[str] = Field(default=None)
     tool_calls: Optional[List[ToolCall]] = Field(default=None)
-    context: Optional[str] = Field(
+    context: Optional[List[Any]] = Field(
         default=None, description="context given to llm in order to answer user query"
     )
     output: Optional[str] = Field(default=None)

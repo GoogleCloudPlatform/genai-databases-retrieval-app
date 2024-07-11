@@ -16,7 +16,7 @@ from typing import Dict, List
 
 from orchestrator import BaseOrchestrator
 
-from .eval_golden import EvalData
+from .eval_golden import EvalData, ToolCall
 
 
 async def run_llm_for_eval(
@@ -27,20 +27,28 @@ async def run_llm_for_eval(
     """
     agent = orc.get_user_session(session_id)
     for eval_data in eval_list:
-        query_response = await agent.invoke(eval_data.query)
+        try:
+            query_response = await agent.invoke(eval_data.query)
+        except Exception as e:
+            print(f"error invoking agent: {e}")
+        else:
+            eval_data.prediction_output = query_response.get("output")
 
-        # Retrieve prediction_tool_calls from query response
-        prediction_tool_calls = []
-        for step in query_response.get("intermediate_steps"):
-            called_tool = step[0]
-            tool_call = {
-                "name": called_tool.tool,
-                "arguments": called_tool.tool_input,
-            }
-            prediction_tool_calls.append(tool_call)
+            # Retrieve prediction_tool_calls from query response
+            prediction_tool_calls = []
+            contexts = []
+            for step in query_response.get("intermediate_steps"):
+                called_tool = step[0]
+                tool_call = ToolCall(
+                    name=called_tool.tool,
+                    arguments=called_tool.tool_input,
+                )
+                prediction_tool_calls.append(tool_call)
+                context = step[-1]
+                contexts.append(context)
 
-        eval_data.prediction_tool_calls = prediction_tool_calls
-        eval_data.prediction_output = query_response.get("output")
+            eval_data.prediction_tool_calls = prediction_tool_calls
+            eval_data.context = contexts
 
         if eval_data.reset:
             orc.user_session_reset(session, session_id)
