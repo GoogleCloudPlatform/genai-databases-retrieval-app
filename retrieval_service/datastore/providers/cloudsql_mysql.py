@@ -81,6 +81,13 @@ class Client(datastore.Client[Config]):
         pool = await loop.run_in_executor(None, cls.create_sync, config)
         return pool
 
+    def drop_vector_indexes(self):
+        with self.__pool.connect() as conn:
+            s = text("""SELECT index_name FROM mysql.vector_indexes""")
+            results = (conn.execute(s)).mappings().fetchall()
+            for r in results:
+                conn.execute(text(f"CALL mysql.drop_vector_index('{r['index_name']}')"))
+
     def initialize_data_sync(
         self,
         airports: list[models.Airport],
@@ -88,6 +95,7 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
         policies: list[models.Policy],
     ) -> None:
+        self.drop_vector_indexes()
         with self.__pool.connect() as conn:
             # If the table already exists, drop it to avoid conflicts
             conn.execute(text("DROP TABLE IF EXISTS airports"))
@@ -815,17 +823,4 @@ class Client(datastore.Client[Config]):
         return res
 
     async def close(self):
-        # Vector indexes must be dropped before any DDLs on the base table are permitted
-        with self.__pool.connect() as conn:
-            s = text(
-                """
-                CALL mysql.drop_vector_index(:index_name)
-                """
-            )
-            params = [
-                {"index_name": f"{self.__db_name}.amenities_index"},
-                {"index_name": f"{self.__db_name}.policies_index"},
-            ]
-
-            conn.execute(s, parameters=params)
         self.__pool.dispose()
