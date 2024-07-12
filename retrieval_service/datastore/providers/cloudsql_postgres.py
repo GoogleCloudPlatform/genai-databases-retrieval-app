@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Any, Literal, Optional
 
 import asyncpg
-from google.cloud.sql.connector import Connector
+from google.cloud.sql.connector import Connector, RefreshStrategy
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -55,7 +55,9 @@ class Client(datastore.Client[Config]):
         loop = asyncio.get_running_loop()
 
         async def getconn() -> asyncpg.Connection:
-            async with Connector(loop=loop) as connector:
+            async with Connector(
+                loop=loop, refresh_strategy=RefreshStrategy.LAZY
+            ) as connector:
                 conn: asyncpg.Connection = await connector.connect_async(
                     # Cloud SQL instance connection name
                     f"{config.project}:{config.region}:{config.instance}",
