@@ -133,6 +133,9 @@ async def ds(
     if ds is None:
         raise TypeError("datastore creation failure")
     yield ds
+
+    if isinstance(ds, cloudsql_mysql.Client):
+        ds.drop_vector_indexes()
     await ds.close()
 
 
