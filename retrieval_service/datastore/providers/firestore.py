@@ -280,8 +280,16 @@ class Client(datastore.Client[Config]):
         docs = query.stream()
         amenities = []
         async for doc in docs:
-            amenity_dict = doc.to_dict() | {"id": doc.id}
-            del amenity_dict['embedding']
+            amenity_dict = {
+                "id": doc.id,
+                "category": doc.get("category"),
+                "content": doc.get("content"),
+                "description": doc.get("description"),
+                "hour": doc.get("hour"),
+                "location": doc.get("location"),
+                "name": doc.get("name"),
+                "terminal": doc.get("terminal")
+            }
             amenities.append(amenity_dict)
         return amenities
 
@@ -384,8 +392,10 @@ class Client(datastore.Client[Config]):
         docs = query.stream()
         policies = []
         async for doc in docs:
-            policy_dict = doc.to_dict() | {"id": doc.id}
-            del policy_dict['embedding']
+            policy_dict = {
+                "id": doc.id,
+                "content": doc.get("content")
+            }
             policies.append(policy_dict)
         return policies
 
