@@ -264,7 +264,7 @@ class Client(datastore.Client[Config]):
     
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Amenity]:
+    ) -> list[Any]:
         collection = AsyncQuery(self.__client.collection("amenities"))
         query_vector = Vector(query_embedding)
         # Using the same similarity metric to the embedding model's training method
@@ -276,12 +276,13 @@ class Client(datastore.Client[Config]):
             distance_measure=distance_measure,
             limit=top_k,
         )
-        
+
         docs = query.stream()
         amenities = []
         async for doc in docs:
             amenity_dict = doc.to_dict() | {"id": doc.id}
-            amenities.append(models.Amenity.model_validate(amenity_dict))
+            del amenity_dict['embedding']
+            amenities.append(amenity_dict)
         return amenities
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
@@ -369,7 +370,7 @@ class Client(datastore.Client[Config]):
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[models.Policy]:
+    ) -> list[Any]:
         collection = AsyncQuery(self.__client.collection("policies"))
         query_vector = Vector(query_embedding) 
         distance_measure = DistanceMeasure.DOT_PRODUCT
@@ -384,7 +385,8 @@ class Client(datastore.Client[Config]):
         policies = []
         async for doc in docs:
             policy_dict = doc.to_dict() | {"id": doc.id}
-            policies.append(models.Policy.model_validate(policy_dict))
+            del policy_dict['embedding']
+            policies.append(policy_dict)
         return policies
 
     async def close(self):
