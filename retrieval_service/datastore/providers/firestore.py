@@ -283,7 +283,6 @@ class Client(datastore.Client[Config]):
             amenity_dict = {
                 "id": doc.id,
                 "category": doc.get("category"),
-                "content": doc.get("content"),
                 "description": doc.get("description"),
                 "hour": doc.get("hour"),
                 "location": doc.get("location"),
