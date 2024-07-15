@@ -16,7 +16,6 @@ import asyncio
 import json
 from typing import Dict, List
 
-import nest_asyncio  # type: ignore
 import pandas as pd
 from pydantic import BaseModel, Field
 from vertexai.preview.evaluation import EvalTask  # type: ignore
@@ -69,7 +68,6 @@ def evaluate_task(
     """
     Run VertexAI Evaluation Task.
     """
-    nest_asyncio.apply()
     eval_task = EvalTask(
         dataset=eval_dataset,
         metrics=metrics,
