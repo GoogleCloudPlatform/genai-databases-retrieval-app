@@ -18,9 +18,11 @@ from typing import Any, Literal, Optional
 
 from google.cloud.firestore import AsyncClient  # type: ignore
 from google.cloud.firestore_v1.async_collection import AsyncCollectionReference
+from google.cloud.firestore_v1.async_query import AsyncQuery
 from google.cloud.firestore_v1.base_query import FieldFilter
-from google.cloud.firestore_v1.vector import Vector
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
+from google.cloud.firestore_v1.vector import Vector
+
 
 from pydantic import BaseModel
 
@@ -263,8 +265,10 @@ class Client(datastore.Client[Config]):
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[models.Amenity]:
-        collection = self.__client.collection("amenities")
+        collection = AsyncQuery(self.__client.collection("amenities"))
         query_vector = Vector(query_embedding)
+        # Using the same similarity metric to the embedding model's training method
+        # produce the most accurate result
         distance_measure = DistanceMeasure.DOT_PRODUCT
         query = collection.find_nearest(
             vector_field="embedding",
@@ -277,7 +281,7 @@ class Client(datastore.Client[Config]):
         amenities = []
         async for doc in docs:
             amenity_dict = doc.to_dict() | {"id": doc.id}
-            amenities.append(models.Amenities.model_validate(amenity_dict))
+            amenities.append(models.Amenity.model_validate(amenity_dict))
         return amenities
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
@@ -366,7 +370,7 @@ class Client(datastore.Client[Config]):
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[models.Policy]:
-        collection = self.__client.collection("policies")
+        collection = AsyncQuery(self.__client.collection("policies"))
         query_vector = Vector(query_embedding) 
         distance_measure = DistanceMeasure.DOT_PRODUCT
         query = collection.find_nearest(
@@ -380,7 +384,7 @@ class Client(datastore.Client[Config]):
         policies = []
         async for doc in docs:
             policy_dict = doc.to_dict() | {"id": doc.id}
-            policies.append(models.Policies.model_validate(policy_dict))
+            policies.append(models.Policy.model_validate(policy_dict))
         return policies
 
     async def close(self):
