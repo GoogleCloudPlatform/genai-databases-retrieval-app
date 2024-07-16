@@ -31,12 +31,12 @@ class EvalData(BaseModel):
         default=None, description="instruction to llm system"
     )
     content: Optional[str] = Field(default=None)
-    tool_calls: Optional[List[ToolCall]] = Field(default=None)
+    tool_calls: List[ToolCall] = Field(default=[])
     context: Optional[List[Dict[str, Any] | List[Dict[str, Any]]]] = Field(
         default=None, description="context given to llm in order to answer user query"
     )
     output: Optional[str] = Field(default=None)
-    prediction_tool_calls: Optional[List[ToolCall]] = Field(default=None)
+    prediction_tool_calls: List[ToolCall] = Field(default=[])
     prediction_output: Optional[str] = Field(default=None)
     reset: bool = Field(
         default=True, description="determine to reset the chat after invoke"

@@ -84,9 +84,21 @@ def evaluate_retrieval_phase(eval_datas: List[EvalData]) -> evaluation_base.Eval
     responses = []
     references = []
     for e in eval_datas:
-        responses.append(json.dumps({"content": e.content, "tool_calls": e.tool_calls}))
+        responses.append(
+            json.dumps(
+                {
+                    "content": e.content,
+                    "tool_calls": [t.model_dump() for t in e.tool_calls],
+                }
+            )
+        )
         references.append(
-            json.dumps({"content": e.content, "tool_calls": e.prediction_tool_calls})
+            json.dumps(
+                {
+                    "content": e.content,
+                    "tool_calls": [t.model_dump() for t in e.prediction_tool_calls],
+                }
+            )
         )
     eval_dataset = pd.DataFrame(
         {
