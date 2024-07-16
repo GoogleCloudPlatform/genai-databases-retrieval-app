@@ -565,11 +565,12 @@ class Client(datastore.Client[Config]):
                 "flight_number": flight_number,
                 "departure_airport": departure_airport,
                 "arrival_airport": arrival_airport,
-                "departure_time": departure_time,
-                "arrival_time": arrival_time,
+                "departure_time": departure_time_datetime,
+                "arrival_time": arrival_time_datetime,
             }
-            results = (await conn.execute(s, params)).mappings().fetchall()
-            if results != "INSERT 0 1":
+            result = (await conn.execute(s, params)).mappings()
+            await conn.commit()
+            if not result:
                 raise Exception("Ticket Insertion failure")
 
     async def list_tickets(
