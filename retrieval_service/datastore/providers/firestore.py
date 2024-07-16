@@ -197,7 +197,8 @@ class Client(datastore.Client[Config]):
         async for doc in amenities_docs:
             amenity_dict = doc.to_dict()
             amenity_dict["id"] = doc.id
-            amenity_dict["embedding"] = list(amenity_dict["embedding"])
+            if "embedding" in amenity_dict:
+                amenity_dict["embedding"] = list(amenity_dict["embedding"])
             amenities.append(models.Amenity.model_validate(amenity_dict))
 
         flights = []
@@ -210,8 +211,10 @@ class Client(datastore.Client[Config]):
         async for doc in policies_docs:
             policy_dict = doc.to_dict()
             policy_dict["id"] = doc.id
-            policy_dict["embedding"] = list(policy_dict["embedding"])
+            if "embedding" in policy_dict:
+                policy_dict["embedding"] = list(policy_dict["embedding"])
             policies.append(models.Policy.model_validate(policy_dict))
+
         return airports, amenities, flights, policies
 
     async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
@@ -262,7 +265,8 @@ class Client(datastore.Client[Config]):
         )
         amenity_doc = await query.get()
         amenity_dict = amenity_doc.to_dict() | {"id": amenity_doc.id}
-        amenity_dict["embedding"] = list(amenity_dict["embedding"])
+        if "embedding" in amenity_dict:
+            amenity_dict["embedding"] = list(amenity_dict["embedding"])
         return models.Amenity.model_validate(amenity_dict)
     
     async def amenities_search(
