@@ -62,25 +62,13 @@ async def run_llm_for_eval(
     return eval_list
 
 
-def evaluate_task(
-    eval_dataset: "pd.DataFrame", metrics: List[str], experiment_name: str
-) -> evaluation_base.EvalResult:
-    """
-    Run VertexAI Evaluation Task.
-    """
-    eval_task = EvalTask(
-        dataset=eval_dataset,
-        metrics=metrics,
-        experiment=experiment_name,
-    )
-
-    eval_result = eval_task.evaluate()
-    return eval_result
-
-
 def evaluate_retrieval_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalResult:
+    """
+    Run evaluation for the ability of a model to select the right tool and arguments (retrieval phase).
+    """
     RETRIEVAL_EXPERIMENT_NAME = "retrieval-phase-eval"
     metrics = ["tool_call_quality"]
+    # Prepare evaluation task input
     responses = []
     references = []
     for e in eval_datas:
@@ -106,5 +94,10 @@ def evaluate_retrieval_phase(eval_datas: List[EvalData]) -> evaluation_base.Eval
             "reference": references,
         }
     )
-    eval_result = evaluate_task(eval_dataset, metrics, RETRIEVAL_EXPERIMENT_NAME)
+    # Run evaluation
+    eval_result = EvalTask(
+        dataset=eval_dataset,
+        metrics=metrics,
+        experiment=RETRIEVAL_EXPERIMENT_NAME,
+    ).evaluate()
     return eval_result
