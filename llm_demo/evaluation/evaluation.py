@@ -12,7 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
+import json
 from typing import Dict, List
+
+import pandas as pd
+from pydantic import BaseModel, Field
+from vertexai.preview.evaluation import EvalTask  # type: ignore
+from vertexai.preview.evaluation import _base as evaluation_base
 
 from orchestrator import BaseOrchestrator
 
@@ -53,3 +60,44 @@ async def run_llm_for_eval(
         if eval_data.reset:
             orc.user_session_reset(session, session_id)
     return eval_list
+
+
+def evaluate_retrieval_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalResult:
+    """
+    Run evaluation for the ability of a model to select the right tool and arguments (retrieval phase).
+    """
+    RETRIEVAL_EXPERIMENT_NAME = "retrieval-phase-eval"
+    metrics = ["tool_call_quality"]
+    # Prepare evaluation task input
+    responses = []
+    references = []
+    for e in eval_datas:
+        responses.append(
+            json.dumps(
+                {
+                    "content": e.content,
+                    "tool_calls": [t.model_dump() for t in e.tool_calls],
+                }
+            )
+        )
+        references.append(
+            json.dumps(
+                {
+                    "content": e.content,
+                    "tool_calls": [t.model_dump() for t in e.prediction_tool_calls],
+                }
+            )
+        )
+    eval_dataset = pd.DataFrame(
+        {
+            "response": responses,
+            "reference": references,
+        }
+    )
+    # Run evaluation
+    eval_result = EvalTask(
+        dataset=eval_dataset,
+        metrics=metrics,
+        experiment=RETRIEVAL_EXPERIMENT_NAME,
+    ).evaluate()
+    return eval_result
