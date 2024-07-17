@@ -22,8 +22,6 @@ from google.cloud.firestore_v1.async_query import AsyncQuery
 from google.cloud.firestore_v1.base_query import FieldFilter
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.vector import Vector
-
-
 from pydantic import BaseModel
 
 import models
@@ -111,7 +109,8 @@ class Client(datastore.Client[Config]):
                         "category": amenity.category,
                         "hour": amenity.hour,
                         "content": amenity.content,
-                        "embedding": Vector(amenity.embedding),
+                        # Vector type does not accept None value
+                        "embedding": Vector(tuple(amenity.embedding or [])),
                     }
                 )
             )
@@ -147,31 +146,46 @@ class Client(datastore.Client[Config]):
                 .set(
                     {
                         "content": policy.content,
-                        "embedding": Vector(policy.embedding),
+                        # Vector type does not accept None value
+                        "embedding": Vector(policy.embedding or []),
                     }
                 )
             )
         await asyncio.gather(*create_policies_tasks)
 
-         # Initialize single-field vector indexes
+        # Initialize single-field vector indexes
         create_amenities_vector_index = [
-            "gcloud", "alpha", "firestore", "indexes", "composite", "create",
+            "gcloud",
+            "alpha",
+            "firestore",
+            "indexes",
+            "composite",
+            "create",
             "--collection-group=amenities",
             "--query-scope=COLLECTION",
-            "--field-config=field-path=embedding,vector-config={\"dimension\":768,\"flat\":\"{}\"}",
-            "--database=(default)"
+            '--field-config=field-path=embedding,vector-config={"dimension":768,"flat":"{}"}',
+            "--database=(default)",
         ]
-        create_amenities_process = await asyncio.create_subprocess_exec(*create_amenities_vector_index)
+        create_amenities_process = await asyncio.create_subprocess_exec(
+            *create_amenities_vector_index
+        )
         await create_amenities_process.wait()
-        
+
         create_policies_vector_index = [
-            "gcloud", "alpha", "firestore", "indexes", "composite", "create",
+            "gcloud",
+            "alpha",
+            "firestore",
+            "indexes",
+            "composite",
+            "create",
             "--collection-group=policies",
             "--query-scope=COLLECTION",
-            "--field-config=field-path=embedding,vector-config={\"dimension\":768,\"flat\":\"{}\"}",
-            "--database=(default)"
+            '--field-config=field-path=embedding,vector-config={"dimension":768,"flat":"{}"}',
+            "--database=(default)",
         ]
-        create_policies_process = await asyncio.create_subprocess_exec(*create_policies_vector_index)
+        create_policies_process = await asyncio.create_subprocess_exec(
+            *create_policies_vector_index
+        )
         await create_policies_process.wait()
 
     async def export_data(
@@ -268,7 +282,7 @@ class Client(datastore.Client[Config]):
         if "embedding" in amenity_dict:
             amenity_dict["embedding"] = list(amenity_dict["embedding"])
         return models.Amenity.model_validate(amenity_dict)
-    
+
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[Any]:
@@ -294,7 +308,7 @@ class Client(datastore.Client[Config]):
                 "hour": doc.get("hour"),
                 "location": doc.get("location"),
                 "name": doc.get("name"),
-                "terminal": doc.get("terminal")
+                "terminal": doc.get("terminal"),
             }
             amenities.append(amenity_dict)
         return amenities
@@ -386,7 +400,7 @@ class Client(datastore.Client[Config]):
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[Any]:
         collection = AsyncQuery(self.__client.collection("policies"))
-        query_vector = Vector(query_embedding) 
+        query_vector = Vector(query_embedding)
         distance_measure = DistanceMeasure.DOT_PRODUCT
         query = collection.find_nearest(
             vector_field="embedding",
@@ -394,14 +408,11 @@ class Client(datastore.Client[Config]):
             distance_measure=distance_measure,
             limit=top_k,
         )
-        
+
         docs = query.stream()
         policies = []
         async for doc in docs:
-            policy_dict = {
-                "id": doc.id,
-                "content": doc.get("content")
-            }
+            policy_dict = {"id": doc.id, "content": doc.get("content")}
             policies.append(policy_dict)
         return policies
 
