@@ -241,7 +241,7 @@ class Client(datastore.Client[Config]):
                         ),
                         "content": amenity.content,
                         # Vector type does not support None value
-                        "embedding": Vector(tuple(amenity.embedding or [])),
+                        "embedding": Vector(amenity.embedding or []),
                     }
                 )
             )
