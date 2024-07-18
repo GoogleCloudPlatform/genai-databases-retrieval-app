@@ -79,6 +79,68 @@ class Client(datastore.Client[Config]):
             [airports_ref, amenities_ref, flights_ref, policies_ref]
         )
 
+        async def delete_indexes(index_list):
+            # Check if the collection exists and deletes all indexes
+            delete_tasks = []
+            for index in index_list:
+                if index:
+                    delete_vector_index = [
+                        "gcloud",
+                        "alpha",
+                        "firestore",
+                        "indexes",
+                        "composite",
+                        "delete",
+                        index,
+                        "--database=(default)",
+                        "--quiet",  # Added to suppress delete warning
+                    ]
+
+                    delete_vector_index_process = await asyncio.create_subprocess_exec(
+                        *delete_vector_index,
+                    )
+                    delete_tasks.append(
+                        asyncio.create_task(delete_vector_index_process.wait())
+                    )
+            await asyncio.gather(*delete_tasks)
+
+        # List indexes and retrieve name field (file-path)
+        list_vector_index = [
+            "gcloud",
+            "alpha",
+            "firestore",
+            "indexes",
+            "composite",
+            "list",
+            "--database=(default)",
+            "--format=value(name)",  # prints name field
+        ]
+
+        list_vector_index_process = await asyncio.create_subprocess_exec(
+            *list_vector_index,
+            stdout=asyncio.subprocess.PIPE,
+        )
+
+        # Capture output and ignore stderr
+        stdout, __ = await list_vector_index_process.communicate()
+
+        # Decode and format output
+        indexes = stdout.decode().strip().split("\n")
+
+        # Check if the indexes already exist; if so, delete indexes
+        # Extract collection and index-id from file path
+        # Assign the index-id to the corresponding collection
+        if indexes == [""]:
+            pass
+        else:
+            collections = {"amenities": "", "policies": ""}
+            for line in indexes:
+                collection, index_id = line.split("/")[-3], line.split("/")[-1]
+                collections[collection] = index_id
+            amenities_ref = collections["amenities"]
+            policies_ref = collections["policies"]
+            await delete_indexes([amenities_ref, policies_ref])
+
         # initialize collections
         create_airports_tasks = []
         for airport in airports:
@@ -109,22 +171,76 @@ class Client(datastore.Client[Config]):
                         "category": amenity.category,
                         "hour": amenity.hour,
                         # Firebase does not support datetime.time type
-                        "sunday_start_hour": str(amenity.sunday_start_hour or None),
-                        "sunday_end_hour": str(amenity.sunday_end_hour or None),
-                        "monday_start_hour": str(amenity.monday_start_hour or None),
-                        "monday_end_hour": str(amenity.monday_end_hour or None),
-                        "tuesday_start_hour": str(amenity.tuesday_start_hour or None),
-                        "tuesday_end_hour": str(amenity.tuesday_end_hour or None),
-                        "wednesday_start_hour": str(
-                            amenity.wednesday_start_hour or None
+                        "sunday_start_hour": (
+                            str(amenity.sunday_start_hour)
+                            if amenity.sunday_start_hour
+                            else None
                         ),
-                        "wednesday_end_hour": str(amenity.wednesday_end_hour or None),
-                        "thursday_start_hour": str(amenity.thursday_start_hour or None),
-                        "thursday_end_hour": str(amenity.thursday_end_hour or None),
-                        "friday_start_hour": str(amenity.friday_start_hour or None),
-                        "friday_end_hour": str(amenity.friday_end_hour or None),
-                        "saturday_start_hour": str(amenity.saturday_start_hour or None),
-                        "saturday_end_hour": str(amenity.saturday_end_hour or None),
+                        "sunday_end_hour": (
+                            str(amenity.sunday_end_hour)
+                            if amenity.sunday_end_hour
+                            else None
+                        ),
+                        "monday_start_hour": (
+                            str(amenity.monday_start_hour)
+                            if amenity.monday_start_hour
+                            else None
+                        ),
+                        "monday_end_hour": (
+                            str(amenity.monday_end_hour)
+                            if amenity.monday_end_hour
+                            else None
+                        ),
+                        "tuesday_start_hour": (
+                            str(amenity.tuesday_start_hour)
+                            if amenity.tuesday_start_hour
+                            else None
+                        ),
+                        "tuesday_end_hour": (
+                            str(amenity.tuesday_end_hour)
+                            if amenity.tuesday_end_hour
+                            else None
+                        ),
+                        "wednesday_start_hour": (
+                            str(amenity.wednesday_start_hour)
+                            if amenity.wednesday_start_hour
+                            else None
+                        ),
+                        "wednesday_end_hour": (
+                            str(amenity.wednesday_end_hour)
+                            if amenity.wednesday_end_hour
+                            else None
+                        ),
+                        "thursday_start_hour": (
+                            str(amenity.thursday_start_hour)
+                            if amenity.thursday_start_hour
+                            else None
+                        ),
+                        "thursday_end_hour": (
+                            str(amenity.thursday_end_hour)
+                            if amenity.thursday_end_hour
+                            else None
+                        ),
+                        "friday_start_hour": (
+                            str(amenity.friday_start_hour)
+                            if amenity.friday_start_hour
+                            else None
+                        ),
+                        "friday_end_hour": (
+                            str(amenity.friday_end_hour)
+                            if amenity.friday_end_hour
+                            else None
+                        ),
+                        "saturday_start_hour": (
+                            str(amenity.saturday_start_hour)
+                            if amenity.saturday_start_hour
+                            else None
+                        ),
+                        "saturday_end_hour": (
+                            str(amenity.saturday_end_hour)
+                            if amenity.saturday_end_hour
+                            else None
+                        ),
                         "content": amenity.content,
                         # Vector type does not support None value
                         "embedding": Vector(tuple(amenity.embedding or [])),
@@ -143,8 +259,12 @@ class Client(datastore.Client[Config]):
                         "flight_number": flight.flight_number,
                         "departure_airport": flight.departure_airport,
                         "arrival_airport": flight.arrival_airport,
-                        "departure_time": flight.departure_time,
-                        "arrival_time": flight.arrival_time,
+                        "departure_time": flight.departure_time.strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        ),
+                        "arrival_time": flight.arrival_time.strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        ),
                         "departure_gate": flight.departure_gate,
                         "arrival_gate": flight.arrival_gate,
                     }
@@ -184,7 +304,7 @@ class Client(datastore.Client[Config]):
             "--database=(default)",
         ]
         create_amenities_process = await asyncio.create_subprocess_exec(
-            *create_amenities_vector_index
+            *create_amenities_vector_index,
         )
         await create_amenities_process.wait()
 
