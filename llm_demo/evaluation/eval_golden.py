@@ -37,7 +37,7 @@ class EvalData(BaseModel):
     )
     output: Optional[str] = Field(default=None)
     prediction_tool_calls: List[ToolCall] = Field(default=[])
-    prediction_output: Optional[str] = Field(default=None)
+    prediction_output: str = Field(default="")
     reset: bool = Field(
         default=True, description="determine to reset the chat after invoke"
     )
