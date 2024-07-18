@@ -200,8 +200,9 @@ class Client(datastore.Client[Config]):
             '--field-config=field-path=embedding,vector-config={"dimension":768,"flat":"{}"}',
             "--database=(default)",
         ]
+
         create_policies_process = await asyncio.create_subprocess_exec(
-            *create_policies_vector_index
+            *create_policies_vector_index,
         )
         await create_policies_process.wait()
 
@@ -228,8 +229,7 @@ class Client(datastore.Client[Config]):
         async for doc in amenities_docs:
             amenity_dict = doc.to_dict()
             amenity_dict["id"] = doc.id
-            if "embedding" in amenity_dict:
-                amenity_dict["embedding"] = list(amenity_dict["embedding"])
+            amenity_dict["embedding"] = list(amenity_dict["embedding"])
             amenities.append(models.Amenity.model_validate(amenity_dict))
 
         flights = []
@@ -242,8 +242,7 @@ class Client(datastore.Client[Config]):
         async for doc in policies_docs:
             policy_dict = doc.to_dict()
             policy_dict["id"] = doc.id
-            if "embedding" in policy_dict:
-                policy_dict["embedding"] = list(policy_dict["embedding"])
+            policy_dict["embedding"] = list(policy_dict["embedding"])
             policies.append(models.Policy.model_validate(policy_dict))
 
         return airports, amenities, flights, policies
