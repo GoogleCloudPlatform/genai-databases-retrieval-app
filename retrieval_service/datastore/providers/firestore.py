@@ -415,8 +415,7 @@ class Client(datastore.Client[Config]):
         )
         amenity_doc = await query.get()
         amenity_dict = amenity_doc.to_dict() | {"id": amenity_doc.id}
-        if "embedding" in amenity_dict:
-            amenity_dict["embedding"] = list(amenity_dict["embedding"])
+        amenity_dict["embedding"] = list(amenity_dict["embedding"])
         return models.Amenity.model_validate(amenity_dict)
 
     async def amenities_search(
