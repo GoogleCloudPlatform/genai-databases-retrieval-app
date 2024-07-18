@@ -68,7 +68,7 @@ class Client(datastore.Client[Config]):
                 docs = collection_ref.stream()
                 async for doc in docs:
                     delete_tasks.append(asyncio.create_task(doc.reference.delete()))
-            asyncio.gather(*delete_tasks)
+            await asyncio.gather(*delete_tasks)
 
         # Check if the collections already exist; if so, delete collections
         airports_ref = self.__client.collection("airports")
