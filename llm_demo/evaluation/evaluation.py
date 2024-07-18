@@ -122,9 +122,7 @@ def evaluate_response_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalR
     for e in eval_datas:
         instructions.append(e.instruction or "answer user query based on context given")
         context_str = (
-            [json.dumps(c) for c in e.context]
-            if e.context != None
-            else "no data retrieved"
+            [json.dumps(c) for c in e.context] if e.context else ["no data retrieved"]
         )
         contexts.append(",".join(context_str))
         responses.append(e.prediction_output or "")
