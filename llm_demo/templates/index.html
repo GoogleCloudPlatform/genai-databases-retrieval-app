@@ -114,7 +114,7 @@ limitations under the License.
 <script>
   document.getElementById('g_id_onload').setAttribute('data-client_id', '{{ client_id }}');
   var currentUrl = window.location.href;
-  var loginUri = currentUrl + 'login/google';
+  var loginUri = currentUrl.split('?')[0] + 'login/google';
   document.getElementById('g_id_onload').setAttribute('data-login_uri', loginUri);
 </script>
 

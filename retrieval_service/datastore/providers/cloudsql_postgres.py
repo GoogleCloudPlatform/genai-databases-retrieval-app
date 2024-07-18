@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Any, Literal, Optional
 
 import asyncpg
-from google.cloud.sql.connector import Connector
+from google.cloud.sql.connector import Connector, RefreshStrategy
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -27,7 +27,7 @@ import models
 
 from .. import datastore
 
-POSTGRES_IDENTIFIER = "cloudsql-postgres"
+CLOUD_SQL_PG_IDENTIFIER = "cloudsql-postgres"
 
 
 class Config(BaseModel, datastore.AbstractConfig):
@@ -45,7 +45,7 @@ class Client(datastore.Client[Config]):
 
     @datastore.classproperty
     def kind(cls):
-        return "cloudsql-postgres"
+        return CLOUD_SQL_PG_IDENTIFIER
 
     def __init__(self, pool: AsyncEngine):
         self.__pool = pool
@@ -55,7 +55,9 @@ class Client(datastore.Client[Config]):
         loop = asyncio.get_running_loop()
 
         async def getconn() -> asyncpg.Connection:
-            async with Connector(loop=loop) as connector:
+            async with Connector(
+                loop=loop, refresh_strategy=RefreshStrategy.LAZY
+            ) as connector:
                 conn: asyncpg.Connection = await connector.connect_async(
                     # Cloud SQL instance connection name
                     f"{config.project}:{config.region}:{config.instance}",
@@ -490,7 +492,29 @@ class Client(datastore.Client[Config]):
         departure_airport: str,
         departure_time: str,
     ) -> Optional[models.Flight]:
-        raise NotImplementedError("Not Implemented")
+        departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
+        async with self.__pool.connect() as conn:
+            s = text(
+                """
+                    SELECT * FROM flights
+                    WHERE airline ILIKE :airline
+                    AND flight_number ILIKE :flight_number
+                    AND departure_airport ILIKE :departure_airport
+                    AND departure_time = :departure_time
+                """
+            )
+            params = {
+                "airline": airline,
+                "flight_number": flight_number,
+                "departure_airport": departure_airport,
+                "departure_time": departure_time_datetime,
+            }
+            result = (await conn.execute(s, params)).mappings().fetchone()
+
+        if result is None:
+            return None
+        res = models.Flight.model_validate(result)
+        return res
 
     async def insert_ticket(
         self,
@@ -504,13 +528,69 @@ class Client(datastore.Client[Config]):
         departure_time: str,
         arrival_time: str,
     ):
-        raise NotImplementedError("Not Implemented")
+        departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
+        arrival_time_datetime = datetime.strptime(arrival_time, "%Y-%m-%d %H:%M:%S")
+
+        async with self.__pool.connect() as conn:
+            s = text(
+                """
+                INSERT INTO tickets (
+                    user_id,
+                    user_name,
+                    user_email,
+                    airline,
+                    flight_number,
+                    departure_airport,
+                    arrival_airport,
+                    departure_time,
+                    arrival_time
+                ) VALUES (
+                    :user_id,
+                    :user_name,
+                    :user_email,
+                    :airline,
+                    :flight_number,
+                    :departure_airport,
+                    :arrival_airport,
+                    :departure_time,
+                    :arrival_time
+                );
+            """
+            )
+            params = {
+                "user_id": user_id,
+                "user_name": user_name,
+                "user_email": user_email,
+                "airline": airline,
+                "flight_number": flight_number,
+                "departure_airport": departure_airport,
+                "arrival_airport": arrival_airport,
+                "departure_time": departure_time_datetime,
+                "arrival_time": arrival_time_datetime,
+            }
+            result = (await conn.execute(s, params)).mappings()
+            await conn.commit()
+            if not result:
+                raise Exception("Ticket Insertion failure")
 
     async def list_tickets(
         self,
         user_id: str,
     ) -> list[models.Ticket]:
-        raise NotImplementedError("Not Implemented")
+        async with self.__pool.connect() as conn:
+            s = text(
+                """
+                    SELECT * FROM tickets
+                    WHERE user_id = :user_id
+                """
+            )
+            params = {
+                "user_id": user_id,
+            }
+            results = (await conn.execute(s, params)).mappings().fetchall()
+
+        res = [models.Ticket.model_validate(r) for r in results]
+        return res
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int

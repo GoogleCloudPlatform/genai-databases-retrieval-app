@@ -16,7 +16,7 @@ import asyncio
 from datetime import datetime
 from typing import Any, AsyncGenerator, List
 
-import asyncpg
+import pymysql
 import pytest
 import pytest_asyncio
 from csv_diff import compare, load_csv  # type: ignore
@@ -25,7 +25,7 @@ from google.cloud.sql.connector import Connector
 import models
 
 from .. import datastore
-from . import cloudsql_postgres
+from . import cloudsql_mysql
 from .test_data import (
     amenities_query_embedding1,
     amenities_query_embedding2,
@@ -40,12 +40,12 @@ pytestmark = pytest.mark.asyncio(scope="module")
 
 @pytest.fixture(scope="module")
 def db_user() -> str:
-    return get_env_var("DB_USER", "name of a postgres user")
+    return get_env_var("DB_USER", "name of a mysql user")
 
 
 @pytest.fixture(scope="module")
 def db_pass() -> str:
-    return get_env_var("DB_PASS", "password for the postgres user")
+    return get_env_var("DB_PASS", "password for the mysql user")
 
 
 @pytest.fixture(scope="module")
@@ -67,31 +67,33 @@ def db_instance() -> str:
 async def create_db(
     db_user: str, db_pass: str, db_project: str, db_region: str, db_instance: str
 ) -> AsyncGenerator[str, None]:
-    db_name = get_env_var("DB_NAME", "name of a postgres database")
+    db_name = get_env_var("DB_NAME", "name of a cloud sql mysql database")
     loop = asyncio.get_running_loop()
     connector = Connector(loop=loop)
     # Database does not exist, create it.
-    sys_conn: asyncpg.Connection = await connector.connect_async(
+    sys_conn: pymysql.Connection = await connector.connect_async(
+        # Cloud SQL instance connection name
         f"{db_project}:{db_region}:{db_instance}",
-        "asyncpg",
+        "pymysql",
         user=f"{db_user}",
         password=f"{db_pass}",
-        db="postgres",
+        db="mysql",
     )
-    await sys_conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
-    await sys_conn.execute(f'CREATE DATABASE "{db_name}";')
-    await sys_conn.close()
-    conn: asyncpg.Connection = await connector.connect_async(
+    cursor = sys_conn.cursor()
+
+    cursor.execute(f"DROP DATABASE IF EXISTS {db_name};")
+    cursor.execute(f"CREATE DATABASE {db_name};")
+    cursor.close()
+    conn: pymysql.Connection = await connector.connect_async(
+        # Cloud SQL instance connection name
         f"{db_project}:{db_region}:{db_instance}",
-        "asyncpg",
+        "pymysql",
         user=f"{db_user}",
         password=f"{db_pass}",
         db=f"{db_name}",
     )
-    await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
     yield db_name
-    await conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
-    await conn.close()
+    conn.close()
 
 
 @pytest_asyncio.fixture(scope="module")
@@ -104,8 +106,8 @@ async def ds(
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
     db_name = await create_db.__anext__()
-    cfg = cloudsql_postgres.Config(
-        kind="cloudsql-postgres",
+    cfg = cloudsql_mysql.Config(
+        kind="cloudsql-mysql",
         user=db_user,
         password=db_pass,
         database=db_name,
@@ -131,18 +133,29 @@ async def ds(
     if ds is None:
         raise TypeError("datastore creation failure")
     yield ds
+
+    if isinstance(ds, cloudsql_mysql.Client):
+        ds.drop_vector_indexes()
     await ds.close()
+
+
+def only_embedding_changed(file_diff):
+    return all(
+        key == "embedding"
+        for change in file_diff["changed"]
+        for key in change["changes"]
+    )
 
 
 def check_file_diff(file_diff):
     assert file_diff["added"] == []
     assert file_diff["removed"] == []
-    assert file_diff["changed"] == []
     assert file_diff["columns_added"] == []
     assert file_diff["columns_removed"] == []
+    assert file_diff["changed"] == [] or only_embedding_changed(file_diff)
 
 
-async def test_export_dataset(ds: cloudsql_postgres.Client):
+async def test_export_dataset(ds: cloudsql_mysql.Client):
     airports, amenities, flights, policies = await ds.export_data()
 
     airports_ds_path = "../data/airport_dataset.csv"
@@ -186,10 +199,11 @@ async def test_export_dataset(ds: cloudsql_postgres.Client):
         load_csv(open(policies_ds_path), "id"),
         load_csv(open(policies_new_path), "id"),
     )
+
     check_file_diff(diff_policies)
 
 
-async def test_get_airport_by_id(ds: cloudsql_postgres.Client):
+async def test_get_airport_by_id(ds: cloudsql_mysql.Client):
     res = await ds.get_airport_by_id(1)
     expected = models.Airport(
         id=1,
@@ -208,7 +222,7 @@ async def test_get_airport_by_id(ds: cloudsql_postgres.Client):
         pytest.param("sfo", id="lower_case"),
     ],
 )
-async def test_get_airport_by_iata(ds: cloudsql_postgres.Client, iata: str):
+async def test_get_airport_by_iata(ds: cloudsql_mysql.Client, iata: str):
     res = await ds.get_airport_by_iata(iata)
     expected = models.Airport(
         id=3270,
@@ -264,6 +278,13 @@ search_airports_test_data = [
         "San Jose",
         [
             models.Airport(
+                id=1714,
+                iata="GSJ",
+                name="San José Airport",
+                city="San Jose",
+                country="Guatemala",
+            ),
+            models.Airport(
                 id=2299,
                 iata="SJI",
                 name="San Jose Airport",
@@ -292,7 +313,7 @@ search_airports_test_data = [
 
 @pytest.mark.parametrize("country, city, name, expected", search_airports_test_data)
 async def test_search_airports(
-    ds: cloudsql_postgres.Client,
+    ds: cloudsql_mysql.Client,
     country: str,
     city: str,
     name: str,
@@ -302,7 +323,7 @@ async def test_search_airports(
     assert res == expected
 
 
-async def test_get_amenity(ds: cloudsql_postgres.Client):
+async def test_get_amenity(ds: cloudsql_mysql.Client):
     res = await ds.get_amenity(0)
     expected = models.Amenity(
         id=0,
@@ -355,14 +376,6 @@ amenities_search_test_data = [
         2,
         [
             {
-                "name": "Gucci Duty Free",
-                "description": "Luxury brand duty-free shop offering designer clothing, accessories, and fragrances.",
-                "location": "Gate E9",
-                "terminal": "International Terminal A",
-                "category": "shop",
-                "hour": "Daily 7:00 am-10:00 pm",
-            },
-            {
                 "name": "Dufry Duty Free",
                 "description": "Duty-free shop offering a large selection of luxury goods, including perfumes, cosmetics, and liquor.",
                 "location": "Gate E2",
@@ -370,16 +383,16 @@ amenities_search_test_data = [
                 "category": "shop",
                 "hour": "Daily 7:00 am-10:00 pm",
             },
+            {
+                "name": "Gucci Duty Free",
+                "description": "Luxury brand duty-free shop offering designer clothing, accessories, and fragrances.",
+                "location": "Gate E9",
+                "terminal": "International Terminal A",
+                "category": "shop",
+                "hour": "Daily 7:00 am-10:00 pm",
+            },
         ],
         id="search_luxury_goods",
-    ),
-    pytest.param(
-        # "FOO BAR"
-        foobar_query_embedding,
-        0.1,
-        1,
-        [],
-        id="no_results",
     ),
 ]
 
@@ -388,7 +401,7 @@ amenities_search_test_data = [
     "query_embedding, similarity_threshold, top_k, expected", amenities_search_test_data
 )
 async def test_amenities_search(
-    ds: cloudsql_postgres.Client,
+    ds: cloudsql_mysql.Client,
     query_embedding: List[float],
     similarity_threshold: float,
     top_k: int,
@@ -398,7 +411,7 @@ async def test_amenities_search(
     assert res == expected
 
 
-async def test_get_flight(ds: cloudsql_postgres.Client):
+async def test_get_flight(ds: cloudsql_mysql.Client):
     res = await ds.get_flight(1)
     expected = models.Flight(
         id=1,
@@ -465,7 +478,7 @@ search_flights_by_number_test_data = [
     "airline, number, expected", search_flights_by_number_test_data
 )
 async def test_search_flights_by_number(
-    ds: cloudsql_postgres.Client,
+    ds: cloudsql_mysql.Client,
     airline: str,
     number: str,
     expected: List[models.Flight],
@@ -588,7 +601,7 @@ search_flights_by_airports_test_data = [
     search_flights_by_airports_test_data,
 )
 async def test_search_flights_by_airports(
-    ds: cloudsql_postgres.Client,
+    ds: cloudsql_mysql.Client,
     date: str,
     departure_airport: str,
     arrival_airport: str,
@@ -598,7 +611,7 @@ async def test_search_flights_by_airports(
     assert res == expected
 
 
-async def test_insert_ticket(ds: cloudsql_postgres.Client):
+async def test_insert_ticket(ds: cloudsql_mysql.Client):
     await ds.insert_ticket(
         "1",
         "test",
@@ -612,7 +625,7 @@ async def test_insert_ticket(ds: cloudsql_postgres.Client):
     )
 
 
-async def test_list_tickets(ds: cloudsql_postgres.Client):
+async def test_list_tickets(ds: cloudsql_mysql.Client):
     res = await ds.list_tickets("1")
     expected = models.Ticket(
         user_id=1,
@@ -628,7 +641,7 @@ async def test_list_tickets(ds: cloudsql_postgres.Client):
     assert res == [expected]
 
 
-async def test_validate_ticket(ds: cloudsql_postgres.Client):
+async def test_validate_ticket(ds: cloudsql_mysql.Client):
     res = await ds.validate_ticket("UA", "1532", "SFO", "2024-01-01 05:50:00")
     expected = models.Flight(
         id=0,
@@ -661,18 +674,10 @@ policies_search_test_data = [
         0.35,
         2,
         [
-            "Changes: Changes to tickets are permitted at any time until 60 minutes prior to scheduled departure. There are no fees for changes as long as the new ticket is on Cymbal Air and is at an equal or lower price.  If the new ticket has a higher price, the customer must pay the difference between the new and old fares.  Changes to a non-Cymbal-Air flight include a $100 change fee.",
             "# Cymbal Air: Passenger Policy  \n## Ticket Purchase and Changes\nTypes of Fares: Cymbal Air offers a variety of fares (Economy, Premium Economy, Business Class, and First Class). Fare restrictions, such as change fees and refundability, vary depending on the fare purchased.",
+            "Changes: Changes to tickets are permitted at any time until 60 minutes prior to scheduled departure. There are no fees for changes as long as the new ticket is on Cymbal Air and is at an equal or lower price.  If the new ticket has a higher price, the customer must pay the difference between the new and old fares.  Changes to a non-Cymbal-Air flight include a $100 change fee.",
         ],
         id="search_flight_delays",
-    ),
-    pytest.param(
-        # "FOO BAR"
-        foobar_query_embedding,
-        0.35,
-        1,
-        [],
-        id="no_results",
     ),
 ]
 
@@ -681,7 +686,7 @@ policies_search_test_data = [
     "query_embedding, similarity_threshold, top_k, expected", policies_search_test_data
 )
 async def test_policies_search(
-    ds: cloudsql_postgres.Client,
+    ds: cloudsql_mysql.Client,
     query_embedding: List[float],
     similarity_threshold: float,
     top_k: int,

@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Any, Literal, Optional
 
 import asyncpg
-from google.cloud.alloydb.connector import AsyncConnector
+from google.cloud.alloydb.connector import AsyncConnector, RefreshStrategy
 from pgvector.asyncpg import register_vector
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -27,7 +27,7 @@ import models
 
 from .. import datastore
 
-POSTGRES_IDENTIFIER = "alloydb-postgres"
+ALLOYDB_PG_IDENTIFIER = "alloydb-postgres"
 
 
 class Config(BaseModel, datastore.AbstractConfig):
@@ -46,7 +46,7 @@ class Client(datastore.Client[Config]):
 
     @datastore.classproperty
     def kind(cls):
-        return "alloydb-postgres"
+        return ALLOYDB_PG_IDENTIFIER
 
     def __init__(self, pool: AsyncEngine):
         self.__pool = pool
@@ -54,7 +54,9 @@ class Client(datastore.Client[Config]):
     @classmethod
     async def create(cls, config: Config) -> "Client":
         async def getconn() -> asyncpg.Connection:
-            async with AsyncConnector() as connector:
+            async with AsyncConnector(
+                refresh_strategy=RefreshStrategy.LAZY
+            ) as connector:
                 conn: asyncpg.Connection = await connector.connect(
                     # Alloydb instance connection name
                     f"projects/{config.project}/locations/{config.region}/clusters/{config.cluster}/instances/{config.instance}",
@@ -563,11 +565,12 @@ class Client(datastore.Client[Config]):
                 "flight_number": flight_number,
                 "departure_airport": departure_airport,
                 "arrival_airport": arrival_airport,
-                "departure_time": departure_time,
-                "arrival_time": arrival_time,
+                "departure_time": departure_time_datetime,
+                "arrival_time": arrival_time_datetime,
             }
-            results = (await conn.execute(s, params)).mappings().fetchall()
-            if results != "INSERT 0 1":
+            result = (await conn.execute(s, params)).mappings()
+            await conn.commit()
+            if not result:
                 raise Exception("Ticket Insertion failure")
 
     async def list_tickets(

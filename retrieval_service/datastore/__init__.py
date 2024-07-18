@@ -23,6 +23,7 @@ Config = Union[
     providers.cloudsql_postgres.Config,
     providers.spanner_gsql.Config,
     providers.alloydb.Config,
+    providers.cloudsql_mysql.Config,
 ]
 
 __ALL__ = [Client, Config, create, providers]
