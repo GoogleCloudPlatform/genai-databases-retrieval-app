@@ -130,9 +130,7 @@ class Client(datastore.Client[Config]):
         # Check if the indexes already exist; if so, delete indexes
         # Extract collection and index-id from file path
         # Assign the index-id to the corresponding collection
-        if indexes == [""]:
-            pass
-        else:
+        if indexes != [""]:
             collections = {"amenities": "", "policies": ""}
             for line in indexes:
                 collection, index_id = line.split("/")[-3], line.split("/")[-1]
