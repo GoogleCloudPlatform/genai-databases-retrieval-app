@@ -39,6 +39,9 @@ async def run_llm_for_eval(
         except Exception as e:
             print(f"error invoking agent: {e}")
         else:
+            eval_data.instruction = (
+                INSTRUCTION + f"\nUser query is '{eval_data.query}'."
+            )
             eval_data.prediction_output = query_response.get("output")
 
             # Retrieve prediction_tool_calls from query response
