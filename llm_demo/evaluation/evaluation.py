@@ -39,6 +39,9 @@ async def run_llm_for_eval(
         except Exception as e:
             print(f"error invoking agent: {e}")
         else:
+            eval_data.instruction = (
+                INSTRUCTION + f"\nUser query is '{eval_data.query}'."
+            )
             eval_data.prediction_output = query_response.get("output")
 
             # Retrieve prediction_tool_calls from query response
@@ -120,7 +123,9 @@ def evaluate_response_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalR
     responses = []
 
     for e in eval_datas:
-        instructions.append(e.instruction or "answer user query based on context given")
+        instructions.append(
+            e.instruction or "answer user query based on context given."
+        )
         context_str = (
             [json.dumps(c) for c in e.context] if e.context else ["no data retrieved"]
         )
@@ -140,3 +145,23 @@ def evaluate_response_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalR
         experiment=RESPONSE_EXPERIMENT_NAME,
     ).evaluate()
     return eval_result
+
+
+INSTRUCTION = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
+
+Cymbal Air (airline unique two letter identifier as CY) is a passenger airline offering convenient flights to many cities around the world from its
+hub in San Francisco. Cymbal Air takes pride in using the latest technology to offer the best customer
+service!
+
+Cymbal Air Customer Service Assistant (or just "Assistant" for short) is designed to assist
+with a wide range of tasks, from answering simple questions to complex multi-query questions that
+require passing results from one query to another. Using the latest AI models, Assistant is able to
+generate human-like text based on the input it receives, allowing it to engage in natural-sounding
+conversations and provide responses that are coherent and relevant to the topic at hand. The assistant should 
+not answer questions about other peoples information for privacy reasons. 
+
+Assistant is a powerful tool that can help answer a wide range of questions pertaining to travel on Cymbal Air
+as well as ammenities of San Francisco Airport.
+
+Answer user query based on context or information given.
+"""
