@@ -78,7 +78,8 @@ async def create_graph(
 
     async def acall_model(state: UserState, config: RunnableConfig):
         """
-        The async function that calls the model
+        The node representing async function that calls the model.
+        After invoking model, it will return AIMessage back to the user.
         """
         messages = state["messages"]
         res = await model_runnable.ainvoke({"messages": messages}, config)
@@ -99,6 +100,7 @@ async def create_graph(
             new_message = AIMessage(
                 content="Sorry, failed to generate the right format for response"
             )
+        # if model exceed the number of steps and has not yet return a final answer
         if state["is_last_step"] and hasattr(new_message, "tool_calls"):
             return {
                 "messages": [
@@ -111,7 +113,7 @@ async def create_graph(
 
     def agent_should_continue(state: UserState) -> Literal["continue", "end"]:
         """
-        Function to determine which node is called next
+        Function to determine which node is called after the agent node.
         """
         messages = state["messages"]
         last_message = messages[-1]
@@ -121,19 +123,23 @@ async def create_graph(
         # Otherwise, we stop (reply to the user)
         return "end"
 
+    # Define constant node strings
+    AGENT_NODE = "agent"
+    TOOL_NODE = "tools"
+
     # Define a new graph
     llm_graph = StateGraph(UserState)
-    llm_graph.add_node("agent", RunnableLambda(acall_model))
-    llm_graph.add_node("tools", tool_node)
+    llm_graph.add_node(AGENT_NODE, RunnableLambda(acall_model))
+    llm_graph.add_node(TOOL_NODE, tool_node)
 
     # Set agent node as the first node to call
-    llm_graph.set_entry_point("agent")
+    llm_graph.set_entry_point(AGENT_NODE)
 
     # Add edges
     llm_graph.add_conditional_edges(
-        "agent", agent_should_continue, {"continue": "tools", "end": END}
+        AGENT_NODE, agent_should_continue, {"continue": TOOL_NODE, "end": END}
     )
-    llm_graph.add_edge("tools", "agent")
+    llm_graph.add_edge(TOOL_NODE, AGENT_NODE)
 
     # Compile graph into a LangChain Runnable
     langgraph_app = llm_graph.compile(checkpointer=checkpointer, debug=debug)
