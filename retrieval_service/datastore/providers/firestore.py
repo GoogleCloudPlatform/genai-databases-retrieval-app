@@ -38,6 +38,8 @@ class Config(BaseModel, datastore.AbstractConfig):
 
 class Client(datastore.Client[Config]):
     __client: AsyncClient
+    policies_collection: AsyncQuery
+    amenities_collection: AsyncQuery
 
     @datastore.classproperty
     def kind(cls):
@@ -45,10 +47,50 @@ class Client(datastore.Client[Config]):
 
     def __init__(self, client: AsyncClient):
         self.__client = client
+        self.policies_collection = AsyncQuery(self.__client.collection("policies"))
+        self.amenities_collection = AsyncQuery(self.__client.collection("amenities"))
 
     @classmethod
     async def create(cls, config: Config) -> "Client":
         return cls(AsyncClient(project=config.projectId))
+
+    async def delete_collections(collection_list: list[AsyncCollectionReference]):
+        # Checks if collection exists and deletes all documents
+        delete_tasks = []
+        for collection_ref in collection_list:
+            collection_exists = collection_ref.limit(1).stream()
+            if not collection_exists:
+                continue
+
+            docs = collection_ref.stream()
+            async for doc in docs:
+                delete_tasks.append(asyncio.create_task(doc.reference.delete()))
+        await asyncio.gather(*delete_tasks)
+
+    async def delete_indexes(index_list):
+        # Check if the collection exists and deletes all indexes
+        delete_tasks = []
+        for index in index_list:
+            if index:
+                delete_vector_index = [
+                    "gcloud",
+                    "alpha",
+                    "firestore",
+                    "indexes",
+                    "composite",
+                    "delete",
+                    index,
+                    "--database=(default)",
+                    "--quiet",  # Added to suppress delete warning
+                ]
+
+                delete_vector_index_process = await asyncio.create_subprocess_exec(
+                    *delete_vector_index,
+                )
+                delete_tasks.append(
+                    asyncio.create_task(delete_vector_index_process.wait())
+                )
+        await asyncio.gather(*delete_tasks)
 
     async def initialize_data(
         self,
@@ -57,52 +99,14 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
         policies: list[models.Policy],
     ) -> None:
-        async def delete_collections(collection_list: list[AsyncCollectionReference]):
-            # Checks if collection exists and deletes all documents
-            delete_tasks = []
-            for collection_ref in collection_list:
-                collection_exists = collection_ref.limit(1).stream()
-                if not collection_exists:
-                    continue
-
-                docs = collection_ref.stream()
-                async for doc in docs:
-                    delete_tasks.append(asyncio.create_task(doc.reference.delete()))
-            await asyncio.gather(*delete_tasks)
-
         # Check if the collections already exist; if so, delete collections
         airports_ref = self.__client.collection("airports")
         amenities_ref = self.__client.collection("amenities")
         flights_ref = self.__client.collection("flights")
         policies_ref = self.__client.collection("policies")
-        await delete_collections(
+        await self.delete_collections(
             [airports_ref, amenities_ref, flights_ref, policies_ref]
         )
-
-        async def delete_indexes(index_list):
-            # Check if the collection exists and deletes all indexes
-            delete_tasks = []
-            for index in index_list:
-                if index:
-                    delete_vector_index = [
-                        "gcloud",
-                        "alpha",
-                        "firestore",
-                        "indexes",
-                        "composite",
-                        "delete",
-                        index,
-                        "--database=(default)",
-                        "--quiet",  # Added to suppress delete warning
-                    ]
-
-                    delete_vector_index_process = await asyncio.create_subprocess_exec(
-                        *delete_vector_index,
-                    )
-                    delete_tasks.append(
-                        asyncio.create_task(delete_vector_index_process.wait())
-                    )
-            await asyncio.gather(*delete_tasks)
 
         # List indexes and retrieve name field (file-path)
         list_vector_index = [
@@ -137,7 +141,7 @@ class Client(datastore.Client[Config]):
                 collections[collection] = index_id
             amenities_ref = collections["amenities"]
             policies_ref = collections["policies"]
-            await delete_indexes([amenities_ref, policies_ref])
+            await self.delete_indexes([amenities_ref, policies_ref])
 
         # initialize collections
         create_airports_tasks = []
@@ -419,7 +423,7 @@ class Client(datastore.Client[Config]):
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[Any]:
-        collection = AsyncQuery(self.__client.collection("amenities"))
+        collection = self.amenities_collection
         query_vector = Vector(query_embedding)
         # Using the same similarity metric to the embedding model's training method
         # produce the most accurate result
@@ -532,7 +536,7 @@ class Client(datastore.Client[Config]):
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[Any]:
-        collection = AsyncQuery(self.__client.collection("policies"))
+        collection = self.policies_collection
         query_vector = Vector(query_embedding)
         distance_measure = DistanceMeasure.DOT_PRODUCT
         query = collection.find_nearest(
