@@ -16,22 +16,21 @@ import asyncio
 import os
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Annotated, Any, Dict, List, Literal, Optional, Sequence, TypedDict
 
 from aiohttp import ClientSession, TCPConnector
 from fastapi import HTTPException
-from langchain.agents import AgentType, initialize_agent
-from langchain.agents.agent import AgentExecutor
 from langchain.globals import set_verbose  # type: ignore
-from langchain.memory import ConversationBufferMemory
-from langchain.prompts.chat import ChatPromptTemplate
-from langchain.tools import StructuredTool
-from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
-from langchain_google_vertexai import VertexAI
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import RunnableConfig, RunnableLambda
+from langchain_core.tools import StructuredTool
+from langgraph.checkpoint import MemorySaver
+from langgraph.checkpoint.base import empty_checkpoint
 from pytz import timezone
 
 from ..orchestrator import BaseOrchestrator, classproperty
+from .react_graph import create_graph
 from .tools import (
     get_confirmation_needing_tools,
     initialize_tools,
@@ -39,81 +38,23 @@ from .tools import (
     validate_ticket,
 )
 
-set_verbose(bool(os.getenv("DEBUG", default=False)))
+DEBUG = bool(os.getenv("DEBUG", default=False))
+set_verbose(DEBUG)
 BASE_HISTORY = {
     "type": "ai",
     "data": {"content": "Welcome to Cymbal Air!  How may I assist you?"},
 }
 
 
-class UserAgent:
-    client: ClientSession
-    agent: AgentExecutor
-
-    def __init__(
-        self,
-        client: ClientSession,
-        agent: AgentExecutor,
-        memory: ConversationBufferMemory,
-    ):
-        self.client = client
-        self.agent = agent
-        self.memory = memory
-
-    @classmethod
-    def initialize_agent(
-        cls,
-        client: ClientSession,
-        tools: List[StructuredTool],
-        history: List[BaseMessage],
-        prompt: ChatPromptTemplate,
-        model: str,
-    ) -> "UserAgent":
-        llm = VertexAI(max_output_tokens=512, model_name=model, temperature=0.0)
-        memory = ConversationBufferMemory(
-            chat_memory=ChatMessageHistory(messages=history),
-            memory_key="chat_history",
-            input_key="input",
-            output_key="output",
-        )
-        agent = initialize_agent(
-            tools,
-            llm,
-            agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
-            memory=memory,
-            handle_parsing_errors=True,
-            max_iterations=3,
-            early_stopping_method="generate",
-            return_intermediate_steps=True,
-        )
-        agent.agent.llm_chain.prompt = prompt  # type: ignore
-        return UserAgent(client, agent, memory)
-
-    async def close(self):
-        await self.client.close()
-
-    async def invoke(self, prompt: str) -> Dict[str, Any]:
-        try:
-            response = await self.agent.ainvoke({"input": prompt})
-        except Exception as err:
-            raise HTTPException(status_code=500, detail=f"Error invoking agent: {err}")
-        return response
-
-    async def insert_ticket(self, params: str):
-        return await insert_ticket(self.client, params)
-
-    def reset_memory(self, base_message: List[BaseMessage]):
-        self.memory.clear()
-        self.memory.chat_memory = ChatMessageHistory(messages=base_message)
-
-
 class LangGraphOrchestrator(BaseOrchestrator):
-    _user_sessions: Dict[str, UserAgent]
+    _user_sessions: Dict[str, str]
     # aiohttp context
     connector = None
 
     def __init__(self):
         self._user_sessions = {}
+        self._langgraph_app = None
+        self._checkpointer = None
 
     @classproperty
     def kind(cls):
@@ -123,66 +64,73 @@ class LangGraphOrchestrator(BaseOrchestrator):
         return uuid in self._user_sessions
 
     async def user_session_insert_ticket(self, uuid: str, params: str) -> Any:
-        user_session = self.get_user_session(uuid)
-        response = await user_session.insert_ticket(params)
+        user_id_token = self.get_user_id_token(uuid) or ""
+        response = await insert_ticket(self.client, params, user_id_token)
         return response
-
-    async def check_and_add_confirmations(self, response: Dict[str, Any]):
-        for step in response.get("intermediate_steps") or []:
-            if len(step) > 0:
-                # Find the called tool in the step
-                called_tool = step[0]
-                # Check to see if the agent has made a decision to call Prepare Insert Ticket
-                # This tool is a no-op and requires user confirmation before continuing
-                if called_tool.tool in self.confirmation_needing_tools:
-                    if called_tool.tool == "Insert Ticket":
-                        flight_info = await validate_ticket(
-                            self.client, called_tool.tool_input
-                        )
-                        return {"tool": called_tool.tool, "params": flight_info}
-                    return {"tool": called_tool.tool, "params": called_tool.tool_input}
-        return None
 
     async def user_session_create(self, session: dict[str, Any]):
         """Create and load an agent executor with tools and LLM."""
-        print("Initializing agent..")
+        client = await self.create_client_session()
+        if self._langgraph_app is None:
+            print("Initializing graph..")
+            tools = await initialize_tools(client)
+            prompt = self.create_prompt_template(tools)
+            checkpointer = MemorySaver()
+            langgraph_app = await create_graph(
+                tools, checkpointer, prompt, self.MODEL, DEBUG
+            )
+            self._checkpointer = checkpointer
+            self._langgraph_app = langgraph_app
+
+        print("Initializing session")
         if "uuid" not in session:
             session["uuid"] = str(uuid.uuid4())
-        id = session["uuid"]
+        session_id = session["uuid"]
         if "history" not in session:
             session["history"] = [BASE_HISTORY]
         history = self.parse_messages(session["history"])
-        client = await self.create_client_session()
-        tools = await initialize_tools(client)
-        prompt = self.create_prompt_template(tools)
-        agent = UserAgent.initialize_agent(client, tools, history, prompt, self.MODEL)
-        self._user_sessions[id] = agent
-        self.confirmation_needing_tools = get_confirmation_needing_tools()
+
+        config = self.get_config(session_id)
+        self._langgraph_app.update_state(config, {"messages": history})
+        self._user_sessions[session_id] = ""
         self.client = client
 
-    async def user_session_invoke(self, uuid: str, prompt: str) -> dict[str, Any]:
-        user_session = self.get_user_session(uuid)
-        # Send prompt to LLM
-        agent_response = await user_session.invoke(prompt)
-        # Check for calls that may require confirmation to proceed
-        confirmation = await self.check_and_add_confirmations(agent_response)
+    async def user_session_invoke(self, uuid: str, user_prompt: str) -> dict[str, Any]:
+        config = self.get_config(uuid)
+        user_query = [HumanMessage(content=user_prompt)]
+        final_state = await self._langgraph_app.ainvoke(
+            {"messages": user_query, "user_id_token": self.get_user_id_token(uuid)},
+            config=config,
+        )
+        output = final_state["messages"][-1].content
         # Build final response
         response = {}
-        response["output"] = agent_response.get("output")
-        if confirmation:
-            response["confirmation"] = confirmation
+        response["output"] = output
+        response["state"] = final_state
         return response
 
     def user_session_reset(self, session: dict[str, Any], uuid: str):
-        user_session = self.get_user_session(uuid)
         del session["history"]
         base_history = self.get_base_history(session)
         session["history"] = [base_history]
         history = self.parse_messages(session["history"])
-        user_session.reset_memory(history)
 
-    def get_user_session(self, uuid: str) -> UserAgent:
-        return self._user_sessions[uuid]
+        # Reset graph checkpointer
+        checkpoint = empty_checkpoint()
+        config = self.get_config(uuid)
+        self._checkpointer.put(config=config, checkpoint=checkpoint, metadata={})
+
+        # Update state with message history
+        self._langgraph_app.update_state(config, {"messages": history})
+
+    def get_user_session(self, uuid: str):
+        raise NotImplementedError("Irrelevant to LangGraph.")
+
+    def set_user_session_header(self, uuid: str, user_id_token: str):
+        self._user_sessions[uuid] = user_id_token
+
+    def get_user_id_token(self, uuid: str) -> Optional[str]:
+        return self._user_sessions.get(uuid)
 
     async def get_connector(self) -> TCPConnector:
         if self.connector is None:
@@ -217,10 +165,9 @@ class LangGraphOrchestrator(BaseOrchestrator):
                 SUFFIX,
             ]
         )
-        human_message_template = "{input}\n\n{agent_scratchpad}"
 
         prompt = ChatPromptTemplate.from_messages(
-            [("system", template), ("human", human_message_template)]
+            [("system", template), ("placeholder", "{messages}")]
         )
         prompt = prompt.partial(cur_datetime=self.get_datetime)
         return prompt
@@ -252,17 +199,17 @@ class LangGraphOrchestrator(BaseOrchestrator):
             return base_history
         return BASE_HISTORY
 
+    def get_config(self, uuid: str):
+        return {"configurable": {"thread_id": uuid}}
+
     async def user_session_signout(self, uuid: str):
-        user_session = self.get_user_session(uuid)
-        if user_session:
-            await user_session.close()
-            del self._user_sessions[uuid]
+        checkpoint = empty_checkpoint()
+        config = self.get_config(uuid)
+        self._checkpointer.put(config=config, checkpoint=checkpoint, metadata={})
+        del self._user_sessions[uuid]
 
     def close_clients(self):
-        close_client_tasks = [
-            asyncio.create_task(a.close()) for a in self._user_sessions.values()
-        ]
-        asyncio.gather(*close_client_tasks)
+        self.client.close()
 
 
 PREFIX = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
@@ -284,47 +231,35 @@ as well as ammenities of San Francisco Airport."""
 TOOLS_PREFIX = """
 TOOLS:
 ------
+Assistant can ask the user to use tools to look up information that may be helpful in answering the users original question. The tools the human can use are:
 
-Assistant has access to the following tools:"""
+"""
 
-FORMAT_INSTRUCTIONS = """Use a json blob to specify a tool by providing an action key (tool name)
-and an action_input key (tool input).
+FORMAT_INSTRUCTIONS = """
+When responding, please output a response in one of two formats:
 
-Valid "action" values: "Final Answer" or {tool_names}
-
-Provide only ONE action per $JSON_BLOB, as shown:
-
-```
+** Option 1:**
+Use this is you want to use a tool.
+Markdown code snippet formatted in the following schema:
+```json
 {{{{
-  "action": $TOOL_NAME,
-  "action_input": $INPUT
+  "action": string, \ The action to take. Must be one of {tool_names}
+  "action_input": string \ The input to the action
 }}}}
 ```
 
-Follow this format:
-
-Question: input question to answer
-Thought: consider previous and subsequent steps
-Action:
-```
-$JSON_BLOB
-```
-Observation: action result
-... (repeat Thought/Action/Observation N times)
-Thought: I know what to respond
-Action:
-```
+**Option 2:**
+Use this if you want to respond directly to the human.
+Markdown code snippet formatted following schema:
+```json
 {{{{
   "action": "Final Answer",
-  "action_input": "Final response to human"
+  "action_input": string \ You should put what you want to return to user here
 }}}}
-```"""
+```
+"""
 
 SUFFIX = """Begin! Use tools if necessary. Respond directly if appropriate.
-If using a tool, reminder to ALWAYS respond with a valid json blob of a single action.
-Format is Action:```$JSON_BLOB```then Observation:.
-Thought:
 
-Previous conversation history:
-{chat_history}
+Here is the chat history and user's input (remember to respond with a markdown code snippet of a json a single action, and NOTHING else):
 """

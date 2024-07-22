@@ -21,7 +21,7 @@ import aiohttp
 import google.oauth2.id_token  # type: ignore
 from google.auth import compute_engine  # type: ignore
 from google.auth.transport.requests import Request  # type: ignore
-from langchain.tools import StructuredTool
+from langchain_core.tools import StructuredTool
 from pydantic.v1 import BaseModel, Field
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
@@ -51,9 +51,10 @@ def get_id_token():
         return CREDENTIALS.token
 
 
-def get_headers(client: aiohttp.ClientSession):
+def get_headers(client: aiohttp.ClientSession, user_id_token: str):
     """Helper method to generate ID tokens for authenticated requests"""
     headers = client.headers
+    headers["User-Id-Token"] = f"Bearer {user_id_token}"
     if not "http://" in BASE_URL:
         # Append ID Token to make authenticated requests to Cloud Run services
         headers["Authorization"] = f"Bearer {get_id_token()}"
@@ -65,10 +66,11 @@ class AirportSearchInput(BaseModel):
     country: Optional[str] = Field(description="Country")
     city: Optional[str] = Field(description="City")
     name: Optional[str] = Field(description="Airport name")
+    user_id_token: Optional[str]
 
 
 def generate_search_airports(client: aiohttp.ClientSession):
-    async def search_airports(country: str, city: str, name: str):
+    async def search_airports(country: str, city: str, name: str, user_id_token: str):
         params = {
             "country": country,
             "city": city,
@@ -77,7 +79,7 @@ def generate_search_airports(client: aiohttp.ClientSession):
         response = await client.get(
             url=f"{BASE_URL}/airports/search",
             params=filter_none_values(params),
-            headers=get_headers(client),
+            headers=get_headers(client, user_id_token),
         )
 
         response_json = await response.json()
@@ -92,14 +94,17 @@ def generate_search_airports(client: aiohttp.ClientSession):
 class FlightNumberInput(BaseModel):
     airline: str = Field(description="Airline unique 2 letter identifier")
     flight_number: str = Field(description="1 to 4 digit number")
+    user_id_token: Optional[str]
 
 
 def generate_search_flights_by_number(client: aiohttp.ClientSession):
-    async def search_flights_by_number(airline: str, flight_number: str):
+    async def search_flights_by_number(
+        airline: str, flight_number: str, user_id_token: str
+    ):
         response = await client.get(
             url=f"{BASE_URL}/flights/search",
             params={"airline": airline, "flight_number": flight_number},
-            headers=get_headers(client),
+            headers=get_headers(client, user_id_token),
         )
 
         return await response.json()
@@ -107,12 +112,13 @@ def generate_search_flights_by_number(client: aiohttp.ClientSession):
     return search_flights_by_number
 
 
-class ListFlights(BaseModel):
+class ListFlightsInput(BaseModel):
     departure_airport: Optional[str] = Field(
         description="Departure airport 3-letter code",
     )
     arrival_airport: Optional[str] = Field(description="Arrival airport 3-letter code")
     date: str = Field(description="Date of flight departure")
+    user_id_token: Optional[str]
 
 
 def generate_list_flights(client: aiohttp.ClientSession):
@@ -120,6 +126,7 @@ def generate_list_flights(client: aiohttp.ClientSession):
         departure_airport: str,
         arrival_airport: str,
         date: str,
+        user_id_token: str,
     ):
         params = {
             "departure_airport": departure_airport,
@@ -129,7 +136,7 @@ def generate_list_flights(client: aiohttp.ClientSession):
         response = await client.get(
             url=f"{BASE_URL}/flights/search",
             params=filter_none_values(params),
-            headers=get_headers(client),
+            headers=get_headers(client, user_id_token),
         )
 
         response_json = await response.json()
@@ -143,14 +150,15 @@ def generate_list_flights(client: aiohttp.ClientSession):
 
 class QueryInput(BaseModel):
     query: str = Field(description="Search query")
+    user_id_token: Optional[str]
 
 
 def generate_search_amenities(client: aiohttp.ClientSession):
-    async def search_amenities(query: str):
+    async def search_amenities(query: str, user_id_token: str):
         response = await client.get(
             url=f"{BASE_URL}/amenities/search",
             params={"top_k": "5", "query": query},
-            headers=get_headers(client),
+            headers=get_headers(client, user_id_token),
         )
 
         response = await response.json()
@@ -160,11 +168,11 @@ def generate_search_amenities(client: aiohttp.ClientSession):
 
 
 def generate_search_policies(client: aiohttp.ClientSession):
-    async def search_policies(query: str):
+    async def search_policies(query: str, user_id_token: str):
         response = await client.get(
             url=f"{BASE_URL}/policies/search",
             params={"top_k": "5", "query": query},
-            headers=get_headers(client),
+            headers=get_headers(client, user_id_token),
         )
 
         response = await response.json()
@@ -198,7 +206,7 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
     return insert_ticket
 
 
-async def insert_ticket(client: aiohttp.ClientSession, params: str):
+async def insert_ticket(client: aiohttp.ClientSession, params: str, user_id_token: str):
     ticket_info = json.loads(params)
     response = await client.post(
         url=f"{BASE_URL}/tickets/insert",
@@ -210,13 +218,15 @@ async def insert_ticket(client: aiohttp.ClientSession, params: str):
             "departure_time": ticket_info.get("departure_time").replace("T", " "),
             "arrival_time": ticket_info.get("arrival_time").replace("T", " "),
         },
-        headers=get_headers(client),
+        headers=get_headers(client, user_id_token),
     )
     response = await response.json()
     return response
 
 
-async def validate_ticket(client: aiohttp.ClientSession, ticket_info: Dict[Any, Any]):
+async def validate_ticket(
+    client: aiohttp.ClientSession, ticket_info: Dict[Any, Any], user_id_token: str
+):
     response = await client.get(
         url=f"{BASE_URL}/tickets/validate",
         params=filter_none_values(
@@ -229,7 +239,7 @@ async def validate_ticket(client: aiohttp.ClientSession, ticket_info: Dict[Any, 
                 ),
             }
         ),
-        headers=get_headers(client),
+        headers=get_headers(client, user_id_token),
     )
     response_json = await response.json()
 
@@ -245,14 +255,17 @@ async def validate_ticket(client: aiohttp.ClientSession, ticket_info: Dict[Any, 
 
 
 def generate_list_tickets(client: aiohttp.ClientSession):
-    async def list_tickets():
+    async def list_tickets(user_id_token: str):
         response = await client.get(
             url=f"{BASE_URL}/tickets/list",
-            headers=get_headers(client),
+            headers=get_headers(client, user_id_token),
         )
 
-        response = await response.json()
-        return response
+        response_json = await response.json()
+        return {
+            "number of tickets booked": len(response_json),
+            "user's ticket": response_json,
+        }
 
     return list_tickets
 
@@ -343,7 +356,7 @@ async def initialize_tools(client: aiohttp.ClientSession):
                             "date": "2023-01-01"
                         }}
                         """,
-            args_schema=ListFlights,
+            args_schema=ListFlightsInput,
         ),
         StructuredTool.from_function(
             coroutine=generate_search_amenities(client),
