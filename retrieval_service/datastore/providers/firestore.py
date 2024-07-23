@@ -67,6 +67,24 @@ class Client(datastore.Client[Config]):
                 delete_tasks.append(asyncio.create_task(doc.reference.delete()))
         await asyncio.gather(*delete_tasks)
 
+    async def create_vector_indexes(self, collection_name: str):
+        create_vector_index = [
+            "gcloud",
+            "alpha",
+            "firestore",
+            "indexes",
+            "composite",
+            "create",
+            f"--collection-group={collection_name}",
+            "--query-scope=COLLECTION",
+            '--field-config=field-path=embedding,vector-config={"dimension":768,"flat":"{}"}',
+            "--database=(default)",
+        ]
+        create_vector_index_process = await asyncio.create_subprocess_exec(
+            *create_vector_index,
+        )
+        await create_vector_index_process.wait()
+
     async def delete_indexes(index_list):
         # Check if the collection exists and deletes all indexes
         delete_tasks = []
@@ -293,6 +311,9 @@ class Client(datastore.Client[Config]):
         await asyncio.gather(*create_policies_tasks)
 
         # Initialize single-field vector indexes
+        await self.create_vector_indexes("amenities")
+        await self.create_vector_indexes("policies")
+
         create_amenities_vector_index = [
             "gcloud",
             "alpha",
