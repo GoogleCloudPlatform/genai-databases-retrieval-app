@@ -39,9 +39,6 @@ async def run_llm_for_eval(
         except Exception as e:
             print(f"error invoking agent: {e}")
         else:
-            eval_data.instruction = (
-                INSTRUCTION + f"\nUser query is '{eval_data.query}'."
-            )
             eval_data.prediction_output = query_response.get("output")
 
             # Retrieve prediction_tool_calls from query response
@@ -75,7 +72,7 @@ def evaluate_retrieval_phase(eval_datas: List[EvalData]) -> evaluation_base.Eval
     responses = []
     references = []
     for e in eval_datas:
-        responses.append(
+        references.append(
             json.dumps(
                 {
                     "content": e.content,
@@ -83,7 +80,7 @@ def evaluate_retrieval_phase(eval_datas: List[EvalData]) -> evaluation_base.Eval
                 }
             )
         )
-        references.append(
+        responses.append(
             json.dumps(
                 {
                     "content": e.content,
@@ -124,12 +121,12 @@ def evaluate_response_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalR
 
     for e in eval_datas:
         instructions.append(
-            e.instruction or "answer user query based on context given."
+            f"Answer user query based on context given. User query is {e.query}."
         )
         context_str = (
             [json.dumps(c) for c in e.context] if e.context else ["no data retrieved"]
         )
-        contexts.append(",".join(context_str))
+        contexts.append(INSTRUCTION + ", " + ", ".join(context_str))
         responses.append(e.prediction_output or "")
     eval_dataset = pd.DataFrame(
         {
