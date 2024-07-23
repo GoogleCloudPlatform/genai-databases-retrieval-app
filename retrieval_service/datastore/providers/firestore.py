@@ -147,7 +147,7 @@ class Client(datastore.Client[Config]):
             [airports_ref, amenities_ref, flights_ref, policies_ref]
         )
 
-        # List and delte existing vector indexes
+        # List indexes to check if the collections already exist; if so, delete collections
         # Assign the index-id to the corresponding collection
         indexes = await self.__list_vector_index()
         if indexes != [""]:
@@ -159,7 +159,7 @@ class Client(datastore.Client[Config]):
             policies_ref = collections["policies"]
             await self.__delete_vector_index([amenities_ref, policies_ref])
 
-        # initialize collections
+        # Initialize collections
         create_airports_tasks = []
         for airport in airports:
             create_airports_tasks.append(
