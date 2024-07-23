@@ -38,8 +38,6 @@ class Config(BaseModel, datastore.AbstractConfig):
 
 class Client(datastore.Client[Config]):
     __client: AsyncClient
-    policies_collection: AsyncQuery
-    amenities_collection: AsyncQuery
 
     @datastore.classproperty
     def kind(cls):
@@ -47,14 +45,16 @@ class Client(datastore.Client[Config]):
 
     def __init__(self, client: AsyncClient):
         self.__client = client
-        self.policies_collection = AsyncQuery(self.__client.collection("policies"))
-        self.amenities_collection = AsyncQuery(self.__client.collection("amenities"))
+        self.__policies_collection = AsyncQuery(self.__client.collection("policies"))
+        self.__amenities_collection = AsyncQuery(self.__client.collection("amenities"))
 
     @classmethod
     async def create(cls, config: Config) -> "Client":
         return cls(AsyncClient(project=config.projectId))
 
-    async def delete_collections(collection_list: list[AsyncCollectionReference]):
+    async def __delete_collections(
+        self, collection_list: list[AsyncCollectionReference]
+    ):
         # Checks if collection exists and deletes all documents
         delete_tasks = []
         for collection_ref in collection_list:
@@ -67,8 +67,40 @@ class Client(datastore.Client[Config]):
                 delete_tasks.append(asyncio.create_task(doc.reference.delete()))
         await asyncio.gather(*delete_tasks)
 
-    async def create_vector_indexes(self, collection_name: str):
-        create_vector_index = [
+    async def __list_vector_index(self) -> list[str]:
+        list_vector_index_command = [
+            "gcloud",
+            "alpha",
+            "firestore",
+            "indexes",
+            "composite",
+            "list",
+            "--database=(default)",
+            "--format=value(name)",  # prints name field
+        ]
+
+        list_vector_index_process = await asyncio.create_subprocess_exec(
+            *list_vector_index_command,
+            stdout=asyncio.subprocess.PIPE,
+        )
+
+        # Capture output and ignore stderr
+        stdout, __ = await list_vector_index_process.communicate()
+
+        # Decode and format output
+        indexes = stdout.decode().strip().split("\n")
+
+        return indexes
+
+    async def parse_index_info(self, index_path: str) -> tuple[str, str]:
+        # Extract collection and index-id from file path
+        parts = index_path.split("/")
+        collection_name = parts[-3]
+        index_id = parts[-1]
+        return collection_name, index_id
+
+    async def __create_vector_index(self, collection_name: str):
+        create_vector_index = await asyncio.create_subprocess_exec(
             "gcloud",
             "alpha",
             "firestore",
@@ -79,18 +111,14 @@ class Client(datastore.Client[Config]):
             "--query-scope=COLLECTION",
             '--field-config=field-path=embedding,vector-config={"dimension":768,"flat":"{}"}',
             "--database=(default)",
-        ]
-        create_vector_index_process = await asyncio.create_subprocess_exec(
-            *create_vector_index,
         )
-        await create_vector_index_process.wait()
+        await create_vector_index.wait()
 
-    async def delete_indexes(index_list):
+    async def __delete_vector_index(self, indices: list[str]):
         # Check if the collection exists and deletes all indexes
-        delete_tasks = []
-        for index in index_list:
+        for index in indices:
             if index:
-                delete_vector_index = [
+                delete_vector_index = await asyncio.create_subprocess_exec(
                     "gcloud",
                     "alpha",
                     "firestore",
@@ -100,15 +128,8 @@ class Client(datastore.Client[Config]):
                     index,
                     "--database=(default)",
                     "--quiet",  # Added to suppress delete warning
-                ]
-
-                delete_vector_index_process = await asyncio.create_subprocess_exec(
-                    *delete_vector_index,
                 )
-                delete_tasks.append(
-                    asyncio.create_task(delete_vector_index_process.wait())
-                )
-        await asyncio.gather(*delete_tasks)
+                await delete_vector_index.wait()
 
     async def initialize_data(
         self,
@@ -122,44 +143,21 @@ class Client(datastore.Client[Config]):
         amenities_ref = self.__client.collection("amenities")
         flights_ref = self.__client.collection("flights")
         policies_ref = self.__client.collection("policies")
-        await self.delete_collections(
+        await self.__delete_collections(
             [airports_ref, amenities_ref, flights_ref, policies_ref]
         )
 
-        # List indexes and retrieve name field (file-path)
-        list_vector_index = [
-            "gcloud",
-            "alpha",
-            "firestore",
-            "indexes",
-            "composite",
-            "list",
-            "--database=(default)",
-            "--format=value(name)",  # prints name field
-        ]
-
-        list_vector_index_process = await asyncio.create_subprocess_exec(
-            *list_vector_index,
-            stdout=asyncio.subprocess.PIPE,
-        )
-
-        # Capture output and ignore stderr
-        stdout, __ = await list_vector_index_process.communicate()
-
-        # Decode and format output
-        indexes = stdout.decode().strip().split("\n")
-
-        # Check if the indexes already exist; if so, delete indexes
-        # Extract collection and index-id from file path
+        # List and delte existing vector indexes
         # Assign the index-id to the corresponding collection
+        indexes = await self.__list_vector_index()
         if indexes != [""]:
             collections = {"amenities": "", "policies": ""}
             for line in indexes:
-                collection, index_id = line.split("/")[-3], line.split("/")[-1]
+                collection, index_id = await self.parse_index_info(line)
                 collections[collection] = index_id
             amenities_ref = collections["amenities"]
             policies_ref = collections["policies"]
-            await self.delete_indexes([amenities_ref, policies_ref])
+            await self.__delete_vector_index([amenities_ref, policies_ref])
 
         # initialize collections
         create_airports_tasks = []
@@ -311,43 +309,8 @@ class Client(datastore.Client[Config]):
         await asyncio.gather(*create_policies_tasks)
 
         # Initialize single-field vector indexes
-        await self.create_vector_indexes("amenities")
-        await self.create_vector_indexes("policies")
-
-        create_amenities_vector_index = [
-            "gcloud",
-            "alpha",
-            "firestore",
-            "indexes",
-            "composite",
-            "create",
-            "--collection-group=amenities",
-            "--query-scope=COLLECTION",
-            '--field-config=field-path=embedding,vector-config={"dimension":768,"flat":"{}"}',
-            "--database=(default)",
-        ]
-        create_amenities_process = await asyncio.create_subprocess_exec(
-            *create_amenities_vector_index,
-        )
-        await create_amenities_process.wait()
-
-        create_policies_vector_index = [
-            "gcloud",
-            "alpha",
-            "firestore",
-            "indexes",
-            "composite",
-            "create",
-            "--collection-group=policies",
-            "--query-scope=COLLECTION",
-            '--field-config=field-path=embedding,vector-config={"dimension":768,"flat":"{}"}',
-            "--database=(default)",
-        ]
-
-        create_policies_process = await asyncio.create_subprocess_exec(
-            *create_policies_vector_index,
-        )
-        await create_policies_process.wait()
+        await self.__create_vector_index("amenities")
+        await self.__create_vector_index("policies")
 
     async def export_data(
         self,
@@ -444,15 +407,12 @@ class Client(datastore.Client[Config]):
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[Any]:
-        collection = self.amenities_collection
-        query_vector = Vector(query_embedding)
         # Using the same similarity metric to the embedding model's training method
         # produce the most accurate result
-        distance_measure = DistanceMeasure.DOT_PRODUCT
-        query = collection.find_nearest(
+        query = self.__amenities_collection.find_nearest(
             vector_field="embedding",
-            query_vector=query_vector,
-            distance_measure=distance_measure,
+            query_vector=Vector(query_embedding),
+            distance_measure=DistanceMeasure.DOT_PRODUCT,
             limit=top_k,
         )
 
@@ -557,19 +517,15 @@ class Client(datastore.Client[Config]):
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[Any]:
-        collection = self.policies_collection
-        query_vector = Vector(query_embedding)
-        distance_measure = DistanceMeasure.DOT_PRODUCT
-        query = collection.find_nearest(
+        query = self.__policies_collection.find_nearest(
             vector_field="embedding",
-            query_vector=query_vector,
-            distance_measure=distance_measure,
+            query_vector=Vector(query_embedding),
+            distance_measure=DistanceMeasure.DOT_PRODUCT,
             limit=top_k,
         )
 
-        docs = query.stream()
         policies = []
-        async for doc in docs:
+        async for doc in query.stream():
             policy_dict = {"id": doc.id, "content": doc.get("content")}
             policies.append(policy_dict)
         return policies
