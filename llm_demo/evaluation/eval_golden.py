@@ -50,7 +50,7 @@ goldens = [
         tool_calls=[
             ToolCall(
                 name="Search Airport",
-                arguments={"city": "San Francisco"},
+                arguments={"country": "United States", "city": "San Francisco"},
             ),
         ],
     ),
@@ -61,6 +61,7 @@ goldens = [
             ToolCall(
                 name="Search Airport",
                 arguments={
+                    "country": "United States",
                     "city": "Denver",
                     "name": "Denver International Airport",
                 },
@@ -154,14 +155,14 @@ goldens = [
             ToolCall(
                 name="Search Policies",
                 arguments={
-                    "query": "checked bags",
+                    "query": "checked baggage allowance",
                 },
             ),
         ],
     ),
     EvalData(
         category="Insert Ticket",
-        query="I would like to book flight CY 888 departing from SFO on 2024-01-01 at 6am.",
+        query="I would like to book flight CY 888 departing from SFO on January 1st 2024 at 6am.",
         tool_calls=[
             ToolCall(
                 name="Insert Ticket",
