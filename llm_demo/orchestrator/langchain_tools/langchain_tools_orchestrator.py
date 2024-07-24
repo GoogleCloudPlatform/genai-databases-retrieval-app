@@ -127,6 +127,9 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         response = await user_session.insert_ticket(params)
         return response
 
+    async def user_session_decline_ticket(self, uuid: str) -> Any:
+        return None
+
     async def check_and_add_confirmations(self, response: Dict[str, Any]):
         for step in response.get("intermediate_steps") or []:
             if len(step) > 0:

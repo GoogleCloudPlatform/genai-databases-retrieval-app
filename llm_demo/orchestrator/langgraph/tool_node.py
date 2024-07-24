@@ -15,6 +15,7 @@
 import asyncio
 import copy
 import json
+import uuid
 from itertools import repeat
 from typing import Any, Callable, Dict, Optional, Sequence, Union
 
@@ -77,8 +78,9 @@ class ToolNode(RunnableCallable):
             args = copy.copy(call["args"]) or {}
             args["user_id_token"] = user_id_token
             output = self.tools_by_name[call["name"]].invoke(args, config)
+            tool_call_id = call.get("id") or str(uuid.uuid4())
             return ToolMessage(
-                content=str_output(output), name=call["name"], tool_call_id=call["id"]
+                content=str_output(output), name=call["name"], tool_call_id=tool_call_id
             )
 
         with get_executor_for_config(config) as executor:
@@ -106,8 +108,9 @@ class ToolNode(RunnableCallable):
             args = copy.copy(call["args"]) or {}
             args["user_id_token"] = user_id_token
             output = await self.tools_by_name[call["name"]].ainvoke(args, config)
+            tool_call_id = call.get("id") or str(uuid.uuid4())
             return ToolMessage(
-                content=str_output(output), name=call["name"], tool_call_id=call["id"]
+                content=str_output(output), name=call["name"], tool_call_id=tool_call_id
             )
 
         outputs = await asyncio.gather(

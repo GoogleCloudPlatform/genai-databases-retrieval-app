@@ -192,6 +192,9 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
         response = await user_session.insert_ticket(params)
         return response
 
+    async def user_session_decline_ticket(self, uuid: str) -> Any:
+        return None
+
     async def user_session_create(self, session: dict[str, Any]):
         """Create and load an agent executor with tools and LLM."""
         print("Initializing agent..")

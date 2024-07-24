@@ -61,6 +61,10 @@ class BaseOrchestrator(ABC):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
+    async def user_session_decline_ticket(self, uuid: str) -> Any:
+        raise NotImplementedError("Subclass should implement this!")
+
+    @abstractmethod
     async def user_session_signout(self, uuid: str):
         """Sign out from user session. Clear and restart session."""
         raise NotImplementedError("Subclass should implement this!")

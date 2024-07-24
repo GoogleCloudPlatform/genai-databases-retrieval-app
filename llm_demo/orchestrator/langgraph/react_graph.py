@@ -13,10 +13,17 @@
 # limitations under the License.
 
 import json
+import uuid
 from typing import Annotated, Literal, Sequence, TypedDict
 
 from aiohttp import ClientSession
-from langchain_core.messages import AIMessage, BaseMessage, ToolCall
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    ToolCall,
+    ToolMessage,
+)
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableLambda
 from langchain_google_vertexai import VertexAI
@@ -26,6 +33,7 @@ from langgraph.graph.message import add_messages
 from langgraph.managed import IsLastStep
 
 from .tool_node import ToolNode
+from .tools import get_confirmation_needing_tools, insert_ticket, validate_ticket
 
 
 class UserState(TypedDict):
@@ -43,6 +51,7 @@ async def create_graph(
     checkpointer: MemorySaver,
     prompt: ChatPromptTemplate,
     model_name: str,
+    client: ClientSession,
     debug: bool,
 ):
     """
@@ -93,7 +102,9 @@ async def create_graph(
             else:
                 new_message = AIMessage(
                     content="suggesting a tool call",
-                    tool_calls=[ToolCall(id="1", name=action, args=action_input)],
+                    tool_calls=[
+                        ToolCall(id=str(uuid.uuid4()), name=action, args=action_input)
+                    ],
                 )
         except Exception as e:
             json_response = response
@@ -111,7 +122,9 @@ async def create_graph(
             }
         return {"messages": [new_message]}
 
-    def agent_should_continue(state: UserState) -> Literal["continue", "end"]:
+    def agent_should_continue(
+        state: UserState,
+    ) -> Literal["booking_validation", "continue", "end"]:
         """
         Function to determine which node is called after the agent node.
         """
@@ -119,28 +132,111 @@ async def create_graph(
         last_message = messages[-1]
         # If the LLM makes a tool call, then we route to the "tools" node
         if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
+            confirmation_needing_tools = get_confirmation_needing_tools()
+            for tool_call in last_message.tool_calls:
+                tool_name = tool_call["name"]
+                if tool_name in confirmation_needing_tools:
+                    if tool_name == "Insert Ticket":
+                        return "booking_validation"
             return "continue"
         # Otherwise, we stop (reply to the user)
         return "end"
 
+    async def booking_validation_node(state: UserState, config: RunnableConfig):
+        """
+        The node representing async function that validate the ticket.
+        After ticket validation, it will return AIMessage with updated ticket args.
+        """
+        messages = state["messages"]
+        last_message = messages[-1]
+        user_id_token = state["user_id_token"]
+        if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
+            tool_call = last_message.tool_calls[0]
+            # Run ticket validation and return the correct ticket information
+            flight_info = await validate_ticket(
+                client, tool_call.get("args"), user_id_token
+            )
+
+            new_message = AIMessage(
+                content="Please confirm if you would like to book the ticket.",
+                tool_calls=[
+                    ToolCall(
+                        id=str(uuid.uuid4()),
+                        name=tool_call.get("name"),
+                        args=flight_info,
+                    )
+                ],
+                additional_kwargs={"confirmation": True},
+            )
+            return {"messages": [new_message]}
+
+    def booking_should_continue(state: UserState) -> Literal["continue", "agent"]:
+        """
+        Function to determine which node is called after human response on ticket booking.
+        """
+        messages = state["messages"]
+        last_message = messages[-1]
+        # If last message makes a tool call, then we route to the "tools" node to proceed with booking
+        if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
+            return "continue"
+        # Otherwise, send response back to agent
+        return "agent"
+
+    async def insert_ticket_node(state: UserState, config: RunnableConfig):
+        """
+        Node to update human response to prevent
+        """
+        messages = state["messages"]
+        last_message = messages[-1]
+        user_id_token = state["user_id_token"]
+        # Run insert ticket
+        if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
+            tool_call = last_message.tool_calls[0]
+            output = await insert_ticket(client, tool_call.get("args"), user_id_token)
+            tool_call_id = tool_call.get("id") or str(uuid.uuid4())
+            tool_message = ToolMessage(
+                content=output, name="Insert Ticket", tool_call_id=tool_call_id
+            )
+            human_message = HumanMessage(content="Looks good to me.")
+            ai_message = AIMessage(content=output)
+            return {"messages": [human_message, tool_message, ai_message]}
+
     # Define constant node strings
     AGENT_NODE = "agent"
     TOOL_NODE = "tools"
+    BOOKING_VALIDATION_NODE = "booking_validation"
+    INSERT_TICKET_NODE = "insert_ticket"
 
     # Define a new graph
     llm_graph = StateGraph(UserState)
     llm_graph.add_node(AGENT_NODE, RunnableLambda(acall_model))
     llm_graph.add_node(TOOL_NODE, tool_node)
+    llm_graph.add_node(BOOKING_VALIDATION_NODE, RunnableLambda(booking_validation_node))
+    llm_graph.add_node(INSERT_TICKET_NODE, RunnableLambda(insert_ticket_node))
 
     # Set agent node as the first node to call
     llm_graph.set_entry_point(AGENT_NODE)
 
     # Add edges
     llm_graph.add_conditional_edges(
-        AGENT_NODE, agent_should_continue, {"continue": TOOL_NODE, "end": END}
+        AGENT_NODE,
+        agent_should_continue,
+        {
+            "continue": TOOL_NODE,
+            "booking_validation": BOOKING_VALIDATION_NODE,
+            "end": END,
+        },
     )
     llm_graph.add_edge(TOOL_NODE, AGENT_NODE)
+    llm_graph.add_conditional_edges(
+        BOOKING_VALIDATION_NODE,
+        booking_should_continue,
+        {"continue": INSERT_TICKET_NODE, "agent": AGENT_NODE},
+    )
+    llm_graph.add_edge(INSERT_TICKET_NODE, END)
 
     # Compile graph into a LangChain Runnable
-    langgraph_app = llm_graph.compile(checkpointer=checkpointer, debug=debug)
+    langgraph_app = llm_graph.compile(
+        checkpointer=checkpointer, debug=debug, interrupt_after=["booking_validation"]
+    )
     return langgraph_app
