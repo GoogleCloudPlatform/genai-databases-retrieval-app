@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: lint 
+name: lint
 on:
   pull_request:
     paths-ignore:
@@ -24,18 +24,12 @@ on:
       - demo
     paths-ignore:
       - "docs/**"
-  pull_request_target:
-    types: [labeled]
-    paths-ignore:
-      - "docs/**"
 
 # Declare default permissions as read only.
 permissions: read-all
 
 jobs:
   integration:
-    # run job on proper workflow event triggers (skip job for pull_request event from forks and only run pull_request_target for "lint: run" label)
-    if: "${{ (github.event.action != 'labeled' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name) || github.event.label.name == 'lint: run' }}"
     name: ${{ matrix.dir }}
     runs-on: ubuntu-latest
     strategy:
@@ -48,29 +42,8 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - name: Remove PR label
-        if: "${{ github.event.action == 'labeled' && github.event.label.name == 'lint: run' }}"
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            try {
-              await github.rest.issues.removeLabel({
-                name: 'lint: run',
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.payload.pull_request.number
-              });
-            } catch (e) {
-              console.log('Failed to remove label. Another job may have already removed it!');
-            }
-
       - name: Checkout code
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python
         uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0

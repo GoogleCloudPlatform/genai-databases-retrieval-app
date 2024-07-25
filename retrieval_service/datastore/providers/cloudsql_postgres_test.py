@@ -598,6 +598,52 @@ async def test_search_flights_by_airports(
     assert res == expected
 
 
+async def test_insert_ticket(ds: cloudsql_postgres.Client):
+    await ds.insert_ticket(
+        "1",
+        "test",
+        "test",
+        "UA",
+        "1532",
+        "SFO",
+        "DEN",
+        "2024-01-01 05:50:00",
+        "2024-01-01 09:23:00",
+    )
+
+
+async def test_list_tickets(ds: cloudsql_postgres.Client):
+    res = await ds.list_tickets("1")
+    expected = models.Ticket(
+        user_id=1,
+        user_name="test",
+        user_email="test",
+        airline="UA",
+        flight_number="1532",
+        departure_airport="SFO",
+        arrival_airport="DEN",
+        departure_time=datetime.strptime("2024-01-01 05:50:00", "%Y-%m-%d %H:%M:%S"),
+        arrival_time=datetime.strptime("2024-01-01 09:23:00", "%Y-%m-%d %H:%M:%S"),
+    )
+    assert res == [expected]
+
+
+async def test_validate_ticket(ds: cloudsql_postgres.Client):
+    res = await ds.validate_ticket("UA", "1532", "SFO", "2024-01-01 05:50:00")
+    expected = models.Flight(
+        id=0,
+        airline="UA",
+        flight_number="1532",
+        departure_airport="SFO",
+        arrival_airport="DEN",
+        departure_time=datetime.strptime("2024-01-01 05:50:00", "%Y-%m-%d %H:%M:%S"),
+        arrival_time=datetime.strptime("2024-01-01 09:23:00", "%Y-%m-%d %H:%M:%S"),
+        departure_gate="E49",
+        arrival_gate="D6",
+    )
+    assert res == expected
+
+
 policies_search_test_data = [
     pytest.param(
         # "What is the fee for extra baggage?"
