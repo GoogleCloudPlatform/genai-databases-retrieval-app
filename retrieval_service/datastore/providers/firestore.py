@@ -67,8 +67,15 @@ class Client(datastore.Client[Config]):
                 delete_tasks.append(asyncio.create_task(doc.reference.delete()))
         await asyncio.gather(*delete_tasks)
 
-    async def __list_vector_index(self) -> list[str]:
-        list_vector_index_command = [
+    async def parse_index_info(self, line: str) -> tuple[str, str]:
+        # Extract collection and index-id from file path
+        parts = line.split("/")
+        collection_name = parts[-3]
+        index_id = parts[-1]
+        return collection_name, index_id
+
+    async def __get_indices(self) -> dict[str, str]:
+        list_vector_index_process = await asyncio.create_subprocess_exec(
             "gcloud",
             "alpha",
             "firestore",
@@ -77,10 +84,6 @@ class Client(datastore.Client[Config]):
             "list",
             "--database=(default)",
             "--format=value(name)",  # prints name field
-        ]
-
-        list_vector_index_process = await asyncio.create_subprocess_exec(
-            *list_vector_index_command,
             stdout=asyncio.subprocess.PIPE,
         )
 
@@ -88,31 +91,17 @@ class Client(datastore.Client[Config]):
         stdout, __ = await list_vector_index_process.communicate()
 
         # Decode and format output
-        indexes = stdout.decode().strip().split("\n")
+        index_lines = stdout.decode().strip().split("\n")
 
-        return indexes
+        indices = {}
 
-    async def parse_index_info(self, index_path: str) -> tuple[str, str]:
-        # Extract collection and index-id from file path
-        parts = index_path.split("/")
-        collection_name = parts[-3]
-        index_id = parts[-1]
-        return collection_name, index_id
+        # Create a dict with collections and their corresponding vector index.
+        for line in index_lines:
+            if line:
+                collection, index_id = await self.parse_index_info(line)
+                indices[collection] = index_id
 
-    async def __create_vector_index(self, collection_name: str):
-        create_vector_index = await asyncio.create_subprocess_exec(
-            "gcloud",
-            "alpha",
-            "firestore",
-            "indexes",
-            "composite",
-            "create",
-            f"--collection-group={collection_name}",
-            "--query-scope=COLLECTION",
-            '--field-config=field-path=embedding,vector-config={"dimension":768,"flat":"{}"}',
-            "--database=(default)",
-        )
-        await create_vector_index.wait()
+        return indices
 
     async def __delete_vector_index(self, indices: list[str]):
         # Check if the collection exists and deletes all indexes
@@ -131,6 +120,21 @@ class Client(datastore.Client[Config]):
                 )
                 await delete_vector_index.wait()
 
+    async def __create_vector_index(self, collection_name: str):
+        create_vector_index = await asyncio.create_subprocess_exec(
+            "gcloud",
+            "alpha",
+            "firestore",
+            "indexes",
+            "composite",
+            "create",
+            f"--collection-group={collection_name}",
+            "--query-scope=COLLECTION",
+            '--field-config=field-path=embedding,vector-config={"dimension":768,"flat":"{}"}',
+            "--database=(default)",
+        )
+        await create_vector_index.wait()
+
     async def initialize_data(
         self,
         airports: list[models.Airport],
@@ -147,17 +151,11 @@ class Client(datastore.Client[Config]):
             [airports_ref, amenities_ref, flights_ref, policies_ref]
         )
 
-        # List indexes to check if the collections already exist; if so, delete collections
-        # Assign the index-id to the corresponding collection
-        indexes = await self.__list_vector_index()
-        if indexes != [""]:
-            collections = {"amenities": "", "policies": ""}
-            for line in indexes:
-                collection, index_id = await self.parse_index_info(line)
-                collections[collection] = index_id
-            amenities_ref = collections["amenities"]
-            policies_ref = collections["policies"]
-            await self.__delete_vector_index([amenities_ref, policies_ref])
+        # Retrieve vector indexes and check if the collections already exist; if so, delete collections
+        indices = await self.__get_indices()
+        amenities_ref = indices.get("amenities", "")
+        policies_ref = indices.get("policies", "")
+        await self.__delete_vector_index([amenities_ref, policies_ref])
 
         # Initialize collections
         create_airports_tasks = []
