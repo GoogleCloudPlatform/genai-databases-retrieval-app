@@ -14,7 +14,7 @@
 
 import asyncio
 from pydantic import BaseModel
-from neo4j import GraphDatabase
+from neo4j import AsyncGraphDatabase
 
 from typing import Literal, Optional
 
@@ -43,7 +43,7 @@ class SimpleAmenity(BaseModel):
 
 
 class Client(datastore.Client[Config]):
-    __driver: GraphDatabase.driver
+    __driver: AsyncGraphDatabase.driver
 
     @datastore.classproperty
     def kind(cls):
@@ -55,7 +55,7 @@ class Client(datastore.Client[Config]):
     @classmethod
     async def create(cls, config: Config) -> "Client":
         return cls(
-            GraphDatabase.driver(
+            AsyncGraphDatabase.driver(
                 config.uri, auth=(config.auth.username, config.auth.password)
             )
         )
@@ -67,24 +67,22 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
         policies: list[models.Policy],
     ) -> None:
-        async def create_amenities(session, amenities):
-            def _initialize_amenities(tx, amenities):
-                for amenity in amenities:
-                    tx.run(
-                        """
+        async def create_amenities(tx, amenities):
+            for amenity in amenities:
+                await tx.run(
+                    """
                         CREATE (a:Amenity {name: $name, description: $description, category: $category})
                         """,
-                        name=amenity.name,
-                        description=amenity.description,
-                        category=amenity.category,
-                    )
+                    name=amenity.name,
+                    description=amenity.description,
+                    category=amenity.category,
+                )
 
-            session.write_transaction(_initialize_amenities, amenities)
-
-        with self.__driver.session() as session:
+        async with self.__driver.session() as session:
             await asyncio.gather(
-                create_amenities(session, amenities),
-            )
+                session.execute_write(create_amenities, amenities),
+        )
+
 
     async def export_data(self) -> tuple[
         list[models.Airport],
@@ -92,26 +90,22 @@ class Client(datastore.Client[Config]):
         list[models.Flight],
         list[models.Policy],
     ]:
-        async def get_amenities(session):
-            def _get_all_amenities(tx):
-                result = tx.run("MATCH (a:Amenity) RETURN a")
-                return [record["a"] for record in result]
-
-            amenity_results = session.read_transaction(_get_all_amenities)
+        async def get_amenities(tx):
+            amenity_nodes = await tx.run("MATCH (a:Amenity) RETURN a")
             return [
                 models.Amenity(
-                    id=amenity.id,
-                    name=amenity["name"],
-                    description=amenity["description"],
-                    category=amenity["category"],
-                    embedding=amenity["embedding"],
+                    id=record["a"].id,
+                    name=record["a"]["name"],
+                    description=record["a"]["description"],
+                    category=record["a"]["category"],
+                    embedding=record["a"]["embedding"],
                 )
-                for amenity in amenity_results
+                for record in amenity_nodes
             ]
 
-        with self.__driver.session() as session:
+        async with self.__driver.session() as session:
             amenities = await asyncio.gather(
-                get_amenities(session),
+                session.execute_read(get_amenities),
             )
 
         return amenities
@@ -186,4 +180,4 @@ class Client(datastore.Client[Config]):
         raise NotImplementedError("This client does not support policies.")
 
     async def close(self):
-        self.__driver.close()
+        await self.__driver.close()
