@@ -36,18 +36,29 @@ def export_metrics_table_csv(retrieval: pd.DataFrame, response: pd.DataFrame):
 
 
 async def main():
+    ORCHESTRATION_TYPE = os.getenv("ORCHESTRATION_TYPE", default="langchain-tools")
     EXPORT_CSV = bool(os.getenv("EXPORT_CSV", default=False))
+    RETRIEVAL_EXPERIMENT_NAME = os.getenv(
+        "RETRIEVAL_EXPERIMENT_NAME", default="retrieval-phase-eval"
+    )
+    RESPONSE_EXPERIMENT_NAME = os.getenv(
+        "RESPONSE_EXPERIMENT_NAME", default="response-phase-eval"
+    )
 
     # Prepare orchestrator and session
-    orc = createOrchestrator("langchain-tools")
+    orc = createOrchestrator(ORCHESTRATION_TYPE)
     session_id = str(uuid.uuid4())
     session = {"uuid": session_id}
     await orc.user_session_create(session)
 
     # Run evaluation
     eval_lists = await run_llm_for_eval(goldens, orc, session, session_id)
-    retrieval_eval_results = evaluate_retrieval_phase(eval_lists)
-    response_eval_results = evaluate_response_phase(eval_lists)
+    retrieval_eval_results = evaluate_retrieval_phase(
+        eval_lists, RETRIEVAL_EXPERIMENT_NAME
+    )
+    response_eval_results = evaluate_response_phase(
+        eval_lists, RESPONSE_EXPERIMENT_NAME
+    )
     print(f"Retrieval phase eval results: {retrieval_eval_results.summary_metrics}")
     print(f"Response phase eval results: {response_eval_results.summary_metrics}")
 
