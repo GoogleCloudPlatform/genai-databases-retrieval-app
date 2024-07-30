@@ -126,7 +126,7 @@ def evaluate_response_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalR
         context_str = (
             [json.dumps(c) for c in e.context] if e.context else ["no data retrieved"]
         )
-        contexts.append(INSTRUCTION + ", " + ", ".join(context_str))
+        contexts.append(PROMPT + ", " + ", ".join(context_str))
         responses.append(e.prediction_output or "")
     eval_dataset = pd.DataFrame(
         {
@@ -144,7 +144,7 @@ def evaluate_response_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalR
     return eval_result
 
 
-INSTRUCTION = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
+PROMPT = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
 
 Cymbal Air (airline unique two letter identifier as CY) is a passenger airline offering convenient flights to many cities around the world from its
 hub in San Francisco. Cymbal Air takes pride in using the latest technology to offer the best customer

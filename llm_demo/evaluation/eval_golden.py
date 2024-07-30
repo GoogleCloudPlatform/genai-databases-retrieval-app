@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
+from pytz import timezone
 
 
 class ToolCall(BaseModel):
@@ -41,6 +43,12 @@ class EvalData(BaseModel):
     reset: bool = Field(
         default=True, description="determine to reset the chat after invoke"
     )
+
+
+def get_date(day_delta: int):
+    DATE_FORMATTER = "%Y-%m-%d"
+    retrieved_date = datetime.now(timezone("US/Pacific")) + timedelta(days=day_delta)
+    return retrieved_date.strftime(DATE_FORMATTER)
 
 
 goldens = [
@@ -102,7 +110,7 @@ goldens = [
                 name="List Flights",
                 arguments={
                     "arrival_airport": "JFK",
-                    "date": "2023-01-02",
+                    "date": f"{get_date(1)}",
                 },
             ),
         ],
@@ -162,22 +170,22 @@ goldens = [
     ),
     EvalData(
         category="Insert Ticket",
-        query="I would like to book flight CY 888 departing from SFO on January 1st 2024 at 6am.",
+        query="I would like to book flight CY 922 departing from SFO on 2024-01-01 at 6:38am.",
         tool_calls=[
             ToolCall(
                 name="Insert Ticket",
                 arguments={
                     "airline": "CY",
-                    "flight_number": "888",
+                    "flight_number": "922",
                     "departure_airport": "SFO",
-                    "departure_time": "2024-01-01 06:00:00",
+                    "departure_time": "2024-01-01 06:38:00",
                 },
             ),
         ],
     ),
     EvalData(
         category="Insert Ticket",
-        query="What flights are headed from SFO to DEN today?",
+        query="What flights are headed from SFO to DEN on January 1 2024?",
         tool_calls=[
             ToolCall(
                 name="List Flights",
@@ -197,12 +205,12 @@ goldens = [
             ToolCall(
                 name="Insert Ticket",
                 arguments={
-                    "airline": "CY",
-                    "flight_number": "888",
+                    "airline": "UA",
+                    "flight_number": "1532",
                     "departure_airport": "SFO",
                     "arrival_airport": "DEN",
-                    "departure_time": "2024-01-01 05:00:00",
-                    "arrival_time": "2024-01-01 08:00:00",
+                    "departure_time": "2024-01-01 05:50:00",
+                    "arrival_time": "2024-01-01 09:23:00",
                 },
             ),
         ],
@@ -281,7 +289,7 @@ goldens = [
                 arguments={
                     "departure_airport": "SFO",
                     "arrival_airport": "ORD",
-                    "date": "2024-01-02",
+                    "date": f"{get_date(1)}",
                 },
             ),
         ],
