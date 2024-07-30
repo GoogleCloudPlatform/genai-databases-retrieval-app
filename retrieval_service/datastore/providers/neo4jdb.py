@@ -21,11 +21,14 @@ from .. import datastore
 
 NEO4J_IDENTIFIER = "neo4j"
 
-class Config(BaseModel):
+class AuthConfig(BaseModel):
+    username: str
+    password: str
+
+class Config(BaseModel, datastore.AbstractConfig):
     kind: Literal["neo4j"]
     uri: str
-    user: str
-    password: str
+    auth: AuthConfig
 
 class Client(datastore.Client[Config]):
     __driver: GraphDatabase.driver
@@ -39,7 +42,7 @@ class Client(datastore.Client[Config]):
 
     @classmethod
     async def create(cls, config: Config) -> "Client":
-        return cls(GraphDatabase.driver(config.uri, auth=(config.user, config.password)))
+        return cls(GraphDatabase.driver(config.uri, auth=(config.auth.username, config.auth.password)))
     
     async def close(self):
         self.__driver.close()

@@ -17,9 +17,9 @@ from . import (
     cloudsql_mysql,
     cloudsql_postgres,
     firestore,
+    neo4jdb,
     postgres,
     spanner_gsql,
-    neo4j,
 )
 
 __ALL__ = [
@@ -29,5 +29,5 @@ __ALL__ = [
     cloudsql_postgres,
     firestore,
     spanner_gsql,
-    neo4j,
+    neo4jdb,
 ]
