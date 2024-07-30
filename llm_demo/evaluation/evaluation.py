@@ -62,11 +62,12 @@ async def run_llm_for_eval(
     return eval_list
 
 
-def evaluate_retrieval_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalResult:
+def evaluate_retrieval_phase(
+    eval_datas: List[EvalData], experiment_name: str
+) -> evaluation_base.EvalResult:
     """
     Run evaluation for the ability of a model to select the right tool and arguments (retrieval phase).
     """
-    RETRIEVAL_EXPERIMENT_NAME = "retrieval-phase-eval"
     metrics = ["tool_call_quality"]
     # Prepare evaluation task input
     responses = []
@@ -98,16 +99,17 @@ def evaluate_retrieval_phase(eval_datas: List[EvalData]) -> evaluation_base.Eval
     eval_result = EvalTask(
         dataset=eval_dataset,
         metrics=metrics,
-        experiment=RETRIEVAL_EXPERIMENT_NAME,
+        experiment=experiment_name,
     ).evaluate()
     return eval_result
 
 
-def evaluate_response_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalResult:
+def evaluate_response_phase(
+    eval_datas: List[EvalData], experiment_name: str
+) -> evaluation_base.EvalResult:
     """
     Run evaluation for the ability of a model to generate a response based on the context given (response phase).
     """
-    RESPONSE_EXPERIMENT_NAME = "response-phase-eval"
     metrics = [
         "text_generation_quality",
         "text_generation_factuality",
@@ -139,7 +141,7 @@ def evaluate_response_phase(eval_datas: List[EvalData]) -> evaluation_base.EvalR
     eval_result = EvalTask(
         dataset=eval_dataset,
         metrics=metrics,
-        experiment=RESPONSE_EXPERIMENT_NAME,
+        experiment=experiment_name,
     ).evaluate()
     return eval_result
 
