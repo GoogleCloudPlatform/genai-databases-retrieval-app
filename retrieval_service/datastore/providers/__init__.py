@@ -19,6 +19,7 @@ from . import (
     firestore,
     postgres,
     spanner_gsql,
+    neo4j,
 )
 
 __ALL__ = [
@@ -28,4 +29,5 @@ __ALL__ = [
     cloudsql_postgres,
     firestore,
     spanner_gsql,
+    neo4j,
 ]
