@@ -31,12 +31,7 @@ from pytz import timezone
 
 from ..orchestrator import BaseOrchestrator, classproperty
 from .react_graph import create_graph
-from .tools import (
-    get_confirmation_needing_tools,
-    initialize_tools,
-    insert_ticket,
-    validate_ticket,
-)
+from .tools import initialize_tools
 
 DEBUG = bool(os.getenv("DEBUG", default=False))
 set_verbose(DEBUG)
@@ -64,8 +59,16 @@ class LangGraphOrchestrator(BaseOrchestrator):
         return uuid in self._user_sessions
 
     async def user_session_insert_ticket(self, uuid: str, params: str) -> Any:
-        user_id_token = self.get_user_id_token(uuid) or ""
-        response = await insert_ticket(self.client, params, user_id_token)
+        response = await self.user_session_invoke(uuid, None)
+        return "ticket booking success"
+
+    async def user_session_decline_ticket(self, uuid: str) -> dict[str, Any]:
+        config = self.get_config(uuid)
+        human_message = HumanMessage(
+            content="I changed my mind. Decline ticket booking."
+        )
+        self._langgraph_app.update_state(config, {"messages": [human_message]})
+        response = await self.user_session_invoke(uuid, None)
         return response
 
     async def user_session_create(self, session: dict[str, Any]):
@@ -77,7 +80,7 @@ class LangGraphOrchestrator(BaseOrchestrator):
             prompt = self.create_prompt_template(tools)
             checkpointer = MemorySaver()
             langgraph_app = await create_graph(
-                tools, checkpointer, prompt, self.MODEL, DEBUG
+                tools, checkpointer, prompt, self.MODEL, client, DEBUG
             )
             self._checkpointer = checkpointer
             self._langgraph_app = langgraph_app
@@ -95,17 +98,36 @@ class LangGraphOrchestrator(BaseOrchestrator):
         self._user_sessions[session_id] = ""
         self.client = client
 
-    async def user_session_invoke(self, uuid: str, user_prompt: str) -> dict[str, Any]:
+    async def user_session_invoke(
+        self, uuid: str, user_prompt: Optional[str]
+    ) -> dict[str, Any]:
         config = self.get_config(uuid)
-        user_query = [HumanMessage(content=user_prompt)]
+        if user_prompt:
+            user_query = [HumanMessage(content=user_prompt)]
+            app_input = {
+                "messages": user_query,
+                "user_id_token": self.get_user_id_token(uuid),
+            }
+        else:
+            app_input = None
         final_state = await self._langgraph_app.ainvoke(
-            {"messages": user_query, "user_id_token": self.get_user_id_token(uuid)},
+            app_input,
             config=config,
         )
-        output = final_state["messages"][-1].content
+        last_message = final_state["messages"][-1]
+        output = last_message.content
         # Build final response
         response = {}
         response["output"] = output
+        # If needs ticket verification
+        has_add_kwargs = hasattr(last_message, "additional_kwargs")
+        if has_add_kwargs and last_message.additional_kwargs.get("confirmation"):
+            tool_call = last_message.tool_calls[0]
+            response["confirmation"] = {
+                "tool": tool_call.get("name"),
+                "params": tool_call.get("args"),
+            }
+            return response
         response["state"] = final_state
         return response
 
@@ -261,5 +283,5 @@ Markdown code snippet formatted following schema:
 
 SUFFIX = """Begin! Use tools if necessary. Respond directly if appropriate.
 
-Here is the chat history and user's input (remember to respond with a markdown code snippet of a json a single action, and NOTHING else):
+Remember to respond with a markdown code snippet of a json a single action, and NOTHING else.
 """

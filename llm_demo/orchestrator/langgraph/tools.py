@@ -194,34 +194,35 @@ class TicketInput(BaseModel):
 
 def generate_insert_ticket(client: aiohttp.ClientSession):
     async def insert_ticket(
-        airline: str | None = None,
-        flight_number: str | None = None,
-        departure_airport: str | None = None,
-        arrival_airport: str | None = None,
-        departure_time: datetime | date | None = None,
-        arrival_time: datetime | date | None = None,
+        airline: str,
+        flight_number: str,
+        departure_airport: str,
+        arrival_airport: str,
+        departure_time: datetime,
+        arrival_time: datetime,
     ):
         return f"Booking ticket on {airline} {flight_number}"
 
     return insert_ticket
 
 
-async def insert_ticket(client: aiohttp.ClientSession, params: str, user_id_token: str):
-    ticket_info = json.loads(params)
+async def insert_ticket(
+    client: aiohttp.ClientSession, params: dict[str, str], user_id_token: str
+):
     response = await client.post(
         url=f"{BASE_URL}/tickets/insert",
         params={
-            "airline": ticket_info.get("airline"),
-            "flight_number": ticket_info.get("flight_number"),
-            "departure_airport": ticket_info.get("departure_airport"),
-            "arrival_airport": ticket_info.get("arrival_airport"),
-            "departure_time": ticket_info.get("departure_time").replace("T", " "),
-            "arrival_time": ticket_info.get("arrival_time").replace("T", " "),
+            "airline": params.get("airline"),
+            "flight_number": params.get("flight_number"),
+            "departure_airport": params.get("departure_airport"),
+            "arrival_airport": params.get("arrival_airport"),
+            "departure_time": params.get("departure_time"),
+            "arrival_time": params.get("arrival_time"),
         },
         headers=get_headers(client, user_id_token),
     )
     response = await response.json()
-    return response
+    return "Flight booking successful."
 
 
 async def validate_ticket(
@@ -248,8 +249,8 @@ async def validate_ticket(
         "flight_number": response_json.get("flight_number"),
         "departure_airport": response_json.get("departure_airport"),
         "arrival_airport": response_json.get("arrival_airport"),
-        "departure_time": response_json.get("departure_time"),
-        "arrival_time": response_json.get("arrival_time"),
+        "departure_time": response_json.get("departure_time").replace("T", " "),
+        "arrival_time": response_json.get("arrival_time").replace("T", " "),
     }
     return flight_info
 
