@@ -62,7 +62,7 @@ class LangGraphOrchestrator(BaseOrchestrator):
         response = await self.user_session_invoke(uuid, None)
         return "ticket booking success"
 
-    async def user_session_decline_ticket(self, uuid: str):
+    async def user_session_decline_ticket(self, uuid: str) -> dict[str, Any]:
         config = self.get_config(uuid)
         human_message = HumanMessage(
             content="I changed my mind. Decline ticket booking."

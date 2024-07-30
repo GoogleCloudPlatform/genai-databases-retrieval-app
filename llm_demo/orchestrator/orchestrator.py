@@ -61,7 +61,7 @@ class BaseOrchestrator(ABC):
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod
-    async def user_session_decline_ticket(self, uuid: str) -> Any:
+    async def user_session_decline_ticket(self, uuid: str) -> Optional[dict[str, Any]]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod

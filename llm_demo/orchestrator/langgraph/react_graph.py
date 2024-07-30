@@ -193,7 +193,7 @@ async def create_graph(
         if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
             tool_call = last_message.tool_calls[0]
             output = await insert_ticket(client, tool_call.get("args"), user_id_token)
-            tool_call_id = tool_call.get("id") or str(uuid.uuid4())
+            tool_call_id = tool_call.get("id")
             tool_message = ToolMessage(
                 content=output, name="Insert Ticket", tool_call_id=tool_call_id
             )

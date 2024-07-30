@@ -16,7 +16,7 @@ import asyncio
 import os
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from aiohttp import ClientSession, TCPConnector
 from fastapi import HTTPException
@@ -192,7 +192,11 @@ class FunctionCallingOrchestrator(BaseOrchestrator):
         response = await user_session.insert_ticket(params)
         return response
 
-    async def user_session_decline_ticket(self, uuid: str) -> Any:
+    async def user_session_decline_ticket(self, uuid: str) -> Optional[dict[str, Any]]:
+        """
+        Used if there's a process to be done after user decline ticket.
+        Return None is nothing is needed to be done.
+        """
         return None
 
     async def user_session_create(self, session: dict[str, Any]):
