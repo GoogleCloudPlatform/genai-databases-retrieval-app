@@ -24,6 +24,7 @@ Config = Union[
     providers.spanner_gsql.Config,
     providers.alloydb.Config,
     providers.cloudsql_mysql.Config,
+    providers.neo4j.Config,
 ]
 
 __ALL__ = [Client, Config, create, providers]
