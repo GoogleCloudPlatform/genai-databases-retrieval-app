@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 from pydantic import BaseModel
 from neo4j import GraphDatabase
 
-from typing import List, Literal, Optional
+from typing import Literal, Optional
 
 from .. import datastore
 
@@ -61,34 +62,57 @@ class Client(datastore.Client[Config]):
 
     async def initialize_data(
         self,
-        airports: List[models.Airport],
-        amenities: List[models.Amenity],
-        flights: List[models.Flight],
-        policies: List[models.Policy],
+        airports: list[models.Airport],
+        amenities: list[models.Amenity],
+        flights: list[models.Flight],
+        policies: list[models.Policy],
     ) -> None:
-        def _initialize_graph(tx, amenities):
-            for amenity in amenities:
-                tx.run(
-                    """
-                    CREATE (a:Amenity {name: $name, description: $description, category: $category})
-                """,
-                    name=amenity.name,
-                    description=amenity.description,
-                    category=amenity.category,
-                )
+        async def create_amenities(session, amenities):
+            def _initialize_amenities(tx, amenities):
+                for amenity in amenities:
+                    tx.run(
+                        """
+                        CREATE (a:Amenity {name: $name, description: $description, category: $category})
+                        """,
+                        name=amenity.name,
+                        description=amenity.description,
+                        category=amenity.category,
+                    )
+
+            session.write_transaction(_initialize_amenities, amenities)
 
         with self.__driver.session() as session:
-            session.write_transaction(_initialize_graph, amenities)
+            await asyncio.gather(
+                create_amenities(session, amenities),
+            )
 
-    async def export_data(self) -> List[SimpleAmenity]:
-        def _get_all_amenities(tx):
-            result = tx.run("MATCH (a:Amenity) RETURN a")
-            return [record["a"] for record in result]
+    async def export_data(self) -> tuple[
+        list[models.Airport],
+        list[models.Amenity],
+        list[models.Flight],
+        list[models.Policy],
+    ]:
+        async def get_amenities(session):
+            def _get_all_amenities(tx):
+                result = tx.run("MATCH (a:Amenity) RETURN a")
+                return [record["a"] for record in result]
 
-        with self.__driver.session() as session:
             amenity_results = session.read_transaction(_get_all_amenities)
+            return [
+                models.Amenity(
+                    id=amenity.id,
+                    name=amenity["name"],
+                    description=amenity["description"],
+                    category=amenity["category"],
+                    embedding=amenity["embedding"],
+                )
+                for amenity in amenity_results
+            ]
 
-        amenities = [SimpleAmenity(**a) for a in amenity_results]
+        with self.__driver.session() as session:
+            amenities = await asyncio.gather(
+                get_amenities(session),
+            )
 
         return amenities
 
