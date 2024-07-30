@@ -1,7 +1,7 @@
 host: 0.0.0.0
 datastore:
   # Example for Neo4j
-  kind: "neo4j"
+  kind: "neo4j",
   uri: "neo4j_url",
   auth:
     username: "neo4j_user",
