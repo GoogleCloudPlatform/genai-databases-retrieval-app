@@ -17,7 +17,12 @@ from neo4j import GraphDatabase
 
 from typing import Literal
 
+from retrieval_service.models.models import Airport, Amenity, Flight, Policy
+
 from .. import datastore
+
+import models
+
 
 NEO4J_IDENTIFIER = "neo4j"
 
@@ -29,6 +34,11 @@ class Config(BaseModel, datastore.AbstractConfig):
     kind: Literal["neo4j"]
     uri: str
     auth: AuthConfig
+
+class SimpleAmenity(BaseModel):
+    name: str
+    description: str
+    category: str
 
 class Client(datastore.Client[Config]):
     __driver: GraphDatabase.driver
@@ -47,6 +57,7 @@ class Client(datastore.Client[Config]):
     async def close(self):
         self.__driver.close()
 
-    
+    async def initialize_data(self, amenities: list[SimpleAmenity]) -> None:
+        return
 
 
