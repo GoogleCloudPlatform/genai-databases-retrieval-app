@@ -44,6 +44,7 @@ async def main():
     RESPONSE_EXPERIMENT_NAME = os.getenv(
         "RESPONSE_EXPERIMENT_NAME", default="response-phase-eval"
     )
+    USER_TOKEN_ID = os.getenv("USER_TOKEN_ID", default="")
 
     # Prepare orchestrator and session
     orc = createOrchestrator(ORCHESTRATION_TYPE)
