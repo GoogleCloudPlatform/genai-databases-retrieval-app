@@ -13,14 +13,14 @@
 # limitations under the License.
 
 import asyncio
-from pydantic import BaseModel
-from neo4j import AsyncGraphDatabase
-
-from typing import Literal, Optional
+import models
 
 from .. import datastore
 
-import models
+from pydantic import BaseModel
+from neo4j import AsyncGraphDatabase
+from typing import Literal, Optional
+
 
 NEO4J_IDENTIFIER = "neo4j"
 
@@ -37,6 +37,7 @@ class Config(BaseModel, datastore.AbstractConfig):
 
 
 class SimpleAmenity(BaseModel):
+    id: int
     name: str
     description: str
     category: str
@@ -71,8 +72,9 @@ class Client(datastore.Client[Config]):
             for amenity in amenities:
                 await tx.run(
                     """
-                        CREATE (a:Amenity {name: $name, description: $description, category: $category})
-                        """,
+                    CREATE (a:Amenity {id: $id, name: $name, description: $description, category: $category})
+                    """,
+                    id=amenity.id,
                     name=amenity.name,
                     description=amenity.description,
                     category=amenity.category,
@@ -81,8 +83,7 @@ class Client(datastore.Client[Config]):
         async with self.__driver.session() as session:
             await asyncio.gather(
                 session.execute_write(create_amenities, amenities),
-        )
-
+            )
 
     async def export_data(self) -> tuple[
         list[models.Airport],
@@ -90,25 +91,16 @@ class Client(datastore.Client[Config]):
         list[models.Flight],
         list[models.Policy],
     ]:
-        async def get_amenities(tx):
-            amenity_nodes = await tx.run("MATCH (a:Amenity) RETURN a")
-            return [
-                models.Amenity(
-                    id=record["a"].id,
-                    name=record["a"]["name"],
-                    description=record["a"]["description"],
-                    category=record["a"]["category"],
-                    embedding=record["a"]["embedding"],
-                )
-                for record in amenity_nodes
-            ]
+        async def amenities_nodes(tx):
+            result = await tx.run("MATCH (a:Amenity) RETURN a")
+            return [models.Amenity(**record["a"]) for record in result]
 
         async with self.__driver.session() as session:
             amenities = await asyncio.gather(
-                session.execute_read(get_amenities),
+                session.execute_read(amenities_nodes),
             )
 
-        return amenities
+        return [], amenities, [], []
 
     async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
         raise NotImplementedError("This client does not support airports.")
