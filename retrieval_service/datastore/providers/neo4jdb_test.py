@@ -59,33 +59,28 @@ async def driver(db_uri: str, db_auth: tuple) -> AsyncGenerator:
 
 
 @pytest_asyncio.fixture(scope="module")
-async def create_db(driver) -> AsyncGenerator[None, None]:
-    async with driver.session() as session:
-        await session.run("MATCH (n) DETACH DELETE n")
-    yield
-
-
-@pytest_asyncio.fixture(scope="module")
 async def data_set(
-    create_db: AsyncGenerator[None, None],
     db_uri: str,
-    db_user: str,
-    db_password: str,
-) -> AsyncGenerator[neo4jdb.Client, None]:
-    await create_db.__anext__()
+    db_auth: tuple,
+) -> AsyncGenerator[datastore.Client, None]:
     config = neo4jdb.Config(
         kind="neo4j",
         uri=db_uri,
-        user=db_user,
-        password=db_password,
+        auth=neo4jdb.AuthConfig(username=db_auth[0], password=db_auth[1]),
     )
 
     client = await datastore.create(config)
 
+    airports_data_set_path = "../data/airport_dataset.csv"
     amenities_data_set_path = "../data/amenity_dataset.csv"
+    flights_data_set_path = "../data/flights_dataset.csv"
+    policies_data_set_path = "../data/cymbalair_policy.csv"
 
-    amenities = await client.load_dataset(
+    airport, amenities, flights, polcies = await client.load_dataset(
+        airports_data_set_path,
         amenities_data_set_path,
+        flights_data_set_path,
+        policies_data_set_path,
     )
 
     await client.initialize_data([], amenities, [], [])
@@ -126,8 +121,8 @@ async def test_amenity_init_id(driver):
         "name": "Airport Information Desk",
         "description": "Information desk offering assistance with flight information, directions, and other airport services.",
         "location": "Arrivals Hall",
-        "terminal":"All Terminals",
+        "terminal": "All Terminals",
         "category": "facility",
-        "hour":"24/7",
+        "hour": "24/7",
     }
     assert node == expected_node
