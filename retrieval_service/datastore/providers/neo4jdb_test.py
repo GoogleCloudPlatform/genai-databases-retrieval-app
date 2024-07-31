@@ -13,15 +13,15 @@
 # limitations under the License.
 
 import asyncio
+from typing import AsyncGenerator
+
 import pytest
 import pytest_asyncio
+from neo4j import AsyncGraphDatabase
 
 from .. import datastore
 from . import neo4jdb
 from .utils import get_env_var
-
-from typing import AsyncGenerator
-from neo4j import AsyncGraphDatabase
 
 
 @pytest.fixture(scope="session")

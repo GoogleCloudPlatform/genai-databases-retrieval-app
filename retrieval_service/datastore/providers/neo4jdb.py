@@ -13,14 +13,14 @@
 # limitations under the License.
 
 import asyncio
+from typing import Literal, Optional
+
+from neo4j import AsyncGraphDatabase
+from pydantic import BaseModel
+
 import models
 
 from .. import datastore
-
-from pydantic import BaseModel
-from neo4j import AsyncGraphDatabase
-from typing import Literal, Optional
-
 
 NEO4J_IDENTIFIER = "neo4j"
 
