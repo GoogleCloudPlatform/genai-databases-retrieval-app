@@ -97,7 +97,7 @@ async def data_set(
 
 
 @pytest.mark.asyncio
-async def test_amenity_init_nodes(driver):
+async def test_amenity_init(driver):
     async with driver.session() as session:
         result = await session.run("MATCH (a: Amenity) RETURN count(a) AS count")
         record = await result.single()
@@ -109,7 +109,7 @@ async def test_amenity_init_nodes(driver):
 
 
 @pytest.mark.asyncio
-async def test_amenity(driver):
+async def test_amenity_init_id(driver):
     async with driver.session() as session:
         amenity_id = 35
         result = await session.run(
