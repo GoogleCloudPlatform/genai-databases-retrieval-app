@@ -68,6 +68,9 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
         policies: list[models.Policy],
     ) -> None:
+        async def delete_all(tx):
+            await tx.run("MATCH (n) DETACH DELETE n")
+
         async def create_amenities(tx, amenities):
             for amenity in amenities:
                 await tx.run(
@@ -81,6 +84,9 @@ class Client(datastore.Client[Config]):
                 )
 
         async with self.__driver.session() as session:
+            # Delete all exsiting nodes and relationships
+            await session.execute_write(delete_all)
+
             await asyncio.gather(
                 session.execute_write(create_amenities, amenities),
             )
