@@ -35,6 +35,7 @@ class Config(BaseModel, datastore.AbstractConfig):
     uri: str
     auth: AuthConfig
 
+
 class Client(datastore.Client[Config]):
     __driver: AsyncDriver
 
