@@ -14,6 +14,7 @@
 
 import json
 import os
+from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any, Dict, Optional
 
@@ -206,18 +207,28 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
     return insert_ticket
 
 
+@dataclass
+class TicketInfo:
+    airline: str
+    flight_number: str
+    departure_airport: str
+    departure_time: str
+    arrival_airport: str
+    arrival_time: str
+
+
 async def insert_ticket(
-    client: aiohttp.ClientSession, params: dict[str, str], user_id_token: str
+    client: aiohttp.ClientSession, ticket_info: TicketInfo, user_id_token: str
 ):
     response = await client.post(
         url=f"{BASE_URL}/tickets/insert",
         params={
-            "airline": params.get("airline"),
-            "flight_number": params.get("flight_number"),
-            "departure_airport": params.get("departure_airport"),
-            "arrival_airport": params.get("arrival_airport"),
-            "departure_time": params.get("departure_time"),
-            "arrival_time": params.get("arrival_time"),
+            "airline": ticket_info.airline,
+            "flight_number": ticket_info.flight_number,
+            "departure_airport": ticket_info.departure_airport,
+            "arrival_airport": ticket_info.arrival_airport,
+            "departure_time": ticket_info.departure_time,
+            "arrival_time": ticket_info.arrival_time,
         },
         headers=get_headers(client, user_id_token),
     )
