@@ -15,7 +15,7 @@
 import asyncio
 from typing import Literal, Optional
 
-from neo4j import AsyncGraphDatabase
+from neo4j import AsyncDriver, AsyncGraphDatabase
 from pydantic import BaseModel
 
 import models
@@ -35,16 +35,8 @@ class Config(BaseModel, datastore.AbstractConfig):
     uri: str
     auth: AuthConfig
 
-
-class SimpleAmenity(BaseModel):
-    id: int
-    name: str
-    description: str
-    category: str
-
-
 class Client(datastore.Client[Config]):
-    __driver: AsyncGraphDatabase.driver
+    __driver: AsyncDriver
 
     @datastore.classproperty
     def kind(cls):
@@ -75,12 +67,15 @@ class Client(datastore.Client[Config]):
             for amenity in amenities:
                 await tx.run(
                     """
-                    CREATE (a:Amenity {id: $id, name: $name, description: $description, category: $category})
+                    CREATE (a:Amenity {id: $id, name: $name, description: $description, location: $location, terminal: $terminal, category: $category, hour: $hour})
                     """,
                     id=amenity.id,
                     name=amenity.name,
                     description=amenity.description,
+                    location=amenity.location,
+                    terminal=amenity.terminal,
                     category=amenity.category,
+                    hour=amenity.hour,
                 )
 
         async with self.__driver.session() as session:
@@ -97,16 +92,7 @@ class Client(datastore.Client[Config]):
         list[models.Flight],
         list[models.Policy],
     ]:
-        async def amenities_nodes(tx):
-            result = await tx.run("MATCH (a:Amenity) RETURN a")
-            return [models.Amenity(**record["a"]) for record in result]
-
-        async with self.__driver.session() as session:
-            amenities = await asyncio.gather(
-                session.execute_read(amenities_nodes),
-            )
-
-        return [], amenities, [], []
+        raise NotImplementedError("This client does not support airports.")
 
     async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
         raise NotImplementedError("This client does not support airports.")
@@ -122,7 +108,7 @@ class Client(datastore.Client[Config]):
     ) -> list[models.Airport]:
         raise NotImplementedError("This client does not support airports.")
 
-    async def get_amenity(self, id: int) -> Optional[SimpleAmenity]:
+    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         raise NotImplementedError("This client does not support amenities.")
 
     async def amenities_search(

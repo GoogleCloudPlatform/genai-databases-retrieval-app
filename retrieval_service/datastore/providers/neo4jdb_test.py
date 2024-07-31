@@ -125,6 +125,9 @@ async def test_amenity_init_id(driver):
         "id": 35,
         "name": "Airport Information Desk",
         "description": "Information desk offering assistance with flight information, directions, and other airport services.",
+        "location": "Arrivals Hall",
+        "terminal":"All Terminals",
         "category": "facility",
+        "hour":"24/7",
     }
     assert node == expected_node
