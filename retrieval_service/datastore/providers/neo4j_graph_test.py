@@ -47,7 +47,7 @@ def db_auth(db_user, db_password) -> tuple:
 
 
 @pytest_asyncio.fixture(scope="module")
-async def data_set(
+async def ds(
     db_uri: str,
     db_auth: tuple,
 ) -> AsyncGenerator[datastore.Client, None]:
@@ -57,30 +57,30 @@ async def data_set(
         auth=neo4jdb.AuthConfig(username=db_auth[0], password=db_auth[1]),
     )
 
-    client = await datastore.create(config)
+    ds = await datastore.create(config)
 
     airports_data_set_path = "../data/airport_dataset.csv"
     amenities_data_set_path = "../data/amenity_dataset.csv"
     flights_data_set_path = "../data/flights_dataset.csv"
     policies_data_set_path = "../data/cymbalair_policy.csv"
 
-    airport, amenities, flights, policies = await client.load_dataset(
+    airport, amenities, flights, policies = await ds.load_dataset(
         airports_data_set_path,
         amenities_data_set_path,
         flights_data_set_path,
         policies_data_set_path,
     )
 
-    await client.initialize_data([], amenities, [], [])
+    await ds.initialize_data([], amenities, [], [])
 
-    if client is None:
+    if ds is None:
         raise TypeError("datastore creation failure")
-    yield client
-    await client.close()
+    yield ds
+    await ds.close()
 
 
-async def test_total_nodes_count(data_set: neo4jdb.Client):
-    async with data_set.driver.session() as session:
+async def test_total_nodes_count(ds: neo4jdb.Client):
+    async with ds.driver.session() as session:
         result = await session.run("MATCH (a: Amenity) RETURN count(a) AS count")
         record = await result.single()
         count = record["count"]
@@ -92,8 +92,8 @@ async def test_total_nodes_count(data_set: neo4jdb.Client):
     ), f"Expected {expected_count} nodes, but found {count}"
 
 
-async def test_amenity_init_id(data_set: neo4jdb.Client):
-    amenity = await data_set.get_amenity(35)
+async def test_amenity_init_id(ds: neo4jdb.Client):
+    amenity = await ds.get_amenity(35)
 
     expected_amenity = models.Amenity(
         id=35,
