@@ -79,6 +79,19 @@ async def data_set(
     await client.close()
 
 
+async def test_total_nodes_count(data_set: neo4jdb.Client):
+    async with data_set.driver.session() as session:
+        result = await session.run("MATCH (a: Amenity) RETURN count(a) AS count")
+        record = await result.single()
+        count = record["count"]
+        print(count)
+
+    expected_count = 127
+    assert (
+        count == expected_count
+    ), f"Expected {expected_count} nodes, but found {count}"
+
+
 async def test_amenity_init_id(data_set: neo4jdb.Client):
     amenity = await data_set.get_amenity(35)
 
