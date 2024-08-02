@@ -115,13 +115,15 @@ class Client(datastore.Client[Config]):
 
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         async with self.__driver.session() as session:
-            result = await session.run("MATCH (a: Amenity {id: $id}) RETURN a", id=id)
+            result = await session.run(
+                "MATCH (amenity: Amenity {id: $id}) RETURN amenity", id=id
+            )
             record = await result.single()
 
             if not record:
                 return None
 
-            amenity_data = dict(record["a"])
+            amenity_data = record["amenity"]
             return models.Amenity(**amenity_data)
 
     async def amenities_search(
