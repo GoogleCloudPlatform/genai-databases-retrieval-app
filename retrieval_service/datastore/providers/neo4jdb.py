@@ -46,6 +46,10 @@ class Client(datastore.Client[Config]):
     def __init__(self, driver):
         self.__driver = driver
 
+    @property
+    def driver(self):
+        return self.__driver
+
     @classmethod
     async def create(cls, config: Config) -> "Client":
         return cls(
