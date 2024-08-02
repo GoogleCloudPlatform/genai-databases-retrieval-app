@@ -188,6 +188,8 @@ async def decline_flight(request: Request):
     """Handler for LangChain chat requests"""
     # Note in the history, that the ticket was not booked
     # This is helpful in case of reloads so there doesn't seem to be a break in communication.
+    orchestrator = request.app.state.orchestrator
+    response = await orchestrator.user_session_decline_ticket(request.session["uuid"])
     request.session["history"].append(
         {"type": "ai", "data": {"content": "Please confirm if you would like to book."}}
     )
