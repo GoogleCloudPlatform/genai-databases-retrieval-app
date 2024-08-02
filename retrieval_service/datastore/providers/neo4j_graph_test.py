@@ -20,7 +20,7 @@ import pytest_asyncio
 import models
 
 from .. import datastore
-from . import neo4jdb
+from . import neo4j_graph
 from .utils import get_env_var
 
 pytestmark = pytest.mark.asyncio(scope="module")
@@ -51,10 +51,10 @@ async def ds(
     db_uri: str,
     db_auth: tuple,
 ) -> AsyncGenerator[datastore.Client, None]:
-    config = neo4jdb.Config(
+    config = neo4j_graph.Config(
         kind="neo4j",
         uri=db_uri,
-        auth=neo4jdb.AuthConfig(username=db_auth[0], password=db_auth[1]),
+        auth=neo4j_graph.AuthConfig(username=db_auth[0], password=db_auth[1]),
     )
 
     ds = await datastore.create(config)
@@ -79,7 +79,7 @@ async def ds(
     await ds.close()
 
 
-async def test_total_nodes_count(ds: neo4jdb.Client):
+async def test_total_nodes_count(ds: neo4j_graph.Client):
     async with ds.driver.session() as session:
         result = await session.run("MATCH (a: Amenity) RETURN count(a) AS count")
         record = await result.single()
@@ -92,7 +92,7 @@ async def test_total_nodes_count(ds: neo4jdb.Client):
     ), f"Expected {expected_count} nodes, but found {count}"
 
 
-async def test_amenity_init_id(ds: neo4jdb.Client):
+async def test_amenity_init_id(ds: neo4j_graph.Client):
     amenity = await ds.get_amenity(35)
 
     expected_amenity = models.Amenity(
