@@ -19,4 +19,4 @@ asyncio==3.4.3
 datetime==5.5
 pymysql==1.1.1
 types-PyMySQL==1.1.0.20240524
-neo4j==5.22
+neo4j==5.23.0
