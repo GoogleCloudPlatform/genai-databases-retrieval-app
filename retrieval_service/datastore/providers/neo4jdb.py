@@ -1,4 +1,4 @@
-# Copyright 2023 Google LLC
+# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -110,7 +110,15 @@ class Client(datastore.Client[Config]):
         raise NotImplementedError("This client does not support airports.")
 
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
-        raise NotImplementedError("This client does not support amenities.")
+        async with self.__driver.session() as session:
+            result = await session.run("MATCH (a: Amenity {id: $id}) RETURN a", id=id)
+            record = await result.single()
+
+            if not record:
+                return None
+
+            amenity_data = dict(record["a"])
+            return models.Amenity(**amenity_data)
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
