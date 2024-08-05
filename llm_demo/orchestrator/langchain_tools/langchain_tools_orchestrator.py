@@ -16,7 +16,7 @@ import asyncio
 import os
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from aiohttp import ClientSession, TCPConnector
 from fastapi import HTTPException
@@ -126,6 +126,13 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
         user_session = self.get_user_session(uuid)
         response = await user_session.insert_ticket(params)
         return response
+
+    async def user_session_decline_ticket(self, uuid: str) -> Optional[dict[str, Any]]:
+        """
+        Used if there's a process to be done after user decline ticket.
+        Return None is nothing is needed to be done.
+        """
+        return None
 
     async def check_and_add_confirmations(self, response: Dict[str, Any]):
         for step in response.get("intermediate_steps") or []:
