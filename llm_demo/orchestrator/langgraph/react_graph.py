@@ -33,7 +33,12 @@ from langgraph.graph.message import add_messages
 from langgraph.managed import IsLastStep
 
 from .tool_node import ToolNode
-from .tools import get_confirmation_needing_tools, insert_ticket, validate_ticket
+from .tools import (
+    TicketInfo,
+    get_confirmation_needing_tools,
+    insert_ticket,
+    validate_ticket,
+)
 
 
 class UserState(TypedDict):
@@ -192,7 +197,9 @@ async def create_graph(
         # Run insert ticket
         if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
             tool_call = last_message.tool_calls[0]
-            output = await insert_ticket(client, tool_call.get("args"), user_id_token)
+            tool_args = tool_call.get("args")
+            ticket_info = TicketInfo(**tool_args)
+            output = await insert_ticket(client, ticket_info, user_id_token)
             tool_call_id = tool_call.get("id")
             tool_message = ToolMessage(
                 content=output, name="Insert Ticket", tool_call_id=tool_call_id
