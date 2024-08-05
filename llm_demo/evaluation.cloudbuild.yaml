@@ -12,16 +12,10 @@
 # limitations under the License.
 
 steps:
-#   - id: Install dependencies
-#     name: python:3.11
-#     dir: llm_demo 
-#     script: pip install -r requirements.txt -r requirements-test.txt --user
-
-  - id: "Retrieve user token id"
-    name: 'gcr.io/cloud-builders/gcloud'
-    script: |
-        USER_TOKEN_ID="$(gcloud auth print-identity-token)"
-        echo $USER_TOKEN_ID
+  - id: Install dependencies
+    name: python:3.11
+    dir: llm_demo 
+    script: pip install -r requirements.txt -r requirements-test.txt --user
 
   - id: "Run evaluation service"
     name: python:3.11
@@ -30,21 +24,18 @@ steps:
       - "ORCHESTRATION_TYPE=${_ORCHESTRATION_TYPE}"
       - "RETRIEVAL_EXPERIMENT_NAME=${_RETRIEVAL_EXPERIMENT_NAME}"
       - "RESPONSE_EXPERIMENT_NAME=${_RESPONSE_EXPERIMENT_NAME}"
-      - "USER_TOKEN_ID=${USER_TOKEN_ID}"
+      - "CLIENT_ID=${_CLIENT_ID}"
     script: |
         #!/usr/bin/env bash
-        echo $ORCHESTRATION_TYPE
-        echo $USER_TOKEN_ID
-        # python run_evaluation.py
+        python run_evaluation.py
 
-serviceAccount: "projects/$PROJECT_ID/serviceAccounts/706535509072-compute@developer.gserviceaccount.com"
+serviceAccount: "projects/$PROJECT_ID/serviceAccounts/${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" # Necessary for ID token creation
 options:
   logging: CLOUD_LOGGING_ONLY # Necessary for custom service account
   dynamic_substitutions: true
 
 substitutions:
   _ORCHESTRATION_TYPE: "langchain-tools"
-  _RETRIEVAL_EXPERIMENT_NAME: "retrieval-phase-eval-temp"
-  _RESPONSE_EXPERIMENT_NAME:  "response-phase-eval-temp"
-  # _RETRIEVAL_EXPERIMENT_NAME: "retrieval-phase-eval-${_PR_NUMBER}"
-  # _RESPONSE_EXPERIMENT_NAME:  "response-phase-eval-${_PR_NUMBER}"
+  _CLIENT_ID: "${PROJECT_NUMBER}-qa5v22ur8ik8o513b0538ufo0ne9jfn5.apps.googleusercontent.com"
+  _RETRIEVAL_EXPERIMENT_NAME: "retrieval-phase-eval-${_PR_NUMBER}"
+  _RESPONSE_EXPERIMENT_NAME:  "response-phase-eval-${_PR_NUMBER}"
