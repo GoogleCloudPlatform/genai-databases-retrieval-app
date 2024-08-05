@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/compare/v0.1.0...v0.2.0) (2024-08-05)
+
+
+### Features
+
+* Add langgraph orchestration ([#447](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/447)) ([8cefed0](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/8cefed07c5e4cc4357d08fc3a29920dc2cfabd6a))
+* add ticket validation and insertion to cloudsql postgres ([#437](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/437)) ([a4480fa](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/a4480fa1fd0c117d64278fa9d864647a96f9b8a8))
+
 ## 0.1.0 (2024-07-01)
 
 
