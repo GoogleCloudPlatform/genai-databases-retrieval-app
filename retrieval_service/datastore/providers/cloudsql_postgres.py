@@ -520,9 +520,9 @@ class Client(datastore.Client[Config]):
             result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
-            return None
+            return None, None
         res = models.Flight.model_validate(result)
-        return res
+        return res, None
 
     async def insert_ticket(
         self,

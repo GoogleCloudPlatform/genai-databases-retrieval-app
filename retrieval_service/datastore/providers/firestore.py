@@ -406,7 +406,7 @@ class Client(datastore.Client[Config]):
         amenity_doc = await query.get()
         amenity_dict = amenity_doc.to_dict() | {"id": amenity_doc.id}
         amenity_dict["embedding"] = list(amenity_dict["embedding"])
-        return models.Amenity.model_validate(amenity_dict)
+        return models.Amenity.model_validate(amenity_dict), None
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
@@ -532,8 +532,7 @@ class Client(datastore.Client[Config]):
 
         policies = []
         async for doc in query.stream():
-            policy_dict = {"id": doc.id, "content": doc.get("content")}
-            policies.append(policy_dict)
+            policies.append(doc.get("content"))
         return policies, None
 
     async def close(self):
