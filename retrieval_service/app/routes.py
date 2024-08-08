@@ -47,9 +47,9 @@ async def get_user_info(request):
         )
 
         return {
-            "user_id": id_info["sub"],
-            "user_name": id_info["name"],
-            "user_email": id_info["email"],
+            "user_id": id_info.get("sub"),
+            "user_name": id_info.get("name"),
+            "user_email": id_info.get("email"),
         }
 
     except Exception as e:  # pylint: disable=broad-except
