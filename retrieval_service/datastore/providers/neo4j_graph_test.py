@@ -92,7 +92,7 @@ async def test_total_amenity_nodes_count(ds: neo4j_graph.Client):
     ), f"Expected {expected_count} nodes, but found {count}"
 
 
-async def get_amenity_id(ds: neo4j_graph.Client):
+async def test_get_amenity_id(ds: neo4j_graph.Client):
     amenity = await ds.get_amenity(35)
 
     assert amenity, f"No amenity found with id 35"

@@ -19,23 +19,34 @@ steps:
     script: pip install -r requirements.txt -r requirements-test.txt --user
 
   - id: Update config
-    name: python:3.11
+    name: bash
     dir: retrieval_service
     script: |
         #!/usr/bin/env bash
         # Create config
         cp example-config-neo4j.yml config.yml
-        sed -i "s/neo4j_url/$_DB_URI/g" config.yml
-        sed -i "s/neo4j_user/${}/_DB_USER" config.yml
+        sed -i "s/neo4j_url/${_DB_URI}/g" config.yml
+        sed -i "s/neo4j_user/${_DB_USER}/g" config.yml
         sed -i "s/neo4j_password/${_DB_PASSWORD}/g" config.yml
+        cat config.yml
 
   - id: Run Neo4j integration tests
     name: python:3.11
     dir: retrieval_service
     env: # Set env var expected by tests
-      - "DB_URI=$_DB_URI"
+      - "DB_URI=${_DB_URI}"
       - "DB_USER=${_DB_USER}"
       - "DB_PASSWORD=${_DB_PASSWORD}"
     script: |
         #!/usr/bin/env bash
-        python -m pytest datastore/providers/eno4j_graph_test.py
+        python -m pytest datastore/providers/neo4j_graph_test.py
+
+substitutions:
+  _DB_URI: ""
+  _DB_USER: ""
+  _DB_PASSWORD: ""
+
+options:
+  automapSubstitutions: true
+  substitutionOption: 'ALLOW_LOOSE'
+  dynamic_substitutions: true
