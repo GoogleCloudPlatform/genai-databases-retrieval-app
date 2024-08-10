@@ -79,6 +79,9 @@ async def ds(
     await ds.close()
 
 
+# Test nodes
+
+
 async def test_total_amenity_nodes_count(ds: neo4j_graph.Client):
     async with ds.driver.session() as session:
         result = await session.run("MATCH (a: Amenity) RETURN count(a) AS count")
@@ -92,7 +95,7 @@ async def test_total_amenity_nodes_count(ds: neo4j_graph.Client):
     ), f"Expected {expected_count} nodes, but found {count}"
 
 
-async def get_amenity_id(ds: neo4j_graph.Client):
+async def test_get_amenity_id(ds: neo4j_graph.Client):
     amenity = await ds.get_amenity(35)
 
     assert amenity, f"No amenity found with id 35"
@@ -123,3 +126,34 @@ async def get_amenity_id(ds: neo4j_graph.Client):
     )
 
     assert amenity == expected_amenity
+
+
+async def test_total_category_nodes_count(ds: neo4j_graph.Client):
+    async with ds.driver.session() as session:
+        result = await session.run("MATCH (c: Category) RETURN count(c) AS count")
+        record = await result.single()
+        count = record["count"]
+        print(count)
+
+    expected_count = 3
+    assert (
+        count == expected_count
+    ), f"Expected {expected_count} nodes, but found {count}"
+
+
+# Test relationships
+
+
+async def test_total_belongs_to_relationships_count(ds: neo4j_graph.Client):
+    async with ds.driver.session() as session:
+        result = await session.run(
+            "MATCH ()-[r:BELONGS_TO]->() RETURN count(r) AS count"
+        )
+        record = await result.single()
+        count = record["count"]
+        print(count)
+
+    expected_count = 127
+    assert (
+        count == expected_count
+    ), f"Expected {expected_count} BELONGS_TO relationships, but found {count}"
