@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import asyncio
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from neo4j import AsyncDriver, AsyncGraphDatabase
 from pydantic import BaseModel
@@ -170,7 +170,7 @@ class Client(datastore.Client[Config]):
     ):
         raise NotImplementedError("This client does not support tickets.")
 
-    async def list_tickets(self, user_id: str) -> list[models.Ticket]:
+    async def list_tickets(self, user_id: str) -> list[Any]:
         raise NotImplementedError("This client does not support tickets.")
 
     async def policies_search(

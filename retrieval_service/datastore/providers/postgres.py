@@ -495,16 +495,16 @@ class Client(datastore.Client[Config]):
     async def list_tickets(
         self,
         user_id: str,
-    ) -> list[models.Ticket]:
+    ) -> list[Any]:
         results = await self.__pool.fetch(
             """
-                SELECT * FROM tickets
-                WHERE user_id = $1
+            SELECT user_name, airline, flight_number, departure_airport, arrival_airport, departure_time, arrival_time FROM tickets
+            WHERE user_id = $1
             """,
             user_id,
             timeout=10,
         )
-        results = [models.Ticket.model_validate(dict(r)) for r in results]
+        results = [r for r in results]
         return results
 
     async def policies_search(

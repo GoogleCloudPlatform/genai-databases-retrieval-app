@@ -675,7 +675,6 @@ class Client(datastore.Client[Config]):
                 },
             )
 
-        # Convert query result to model instance using model_validate method
         amenities = [
             {key: value for key, value in zip(self.AMENITIES_COLUMNS[1:], a)}
             for a in results
@@ -932,7 +931,7 @@ class Client(datastore.Client[Config]):
             # Spread SQL query for readability
             results = snapshot.execute_sql(
                 sql="""
-                SELECT * FROM tickets
+                SELECT user_name, airline, flight_number, departure_airport, arrival_airport, departure_time, arrival_time FROM tickets
                 WHERE user_id = @user_id
                 """,
                 params={"user_id": user_id},
@@ -940,28 +939,7 @@ class Client(datastore.Client[Config]):
             )
 
         # Convert query results to model instances using model_validate method
-        tickets = [
-            models.Ticket.model_validate(
-                {
-                    key: value
-                    for key, value in zip(
-                        [
-                            "user_id",
-                            "user_name",
-                            "user_email",
-                            "airline",
-                            "flight_number",
-                            "departure_airport",
-                            "arrival_airport",
-                            "departure_time",
-                            "arrival_time",
-                        ],
-                        a,
-                    )
-                }
-            )
-            for a in results
-        ]
+        tickets = [r for r in results]
 
         return tickets
 
