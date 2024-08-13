@@ -12,7 +12,7 @@ cloud-sql-python-connector==1.10.0
 google-cloud-alloydb-connector[asyncpg]==1.2.0
 sqlalchemy==2.0.25
 pandas==2.2.2
-pandas-stubs==2.2.2.240805
+pandas-stubs==2.2.2.240807
 langchain-text-splitters==0.2.2
 langchain-google-vertexai==1.0.7
 asyncio==3.4.3
