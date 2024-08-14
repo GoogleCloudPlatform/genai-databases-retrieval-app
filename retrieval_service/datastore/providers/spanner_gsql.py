@@ -920,7 +920,7 @@ class Client(datastore.Client[Config]):
     async def list_tickets(
         self,
         user_id: str,
-    ) -> list[models.Ticket]:
+    ) -> list[Any]:
         """
         Retrieves a list of tickets for a user.
 
