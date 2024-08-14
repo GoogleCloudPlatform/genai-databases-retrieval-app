@@ -763,7 +763,7 @@ class Client(datastore.Client[Config]):
     def list_tickets_sync(
         self,
         user_id: str,
-    ) -> list[models.Ticket]:
+    ) -> list[Any]:
         with self.__pool.connect() as conn:
             s = text(
                 """

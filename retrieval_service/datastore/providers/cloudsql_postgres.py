@@ -576,7 +576,7 @@ class Client(datastore.Client[Config]):
     async def list_tickets(
         self,
         user_id: str,
-    ) -> list[models.Ticket]:
+    ) -> list[Any]:
         async with self.__pool.connect() as conn:
             s = text(
                 """
