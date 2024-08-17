@@ -86,6 +86,7 @@ class Client(datastore.Client[Config]):
                 )
 
                 # Create Category node
+                # MERGE prevents duplicate nodes by first checking if they already exist
                 await tx.run(
                     """
                     MERGE (c:Category {name: $category})
@@ -94,6 +95,7 @@ class Client(datastore.Client[Config]):
                 )
 
                 # Create BELONGS_TO relationship
+                # MERGE prevents duplicate relationships by first checking if they already exist
                 await tx.run(
                     """
                     MATCH (a:Amenity {id: $id}), (c:Category {name: $category})
