@@ -141,8 +141,11 @@ def generate_list_flights(client: aiohttp.ClientSession):
         )
 
         response_json = await response.json()
+        print(f"response from tools: {response_json}")
         if len(response_json) < 1:
-            return "There are no flights matching that query. Let the user know there are no results."
+            return {
+                "results": "There are no flights matching that query. Let the user know there are no results."
+            }
         else:
             return response_json
 
@@ -202,7 +205,7 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
         departure_time: datetime,
         arrival_time: datetime,
     ):
-        return f"Booking ticket on {airline} {flight_number}"
+        return {"results": f"Booking ticket on {airline} {flight_number}"}
 
     return insert_ticket
 
@@ -233,7 +236,7 @@ async def insert_ticket(
         headers=get_headers(client, user_id_token),
     )
     response = await response.json()
-    return "Flight booking successful."
+    return {"results": "Flight booking successful."}
 
 
 async def validate_ticket(
@@ -275,8 +278,10 @@ def generate_list_tickets(client: aiohttp.ClientSession):
 
         response_json = await response.json()
         return {
-            "number of tickets booked": len(response_json),
-            "user's ticket": response_json,
+            "results": {
+                "number of tickets booked": len(response_json),
+                "user's ticket": response_json,
+            }
         }
 
     return list_tickets
