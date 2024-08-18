@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import asyncio
+import csv
 from typing import Literal, Optional
 
 from neo4j import AsyncDriver, AsyncGraphDatabase
@@ -65,16 +66,15 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
         policies: list[models.Policy],
     ) -> None:
-        async def delete_all(tx):
+        async def delete_graph(tx):
             await tx.run("MATCH (n) DETACH DELETE n")
 
-        async def create_amenities(tx, amenities):
+        async def create_amenity_nodes(tx, amenities):
             for amenity in amenities:
-
                 # Create Amenity node
                 await tx.run(
                     """
-                    CREATE (a:Amenity {id: $id, name: $name, description: $description, location: $location, terminal: $terminal, category: $category, hour: $hour})
+                    CREATE (a:Amenity {id: $id, name: $name, description: $description, location: $location, terminal: $terminal, category: $category, hour: $hour, embedding: $embedding})
                     """,
                     id=amenity.id,
                     name=amenity.name,
@@ -83,10 +83,10 @@ class Client(datastore.Client[Config]):
                     terminal=amenity.terminal,
                     category=amenity.category,
                     hour=amenity.hour,
+                    embedding=amenity.embedding,
                 )
 
                 # Create Category node
-                # MERGE prevents duplicate nodes by first checking if they already exist
                 await tx.run(
                     """
                     MERGE (c:Category {name: $category})
@@ -94,8 +94,9 @@ class Client(datastore.Client[Config]):
                     category=amenity.category,
                 )
 
+        async def create_amenity_relationships(tx, amenities):
+            for amenity in amenities:
                 # Create BELONGS_TO relationship
-                # MERGE prevents duplicate relationships by first checking if they already exist
                 await tx.run(
                     """
                     MATCH (a:Amenity {id: $id}), (c:Category {name: $category})
@@ -105,12 +106,43 @@ class Client(datastore.Client[Config]):
                     category=amenity.category,
                 )
 
-        async with self.__driver.session() as session:
-            # Delete all exsiting nodes and relationships
-            await session.execute_write(delete_all)
+            # Create relationships from CSV
+            # Create SIMILAR_TO relationship
+            csv_file_path = "../data/relationships/amenity_relationships.csv"
 
+            with open(csv_file_path, "r") as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    src_id = row["src_id"]
+                    rel_type = row["rel_type"]
+                    tgt_id = row["tgt_id"]
+
+                    # Generate and run the Cypher query
+                    # Case-insensitive and apostrophes-insensitive regex
+                    await tx.run(
+                        f"""
+                        MATCH (a) WHERE a.name =~ "(?i){src_id}"
+                        MATCH (b) WHERE b.name =~ "(?i){tgt_id}"
+                        MERGE (a)-[:{rel_type}]->(b)
+                        """,
+                        src_id=src_id,
+                        tgt_id=tgt_id,
+                    )
+
+        async with self.__driver.session() as session:
+            # Delete all existing nodes and relationships
+            await session.execute_write(delete_graph)
+
+            # Create nodes
             await asyncio.gather(
-                session.execute_write(create_amenities, amenities),
+                # Create amenity nodes
+                session.execute_write(create_amenity_nodes, amenities)
+            )
+
+            # Create relationships
+            await asyncio.gather(
+                # Create amenity relationships
+                session.execute_write(create_amenity_relationships, amenities)
             )
 
     async def export_data(self) -> tuple[
@@ -138,15 +170,24 @@ class Client(datastore.Client[Config]):
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         async with self.__driver.session() as session:
             result = await session.run(
-                "MATCH (amenity: Amenity {id: $id}) RETURN amenity", id=id
+                """
+                MATCH (amenity: Amenity {id: $id})
+                RETURN amenity.id AS id, 
+                    amenity.name AS name, 
+                    amenity.description AS description, 
+                    amenity.location AS location, 
+                    amenity.terminal AS terminal, 
+                    amenity.category AS category, 
+                    amenity.hour AS hour
+                """,
+                id=id,
             )
             record = await result.single()
 
             if not record:
                 return None
 
-            amenity_data = record["amenity"]
-            return models.Amenity(**amenity_data)
+            return models.Amenity(**record)
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
