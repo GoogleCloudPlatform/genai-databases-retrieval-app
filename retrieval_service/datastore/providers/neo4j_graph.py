@@ -74,7 +74,7 @@ class Client(datastore.Client[Config]):
                 # Create Amenity node
                 await tx.run(
                     """
-                    CREATE (a:Amenity {id: $id, name: $name, description: $description, location: $location, terminal: $terminal, category: $category, hour: $hour, embedding: $embedding})
+                    CREATE (a:Amenity {id: $id, name: $name, description: $description, location: $location, terminal: $terminal, category: $category, hour: $hour)
                     """,
                     id=amenity.id,
                     name=amenity.name,
@@ -83,7 +83,6 @@ class Client(datastore.Client[Config]):
                     terminal=amenity.terminal,
                     category=amenity.category,
                     hour=amenity.hour,
-                    embedding=amenity.embedding,
                 )
 
                 # Create Category node
@@ -170,24 +169,15 @@ class Client(datastore.Client[Config]):
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         async with self.__driver.session() as session:
             result = await session.run(
-                """
-                MATCH (amenity: Amenity {id: $id})
-                RETURN amenity.id AS id, 
-                    amenity.name AS name, 
-                    amenity.description AS description, 
-                    amenity.location AS location, 
-                    amenity.terminal AS terminal, 
-                    amenity.category AS category, 
-                    amenity.hour AS hour
-                """,
-                id=id,
+                "MATCH (amenity: Amenity {id: $id}) RETURN amenity", id=id
             )
             record = await result.single()
 
             if not record:
                 return None
 
-            return models.Amenity(**record)
+            amenity_data = record["amenity"]
+            return models.Amenity(**amenity_data)
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
