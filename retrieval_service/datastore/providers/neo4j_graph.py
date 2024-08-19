@@ -70,6 +70,8 @@ class Client(datastore.Client[Config]):
 
         async def create_amenities(tx, amenities):
             for amenity in amenities:
+
+                # Create Amenity node
                 await tx.run(
                     """
                     CREATE (a:Amenity {id: $id, name: $name, description: $description, location: $location, terminal: $terminal, category: $category, hour: $hour})
@@ -81,6 +83,26 @@ class Client(datastore.Client[Config]):
                     terminal=amenity.terminal,
                     category=amenity.category,
                     hour=amenity.hour,
+                )
+
+                # Create Category node
+                # MERGE prevents duplicate nodes by first checking if they already exist
+                await tx.run(
+                    """
+                    MERGE (c:Category {name: $category})
+                    """,
+                    category=amenity.category,
+                )
+
+                # Create BELONGS_TO relationship
+                # MERGE prevents duplicate relationships by first checking if they already exist
+                await tx.run(
+                    """
+                    MATCH (a:Amenity {id: $id}), (c:Category {name: $category})
+                    MERGE (a)-[:BELONGS_TO]->(c)
+                    """,
+                    id=amenity.id,
+                    category=amenity.category,
                 )
 
         async with self.__driver.session() as session:
