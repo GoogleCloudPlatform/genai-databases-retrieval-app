@@ -34,7 +34,12 @@
 
 ## Create a Neo4j database
 
-1. In the [Neo4j console](https://console.neo4j.io/?product=aura-db&_gl=1*mpkyd1*_ga*NzM2MTEwNTQ4LjE3MTk1MDkyNTA.*_ga_DZP8Z65KK4*MTcyMjYyNzYyOC41OC4xLjE3MjI2MzQyODMuMC4wLjA.*_gcl_aw*R0NMLjE3MjI1NTA5NTcuQ2p3S0NBanc1S3kxQmhBZ0Vpd0E1akd1anR2c0FLbVdqVXB3SXNHTE5VQkEzcjh4Zm9WSjk5ZkdXdnl1UEM4bHI4YmZGSUVmMkM4NTF4b0NVOHNRQXZEX0J3RQ..*_gcl_au*MTY0NDkyNTM4OS4xNzE5NTA5MjUwLjE4NjQyNTUxNDguMTcyMTM3NDE3NS4xNzIxMzc0MTc0*_ga_DL38Q8KGQC*MTcyMjYyNzYyOC41Mi4xLjE3MjI2MzQyODMuMC4wLjA.), click `New Instance`, then follow the on-screen instructions to download the credentials as a .txt file
+1. Important: Enabling Neo4j Aura in Google Cloud Marketplace does not permit the use of `Free-tier` instances. It will provision a `Professional-tier` instance, which incurs additional monthly costs.
+
+1. Enable Neo4j AuraDB in GCP Marketplace [Neo4j console](https://console.cloud.google.com/marketplace/product/endpoints/prod.n4gcp.neo4j.io?authuser=2). After enabling it, a `Manage on Provider` button will appear. Click on it to proceed.
+
+
+1. In the [Neo4j console](https://console.neo4j.io/?ref=aura-lp&mpp=4bfb2414ab973c741b6f067bf06d5575&mpid=%24device%3A19050fa4558249-004c1750b934b6-6a3f4f73-18f258-19050fa4558249&_gl=1*9tzqtf*_ga*NzM2MTEwNTQ4LjE3MTk1MDkyNTA.*_ga_DZP8Z65KK4*MTcyNDA5OTc0OS44NC4xLjE3MjQxMDMwMTkuMC4wLjA.*_gcl_aw*R0NMLjE3MjQxMDMwMTkuQ2owS0NRancyb3UyQmhDQ0FSSXNBTkF3TTJIWGhNang4U3l3VEJDYVh6NWZHSWd6Y2VmTHN0dTJoTjJnTXpKd2ZEN1B1U2J1RDdLNFA0OGFBbVRjRUFMd193Y0I.*_gcl_au*MTY0NDkyNTM4OS4xNzE5NTA5MjUwLjE4NjQyNTUxNDguMTcyMTM3NDE3NS4xNzIxMzc0MTc0*_ga_DL38Q8KGQC*MTcyNDA5OTc0OS43OC4xLjE3MjQxMDMwMjAuMC4wLjA.), click `New Instance`, then choose `Professional Tier`. Finally follow the on-screen instructions to download the credentials as a .txt file
 
 ## Update config
 
