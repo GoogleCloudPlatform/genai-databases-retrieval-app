@@ -74,7 +74,7 @@ class Client(datastore.Client[Config]):
                 # Create Amenity node
                 await tx.run(
                     """
-                    CREATE (a:Amenity {id: $id, name: $name, description: $description, location: $location, terminal: $terminal, category: $category, hour: $hour)
+                    CREATE (a:Amenity {id: $id, name: $name, description: $description, location: $location, terminal: $terminal, category: $category, hour: $hour})
                     """,
                     id=amenity.id,
                     name=amenity.name,
@@ -86,6 +86,7 @@ class Client(datastore.Client[Config]):
                 )
 
                 # Create Category node
+                # MERGE prevents duplicate nodes by first checking if they already exist
                 await tx.run(
                     """
                     MERGE (c:Category {name: $category})
@@ -96,9 +97,12 @@ class Client(datastore.Client[Config]):
         async def create_amenity_relationships(tx, amenities):
             for amenity in amenities:
                 # Create BELONGS_TO relationship
+                # MERGE prevents duplicate relationships by first checking if they already exist
+                # OPTIONAL avoids cartesian product
                 await tx.run(
                     """
-                    MATCH (a:Amenity {id: $id}), (c:Category {name: $category})
+                    MATCH (a:Amenity {id: $id})
+                    OPTIONAL MATCH (c:Category {name: $category})
                     MERGE (a)-[:BELONGS_TO]->(c)
                     """,
                     id=amenity.id,
@@ -112,20 +116,18 @@ class Client(datastore.Client[Config]):
             with open(csv_file_path, "r") as file:
                 reader = csv.DictReader(file)
                 for row in reader:
-                    src_id = row["src_id"]
+                    src_name = row["src_id"]
                     rel_type = row["rel_type"]
-                    tgt_id = row["tgt_id"]
+                    tgt_name = row["tgt_id"]
 
                     # Generate and run the Cypher query
-                    # Case-insensitive and apostrophes-insensitive regex
-                    await tx.run(
+                    # Case-insensitive and apostrophes-insensitive
+                    result = await tx.run(
                         f"""
-                        MATCH (a) WHERE a.name =~ "(?i){src_id}"
-                        MATCH (b) WHERE b.name =~ "(?i){tgt_id}"
+                        MATCH (a:Amenity) WHERE toLower(a.name) = toLower("{src_name}")
+                        MATCH (b:Amenity) WHERE toLower(b.name) = toLower("{tgt_name}")
                         MERGE (a)-[:{rel_type}]->(b)
                         """,
-                        src_id=src_id,
-                        tgt_id=tgt_id,
                     )
 
         async with self.__driver.session() as session:
