@@ -38,7 +38,7 @@ def db_user() -> str:
 
 @pytest.fixture(scope="module")
 def db_password() -> str:
-    return str(get_env_var("DB_PASSWORD", "neo4 password"))
+    return str(get_env_var("DB_PASS", "neo4 password"))
 
 
 @pytest.fixture(scope="module")

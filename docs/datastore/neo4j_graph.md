@@ -34,7 +34,7 @@
 
 ## Create a Neo4j database
 
-1. In the [Neo4j console](https://console.neo4j.io/?product=aura-db&_gl=1*mpkyd1*_ga*NzM2MTEwNTQ4LjE3MTk1MDkyNTA.*_ga_DZP8Z65KK4*MTcyMjYyNzYyOC41OC4xLjE3MjI2MzQyODMuMC4wLjA.*_gcl_aw*R0NMLjE3MjI1NTA5NTcuQ2p3S0NBanc1S3kxQmhBZ0Vpd0E1akd1anR2c0FLbVdqVXB3SXNHTE5VQkEzcjh4Zm9WSjk5ZkdXdnl1UEM4bHI4YmZGSUVmMkM4NTF4b0NVOHNRQXZEX0J3RQ..*_gcl_au*MTY0NDkyNTM4OS4xNzE5NTA5MjUwLjE4NjQyNTUxNDguMTcyMTM3NDE3NS4xNzIxMzc0MTc0*_ga_DL38Q8KGQC*MTcyMjYyNzYyOC41Mi4xLjE3MjI2MzQyODMuMC4wLjA.), click `New Instance`, then follow the on-screen instructions to download the credentials as a .txt
+1. In the [Neo4j console](https://console.neo4j.io/?product=aura-db&_gl=1*mpkyd1*_ga*NzM2MTEwNTQ4LjE3MTk1MDkyNTA.*_ga_DZP8Z65KK4*MTcyMjYyNzYyOC41OC4xLjE3MjI2MzQyODMuMC4wLjA.*_gcl_aw*R0NMLjE3MjI1NTA5NTcuQ2p3S0NBanc1S3kxQmhBZ0Vpd0E1akd1anR2c0FLbVdqVXB3SXNHTE5VQkEzcjh4Zm9WSjk5ZkdXdnl1UEM4bHI4YmZGSUVmMkM4NTF4b0NVOHNRQXZEX0J3RQ..*_gcl_au*MTY0NDkyNTM4OS4xNzE5NTA5MjUwLjE4NjQyNTUxNDguMTcyMTM3NDE3NS4xNzIxMzc0MTc0*_ga_DL38Q8KGQC*MTcyMjYyNzYyOC41Mi4xLjE3MjI2MzQyODMuMC4wLjA.), click `New Instance`, then follow the on-screen instructions to download the credentials as a .txt file
 
 ## Update config
 
@@ -52,10 +52,14 @@ datastore:
 
 
 ## Initialize data in Neo4j
+
+1. Change to the `retrieval_service` directory:
+
+    ```bash
     cd retrieval_service
     ```
 
-1. Populate your Neo4j database with the command below. It will take several minutes to run:
+2. Populate your Neo4j database with the command below. It will take several minutes to run:
 
     ```bash
     python run_database_init.py
@@ -78,5 +82,8 @@ export DB_PASSWORD=""
 Run retrieval service unit tests:
 
 ```bash
-pytest
+gcloud builds submit --config retrieval_service/neo4j_graph.tests.cloudbuild.yaml \
+    --substitutions _DATABASE_URI=$DB_URI
 ```
+
+Where `$DB_URI`are environment variables with your database values.
