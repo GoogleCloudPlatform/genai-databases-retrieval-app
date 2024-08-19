@@ -20,28 +20,46 @@ from pytz import timezone
 
 
 class ToolCall(BaseModel):
+    """
+    Represents tool call by orchestration.
+    """
+
     name: str
     arguments: Dict[str, Any] = Field(
-        default={}, description="query arguments for tool call"
+        default={}, description="Query arguments for tool call"
     )
 
 
 class EvalData(BaseModel):
-    category: Optional[str] = Field(default=None, description="evaluation category")
-    query: Optional[str] = Field(default=None, description="user query")
+    """
+    Evaluation data model.
+    This model represents the information needed for running rapid evaluation with Vertex AI.
+    """
+
+    category: Optional[str] = Field(default=None, description="Evaluation category")
+    query: Optional[str] = Field(default=None, description="User query")
     instruction: Optional[str] = Field(
-        default=None, description="instruction to llm system"
+        default=None, description="Instruction to llm system"
     )
-    content: Optional[str] = Field(default=None)
-    tool_calls: List[ToolCall] = Field(default=[])
+    content: Optional[str] = Field(
+        default=None,
+        description="Used in tool call evaluation. Content value is the text output from the model.",
+    )
+    tool_calls: List[ToolCall] = Field(
+        default=[], description="Golden tool call for evaluation"
+    )
     context: Optional[List[Dict[str, Any] | List[Dict[str, Any]]]] = Field(
-        default=None, description="context given to llm in order to answer user query"
+        default=None, description="Context given to llm in order to answer user query"
     )
-    output: Optional[str] = Field(default=None)
-    prediction_tool_calls: List[ToolCall] = Field(default=[])
-    prediction_output: str = Field(default="")
+    output: Optional[str] = Field(
+        default=None, description="Golden output for evaluation"
+    )
+    prediction_tool_calls: List[ToolCall] = Field(
+        default=[], description="Tool call output from LLM"
+    )
+    prediction_output: str = Field(default="", description="Final output from LLM")
     reset: bool = Field(
-        default=True, description="determine to reset the chat after invoke"
+        default=True, description="Determine to reset the chat after invoke"
     )
 
 
