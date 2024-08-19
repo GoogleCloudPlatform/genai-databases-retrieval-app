@@ -98,11 +98,10 @@ class Client(datastore.Client[Config]):
             for amenity in amenities:
                 # Create BELONGS_TO relationship
                 # MERGE prevents duplicate relationships by first checking if they already exist
-                # OPTIONAL avoids cartesian product
                 await tx.run(
                     """
                     MATCH (a:Amenity {id: $id})
-                    OPTIONAL MATCH (c:Category {name: $category})
+                    MATCH (c:Category {name: $category})
                     MERGE (a)-[:BELONGS_TO]->(c)
                     """,
                     id=amenity.id,
@@ -121,7 +120,7 @@ class Client(datastore.Client[Config]):
                     tgt_name = row["tgt_id"]
 
                     # Generate and run the Cypher query
-                    # Case-insensitive and apostrophes-insensitive
+                    # Case-insensitive and apostrophes-insensitive match
                     result = await tx.run(
                         f"""
                         MATCH (a:Amenity) WHERE toLower(a.name) = toLower("{src_name}")
