@@ -100,8 +100,7 @@ class Client(datastore.Client[Config]):
                 # MERGE prevents duplicate relationships by first checking if they already exist
                 await tx.run(
                     """
-                    MATCH (a:Amenity {id: $id})
-                    MATCH (c:Category {name: $category})
+                    MATCH (a:Amenity {id: $id}), MATCH (c:Category {name: $category})
                     MERGE (a)-[:BELONGS_TO]->(c)
                     """,
                     id=amenity.id,
