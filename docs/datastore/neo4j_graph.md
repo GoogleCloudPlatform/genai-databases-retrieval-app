@@ -82,7 +82,7 @@ export DB_PASSWORD=""
 Run retrieval service unit tests:
 
 ```bash
-gcloud builds submit --config retrieval_service/neo4j_graph.tests.cloudbuild.yaml \
+gcloud builds submit --config retrieval_service/neo4j_graph.test.cloudbuild.yaml \
     --substitutions _DATABASE_URI=$DB_URI
 ```
 
