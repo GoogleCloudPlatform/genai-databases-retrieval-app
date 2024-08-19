@@ -157,3 +157,20 @@ async def test_total_belongs_to_relationships_count(ds: neo4j_graph.Client):
     assert (
         count == expected_count
     ), f"Expected {expected_count} BELONGS_TO relationships, but found {count}"
+
+
+async def test_total_similar_to_relationships_count(ds: neo4j_graph.Client):
+    async with ds.driver.session() as session:
+        result = await session.run(
+            # Lower-case relationship naming due to graph generation output format
+            "MATCH ()-[r:Similar_to]->() RETURN count(r) AS count"
+        )
+        record = await result.single()
+        count = record["count"]
+        print(count)
+
+    # Bi-directional pairs are counted only once
+    expected_count = 217
+    assert (
+        count == expected_count
+    ), f"Expected {expected_count} BELONGS_TO relationships, but found {count}"
