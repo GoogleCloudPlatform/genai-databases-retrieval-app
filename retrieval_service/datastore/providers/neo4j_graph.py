@@ -112,7 +112,7 @@ class Client(datastore.Client[Config]):
             csv_file_path = "../data/relationships/amenity_relationships.csv"
 
             with open(csv_file_path, "r") as file:
-                reader = csv.DictReader(file)
+                reader = csv.DictReader(file, delimiter=",")
                 for row in reader:
                     src_name = row["src_id"]
                     rel_type = row["rel_type"]
@@ -120,7 +120,7 @@ class Client(datastore.Client[Config]):
 
                     # Generate and run the Cypher query
                     # Case-insensitive and apostrophes-insensitive match
-                    result = await tx.run(
+                    await tx.run(
                         f"""
                         MATCH (a:Amenity) WHERE toLower(a.name) = toLower("{src_name}")
                         MATCH (b:Amenity) WHERE toLower(b.name) = toLower("{tgt_name}")
