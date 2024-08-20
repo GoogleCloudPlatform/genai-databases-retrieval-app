@@ -16,7 +16,6 @@ from datetime import datetime
 from ipaddress import IPv4Address
 from typing import Any, AsyncGenerator, List, Optional
 
-import models
 import pytest
 import pytest_asyncio
 from csv_diff import compare, load_csv  # type: ignore
@@ -26,11 +25,17 @@ from google.cloud.spanner_v1 import JsonObject, param_types
 from google.cloud.spanner_v1.database import Database
 from google.cloud.spanner_v1.instance import Instance
 
+import models
+
 from .. import datastore
 from . import spanner_postgres
-from .test_data import (amenities_query_embedding1, amenities_query_embedding2,
-                        foobar_query_embedding, policies_query_embedding1,
-                        policies_query_embedding2)
+from .test_data import (
+    amenities_query_embedding1,
+    amenities_query_embedding2,
+    foobar_query_embedding,
+    policies_query_embedding1,
+    policies_query_embedding2,
+)
 from .utils import get_env_var
 
 pytestmark = pytest.mark.asyncio(scope="module")
@@ -58,7 +63,10 @@ async def create_db(
     client = spanner.Client(project=db_project)
     instance = client.instance(db_instance)
 
-    database = instance.database(db_name, database_dialect=DatabaseDialect.POSTGRESQL,)
+    database = instance.database(
+        db_name,
+        database_dialect=DatabaseDialect.POSTGRESQL,
+    )
 
     database.create()
 
