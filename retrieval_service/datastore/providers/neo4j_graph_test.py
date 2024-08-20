@@ -21,10 +21,7 @@ import models
 
 from .. import datastore
 from . import neo4j_graph
-from .test_data import (
-    amenities_query_embedding1,
-    amenities_query_embedding2,
-)
+from .test_data import amenities_query_embedding1, amenities_query_embedding2
 from .utils import get_env_var
 
 pytestmark = pytest.mark.asyncio(scope="module")
@@ -221,6 +218,7 @@ amenities_search_test_data = [
         id="search_luxury_goods",
     ),
 ]
+
 
 @pytest.mark.parametrize(
     "query_embedding, similarity_threshold, top_k, expected", amenities_search_test_data
