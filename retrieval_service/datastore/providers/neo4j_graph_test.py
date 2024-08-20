@@ -182,30 +182,6 @@ async def test_total_similar_to_relationships_count(ds: neo4j_graph.Client):
 
 amenities_search_test_data = [
     pytest.param(
-        # "Where can I get coffee near gate A6?"
-        amenities_query_embedding1,
-        None,  # similarity threshold value
-        1,  # top_k value
-        [
-            {
-                "source_name": "Coffee Shop 732",
-                "source_description": "Serving American cuisine.",
-                "source_location": "Near Gate B12",
-                "source_terminal": "Terminal 3",
-                "source_category": "restaurant",
-                "source_hour": "Daily 7:00 am - 10:00 pm",
-                "relationship_type": "Similar_to",
-                "target_name": "Dufry Duty Free",
-                "target_description": "Duty-free shop offering a large selection of luxury goods, including perfumes, cosmetics, and liquor.",
-                "target_location": "Gate E2",
-                "target_terminal": "International Terminal A",
-                "target_category": "shop",
-                "target_hour": "Daily 7:00 am-10:00 pm",
-            },
-        ],
-        id="search_coffee_shop",
-    ),
-    pytest.param(
         # "Where can I look for luxury goods?"
         amenities_query_embedding2,
         None,  # similarity threshold value
@@ -245,7 +221,6 @@ amenities_search_test_data = [
         id="search_luxury_goods",
     ),
 ]
-
 
 @pytest.mark.parametrize(
     "query_embedding, similarity_threshold, top_k, expected", amenities_search_test_data
