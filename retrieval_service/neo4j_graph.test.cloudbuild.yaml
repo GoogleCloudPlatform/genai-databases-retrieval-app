@@ -28,7 +28,6 @@ steps:
         sed -i "s/neo4j_url/${_DB_URI}/g" config.yml
         sed -i "s/neo4j_user/${_DB_USER}/g" config.yml
         sed -i "s/neo4j_password/${_DB_PASSWORD}/g" config.yml
-        cat config.yml
 
   - id: Run Neo4j integration tests
     name: python:3.11
