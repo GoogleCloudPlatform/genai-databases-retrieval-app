@@ -55,6 +55,8 @@
 
 ### Neo4j Aura (Free)
 
+1.  ⚠️**Important**: Free-Tier only allows to have one instance. 
+
 1. To set up a free-tier Neo4j database, go to the [Neo4j Console](https://console.neo4j.io/).
 
 2. Sign in or create a new account.
