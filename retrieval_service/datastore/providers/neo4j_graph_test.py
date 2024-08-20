@@ -21,7 +21,7 @@ import models
 
 from .. import datastore
 from . import neo4j_graph
-from .test_data import amenities_query_embedding1, amenities_query_embedding2
+from .test_data import amenities_query_embedding2
 from .utils import get_env_var
 
 pytestmark = pytest.mark.asyncio(scope="module")
