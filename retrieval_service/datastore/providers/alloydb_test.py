@@ -67,7 +67,7 @@ def db_instance() -> str:
     return get_env_var("DB_INSTANCE", "instance for alloydb")
 
 
-@pytest.fixture(scope="module")
+@pytest_asyncio.fixture(scope="module")
 async def create_db(
     db_user: str,
     db_pass: str,
@@ -78,9 +78,10 @@ async def create_db(
 ) -> AsyncGenerator[str, None]:
     db_name = get_env_var("DB_NAME", "name of a postgres database")
     connector = AsyncConnector()
+    project_instance = f"projects/{db_project}/locations/{db_region}/clusters/{db_cluster}/instances/{db_instance}"
     # Database does not exist, create it.
     sys_conn: asyncpg.Connection = await connector.connect(
-        f"projects/{db_project}/locations/{db_region}/clusters/{db_cluster}/instances/{db_instance}",
+        project_instance,
         "asyncpg",
         user=f"{db_user}",
         password=f"{db_pass}",
@@ -89,9 +90,8 @@ async def create_db(
     )
     await sys_conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
     await sys_conn.execute(f'CREATE DATABASE "{db_name}";')
-    await sys_conn.close()
     conn: asyncpg.Connection = await connector.connect(
-        f"projects/{db_project}/locations/{db_region}/clusters/{db_cluster}/instances/{db_instance}",
+        project_instance,
         "asyncpg",
         user=f"{db_user}",
         password=f"{db_pass}",
@@ -99,14 +99,15 @@ async def create_db(
         ip_type="PUBLIC",
     )
     await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-    yield db_name
-    await conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
     await conn.close()
+    yield db_name
+    await sys_conn.execute(f'DROP DATABASE IF EXISTS "{db_name}";')
+    await sys_conn.close()
 
 
 @pytest_asyncio.fixture(scope="module")
 async def ds(
-    create_db: AsyncGenerator[str, None],
+    create_db: str,
     db_user: str,
     db_pass: str,
     db_project: str,
@@ -114,18 +115,16 @@ async def ds(
     db_cluster: str,
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
-    db_name = await create_db.__anext__()
     cfg = alloydb.Config(
         kind="alloydb-postgres",
         user=db_user,
         password=db_pass,
-        database=db_name,
+        database=create_db,
         project=db_project,
         region=db_region,
         cluster=db_cluster,
         instance=db_instance,
     )
-    t = create_db
     ds = await datastore.create(cfg)
 
     airports_ds_path = "../data/airport_dataset.csv"
