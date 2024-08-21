@@ -81,10 +81,11 @@ def generate_search_airports(client: aiohttp.ClientSession):
         )
 
         response_json = await response.json()
-        if len(response_json) < 1:
+        response_results = response_json.get("results")
+        if len(response_results) < 1:
             return "There are no airports matching that query. Let the user know there are no results."
         else:
-            return response_json
+            return response_results
 
     return search_airports
 
@@ -102,7 +103,8 @@ def generate_search_flights_by_number(client: aiohttp.ClientSession):
             headers=get_headers(client),
         )
 
-        return await response.json()
+        response_json = await response.json()
+        return response_json.get("results")
 
     return search_flights_by_number
 
@@ -133,10 +135,11 @@ def generate_list_flights(client: aiohttp.ClientSession):
         )
 
         response_json = await response.json()
-        if len(response_json) < 1:
+        response_results = response_json.get("results")
+        if len(response_results) < 1:
             return "There are no flights matching that query. Let the user know there are no results."
         else:
-            return response_json
+            return response_results
 
     return list_flights
 
@@ -153,8 +156,9 @@ def generate_search_amenities(client: aiohttp.ClientSession):
             headers=get_headers(client),
         )
 
-        response = await response.json()
-        return response
+        response_json = await response.json()
+        response_results = response_json.get("results")
+        return response_results
 
     return search_amenities
 
@@ -167,8 +171,9 @@ def generate_search_policies(client: aiohttp.ClientSession):
             headers=get_headers(client),
         )
 
-        response = await response.json()
-        return response
+        response_json = await response.json()
+        response_results = response_json.get("results")
+        return response_results
 
     return search_policies
 
@@ -212,8 +217,8 @@ async def insert_ticket(client: aiohttp.ClientSession, params: str):
         },
         headers=get_headers(client),
     )
-    response = await response.json()
-    return response
+    response_json = await response.json()
+    return "Flight booking successful."
 
 
 async def validate_ticket(client: aiohttp.ClientSession, ticket_info: Dict[Any, Any]):
@@ -232,14 +237,15 @@ async def validate_ticket(client: aiohttp.ClientSession, ticket_info: Dict[Any, 
         headers=get_headers(client),
     )
     response_json = await response.json()
+    response_results = response_json.get("results")
 
     flight_info = {
-        "airline": response_json.get("airline"),
-        "flight_number": response_json.get("flight_number"),
-        "departure_airport": response_json.get("departure_airport"),
-        "arrival_airport": response_json.get("arrival_airport"),
-        "departure_time": response_json.get("departure_time"),
-        "arrival_time": response_json.get("arrival_time"),
+        "airline": response_results.get("airline"),
+        "flight_number": response_results.get("flight_number"),
+        "departure_airport": response_results.get("departure_airport"),
+        "arrival_airport": response_results.get("arrival_airport"),
+        "departure_time": response_results.get("departure_time"),
+        "arrival_time": response_results.get("arrival_time"),
     }
     return flight_info
 
@@ -251,8 +257,16 @@ def generate_list_tickets(client: aiohttp.ClientSession):
             headers=get_headers(client),
         )
 
-        response = await response.json()
-        return response
+        response_json = await response.json()
+        tickets = response_json.get("results")
+        if len(tickets) == 0:
+            return {
+                "results": "There are no upcoming tickets",
+                "sql": response_json.get("sql"),
+                "error": response_json.get("error"),
+            }
+        else:
+            return response_json
 
     return list_tickets
 
