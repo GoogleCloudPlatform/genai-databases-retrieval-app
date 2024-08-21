@@ -45,9 +45,9 @@
 
 ### Neo4j AuraDB on GCP
 
-1. ⚠️**Important**: Enabling [Neo4j Aura in Google Cloud Marketplace](https://console.cloud.google.com/marketplace/product/endpoints/prod.n4gcp.neo4j.io?hl=es-419) does not permit the use of `Free-tier` instances. It will provision a `Professional-tier` instance, which incurs additional monthly costs. Learn more at [Neo4j AuraDB overview](https://neo4j.com/docs/aura/auradb/?utm_source=gcp).
+1. ⚠️**Important**: Enabling [Neo4j Aura in Google Cloud Marketplace](https://console.cloud.google.com/marketplace/product/endpoints/prod.n4gcp.neo4j.io) does not permit the use of `Free-tier` instances. It will provision a `Professional-tier` instance, which incurs additional monthly costs. Learn more at [Neo4j AuraDB overview](https://neo4j.com/docs/aura/auradb/?utm_source=gcp).
 
-2. Enable [Neo4j Aura in Google Cloud Marketplace](https://console.cloud.google.com/marketplace/product/endpoints/prod.n4gcp.neo4j.io?hl=es-419). After enabling it, a `Manage on Provider` button will appear. Click on it to proceed.
+2. Enable [Neo4j Aura in Google Cloud Marketplace](https://console.cloud.google.com/marketplace/product/endpoints/prod.n4gcp.neo4j.io). After enabling it, a `Manage on Provider` button will appear. Click on it to proceed.
 
 3. In the Neo4j console, click `New Instance`, then choose `Professional Tier`. 
 
