@@ -24,6 +24,7 @@ from pydantic import BaseModel
 import models
 
 from .. import datastore
+from ..helpers import format_sql
 
 POSTGRES_IDENTIFIER = "postgres"
 
@@ -281,16 +282,17 @@ class Client(datastore.Client[Config]):
         sql = """
               SELECT * FROM airports WHERE id=$1
             """
+        params = (id,)
         result = await self.__pool.fetchrow(
             sql,
-            id,
+            *params,
         )
 
         if result is None:
             return None, None
 
         result = models.Airport.model_validate(dict(result))
-        return result, sql
+        return result, format_sql(sql, params)
 
     async def get_airport_by_iata(
         self, iata: str
@@ -298,16 +300,17 @@ class Client(datastore.Client[Config]):
         sql = """
               SELECT * FROM airports WHERE iata ILIKE $1
             """
+        params = (iata,)
         result = await self.__pool.fetchrow(
             sql,
-            iata,
+            *params,
         )
 
         if result is None:
             return None, None
 
         result = models.Airport.model_validate(dict(result))
-        return result, sql
+        return result, format_sql(sql, params)
 
     async def search_airports(
         self,
@@ -322,16 +325,19 @@ class Client(datastore.Client[Config]):
             AND ($3::TEXT IS NULL OR name ILIKE '%' || $3 || '%')
             LIMIT 10
             """
-        results = await self.__pool.fetch(
-            sql,
+        params = (
             country,
             city,
             name,
+        )
+        results = await self.__pool.fetch(
+            sql,
+            *params,
             timeout=10,
         )
 
         results = [models.Airport.model_validate(dict(r)) for r in results]
-        return results, sql
+        return results, format_sql(sql, params)
 
     async def get_amenity(
         self, id: int
@@ -340,16 +346,17 @@ class Client(datastore.Client[Config]):
             SELECT id, name, description, location, terminal, category, hour
             FROM amenities WHERE id=$1
             """
+        params = (id,)
         result = await self.__pool.fetchrow(
             sql,
-            id,
+            *params,
         )
 
         if result is None:
             return None, None
 
         result = models.Amenity.model_validate(dict(result))
-        return result, sql
+        return result, format_sql(sql, params)
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
@@ -361,16 +368,19 @@ class Client(datastore.Client[Config]):
             ORDER BY (embedding <=> $1)
             LIMIT $3
             """
-        results = await self.__pool.fetch(
-            sql,
+        params = (
             query_embedding,
             similarity_threshold,
             top_k,
+        )
+        results = await self.__pool.fetch(
+            sql,
+            *params,
             timeout=10,
         )
 
         results = [dict(r) for r in results]
-        return results, sql
+        return results, format_sql(sql, params)
 
     async def get_flight(
         self, flight_id: int
@@ -379,9 +389,10 @@ class Client(datastore.Client[Config]):
                 SELECT * FROM flights
                 WHERE id = $1
             """
+        params = (flight_id,)
         result = await self.__pool.fetchrow(
             sql,
-            flight_id,
+            *params,
             timeout=10,
         )
 
@@ -389,7 +400,7 @@ class Client(datastore.Client[Config]):
             return None, None
 
         result = models.Flight.model_validate(dict(result))
-        return result, sql
+        return result, format_sql(sql, params)
 
     async def search_flights_by_number(
         self,
@@ -402,14 +413,17 @@ class Client(datastore.Client[Config]):
                 AND flight_number = $2
                 LIMIT 10
             """
-        results = await self.__pool.fetch(
-            sql,
+        params = (
             airline,
             number,
+        )
+        results = await self.__pool.fetch(
+            sql,
+            *params,
             timeout=10,
         )
         results = [models.Flight.model_validate(dict(r)) for r in results]
-        return results, sql
+        return results, format_sql(sql, params)
 
     async def search_flights_by_airports(
         self,
@@ -425,15 +439,18 @@ class Client(datastore.Client[Config]):
                 AND departure_time < $3::timestamp + interval '1 day'
                 LIMIT 10
             """
-        results = await self.__pool.fetch(
-            sql,
+        params = (
             departure_airport,
             arrival_airport,
             datetime.strptime(date, "%Y-%m-%d"),
+        )
+        results = await self.__pool.fetch(
+            sql,
+            *params,
             timeout=10,
         )
         results = [models.Flight.model_validate(dict(r)) for r in results]
-        return results, sql
+        return results, format_sql(sql, params)
 
     async def validate_ticket(
         self,
@@ -450,12 +467,15 @@ class Client(datastore.Client[Config]):
                 AND departure_airport ILIKE $3
                 AND departure_time::date = $4::date
             """
-        result = await self.__pool.fetchrow(
-            sql,
+        params = (
             airline,
             flight_number,
             departure_airport,
             departure_time_datetime,
+        )
+        result = await self.__pool.fetchrow(
+            sql,
+            *params,
             timeout=10,
         )
 
@@ -463,7 +483,7 @@ class Client(datastore.Client[Config]):
             return None, None
 
         res = models.Flight.model_validate(dict(result))
-        return res, sql
+        return res, format_sql(sql, params)
 
     async def insert_ticket(
         self,
@@ -517,13 +537,14 @@ class Client(datastore.Client[Config]):
             SELECT user_name, airline, flight_number, departure_airport, arrival_airport, departure_time, arrival_time FROM tickets
             WHERE user_id = $1
             """
+        params = (user_id,)
         results = await self.__pool.fetch(
             sql,
-            user_id,
+            *params,
             timeout=10,
         )
         results = [r for r in results]
-        return results, sql
+        return results, format_sql(sql, params)
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
@@ -535,16 +556,19 @@ class Client(datastore.Client[Config]):
             ORDER BY (embedding <=> $1)
             LIMIT $3
             """
-        results = await self.__pool.fetch(
-            sql,
+        params = (
             query_embedding,
             similarity_threshold,
             top_k,
+        )
+        results = await self.__pool.fetch(
+            sql,
+            *params,
             timeout=10,
         )
 
         results = [r["content"] for r in results]
-        return results, sql
+        return results, format_sql(sql, params)
 
     async def close(self):
         await self.__pool.close()
