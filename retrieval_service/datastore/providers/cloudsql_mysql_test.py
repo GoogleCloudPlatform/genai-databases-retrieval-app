@@ -63,17 +63,18 @@ def db_instance() -> str:
     return get_env_var("DB_INSTANCE", "instance for cloud sql")
 
 
-@pytest.fixture(scope="module")
+@pytest_asyncio.fixture(scope="module")
 async def create_db(
     db_user: str, db_pass: str, db_project: str, db_region: str, db_instance: str
 ) -> AsyncGenerator[str, None]:
     db_name = get_env_var("DB_NAME", "name of a cloud sql mysql database")
     loop = asyncio.get_running_loop()
     connector = Connector(loop=loop)
+    project_instance = f"{db_project}:{db_region}:{db_instance}"
     # Database does not exist, create it.
     sys_conn: pymysql.Connection = await connector.connect_async(
-        # Cloud SQL instance connection name
-        f"{db_project}:{db_region}:{db_instance}",
+        # cloud sql instance connection name
+        project_instance,
         "pymysql",
         user=f"{db_user}",
         password=f"{db_pass}",
@@ -81,41 +82,40 @@ async def create_db(
     )
     cursor = sys_conn.cursor()
 
-    cursor.execute(f"DROP DATABASE IF EXISTS {db_name};")
+    cursor.execute(f"drop database if exists {db_name};")
     cursor.execute(f"CREATE DATABASE {db_name};")
-    cursor.close()
     conn: pymysql.Connection = await connector.connect_async(
         # Cloud SQL instance connection name
-        f"{db_project}:{db_region}:{db_instance}",
+        project_instance,
         "pymysql",
         user=f"{db_user}",
         password=f"{db_pass}",
         db=f"{db_name}",
     )
-    yield db_name
     conn.close()
+    yield db_name
+    cursor.execute(f"drop database if exists {db_name};")
+    cursor.close()
 
 
 @pytest_asyncio.fixture(scope="module")
 async def ds(
-    create_db: AsyncGenerator[str, None],
+    create_db: str,
     db_user: str,
     db_pass: str,
     db_project: str,
     db_region: str,
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
-    db_name = await create_db.__anext__()
     cfg = cloudsql_mysql.Config(
         kind="cloudsql-mysql",
         user=db_user,
         password=db_pass,
-        database=db_name,
+        database=create_db,
         project=db_project,
         region=db_region,
         instance=db_instance,
     )
-    t = create_db
     ds = await datastore.create(cfg)
 
     airports_ds_path = "../data/airport_dataset.csv"
