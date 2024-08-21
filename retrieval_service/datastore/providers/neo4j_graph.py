@@ -13,7 +13,9 @@
 # limitations under the License.
 
 import asyncio
+import csv
 from typing import Any, Literal, Optional
+
 
 from neo4j import AsyncDriver, AsyncGraphDatabase
 from pydantic import BaseModel
@@ -65,12 +67,11 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
         policies: list[models.Policy],
     ) -> None:
-        async def delete_all(tx):
+        async def delete_graph(tx):
             await tx.run("MATCH (n) DETACH DELETE n")
 
-        async def create_amenities(tx, amenities):
+        async def create_amenity_nodes(tx, amenities):
             for amenity in amenities:
-
                 # Create Amenity node
                 await tx.run(
                     """
@@ -94,6 +95,8 @@ class Client(datastore.Client[Config]):
                     category=amenity.category,
                 )
 
+        async def create_amenity_relationships(tx, amenities):
+            for amenity in amenities:
                 # Create BELONGS_TO relationship
                 # MERGE prevents duplicate relationships by first checking if they already exist
                 await tx.run(
@@ -105,12 +108,41 @@ class Client(datastore.Client[Config]):
                     category=amenity.category,
                 )
 
-        async with self.__driver.session() as session:
-            # Delete all exsiting nodes and relationships
-            await session.execute_write(delete_all)
+            # Create relationships from CSV
+            # Create SIMILAR_TO relationship
+            csv_file_path = "../data/relationships/amenity_relationships.csv"
 
+            with open(csv_file_path, "r") as file:
+                reader = csv.DictReader(file, delimiter=",")
+                for row in reader:
+                    src_name = row["src_id"]
+                    rel_type = row["rel_type"]
+                    tgt_name = row["tgt_id"]
+
+                    # Generate and run the Cypher query
+                    # Case-insensitive and apostrophes-insensitive match
+                    await tx.run(
+                        f"""
+                        MATCH (a:Amenity) WHERE toLower(a.name) = toLower("{src_name}")
+                        MATCH (b:Amenity) WHERE toLower(b.name) = toLower("{tgt_name}")
+                        MERGE (a)-[:{rel_type}]->(b)
+                        """,
+                    )
+
+        async with self.__driver.session() as session:
+            # Delete all existing nodes and relationships
+            await session.execute_write(delete_graph)
+
+            # Create nodes
             await asyncio.gather(
-                session.execute_write(create_amenities, amenities),
+                # Create amenity nodes
+                session.execute_write(create_amenity_nodes, amenities)
+            )
+
+            # Create relationships
+            await asyncio.gather(
+                # Create amenity relationships
+                session.execute_write(create_amenity_relationships, amenities)
             )
 
     async def export_data(self) -> tuple[
