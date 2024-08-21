@@ -263,7 +263,6 @@ def generate_list_tickets(client: aiohttp.ClientSession):
             return {
                 "results": "There are no upcoming tickets",
                 "sql": response_json.get("sql"),
-                "error": response_json.get("error"),
             }
         else:
             return response_json
