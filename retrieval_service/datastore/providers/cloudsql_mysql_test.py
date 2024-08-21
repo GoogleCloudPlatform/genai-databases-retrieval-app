@@ -627,18 +627,23 @@ async def test_insert_ticket(ds: cloudsql_mysql.Client):
 
 async def test_list_tickets(ds: cloudsql_mysql.Client):
     res = await ds.list_tickets("1")
-    expected = models.Ticket(
-        user_id=1,
-        user_name="test",
-        user_email="test",
-        airline="UA",
-        flight_number="1532",
-        departure_airport="SFO",
-        arrival_airport="DEN",
-        departure_time=datetime.strptime("2024-01-01 05:50:00", "%Y-%m-%d %H:%M:%S"),
-        arrival_time=datetime.strptime("2024-01-01 09:23:00", "%Y-%m-%d %H:%M:%S"),
-    )
-    assert res == [expected]
+    expected = [
+        {
+            "user_name": "test",
+            "airline": "UA",
+            "flight_number": "1532",
+            "departure_airport": "SFO",
+            "arrival_airport": "DEN",
+            "departure_time": datetime.strptime(
+                "2024-01-01 05:50:00", "%Y-%m-%d %H:%M:%S"
+            ),
+            "arrival_time": datetime.strptime(
+                "2024-01-01 09:23:00", "%Y-%m-%d %H:%M:%S"
+            ),
+        }
+    ]
+
+    assert res == expected
 
 
 async def test_validate_ticket(ds: cloudsql_mysql.Client):
