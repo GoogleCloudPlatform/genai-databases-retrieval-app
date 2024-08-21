@@ -3,7 +3,7 @@
 ## Before you begin
 
 1. Make sure you've [setup and initialized your
-   Database](../README.md#setting-up-your-database).
+   Database](./README.md#setting-up-your-database).
 
 1. Install Python 3.11+
 
