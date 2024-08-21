@@ -71,7 +71,7 @@ class Client(datastore.Client[Config]):
 
         async def delete_vector_index(tx):
             # Delete amenity vector index
-            await tx.run("DROP INDEX embedding_amenity IF EXISTS")
+            await tx.run("DROP INDEX amenity_embedding IF EXISTS")
 
         async def create_amenity_nodes(tx, amenities):
             for amenity in amenities:
@@ -139,7 +139,7 @@ class Client(datastore.Client[Config]):
             # Cosine is the most similar to Dot-Product default function
             await tx.run(
                 """
-                CREATE VECTOR INDEX embedding_amenity IF NOT EXISTS
+                CREATE VECTOR INDEX amenity_embedding IF NOT EXISTS
                 FOR (a:Amenity)
                 ON a.embedding
                 OPTIONS {indexConfig: {
@@ -195,6 +195,7 @@ class Client(datastore.Client[Config]):
 
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         async with self.__driver.session() as session:
+            # Specify return fields so embedding field wont be included in it
             result = await session.run(
                 """
                 MATCH (amenity: Amenity {id: $id})
@@ -224,7 +225,7 @@ class Client(datastore.Client[Config]):
             # Lower case relationship due to graph generator output
             result = await session.run(
                 """
-                CALL db.index.vector.queryNodes('embedding_amenity', $top_k, $query_embedding)
+                CALL db.index.vector.queryNodes('amenity_embedding', $top_k, $query_embedding)
                 YIELD node AS sourceAmenity
                 OPTIONAL MATCH (sourceAmenity)-[r:Similar_to]-(targetAmenity)
                 RETURN sourceAmenity.name AS source_name,
@@ -246,11 +247,8 @@ class Client(datastore.Client[Config]):
                 top_k=top_k,
             )
 
-            amenities = []
-            async for record in result:
-                amenities.append(dict(record))
+            amenities = await result.data()
 
-            print(amenities)
             return amenities
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
