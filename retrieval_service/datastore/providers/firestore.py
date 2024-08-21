@@ -509,7 +509,7 @@ class Client(datastore.Client[Config]):
     async def list_tickets(
         self,
         user_id: str,
-    ) -> list[models.Ticket]:
+    ) -> list[Any]:
         raise NotImplementedError("Not Implemented")
 
     async def policies_search(
