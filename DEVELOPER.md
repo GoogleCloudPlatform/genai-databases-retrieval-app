@@ -198,6 +198,28 @@ Here is a breakdown of the report:
 - `Cover`: average coverage of files.
 - `Missing`: lines that are not covered by tests.
 
+## LLM Evaluation
+
+[Optional] Export detailed metric table with row-specific scores by setting the `EXPORT_CSV` envrionment variable:
+
+```bash
+export EXPORT_CSV=True
+```
+
+Set `CLIENT_ID` to run evaluation that require authentication:
+
+```bash
+export CLIENT_ID=<retrieve CLIENT_ID from GCP credentials>
+```
+
+To run LLM system evaluation, execute the following:
+
+```bash
+python llm_demo/run_evaluation.py
+```
+
+To view metrics, visit [GCP dashboard][vertex-ai-experiments].
+
 ## Versioning
 
 This app will be released based on version number MAJOR.MINOR.PATCH:
@@ -212,3 +234,4 @@ This app will be released based on version number MAJOR.MINOR.PATCH:
 [config]: https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/blob/main/docs/datastore/alloydb.md#initialize-data-in-alloydb
 [triggers]: https://console.cloud.google.com/cloud-build/triggers?e=13802955&project=extension-demo-testing
 [invoker]: https://cloud.google.com/run/docs/securing/managing-access#add-principals
+[vertex-ai-experiments]: https://pantheon.corp.google.com/vertex-ai/experiments/experiments

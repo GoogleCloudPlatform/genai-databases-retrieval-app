@@ -576,12 +576,12 @@ class Client(datastore.Client[Config]):
     async def list_tickets(
         self,
         user_id: str,
-    ) -> list[models.Ticket]:
+    ) -> list[Any]:
         async with self.__pool.connect() as conn:
             s = text(
                 """
-                    SELECT * FROM tickets
-                    WHERE user_id = :user_id
+                SELECT user_name, airline, flight_number, departure_airport, arrival_airport, departure_time, arrival_time FROM tickets
+                WHERE user_id = :user_id
                 """
             )
             params = {
@@ -589,7 +589,7 @@ class Client(datastore.Client[Config]):
             }
             results = (await conn.execute(s, params)).mappings().fetchall()
 
-        res = [models.Ticket.model_validate(r) for r in results]
+        res = [r for r in results]
         return res
 
     async def policies_search(
