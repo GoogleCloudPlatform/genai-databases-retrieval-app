@@ -20,3 +20,4 @@ datetime==5.5
 pymysql==1.1.1
 types-PyMySQL==1.1.0.20240524
 neo4j==5.22
+sqlparse==0.5.1
