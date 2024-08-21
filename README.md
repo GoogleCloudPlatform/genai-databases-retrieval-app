@@ -131,6 +131,7 @@ of the databases listed below to set up and initialize your database:
 * [Set up and configure Cloud SQL for MySQL](./docs/datastore/cloudsql_mysql.md)
 * [Set up and configure non-cloud postgres (such as AlloyDB Omni)](./docs/datastore/postgres.md)
 * [Set up and configure Firestore](./docs/datastore/firestore.md)
+* [Set up and configure Neo4j](./docs/datastore/neo4j_graph.md)
 
 ### Deploying the Retrieval Service
 
