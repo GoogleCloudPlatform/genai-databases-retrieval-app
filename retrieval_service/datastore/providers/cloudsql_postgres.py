@@ -327,36 +327,40 @@ class Client(datastore.Client[Config]):
 
             return airports, amenities, flights, policies
 
-    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+    async def get_airport_by_id(
+        self, id: int
+    ) -> tuple[Optional[models.Airport], Optional[str]]:
         async with self.__pool.connect() as conn:
             s = text("""SELECT * FROM airports WHERE id=:id""")
             params = {"id": id}
             result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
-            return None
+            return None, None
 
         res = models.Airport.model_validate(result)
-        return res
+        return res, None
 
-    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+    async def get_airport_by_iata(
+        self, iata: str
+    ) -> tuple[Optional[models.Airport], Optional[str]]:
         async with self.__pool.connect() as conn:
             s = text("""SELECT * FROM airports WHERE iata ILIKE :iata""")
             params = {"iata": iata}
             result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
-            return None
+            return None, None
 
         res = models.Airport.model_validate(result)
-        return res
+        return res, None
 
     async def search_airports(
         self,
         country: Optional[str] = None,
         city: Optional[str] = None,
         name: Optional[str] = None,
-    ) -> list[models.Airport]:
+    ) -> tuple[list[models.Airport], Optional[str]]:
         async with self.__pool.connect() as conn:
             s = text(
                 """
@@ -375,9 +379,11 @@ class Client(datastore.Client[Config]):
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [models.Airport.model_validate(r) for r in results]
-        return res
+        return res, None
 
-    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
+    async def get_amenity(
+        self, id: int
+    ) -> tuple[Optional[models.Amenity], Optional[str]]:
         async with self.__pool.connect() as conn:
             s = text(
                 """
@@ -389,14 +395,14 @@ class Client(datastore.Client[Config]):
             result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
-            return None
+            return None, None
 
         res = models.Amenity.model_validate(result)
-        return res
+        return res, None
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[Any]:
+    ) -> tuple[list[Any], Optional[str]]:
         async with self.__pool.connect() as conn:
             s = text(
                 """
@@ -415,9 +421,11 @@ class Client(datastore.Client[Config]):
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [r for r in results]
-        return res
+        return res, None
 
-    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+    async def get_flight(
+        self, flight_id: int
+    ) -> tuple[Optional[models.Flight], Optional[str]]:
         async with self.__pool.connect() as conn:
             s = text(
                 """
@@ -429,16 +437,16 @@ class Client(datastore.Client[Config]):
             result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
-            return None
+            return None, None
 
         res = models.Flight.model_validate(result)
-        return res
+        return res, None
 
     async def search_flights_by_number(
         self,
         airline: str,
         number: str,
-    ) -> list[models.Flight]:
+    ) -> tuple[list[models.Flight], Optional[str]]:
         async with self.__pool.connect() as conn:
             s = text(
                 """
@@ -455,14 +463,14 @@ class Client(datastore.Client[Config]):
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [models.Flight.model_validate(r) for r in results]
-        return res
+        return res, None
 
     async def search_flights_by_airports(
         self,
         date: str,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
-    ) -> list[models.Flight]:
+    ) -> tuple[list[models.Flight], Optional[str]]:
         async with self.__pool.connect() as conn:
             s = text(
                 """
@@ -483,7 +491,7 @@ class Client(datastore.Client[Config]):
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [models.Flight.model_validate(r) for r in results]
-        return res
+        return res, None
 
     async def validate_ticket(
         self,
@@ -491,7 +499,7 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         departure_time: str,
-    ) -> Optional[models.Flight]:
+    ) -> tuple[Optional[models.Flight], Optional[str]]:
         departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
         async with self.__pool.connect() as conn:
             s = text(
@@ -512,9 +520,9 @@ class Client(datastore.Client[Config]):
             result = (await conn.execute(s, params)).mappings().fetchone()
 
         if result is None:
-            return None
+            return None, None
         res = models.Flight.model_validate(result)
-        return res
+        return res, None
 
     async def insert_ticket(
         self,
@@ -576,7 +584,11 @@ class Client(datastore.Client[Config]):
     async def list_tickets(
         self,
         user_id: str,
+<<<<<<< HEAD
     ) -> list[Any]:
+=======
+    ) -> tuple[list[models.Ticket], Optional[str]]:
+>>>>>>> cf5f87a (feat: add sql return to retrieval service (#428))
         async with self.__pool.connect() as conn:
             s = text(
                 """
@@ -589,12 +601,17 @@ class Client(datastore.Client[Config]):
             }
             results = (await conn.execute(s, params)).mappings().fetchall()
 
+<<<<<<< HEAD
         res = [r for r in results]
         return res
+=======
+        res = [models.Ticket.model_validate(r) for r in results]
+        return res, None
+>>>>>>> cf5f87a (feat: add sql return to retrieval service (#428))
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[str]:
+    ) -> tuple[list[str], Optional[str]]:
         async with self.__pool.connect() as conn:
             s = text(
                 """
@@ -613,7 +630,7 @@ class Client(datastore.Client[Config]):
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [r["content"] for r in results]
-        return res
+        return res, None
 
     async def close(self):
         await self.__pool.dispose()

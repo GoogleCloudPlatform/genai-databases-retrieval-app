@@ -179,10 +179,14 @@ class Client(datastore.Client[Config]):
     ]:
         raise NotImplementedError("This client does not support airports.")
 
-    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
+    async def get_airport_by_id(
+        self, id: int
+    ) -> tuple[Optional[models.Airport], Optional[str]]:
         raise NotImplementedError("This client does not support airports.")
 
-    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
+    async def get_airport_by_iata(
+        self, iata: str
+    ) -> tuple[Optional[models.Airport], Optional[str]]:
         raise NotImplementedError("This client does not support airports.")
 
     async def search_airports(
@@ -190,10 +194,12 @@ class Client(datastore.Client[Config]):
         country: Optional[str] = None,
         city: Optional[str] = None,
         name: Optional[str] = None,
-    ) -> list[models.Airport]:
+    ) -> tuple[list[models.Airport], Optional[str]]:
         raise NotImplementedError("This client does not support airports.")
 
-    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
+    async def get_amenity(
+        self, id: int
+    ) -> tuple[Optional[models.Amenity], Optional[str]]:
         async with self.__driver.session() as session:
             # Specify return fields so embedding field wont be included in it
             result = await session.run(
@@ -212,8 +218,9 @@ class Client(datastore.Client[Config]):
             record = await result.single()
 
             if not record:
-                return None
+                return None, None
 
+<<<<<<< HEAD
             return models.Amenity(**record)
 
     async def amenities_search(
@@ -250,13 +257,24 @@ class Client(datastore.Client[Config]):
             amenities = await result.data()
 
             return amenities
+=======
+            amenity_data = record["amenity"]
+            return models.Amenity(**amenity_data), None
 
-    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
+    async def amenities_search(
+        self, query_embedding: list[float], similarity_threshold: float, top_k: int
+    ) -> tuple[list[dict], Optional[str]]:
+        raise NotImplementedError("This client does not support amenities.")
+>>>>>>> cf5f87a (feat: add sql return to retrieval service (#428))
+
+    async def get_flight(
+        self, flight_id: int
+    ) -> tuple[Optional[models.Flight], Optional[str]]:
         raise NotImplementedError("This client does not support flights.")
 
     async def search_flights_by_number(
         self, airline: str, flight_number: str
-    ) -> list[models.Flight]:
+    ) -> tuple[list[models.Flight], Optional[str]]:
         raise NotImplementedError("This client does not support flights.")
 
     async def search_flights_by_airports(
@@ -264,7 +282,7 @@ class Client(datastore.Client[Config]):
         date,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
-    ) -> list[models.Flight]:
+    ) -> tuple[list[models.Flight], Optional[str]]:
         raise NotImplementedError("This client does not support flights.")
 
     async def validate_ticket(
@@ -273,7 +291,7 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         departure_time: str,
-    ) -> Optional[models.Flight]:
+    ) -> tuple[Optional[models.Flight], Optional[str]]:
         raise NotImplementedError("This client does not support tickets.")
 
     async def insert_ticket(
@@ -295,7 +313,7 @@ class Client(datastore.Client[Config]):
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[str]:
+    ) -> tuple[list[str], Optional[str]]:
         raise NotImplementedError("This client does not support policies.")
 
     async def close(self):
