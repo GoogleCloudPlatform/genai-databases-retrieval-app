@@ -114,13 +114,14 @@ connect to your VPC. You should only need to do this once per VPC (per project).
         --region=$REGION \
         --cluster=$CLUSTER \
         --project=$PROJECT_ID \
-        --ssl-mode=ALLOW_UNENCRYPTED_AND_ENCRYPTED
+        --ssl-mode=ALLOW_UNENCRYPTED_AND_ENCRYPTED \
+        --database-flags=password.enforce_complexity=on
     ```
 
 1. Enable public IP on instance:
 
     ```bash
-    gcloud beta alloydb instances update $INSTANCE \
+    gcloud alloydb instances update $INSTANCE \
         --cluster=$CLUSTER  \
         --region=$REGION  \
         --assign-inbound-public-ip=ASSIGN_IPV4
