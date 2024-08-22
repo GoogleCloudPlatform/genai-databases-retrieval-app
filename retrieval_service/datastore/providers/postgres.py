@@ -532,7 +532,7 @@ class Client(datastore.Client[Config]):
     async def list_tickets(
         self,
         user_id: str,
-    ) -> list[Any]:
+    ) -> tuple[list[Any], Optional[str]]:
         sql = """
             SELECT user_name, airline, flight_number, departure_airport, arrival_airport, departure_time, arrival_time FROM tickets
             WHERE user_id = $1

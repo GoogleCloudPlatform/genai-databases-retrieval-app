@@ -22,15 +22,11 @@ export function create_trace(toolcalls) {
         let toolcall = toolcalls[i];
         trace += trace_section_title(toolcall.tool_call_id);
 
-        if (toolcall.error != null) {
-            trace += trace_error(toolcall.error);
-        }
-        else {
-            trace += trace_header("SQL Executed:");
-            trace += trace_sql(toolcall.sql);
-            trace += trace_header("Results:");
-            trace += trace_results(toolcall.results);
-        }
+        trace += trace_header("SQL Executed:");
+        trace += trace_sql(toolcall.sql);
+        trace += trace_header("Results:");
+        trace += trace_results(toolcall.results);
+
         if (i < toolcalls_len-1) {
             trace += '<br>';
         }

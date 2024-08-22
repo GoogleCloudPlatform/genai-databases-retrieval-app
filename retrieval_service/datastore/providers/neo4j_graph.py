@@ -220,12 +220,11 @@ class Client(datastore.Client[Config]):
             if not record:
                 return None, None
 
-<<<<<<< HEAD
-            return models.Amenity(**record)
+            return models.Amenity(**record), None
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[dict]:
+    ) -> tuple[list[dict], Optional[str]]:
         async with self.__driver.session() as session:
             # OPTIONAL ensures that all similar amenities are returned even if they lack a SIMILAR_TO relationship
             # Limit retrieval to 2 target nodes related to the source node, linked by SIMILAR_TO relationship
@@ -256,16 +255,7 @@ class Client(datastore.Client[Config]):
 
             amenities = await result.data()
 
-            return amenities
-=======
-            amenity_data = record["amenity"]
-            return models.Amenity(**amenity_data), None
-
-    async def amenities_search(
-        self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> tuple[list[dict], Optional[str]]:
-        raise NotImplementedError("This client does not support amenities.")
->>>>>>> cf5f87a (feat: add sql return to retrieval service (#428))
+            return amenities, None
 
     async def get_flight(
         self, flight_id: int
@@ -308,7 +298,7 @@ class Client(datastore.Client[Config]):
     ):
         raise NotImplementedError("This client does not support tickets.")
 
-    async def list_tickets(self, user_id: str) -> list[Any]:
+    async def list_tickets(self, user_id: str) -> tuple[list[Any], Optional[str]]:
         raise NotImplementedError("This client does not support tickets.")
 
     async def policies_search(

@@ -517,7 +517,7 @@ class Client(datastore.Client[Config]):
     async def list_tickets(
         self,
         user_id: str,
-    ) -> list[Any]:
+    ) -> tuple[list[Any], Optional[str]]:
         raise NotImplementedError("Not Implemented")
 
     async def policies_search(

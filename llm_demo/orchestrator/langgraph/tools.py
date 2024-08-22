@@ -141,7 +141,6 @@ def generate_list_flights(client: aiohttp.ClientSession):
         )
 
         response_json = await response.json()
-        print(f"response from tools: {response_json}")
         if len(response_json) < 1:
             return {
                 "results": "There are no flights matching that query. Let the user know there are no results."
@@ -283,7 +282,6 @@ def generate_list_tickets(client: aiohttp.ClientSession):
             return {
                 "results": "There are no upcoming tickets",
                 "sql": response_json.get("sql"),
-                "error": response_json.get("error"),
             }
         else:
             return response_json

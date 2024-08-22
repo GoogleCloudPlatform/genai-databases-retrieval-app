@@ -257,7 +257,7 @@ class Client(ABC, Generic[C]):
     async def list_tickets(
         self,
         user_id: str,
-    ) -> list[Any]:
+    ) -> tuple[list[Any], Optional[str]]:
         raise NotImplementedError("Subclass should implement this!")
 
     @abstractmethod

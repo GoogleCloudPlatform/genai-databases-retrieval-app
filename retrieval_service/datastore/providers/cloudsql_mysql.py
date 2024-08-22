@@ -779,11 +779,7 @@ class Client(datastore.Client[Config]):
     def list_tickets_sync(
         self,
         user_id: str,
-<<<<<<< HEAD
-    ) -> list[Any]:
-=======
-    ) -> tuple[list[models.Ticket], Optional[str]]:
->>>>>>> cf5f87a (feat: add sql return to retrieval service (#428))
+    ) -> tuple[list[Any], Optional[str]]:
         with self.__pool.connect() as conn:
             s = text(
                 """
@@ -797,13 +793,8 @@ class Client(datastore.Client[Config]):
 
             results = (conn.execute(s, parameters=params)).mappings().fetchall()
 
-<<<<<<< HEAD
         res = [r for r in results]
-        return res
-=======
-        res = [models.Ticket.model_validate(r) for r in results]
         return res, None
->>>>>>> cf5f87a (feat: add sql return to retrieval service (#428))
 
     async def list_tickets(
         self,

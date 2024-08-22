@@ -579,20 +579,11 @@ class Client(datastore.Client[Config]):
     async def list_tickets(
         self,
         user_id: str,
-<<<<<<< HEAD
-    ) -> list[Any]:
-        async with self.__pool.connect() as conn:
-            s = text(
-                """
-                SELECT user_name, airline, flight_number, departure_airport, arrival_airport, departure_time, arrival_time FROM tickets
-                WHERE user_id = :user_id
-=======
-    ) -> tuple[list[models.Ticket], Optional[str]]:
+    ) -> tuple[list[Any], Optional[str]]:
         async with self.__pool.connect() as conn:
             sql = """
-                    SELECT * FROM tickets
-                    WHERE user_id = :user_id
->>>>>>> cf5f87a (feat: add sql return to retrieval service (#428))
+                SELECT user_name, airline, flight_number, departure_airport, arrival_airport, departure_time, arrival_time FROM tickets
+                WHERE user_id = :user_id
                 """
             s = text(sql)
             params = {
@@ -600,13 +591,8 @@ class Client(datastore.Client[Config]):
             }
             results = (await conn.execute(s, params)).mappings().fetchall()
 
-<<<<<<< HEAD
         res = [r for r in results]
-        return res
-=======
-        res = [models.Ticket.model_validate(r) for r in results]
         return res, sql
->>>>>>> cf5f87a (feat: add sql return to retrieval service (#428))
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int

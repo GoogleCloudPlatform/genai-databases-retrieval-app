@@ -622,7 +622,7 @@ async def test_insert_ticket(ds: cloudsql_postgres.Client):
 
 
 async def test_list_tickets(ds: cloudsql_postgres.Client):
-    res = await ds.list_tickets("1")
+    res, sql = await ds.list_tickets("1")
     expected = [
         {
             "user_name": "test",
@@ -640,10 +640,11 @@ async def test_list_tickets(ds: cloudsql_postgres.Client):
     ]
 
     assert res == expected
+    assert sql is None
 
 
 async def test_validate_ticket(ds: cloudsql_postgres.Client):
-    res = await ds.validate_ticket("UA", "1532", "SFO", "2024-01-01 05:50:00")
+    res, sql = await ds.validate_ticket("UA", "1532", "SFO", "2024-01-01 05:50:00")
     expected = models.Flight(
         id=0,
         airline="UA",
@@ -656,6 +657,7 @@ async def test_validate_ticket(ds: cloudsql_postgres.Client):
         arrival_gate="D6",
     )
     assert res == expected
+    assert sql is None
 
 
 policies_search_test_data = [
