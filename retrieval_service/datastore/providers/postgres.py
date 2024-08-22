@@ -24,6 +24,7 @@ from pydantic import BaseModel
 import models
 
 from .. import datastore
+from ..helpers import format_sql
 
 POSTGRES_IDENTIFIER = "postgres"
 
@@ -275,149 +276,181 @@ class Client(datastore.Client[Config]):
         policies = [models.Policy.model_validate(dict(p)) for p in await policy_task]
         return airports, amenities, flights, policies
 
-    async def get_airport_by_id(self, id: int) -> Optional[models.Airport]:
-        result = await self.__pool.fetchrow(
-            """
+    async def get_airport_by_id(
+        self, id: int
+    ) -> tuple[Optional[models.Airport], Optional[str]]:
+        sql = """
               SELECT * FROM airports WHERE id=$1
-            """,
-            id,
-        )
-
-        if result is None:
-            return None
-
-        result = models.Airport.model_validate(dict(result))
-        return result
-
-    async def get_airport_by_iata(self, iata: str) -> Optional[models.Airport]:
-        result = await self.__pool.fetchrow(
             """
-              SELECT * FROM airports WHERE iata ILIKE $1
-            """,
-            iata,
+        params = (id,)
+        result = await self.__pool.fetchrow(
+            sql,
+            *params,
         )
 
         if result is None:
-            return None
+            return None, None
 
         result = models.Airport.model_validate(dict(result))
-        return result
+        return result, format_sql(sql, params)
+
+    async def get_airport_by_iata(
+        self, iata: str
+    ) -> tuple[Optional[models.Airport], Optional[str]]:
+        sql = """
+              SELECT * FROM airports WHERE iata ILIKE $1
+            """
+        params = (iata,)
+        result = await self.__pool.fetchrow(
+            sql,
+            *params,
+        )
+
+        if result is None:
+            return None, None
+
+        result = models.Airport.model_validate(dict(result))
+        return result, format_sql(sql, params)
 
     async def search_airports(
         self,
         country: Optional[str] = None,
         city: Optional[str] = None,
         name: Optional[str] = None,
-    ) -> list[models.Airport]:
-        results = await self.__pool.fetch(
-            """
+    ) -> tuple[list[models.Airport], Optional[str]]:
+        sql = """
             SELECT * FROM airports
             WHERE ($1::TEXT IS NULL OR country ILIKE $1)
             AND ($2::TEXT IS NULL OR city ILIKE $2)
             AND ($3::TEXT IS NULL OR name ILIKE '%' || $3 || '%')
             LIMIT 10
-            """,
+            """
+        params = (
             country,
             city,
             name,
+        )
+        results = await self.__pool.fetch(
+            sql,
+            *params,
             timeout=10,
         )
 
         results = [models.Airport.model_validate(dict(r)) for r in results]
-        return results
+        return results, format_sql(sql, params)
 
-    async def get_amenity(self, id: int) -> Optional[models.Amenity]:
-        result = await self.__pool.fetchrow(
-            """
+    async def get_amenity(
+        self, id: int
+    ) -> tuple[Optional[models.Amenity], Optional[str]]:
+        sql = """
             SELECT id, name, description, location, terminal, category, hour
             FROM amenities WHERE id=$1
-            """,
-            id,
+            """
+        params = (id,)
+        result = await self.__pool.fetchrow(
+            sql,
+            *params,
         )
 
         if result is None:
-            return None
+            return None, None
 
         result = models.Amenity.model_validate(dict(result))
-        return result
+        return result, format_sql(sql, params)
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[Any]:
-        results = await self.__pool.fetch(
-            """
+    ) -> tuple[list[Any], Optional[str]]:
+        sql = """
             SELECT name, description, location, terminal, category, hour
             FROM amenities
             WHERE (embedding <=> $1) < $2
             ORDER BY (embedding <=> $1)
             LIMIT $3
-            """,
+            """
+        params = (
             query_embedding,
             similarity_threshold,
             top_k,
+        )
+        results = await self.__pool.fetch(
+            sql,
+            *params,
             timeout=10,
         )
 
         results = [dict(r) for r in results]
-        return results
+        return results, format_sql(sql, params)
 
-    async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
-        result = await self.__pool.fetchrow(
-            """
+    async def get_flight(
+        self, flight_id: int
+    ) -> tuple[Optional[models.Flight], Optional[str]]:
+        sql = """
                 SELECT * FROM flights
                 WHERE id = $1
-            """,
-            flight_id,
+            """
+        params = (flight_id,)
+        result = await self.__pool.fetchrow(
+            sql,
+            *params,
             timeout=10,
         )
 
         if result is None:
-            return None
+            return None, None
 
         result = models.Flight.model_validate(dict(result))
-        return result
+        return result, format_sql(sql, params)
 
     async def search_flights_by_number(
         self,
         airline: str,
         number: str,
-    ) -> list[models.Flight]:
-        results = await self.__pool.fetch(
-            """
+    ) -> tuple[list[models.Flight], Optional[str]]:
+        sql = """
                 SELECT * FROM flights
                 WHERE airline = $1
                 AND flight_number = $2
                 LIMIT 10
-            """,
+            """
+        params = (
             airline,
             number,
+        )
+        results = await self.__pool.fetch(
+            sql,
+            *params,
             timeout=10,
         )
         results = [models.Flight.model_validate(dict(r)) for r in results]
-        return results
+        return results, format_sql(sql, params)
 
     async def search_flights_by_airports(
         self,
         date: str,
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
-    ) -> list[models.Flight]:
-        results = await self.__pool.fetch(
-            """
+    ) -> tuple[list[models.Flight], Optional[str]]:
+        sql = """
                 SELECT * FROM flights
                 WHERE ($1::TEXT IS NULL OR departure_airport ILIKE $1)
                 AND ($2::TEXT IS NULL OR arrival_airport ILIKE $2)
                 AND departure_time >= $3::timestamp
                 AND departure_time < $3::timestamp + interval '1 day'
                 LIMIT 10
-            """,
+            """
+        params = (
             departure_airport,
             arrival_airport,
             datetime.strptime(date, "%Y-%m-%d"),
+        )
+        results = await self.__pool.fetch(
+            sql,
+            *params,
             timeout=10,
         )
         results = [models.Flight.model_validate(dict(r)) for r in results]
-        return results
+        return results, format_sql(sql, params)
 
     async def validate_ticket(
         self,
@@ -425,28 +458,32 @@ class Client(datastore.Client[Config]):
         flight_number: str,
         departure_airport: str,
         departure_time: str,
-    ) -> Optional[models.Flight]:
+    ) -> tuple[Optional[models.Flight], Optional[str]]:
         departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
-        result = await self.__pool.fetchrow(
-            """
+        sql = """
                 SELECT * FROM flights
                 WHERE airline ILIKE $1
                 AND flight_number ILIKE $2
                 AND departure_airport ILIKE $3
                 AND departure_time::date = $4::date
-            """,
+            """
+        params = (
             airline,
             flight_number,
             departure_airport,
             departure_time_datetime,
+        )
+        result = await self.__pool.fetchrow(
+            sql,
+            *params,
             timeout=10,
         )
 
         if result is None:
-            return None
+            return None, None
 
         res = models.Flight.model_validate(dict(result))
-        return res
+        return res, format_sql(sql, params)
 
     async def insert_ticket(
         self,
@@ -495,37 +532,43 @@ class Client(datastore.Client[Config]):
     async def list_tickets(
         self,
         user_id: str,
-    ) -> list[Any]:
-        results = await self.__pool.fetch(
-            """
+    ) -> tuple[list[Any], Optional[str]]:
+        sql = """
             SELECT user_name, airline, flight_number, departure_airport, arrival_airport, departure_time, arrival_time FROM tickets
             WHERE user_id = $1
-            """,
-            user_id,
+            """
+        params = (user_id,)
+        results = await self.__pool.fetch(
+            sql,
+            *params,
             timeout=10,
         )
         results = [r for r in results]
-        return results
+        return results, format_sql(sql, params)
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
-    ) -> list[str]:
-        results = await self.__pool.fetch(
-            """
+    ) -> tuple[list[str], Optional[str]]:
+        sql = """
             SELECT content
             FROM policies
             WHERE (embedding <=> $1) < $2
             ORDER BY (embedding <=> $1)
             LIMIT $3
-            """,
+            """
+        params = (
             query_embedding,
             similarity_threshold,
             top_k,
+        )
+        results = await self.__pool.fetch(
+            sql,
+            *params,
             timeout=10,
         )
 
         results = [r["content"] for r in results]
-        return results
+        return results, format_sql(sql, params)
 
     async def close(self):
         await self.__pool.close()

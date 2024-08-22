@@ -21,7 +21,7 @@ from typing import Annotated, Any, Dict, List, Literal, Optional, Sequence, Type
 from aiohttp import ClientSession, TCPConnector
 from fastapi import HTTPException
 from langchain.globals import set_verbose  # type: ignore
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableConfig, RunnableLambda
 from langchain_core.tools import StructuredTool
@@ -45,6 +45,7 @@ class LangGraphOrchestrator(BaseOrchestrator):
     _user_sessions: Dict[str, str]
     # aiohttp context
     connector = None
+    client: Optional[ClientSession] = None
 
     def __init__(self):
         self._user_sessions = {}
@@ -102,6 +103,9 @@ class LangGraphOrchestrator(BaseOrchestrator):
         self, uuid: str, user_prompt: Optional[str]
     ) -> dict[str, Any]:
         config = self.get_config(uuid)
+        cur_message_index = (
+            len(self._langgraph_app.get_state(config).values["messages"]) - 1
+        )
         if user_prompt:
             user_query = [HumanMessage(content=user_prompt)]
             app_input = {
@@ -114,11 +118,16 @@ class LangGraphOrchestrator(BaseOrchestrator):
             app_input,
             config=config,
         )
-        last_message = final_state["messages"][-1]
+        messages = final_state["messages"]
+        # Retrieve tracing information
+        trace = self.retrieve_trace(messages[cur_message_index:])
+        # Retrieve the last message from the state messages
+        last_message = messages[-1]
         output = last_message.content
         # Build final response
         response = {}
         response["output"] = output
+        response["trace"] = trace
         # If needs ticket verification
         has_add_kwargs = hasattr(last_message, "additional_kwargs")
         if has_add_kwargs and last_message.additional_kwargs.get("confirmation"):
@@ -130,6 +139,17 @@ class LangGraphOrchestrator(BaseOrchestrator):
             return response
         response["state"] = final_state
         return response
+
+    def retrieve_trace(self, messages: Sequence[BaseMessage]):
+        trace = []
+        for m in messages:
+            if isinstance(m, ToolMessage):
+                trace_info = {"tool_call_id": m.name, "results": m.content}
+                add_kwargs = m.additional_kwargs
+                if add_kwargs and add_kwargs.get("sql"):
+                    trace_info["sql"] = add_kwargs.get("sql")
+                trace.append(trace_info)
+        return trace
 
     def user_session_reset(self, session: dict[str, Any], uuid: str):
         del session["history"]
@@ -231,7 +251,8 @@ class LangGraphOrchestrator(BaseOrchestrator):
         del self._user_sessions[uuid]
 
     def close_clients(self):
-        self.client.close()
+        if self.client:
+            self.client.close()
 
 
 PREFIX = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
