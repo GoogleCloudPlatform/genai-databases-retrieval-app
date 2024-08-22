@@ -14,7 +14,7 @@
 
 import asyncio
 import csv
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from neo4j import AsyncDriver, AsyncGraphDatabase
 from pydantic import BaseModel
@@ -69,12 +69,16 @@ class Client(datastore.Client[Config]):
         async def delete_graph(tx):
             await tx.run("MATCH (n) DETACH DELETE n")
 
+        async def delete_vector_index(tx):
+            # Delete amenity vector index
+            await tx.run("DROP INDEX amenity_embedding IF EXISTS")
+
         async def create_amenity_nodes(tx, amenities):
             for amenity in amenities:
                 # Create Amenity node
                 await tx.run(
                     """
-                    CREATE (a:Amenity {id: $id, name: $name, description: $description, location: $location, terminal: $terminal, category: $category, hour: $hour})
+                    CREATE (a:Amenity {id: $id, name: $name, description: $description, location: $location, terminal: $terminal, category: $category, hour: $hour, embedding: $embedding})
                     """,
                     id=amenity.id,
                     name=amenity.name,
@@ -83,6 +87,7 @@ class Client(datastore.Client[Config]):
                     terminal=amenity.terminal,
                     category=amenity.category,
                     hour=amenity.hour,
+                    embedding=amenity.embedding,
                 )
 
                 # Create Category node
@@ -128,9 +133,28 @@ class Client(datastore.Client[Config]):
                         """,
                     )
 
+        async def create_vector_index(tx):
+            # Create amenity vector index
+            # Cosine and Euclidean are the only supported similarity functions
+            # Cosine is the most similar to Dot-Product default function
+            await tx.run(
+                """
+                CREATE VECTOR INDEX amenity_embedding IF NOT EXISTS
+                FOR (a:Amenity)
+                ON a.embedding
+                OPTIONS {indexConfig: {
+                `vector.dimensions`: 768,
+                `vector.similarity_function`: 'cosine'
+                }}
+                """
+            )
+
         async with self.__driver.session() as session:
             # Delete all existing nodes and relationships
             await session.execute_write(delete_graph)
+
+            # Delete all indexes
+            await session.execute_write(delete_vector_index)
 
             # Create nodes
             await asyncio.gather(
@@ -143,6 +167,9 @@ class Client(datastore.Client[Config]):
                 # Create amenity relationships
                 session.execute_write(create_amenity_relationships, amenities)
             )
+
+            # Create vector index
+            await session.execute_write(create_vector_index)
 
     async def export_data(self) -> tuple[
         list[models.Airport],
@@ -168,21 +195,61 @@ class Client(datastore.Client[Config]):
 
     async def get_amenity(self, id: int) -> Optional[models.Amenity]:
         async with self.__driver.session() as session:
+            # Specify return fields so embedding field wont be included in it
             result = await session.run(
-                "MATCH (amenity: Amenity {id: $id}) RETURN amenity", id=id
+                """
+                MATCH (amenity: Amenity {id: $id})
+                RETURN amenity.id AS id,
+                    amenity.name AS name,
+                    amenity.description AS description,
+                    amenity.location AS location,
+                    amenity.terminal AS terminal,
+                    amenity.category AS category,
+                    amenity.hour AS hour
+                """,
+                id=id,
             )
             record = await result.single()
 
             if not record:
                 return None
 
-            amenity_data = record["amenity"]
-            return models.Amenity(**amenity_data)
+            return models.Amenity(**record)
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> list[dict]:
-        raise NotImplementedError("This client does not support amenities.")
+        async with self.__driver.session() as session:
+            # OPTIONAL ensures that all similar amenities are returned even if they lack a SIMILAR_TO relationship
+            # Limit retrieval to 2 target nodes related to the source node, linked by SIMILAR_TO relationship
+            # Lower case relationship due to graph generator output
+            result = await session.run(
+                """
+                CALL db.index.vector.queryNodes('amenity_embedding', $top_k, $query_embedding)
+                YIELD node AS sourceAmenity
+                OPTIONAL MATCH (sourceAmenity)-[r:Similar_to]-(targetAmenity)
+                RETURN sourceAmenity.name AS source_name,
+                        sourceAmenity.description AS source_description,
+                        sourceAmenity.location AS source_location,
+                        sourceAmenity.terminal AS source_terminal,
+                        sourceAmenity.category AS source_category,
+                        sourceAmenity.hour AS source_hour,
+                        type(r) AS relationship_type,
+                        targetAmenity.name AS target_name,
+                        targetAmenity.description AS target_description,
+                        targetAmenity.location AS target_location,
+                        targetAmenity.terminal AS target_terminal,
+                        targetAmenity.category AS target_category,
+                        targetAmenity.hour AS target_hour
+                LIMIT 2
+                """,
+                query_embedding=query_embedding,
+                top_k=top_k,
+            )
+
+            amenities = await result.data()
+
+            return amenities
 
     async def get_flight(self, flight_id: int) -> Optional[models.Flight]:
         raise NotImplementedError("This client does not support flights.")
@@ -223,7 +290,7 @@ class Client(datastore.Client[Config]):
     ):
         raise NotImplementedError("This client does not support tickets.")
 
-    async def list_tickets(self, user_id: str) -> list[models.Ticket]:
+    async def list_tickets(self, user_id: str) -> list[Any]:
         raise NotImplementedError("This client does not support tickets.")
 
     async def policies_search(

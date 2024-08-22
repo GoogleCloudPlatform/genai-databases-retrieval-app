@@ -14,7 +14,7 @@
 
 from datetime import datetime
 from ipaddress import IPv4Address
-from typing import Any, AsyncGenerator, List, Optional
+from typing import Any, AsyncGenerator, Generator, List, Optional
 
 import pytest
 import pytest_asyncio
@@ -56,9 +56,9 @@ def db_name() -> str:
 
 
 @pytest.fixture(scope="module")
-async def create_db(
+def create_db(
     db_project: str, db_instance: str, db_name: str
-) -> AsyncGenerator[str, None]:
+) -> Generator[str, None, None]:
     client = spanner.Client(project=db_project)
     instance = client.instance(db_instance)
 
@@ -74,16 +74,15 @@ async def create_db(
 
 @pytest_asyncio.fixture(scope="module")
 async def ds(
-    create_db: AsyncGenerator[str, None],
+    create_db: str,
     db_project: str,
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
-    db_name = await create_db.__anext__()
     cfg = spanner_gsql.Config(
         kind="spanner-gsql",
         project=db_project,
         instance=db_instance,
-        database=db_name,
+        database=create_db,
     )
 
     ds = await datastore.create(cfg)
