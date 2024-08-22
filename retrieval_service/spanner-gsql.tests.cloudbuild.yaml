@@ -40,17 +40,6 @@ steps:
         #!/usr/bin/env bash
         python -m pytest datastore/providers/spanner_gsql_test.py
 
-  - id: Run Spanner with postgres dialect integration tests
-    name: python:3.11
-    dir: retrieval_service
-    env: # Set env var expected by tests
-      - "DB_PROJECT=$PROJECT_ID"
-      - "DB_INSTANCE=${_SPANNER_INSTANCE}"
-      - "DB_NAME=${_DATABASE_NAME}-pg"
-    script: |
-        #!/usr/bin/env bash
-        python -m pytest datastore/providers/spanner_postgres_test.py
-
 substitutions:
   _DATABASE_NAME: test_${SHORT_SHA}
   _SPANNER_INSTANCE: "my-spanner-instance"

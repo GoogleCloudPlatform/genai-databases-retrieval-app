@@ -934,7 +934,7 @@ class Client(datastore.Client[Config]):
             # Spread SQL query for readability
             results = snapshot.execute_sql(
                 sql="""
-                SELECT * FROM tickets
+                SELECT user_name, airline, flight_number, departure_airport, arrival_airport, departure_time, arrival_time FROM tickets
                 WHERE user_id = $1
                 """,
                 params={"p1": user_id},
