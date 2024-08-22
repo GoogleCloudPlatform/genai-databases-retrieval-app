@@ -106,7 +106,7 @@ class UserModel:
                 parts=[part],
             )
             self.history.append(content)
-            model_response = self.request_model(self.history)
+            model_response = await self.request_model(self.history)
             response_function_call_content = model_response.candidates[0].content
             part_response = response_function_call_content.parts[0]
 
@@ -160,8 +160,9 @@ class UserModel:
             params=params,
             headers=get_headers(self.client),
         )
-        response = await response.json()
-        return response
+        response_json = await response.json()
+        response_results = response_json.get("results")
+        return response_results
 
     async def insert_ticket(self, params: str):
         return await insert_ticket(self.client, params)
