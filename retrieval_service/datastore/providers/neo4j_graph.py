@@ -228,20 +228,21 @@ class Client(datastore.Client[Config]):
                 CALL db.index.vector.queryNodes('amenity_embedding', $top_k, $query_embedding)
                 YIELD node AS sourceAmenity
                 OPTIONAL MATCH (sourceAmenity)-[r:Similar_to]-(targetAmenity)
-                RETURN sourceAmenity.name AS source_name,
+                RETURN sourceAmenity.id AS source_id,
+                        sourceAmenity.name AS source_name,
                         sourceAmenity.description AS source_description,
                         sourceAmenity.location AS source_location,
                         sourceAmenity.terminal AS source_terminal,
                         sourceAmenity.category AS source_category,
                         sourceAmenity.hour AS source_hour,
                         type(r) AS relationship_type,
+                        targetAmenity.id AS target_id,
                         targetAmenity.name AS target_name,
                         targetAmenity.description AS target_description,
                         targetAmenity.location AS target_location,
                         targetAmenity.terminal AS target_terminal,
                         targetAmenity.category AS target_category,
                         targetAmenity.hour AS target_hour
-                LIMIT 2
                 """,
                 query_embedding=query_embedding,
                 top_k=top_k,
