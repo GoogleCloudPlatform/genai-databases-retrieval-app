@@ -223,10 +223,12 @@ class Client(datastore.Client[Config]):
             # OPTIONAL ensures that all similar amenities are returned even if they lack a SIMILAR_TO relationship
             # Limit retrieval to 2 target nodes related to the source node, linked by SIMILAR_TO relationship
             # Lower case relationship due to graph generator output
+            # Similarity scores are bounded between 0 and 1, scores closer to 1 indicating higher similarity
             result = await session.run(
                 """
                 CALL db.index.vector.queryNodes('amenity_embedding', $top_k, $query_embedding)
-                YIELD node AS sourceAmenity
+                YIELD node AS sourceAmenity, score
+                WHERE score >= $similarity_threshold
                 OPTIONAL MATCH (sourceAmenity)-[r:Similar_to]-(targetAmenity)
                 RETURN sourceAmenity.id AS source_id,
                         sourceAmenity.name AS source_name,
@@ -245,6 +247,7 @@ class Client(datastore.Client[Config]):
                         targetAmenity.hour AS target_hour
                 """,
                 query_embedding=query_embedding,
+                similarity_threshold=similarity_threshold,
                 top_k=top_k,
             )
 
