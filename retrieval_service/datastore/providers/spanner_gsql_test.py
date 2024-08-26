@@ -14,7 +14,7 @@
 
 from datetime import datetime
 from ipaddress import IPv4Address
-from typing import Any, AsyncGenerator, List, Optional
+from typing import Any, AsyncGenerator, Generator, List, Optional
 
 import pytest
 import pytest_asyncio
@@ -56,9 +56,9 @@ def db_name() -> str:
 
 
 @pytest.fixture(scope="module")
-async def create_db(
+def create_db(
     db_project: str, db_instance: str, db_name: str
-) -> AsyncGenerator[str, None]:
+) -> Generator[str, None, None]:
     client = spanner.Client(project=db_project)
     instance = client.instance(db_instance)
 
@@ -74,16 +74,15 @@ async def create_db(
 
 @pytest_asyncio.fixture(scope="module")
 async def ds(
-    create_db: AsyncGenerator[str, None],
+    create_db: str,
     db_project: str,
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
-    db_name = await create_db.__anext__()
     cfg = spanner_gsql.Config(
         kind="spanner-gsql",
         project=db_project,
         instance=db_instance,
-        database=db_name,
+        database=create_db,
     )
 
     ds = await datastore.create(cfg)
@@ -164,7 +163,7 @@ async def test_export_dataset(ds: spanner_gsql.Client):
 
 
 async def test_get_airport_by_id(ds: spanner_gsql.Client):
-    res = await ds.get_airport_by_id(1)
+    res, sql = await ds.get_airport_by_id(1)
     expected = models.Airport(
         id=1,
         iata="MAG",
@@ -173,6 +172,7 @@ async def test_get_airport_by_id(ds: spanner_gsql.Client):
         country="Papua New Guinea",
     )
     assert res == expected
+    assert sql is None
 
 
 @pytest.mark.parametrize(
@@ -183,7 +183,7 @@ async def test_get_airport_by_id(ds: spanner_gsql.Client):
     ],
 )
 async def test_get_airport_by_iata(ds: spanner_gsql.Client, iata: str):
-    res = await ds.get_airport_by_iata(iata)
+    res, sql = await ds.get_airport_by_iata(iata)
     expected = models.Airport(
         id=3270,
         iata="SFO",
@@ -192,6 +192,7 @@ async def test_get_airport_by_iata(ds: spanner_gsql.Client, iata: str):
         country="United States",
     )
     assert res == expected
+    assert sql is None
 
 
 search_airports_test_data = [
@@ -272,12 +273,13 @@ async def test_search_airports(
     name: str,
     expected: List[models.Airport],
 ):
-    res = await ds.search_airports(country, city, name)
+    res, sql = await ds.search_airports(country, city, name)
     assert res == expected
+    assert sql is None
 
 
 async def test_get_amenity(ds: spanner_gsql.Client):
-    res: Optional[models.Amenity] = await ds.get_amenity(0)
+    res, sql = await ds.get_amenity(0)
     expected = models.Amenity(
         id=0,
         name="Coffee Shop 732",
@@ -302,13 +304,8 @@ async def test_get_amenity(ds: spanner_gsql.Client):
         saturday_end_hour=None,
     )
 
-    assert res is not None
-    assert res.name == expected.name
-    assert res.description == expected.description
-    assert res.location == expected.location
-    assert res.terminal == expected.terminal
-    assert res.category == expected.category
-    assert res.hour == expected.hour
+    assert res == expected
+    assert sql is None
 
 
 amenities_search_test_data = [
@@ -375,12 +372,13 @@ async def test_amenities_search(
     top_k: int,
     expected: List[models.Amenity],
 ):
-    res = await ds.amenities_search(query_embedding, similarity_threshold, top_k)
+    res, sql = await ds.amenities_search(query_embedding, similarity_threshold, top_k)
     assert res == expected
+    assert sql is None
 
 
 async def test_get_flight(ds: spanner_gsql.Client):
-    res = await ds.get_flight(1)
+    res, sql = await ds.get_flight(1)
     expected = models.Flight(
         id=1,
         airline="UA",
@@ -393,6 +391,7 @@ async def test_get_flight(ds: spanner_gsql.Client):
         arrival_gate="D30",
     )
     assert res == expected
+    assert sql is None
 
 
 search_flights_by_number_test_data = [
@@ -451,8 +450,9 @@ async def test_search_flights_by_number(
     number: str,
     expected: List[models.Flight],
 ):
-    res = await ds.search_flights_by_number(airline, number)
+    res, sql = await ds.search_flights_by_number(airline, number)
     assert res == expected
+    assert sql is None
 
 
 search_flights_by_airports_test_data = [
@@ -575,8 +575,11 @@ async def test_search_flights_by_airports(
     arrival_airport: str,
     expected: List[models.Flight],
 ):
-    res = await ds.search_flights_by_airports(date, departure_airport, arrival_airport)
+    res, sql = await ds.search_flights_by_airports(
+        date, departure_airport, arrival_airport
+    )
     assert res == expected
+    assert sql is None
 
 
 policies_search_test_data = [
@@ -622,5 +625,6 @@ async def test_policies_search(
     top_k: int,
     expected: List[models.Policy],
 ):
-    res = await ds.policies_search(query_embedding, similarity_threshold, top_k)
+    res, sql = await ds.policies_search(query_embedding, similarity_threshold, top_k)
     assert res == expected
+    assert sql is None

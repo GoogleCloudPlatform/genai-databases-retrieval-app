@@ -63,17 +63,18 @@ def db_instance() -> str:
     return get_env_var("DB_INSTANCE", "instance for cloud sql")
 
 
-@pytest.fixture(scope="module")
+@pytest_asyncio.fixture(scope="module")
 async def create_db(
     db_user: str, db_pass: str, db_project: str, db_region: str, db_instance: str
 ) -> AsyncGenerator[str, None]:
     db_name = get_env_var("DB_NAME", "name of a cloud sql mysql database")
     loop = asyncio.get_running_loop()
     connector = Connector(loop=loop)
+    project_instance = f"{db_project}:{db_region}:{db_instance}"
     # Database does not exist, create it.
     sys_conn: pymysql.Connection = await connector.connect_async(
-        # Cloud SQL instance connection name
-        f"{db_project}:{db_region}:{db_instance}",
+        # cloud sql instance connection name
+        project_instance,
         "pymysql",
         user=f"{db_user}",
         password=f"{db_pass}",
@@ -81,41 +82,40 @@ async def create_db(
     )
     cursor = sys_conn.cursor()
 
-    cursor.execute(f"DROP DATABASE IF EXISTS {db_name};")
+    cursor.execute(f"drop database if exists {db_name};")
     cursor.execute(f"CREATE DATABASE {db_name};")
-    cursor.close()
     conn: pymysql.Connection = await connector.connect_async(
         # Cloud SQL instance connection name
-        f"{db_project}:{db_region}:{db_instance}",
+        project_instance,
         "pymysql",
         user=f"{db_user}",
         password=f"{db_pass}",
         db=f"{db_name}",
     )
-    yield db_name
     conn.close()
+    yield db_name
+    cursor.execute(f"drop database if exists {db_name};")
+    cursor.close()
 
 
 @pytest_asyncio.fixture(scope="module")
 async def ds(
-    create_db: AsyncGenerator[str, None],
+    create_db: str,
     db_user: str,
     db_pass: str,
     db_project: str,
     db_region: str,
     db_instance: str,
 ) -> AsyncGenerator[datastore.Client, None]:
-    db_name = await create_db.__anext__()
     cfg = cloudsql_mysql.Config(
         kind="cloudsql-mysql",
         user=db_user,
         password=db_pass,
-        database=db_name,
+        database=create_db,
         project=db_project,
         region=db_region,
         instance=db_instance,
     )
-    t = create_db
     ds = await datastore.create(cfg)
 
     airports_ds_path = "../data/airport_dataset.csv"
@@ -204,7 +204,7 @@ async def test_export_dataset(ds: cloudsql_mysql.Client):
 
 
 async def test_get_airport_by_id(ds: cloudsql_mysql.Client):
-    res = await ds.get_airport_by_id(1)
+    res, sql = await ds.get_airport_by_id(1)
     expected = models.Airport(
         id=1,
         iata="MAG",
@@ -213,6 +213,7 @@ async def test_get_airport_by_id(ds: cloudsql_mysql.Client):
         country="Papua New Guinea",
     )
     assert res == expected
+    assert sql is None
 
 
 @pytest.mark.parametrize(
@@ -223,7 +224,7 @@ async def test_get_airport_by_id(ds: cloudsql_mysql.Client):
     ],
 )
 async def test_get_airport_by_iata(ds: cloudsql_mysql.Client, iata: str):
-    res = await ds.get_airport_by_iata(iata)
+    res, sql = await ds.get_airport_by_iata(iata)
     expected = models.Airport(
         id=3270,
         iata="SFO",
@@ -232,6 +233,7 @@ async def test_get_airport_by_iata(ds: cloudsql_mysql.Client, iata: str):
         country="United States",
     )
     assert res == expected
+    assert sql is None
 
 
 search_airports_test_data = [
@@ -319,12 +321,13 @@ async def test_search_airports(
     name: str,
     expected: List[models.Airport],
 ):
-    res = await ds.search_airports(country, city, name)
+    res, sql = await ds.search_airports(country, city, name)
     assert res == expected
+    assert sql is None
 
 
 async def test_get_amenity(ds: cloudsql_mysql.Client):
-    res = await ds.get_amenity(0)
+    res, sql = await ds.get_amenity(0)
     expected = models.Amenity(
         id=0,
         name="Coffee Shop 732",
@@ -349,6 +352,7 @@ async def test_get_amenity(ds: cloudsql_mysql.Client):
         saturday_end_hour=None,
     )
     assert res == expected
+    assert sql is None
 
 
 amenities_search_test_data = [
@@ -407,12 +411,13 @@ async def test_amenities_search(
     top_k: int,
     expected: List[Any],
 ):
-    res = await ds.amenities_search(query_embedding, similarity_threshold, top_k)
+    res, sql = await ds.amenities_search(query_embedding, similarity_threshold, top_k)
     assert res == expected
+    assert sql is None
 
 
 async def test_get_flight(ds: cloudsql_mysql.Client):
-    res = await ds.get_flight(1)
+    res, sql = await ds.get_flight(1)
     expected = models.Flight(
         id=1,
         airline="UA",
@@ -425,6 +430,7 @@ async def test_get_flight(ds: cloudsql_mysql.Client):
         arrival_gate="D30",
     )
     assert res == expected
+    assert sql is None
 
 
 search_flights_by_number_test_data = [
@@ -483,8 +489,9 @@ async def test_search_flights_by_number(
     number: str,
     expected: List[models.Flight],
 ):
-    res = await ds.search_flights_by_number(airline, number)
+    res, sql = await ds.search_flights_by_number(airline, number)
     assert res == expected
+    assert sql is None
 
 
 search_flights_by_airports_test_data = [
@@ -607,8 +614,11 @@ async def test_search_flights_by_airports(
     arrival_airport: str,
     expected: List[models.Flight],
 ):
-    res = await ds.search_flights_by_airports(date, departure_airport, arrival_airport)
+    res, sql = await ds.search_flights_by_airports(
+        date, departure_airport, arrival_airport
+    )
     assert res == expected
+    assert sql is None
 
 
 async def test_insert_ticket(ds: cloudsql_mysql.Client):
@@ -626,7 +636,7 @@ async def test_insert_ticket(ds: cloudsql_mysql.Client):
 
 
 async def test_list_tickets(ds: cloudsql_mysql.Client):
-    res = await ds.list_tickets("1")
+    res, sql = await ds.list_tickets("1")
     expected = [
         {
             "user_name": "test",
@@ -644,10 +654,11 @@ async def test_list_tickets(ds: cloudsql_mysql.Client):
     ]
 
     assert res == expected
+    assert sql is None
 
 
 async def test_validate_ticket(ds: cloudsql_mysql.Client):
-    res = await ds.validate_ticket("UA", "1532", "SFO", "2024-01-01 05:50:00")
+    res, sql = await ds.validate_ticket("UA", "1532", "SFO", "2024-01-01 05:50:00")
     expected = models.Flight(
         id=0,
         airline="UA",
@@ -660,6 +671,7 @@ async def test_validate_ticket(ds: cloudsql_mysql.Client):
         arrival_gate="D6",
     )
     assert res == expected
+    assert sql is None
 
 
 policies_search_test_data = [
@@ -697,5 +709,6 @@ async def test_policies_search(
     top_k: int,
     expected: List[str],
 ):
-    res = await ds.policies_search(query_embedding, similarity_threshold, top_k)
+    res, sql = await ds.policies_search(query_embedding, similarity_threshold, top_k)
     assert res == expected
+    assert sql is None

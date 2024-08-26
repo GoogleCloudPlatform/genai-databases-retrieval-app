@@ -97,7 +97,7 @@ async def test_total_amenity_nodes_count(ds: neo4j_graph.Client):
 
 
 async def test_get_amenity_id(ds: neo4j_graph.Client):
-    amenity = await ds.get_amenity(35)
+    amenity, sql = await ds.get_amenity(35)
 
     assert amenity, f"No amenity found with id 35"
 
@@ -240,6 +240,7 @@ async def test_amenities_search(
     top_k: int,
     expected: List[Any],
 ):
+
     res = await ds.amenities_search(query_embedding, similarity_threshold, top_k)
 
     assert res == expected

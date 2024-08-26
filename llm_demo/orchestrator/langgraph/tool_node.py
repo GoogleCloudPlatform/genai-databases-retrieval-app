@@ -77,10 +77,15 @@ class ToolNode(RunnableCallable):
         def run_one(call: ToolCall, user_id_token: Optional[str]):
             args = copy.copy(call["args"]) or {}
             args["user_id_token"] = user_id_token
-            output = self.tools_by_name[call["name"]].invoke(args, config)
+            response = self.tools_by_name[call["name"]].invoke(args, config)
+            output = response.get("results")
+            sql = response.get("sql")
             tool_call_id = call.get("id") or str(uuid.uuid4())
             return ToolMessage(
-                content=str_output(output), name=call["name"], tool_call_id=tool_call_id
+                content=str_output(output),
+                name=call["name"],
+                tool_call_id=tool_call_id,
+                additional_kwargs={"sql": sql},
             )
 
         with get_executor_for_config(config) as executor:
@@ -107,10 +112,15 @@ class ToolNode(RunnableCallable):
         async def run_one(call: ToolCall, user_id_token: Optional[str]):
             args = copy.copy(call["args"]) or {}
             args["user_id_token"] = user_id_token
-            output = await self.tools_by_name[call["name"]].ainvoke(args, config)
+            response = await self.tools_by_name[call["name"]].ainvoke(args, config)
+            output = response.get("results")
+            sql = response.get("sql")
             tool_call_id = call.get("id") or str(uuid.uuid4())
             return ToolMessage(
-                content=str_output(output), name=call["name"], tool_call_id=tool_call_id
+                content=str_output(output),
+                name=call["name"],
+                tool_call_id=tool_call_id,
+                additional_kwargs={"sql": sql},
             )
 
         outputs = await asyncio.gather(
