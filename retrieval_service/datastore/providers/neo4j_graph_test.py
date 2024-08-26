@@ -242,5 +242,4 @@ async def test_amenities_search(
 ):
     res = await ds.amenities_search(query_embedding, similarity_threshold, top_k)
 
-    print(res)
     assert res == expected
