@@ -249,7 +249,6 @@ class Client(datastore.Client[Config]):
                 """,
                 query_embedding=query_embedding,
                 similarity_threshold=similarity_threshold,
-                top_k=top_k,
             )
 
             amenities = await result.data()
