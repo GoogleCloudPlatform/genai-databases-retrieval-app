@@ -13,70 +13,135 @@ Clothing store 487,Similar_to,Clothing store 193
 Shop 971,Similar_to,Clothing store 193
 Bar & grill 916,Similar_to,Fast food 714
 Bar & grill 916,Similar_to,Pei wei asian diner
-Panda express,Similar_to,Fast food 714
 Sit-down restaurant 563,Similar_to,Sit-down restaurant 458
 Sit-down restaurant 563,Similar_to,Flight deck bar & grill
 Starbucks coffee,Similar_to,Peet's coffee & tea
-Starbucks coffee,Similar_to,Coffee shop 732
+Starbucks coffee,Similar_to,Local coffee roaster
+Starbucks coffee,Similar_to,Laptop bar
+Starbucks coffee,Similar_to,Hawaii coffee store
+Laptop bar,Similar_to,Peet's coffee & tea
+Laptop bar,Similar_to,Local coffee roaster
+Laptop bar,Similar_to,Hawaii coffee store
+Laptop bar,Similar_to,Power charging stations
+Teavana,Similar_to,Peet's coffee & tea
+Peet's coffee & tea,Similar_to,Local coffee roaster
 Travel essentials store 352,Similar_to,Travel essentials store 265
 Travel essentials store 352,Similar_to,Travelmart
+Travel essentials store 352,Similar_to,The Market
+The Market,Similar_to,Travel essentials store 265
 Airport information desk,Similar_to,Information center
 Travelex atm,Similar_to,Bank of america atm
+Travelex atm,Similar_to,Currency exchange
+Travelex atm,Similar_to,Travelex
+Travelex atm,Similar_to,Travelex currency exchange
+Travelex atm,Similar_to,Currency exchange kiosk
+Travelex atm,Similar_to,Atm
 Travelex currency exchange,Similar_to,Currency exchange
+Travelex currency exchange,Similar_to,Travelex
+Travelex currency exchange,Similar_to,Currency exchange kiosk
+Travelex currency exchange,Similar_to,Bank of america atm
+Travelex,Similar_to,Currency exchange kiosk
 Currency exchange,Similar_to,Currency exchange kiosk
+Currency exchange,Similar_to,Travelex
 Gate gourmet deli,Similar_to,The deli counter
 Gate gourmet deli,Similar_to,Soup & salad station
 The local tap room,Similar_to,The spot
 The local tap room,Similar_to,The wine bar
+The local tap room,Similar_to,The wine cellar
+The local tap room,Similar_to,Johnnie walker lounge
+The wine bar,Similar_to,The spot
+The spot,Similar_to,Johnnie walker lounge
+The spot,Similar_to,Sushi & sake bar
+The spot,Similar_to,The wine cellar
 Freshii,Similar_to,Panera bread
 Freshii,Similar_to,Soup & salad station
 Sushi & sake bar,Similar_to,Pei wei asian diner
+Sushi & sake bar,Similar_to,Thai express
 Sushi & sake bar,Similar_to,Bar & grill 301
+Sushi & sake bar,Similar_to,The spot
+Sushi & sake bar,Similar_to,The wine bar
+Sushi & sake bar,Similar_to,The wine cellar
+Sushi & sake bar,Similar_to,Johnnie walker lounge
+Thai express,Similar_to,Pei wei asian diner
+Thai express,Similar_to,Bar & grill 301
 Yoga and meditation studio,Similar_to,Yoga studio store
 Yoga and meditation studio,Similar_to,Yoga & meditation room
-Children's book nook,Similar_to,Book passage
-Children's book nook,Similar_to,Bookworm books
 L'occitane en provence,Similar_to,Kiehl's
 L'occitane en provence,Similar_to,Mac cosmetics
 Dufry duty free,Similar_to,Gucci duty free
+Dufry duty free,Similar_to,L'occitane en provence
 Dufry duty free,Similar_to,Hermes duty free
+Gucci duty free,Similar_to,Hermes duty free
+Gucci duty free,Similar_to,Duty-free spirits
 Tech gear,Similar_to,Brookstone
-Tech gear,Similar_to,Sunglass hut
-Travel plug adapters vending machine,Similar_to,Currency exchange kiosk
-Travel plug adapters vending machine,Similar_to,Atm
+Tech gear,Similar_to,Travel plug adapters vending machine
+Tech gear,Similar_to,Travel essentials
+Tech gear,Similar_to,Tech repair kiosk
+Tech gear,Similar_to,Electronics store 642
 Mobile device charging station,Similar_to,Power charging stations
 Mobile device charging station,Similar_to,Laptop bar
 Public showers,Similar_to,Family restroom
+Public showers,Similar_to,The executive lounge
 Family restroom,Similar_to,Airport nursery
 Minute suites,Similar_to,Sleep pods
 The executive lounge,Similar_to,The local tap room
+The executive lounge,Similar_to,Johnnie walker lounge
 The wine cellar,Similar_to,The wine bar
 The wine cellar,Similar_to,The local tap room
 Xpress spa,Similar_to,Airport yoga studio
 Xpress spa,Similar_to,Hair salon
 Travel essentials,Similar_to,Travelmart
+Travel essentials,Similar_to,Brookstone
+Travel essentials,Similar_to,Travel plug adapters vending machine
 Travel essentials,Similar_to,Travel essentials store 352
+Travel essentials,Similar_to,Travel essentials store 265
+Travel essentials,Similar_to,Newsbeat
+Travel essentials,Similar_to,The Market
 The market,Similar_to,Travel essentials store 265
 The market,Similar_to,Travel essentials
-Art gallery,Similar_to,Children's book nook
-Art gallery,Similar_to,Book passage
-Play port arcade,Similar_to,Family restroom
-Play port arcade,Similar_to,Airport nursery
 Dry cleaning & laundry service,Similar_to,Shoe shine service
 Dry cleaning & laundry service,Similar_to,Shoe valet
 Newsbeat,Similar_to,News & gifts
+Newsbeat,Similar_to,The Market
 Newsbeat,Similar_to,Bookworm books
+Newsbeat,Similar_to,Children's book nook
+Newsbeat,Similar_to,Book passage
+Newsbeat,Similar_to,The reader's choice
 The hangar bar & grill,Similar_to,The spot
 The hangar bar & grill,Similar_to,The local tap room
+The hangar bar & grill,Similar_to,Bar & grill 916
+The hangar bar & grill,Similar_to,Bar & grill 301
+The hangar bar & grill,Similar_to,Flight deck bar & grill
 Johnnie walker lounge,Similar_to,The wine bar
 Johnnie walker lounge,Similar_to,The spot
 Meditation room,Similar_to,Yoga & meditation room
 Meditation room,Similar_to,Airport yoga studio
-Pet relief area,Similar_to,Family restroom
-Pet relief area,Similar_to,Airport nursery
+Meditation room,Similar_to,Yoga & meditation studio
 Luggage repair shop,Similar_to,Baggage storage
 Luggage repair shop,Similar_to,Luggage carts
+Luggage carts,Similar_to,Baggage storage
 The reader's choice,Similar_to,Book passage
 The reader's choice,Similar_to,Bookworm books
+The reader's choice,Similar_to,News & gifts
+Book passage,Similar_to,Bookworm books
+Book passage,Similar_to,News & gifts
+Children's book nook,Similar_to,Book passage
+Children's book nook,Similar_to,News & gifts
+Children's book nook,Similar_to,Bookworm books
+Children's book nook,Similar_to,The reader's choice
 Panda express,Similar_to,Thai express
 Panda express,Similar_to,Pei wei asian diner
+Panda express,Similar_to,Bar & grill 301
+Panda express,Similar_to,Sushi & sake bar
+Crabtree & evelyn, Similar_to,Kikki.k
+Crabtree & evelyn, Similar_to,News & gifts
+Crabtree & evelyn, Similar_to,News & gifts
+Kikki.k, Similar_to,L'occitane en provence
+Homebaked,Similar_to,La crêperie
+The deli counter,Similar_to,Freshii
+The deli counter,Similar_to,Fresh market
+Freshii,Similar_to,Fresh market
+Sunglass station,Similar_to,Sunglass hut
+Play port arcade,Similar_to,Golf simulator
+Golf simulator,Similar_to,
+Pop-up retail,Similar_to,Art gallery
