@@ -16,10 +16,9 @@ import asyncio
 import csv
 from typing import Any, Literal, Optional
 
+import models
 from neo4j import AsyncDriver, AsyncGraphDatabase
 from pydantic import BaseModel
-
-import models
 
 from .. import datastore
 
@@ -226,25 +225,26 @@ class Client(datastore.Client[Config]):
             # Similarity scores are bounded between 0 and 1, scores closer to 1 indicating higher similarity
             result = await session.run(
                 """
-                CALL db.index.vector.queryNodes('amenity_embedding', $top_k, $query_embedding)
+                CALL db.index.vector.queryNodes('amenity_embedding', 2, $query_embedding)
                 YIELD node AS sourceAmenity, score
                 WHERE score >= $similarity_threshold
                 OPTIONAL MATCH (sourceAmenity)-[r:Similar_to]-(targetAmenity)
-                RETURN sourceAmenity.id AS source_id,
-                        sourceAmenity.name AS source_name,
-                        sourceAmenity.description AS source_description,
-                        sourceAmenity.location AS source_location,
-                        sourceAmenity.terminal AS source_terminal,
-                        sourceAmenity.category AS source_category,
-                        sourceAmenity.hour AS source_hour,
-                        type(r) AS relationship_type,
-                        targetAmenity.id AS target_id,
-                        targetAmenity.name AS target_name,
-                        targetAmenity.description AS target_description,
-                        targetAmenity.location AS target_location,
-                        targetAmenity.terminal AS target_terminal,
-                        targetAmenity.category AS target_category,
-                        targetAmenity.hour AS target_hour
+                RETURN sourceAmenity.id AS id,
+                        sourceAmenity.name AS name,
+                        sourceAmenity.description AS description,
+                        sourceAmenity.location AS location,
+                        sourceAmenity.terminal AS terminal,
+                        sourceAmenity.category AS category,
+                        sourceAmenity.hour AS hour,
+                        collect({
+                            id: targetAmenity.id,
+                            name: targetAmenity.name,
+                            description: targetAmenity.description,
+                            location: targetAmenity.location,
+                            terminal: targetAmenity.terminal,
+                            category: targetAmenity.category,
+                            hour: targetAmenity.hour
+                        }) AS SIMILAR_TO
                 """,
                 query_embedding=query_embedding,
                 similarity_threshold=similarity_threshold,
