@@ -53,6 +53,7 @@ The wine bar,Similar_to,The spot
 The spot,Similar_to,Johnnie walker lounge
 The spot,Similar_to,Sushi & sake bar
 The spot,Similar_to,The wine cellar
+The spot,Similar_to,The hangar bar & grill
 Freshii,Similar_to,Panera bread
 Freshii,Similar_to,Soup & salad station
 Sushi & sake bar,Similar_to,Pei wei asian diner
@@ -107,8 +108,6 @@ Newsbeat,Similar_to,Bookworm books
 Newsbeat,Similar_to,Children's book nook
 Newsbeat,Similar_to,Book passage
 Newsbeat,Similar_to,The reader's choice
-The hangar bar & grill,Similar_to,The spot
-The hangar bar & grill,Similar_to,The local tap room
 The hangar bar & grill,Similar_to,Bar & grill 916
 The hangar bar & grill,Similar_to,Bar & grill 301
 The hangar bar & grill,Similar_to,Flight deck bar & grill
@@ -145,3 +144,9 @@ Sunglass station,Similar_to,Sunglass hut
 Play port arcade,Similar_to,Golf simulator
 Golf simulator,Similar_to,Airport Yoga Studio
 Pop-up retail,Similar_to,Art gallery
+Coffee shop 732,Similar_to,Fast food 241
+Coffee shop 732,Similar_to,Coffee shop 829
+Coffee shop 732,Similar_to,Sit-down restaurant 458
+Coffee shop 732,Similar_to,Flight deck bar & grill
+Coffee shop 732,Similar_to,The hangar bar & grill
+
