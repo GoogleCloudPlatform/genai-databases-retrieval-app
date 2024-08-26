@@ -16,9 +16,10 @@ import asyncio
 import csv
 from typing import Any, Literal, Optional
 
-import models
 from neo4j import AsyncDriver, AsyncGraphDatabase
 from pydantic import BaseModel
+
+import models
 
 from .. import datastore
 
@@ -220,8 +221,8 @@ class Client(datastore.Client[Config]):
     ) -> list[dict]:
         async with self.__driver.session() as session:
             # OPTIONAL ensures that all similar amenities are returned even if they lack a SIMILAR_TO relationship
-            # Limit retrieval to 2 target nodes related to the source node, linked by SIMILAR_TO relationship
-            # Lower case relationship due to graph generator output
+            # Retrieve up to 2 source nodes along with all nodes connected by the SIMILAR_TO relationship
+            # Use lowercase relationship names to align with the graph generator's output format
             # Similarity scores are bounded between 0 and 1, scores closer to 1 indicating higher similarity
             result = await session.run(
                 """
