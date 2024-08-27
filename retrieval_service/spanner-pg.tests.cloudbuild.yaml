@@ -25,6 +25,7 @@ steps:
     #!/usr/bin/env bash
     # Create config
     cp example-config-spanner.yml config.yml
+    sed -i "s/spanner-engine/spanner-postgres/g" config.yml
     sed -i "s/my-project/$PROJECT_ID/g" config.yml
     sed -i "s/my-instance/${_SPANNER_INSTANCE}/g" config.yml
     sed -i "s/my_database/${_DATABASE_NAME}/g" config.yml
@@ -42,7 +43,7 @@ steps:
 
 substitutions:
   _DATABASE_NAME: test_${SHORT_SHA}
-  _SPANNER_INSTANCE: "my-spanner-instance"
+  _SPANNER_INSTANCE: "my-spanner-pg-instance"
 
 options:
   automapSubstitutions: true
