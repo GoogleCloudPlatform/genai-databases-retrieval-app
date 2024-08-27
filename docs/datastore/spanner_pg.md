@@ -39,8 +39,8 @@
 1. Set environment variables.
 
     ```bash
-    export INSTANCE=my-spanner-instance
-    export DATABASE=my-spanner-database
+    export INSTANCE=my-spanner-pg-instance
+    export DATABASE=assistantdemo
     export REGION=regional-us-central1
     export DATABASE_DIALECT=POSTGRESQL
     ```
@@ -121,8 +121,8 @@
         # Example for Spanner
         kind: "spanner-postgres"
         project: <YOUR_PROJECT_ID>
-        instance: my-spanner-instance
-        database: my-spanner-database
+        instance: my-spanner-pg-instance
+        database: assistantdemo
         service_account_key_file: <PATH_TO_SERVICE_ACCOUNT_KEY_FILE>
     ```
 
