@@ -43,6 +43,7 @@
     export DATABASE=assistantdemo
     export REGION=regional-us-central1
     export DATABASE_DIALECT=POSTGRESQL
+    export INSTANCE_DESCRIPTION="My Spanner PG Instance"
     ```
 
 1. Create a Cloud Spanner instance:
@@ -51,7 +52,7 @@
     gcloud spanner instances create $INSTANCE \
         --config=$REGION \
         --nodes=1 \
-        --description="My Spanner Instance"
+        --description=$INSTANCE_DESCRIPTION
     ```
 1. Create a database within the Cloud Spanner instance:
 
