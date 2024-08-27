@@ -142,7 +142,9 @@ def generate_list_flights(client: aiohttp.ClientSession):
 
         response_json = await response.json()
         if len(response_json) < 1:
-            return "There are no flights matching that query. Let the user know there are no results."
+            return {
+                "results": "There are no flights matching that query. Let the user know there are no results."
+            }
         else:
             return response_json
 
@@ -202,7 +204,7 @@ def generate_insert_ticket(client: aiohttp.ClientSession):
         departure_time: datetime,
         arrival_time: datetime,
     ):
-        return f"Booking ticket on {airline} {flight_number}"
+        return {"results": f"Booking ticket on {airline} {flight_number}"}
 
     return insert_ticket
 
@@ -227,8 +229,8 @@ async def insert_ticket(
             "flight_number": ticket_info.flight_number,
             "departure_airport": ticket_info.departure_airport,
             "arrival_airport": ticket_info.arrival_airport,
-            "departure_time": ticket_info.departure_time,
-            "arrival_time": ticket_info.arrival_time,
+            "departure_time": ticket_info.departure_time.replace("T", " "),
+            "arrival_time": ticket_info.arrival_time.replace("T", " "),
         },
         headers=get_headers(client, user_id_token),
     )
@@ -254,14 +256,15 @@ async def validate_ticket(
         headers=get_headers(client, user_id_token),
     )
     response_json = await response.json()
+    response_results = response_json.get("results")
 
     flight_info = {
-        "airline": response_json.get("airline"),
-        "flight_number": response_json.get("flight_number"),
-        "departure_airport": response_json.get("departure_airport"),
-        "arrival_airport": response_json.get("arrival_airport"),
-        "departure_time": response_json.get("departure_time").replace("T", " "),
-        "arrival_time": response_json.get("arrival_time").replace("T", " "),
+        "airline": response_results.get("airline"),
+        "flight_number": response_results.get("flight_number"),
+        "departure_airport": response_results.get("departure_airport"),
+        "arrival_airport": response_results.get("arrival_airport"),
+        "departure_time": response_results.get("departure_time"),
+        "arrival_time": response_results.get("arrival_time"),
     }
     return flight_info
 
@@ -274,10 +277,14 @@ def generate_list_tickets(client: aiohttp.ClientSession):
         )
 
         response_json = await response.json()
-        return {
-            "number of tickets booked": len(response_json),
-            "user's ticket": response_json,
-        }
+        tickets = response_json.get("results")
+        if len(tickets) == 0:
+            return {
+                "results": "There are no upcoming tickets",
+                "sql": response_json.get("sql"),
+            }
+        else:
+            return response_json
 
     return list_tickets
 

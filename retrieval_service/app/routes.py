@@ -69,15 +69,15 @@ async def get_airport(
 ):
     ds: datastore.Client = request.app.state.datastore
     if id:
-        results = await ds.get_airport_by_id(id)
+        results, sql = await ds.get_airport_by_id(id)
     elif iata:
-        results = await ds.get_airport_by_iata(iata)
+        results, sql = await ds.get_airport_by_iata(iata)
     else:
         raise HTTPException(
             status_code=422,
             detail="Request requires query params: airport id or iata",
         )
-    return results
+    return {"results": results, "sql": sql}
 
 
 @routes.get("/airports/search")
@@ -94,15 +94,15 @@ async def search_airports(
         )
 
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.search_airports(country, city, name)
-    return results
+    results, sql = await ds.search_airports(country, city, name)
+    return {"results": results, "sql": sql}
 
 
 @routes.get("/amenities")
 async def get_amenity(id: int, request: Request):
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.get_amenity(id)
-    return results
+    results, sql = await ds.get_amenity(id)
+    return {"results": results, "sql": sql}
 
 
 @routes.get("/amenities/search")
@@ -112,15 +112,15 @@ async def amenities_search(query: str, top_k: int, request: Request):
     embed_service: Embeddings = request.app.state.embed_service
     query_embedding = embed_service.embed_query(query)
 
-    results = await ds.amenities_search(query_embedding, 0.5, top_k)
-    return results
+    results, sql = await ds.amenities_search(query_embedding, 0.5, top_k)
+    return {"results": results, "sql": sql}
 
 
 @routes.get("/flights")
 async def get_flight(flight_id: int, request: Request):
     ds: datastore.Client = request.app.state.datastore
-    flights = await ds.get_flight(flight_id)
-    return flights
+    results, sql = await ds.get_flight(flight_id)
+    return {"results": results, "sql": sql}
 
 
 @routes.get("/flights/search")
@@ -134,17 +134,17 @@ async def search_flights(
 ):
     ds: datastore.Client = request.app.state.datastore
     if date and (arrival_airport or departure_airport):
-        flights = await ds.search_flights_by_airports(
+        results, sql = await ds.search_flights_by_airports(
             date, departure_airport, arrival_airport
         )
     elif airline and flight_number:
-        flights = await ds.search_flights_by_number(airline, flight_number)
+        results, sql = await ds.search_flights_by_number(airline, flight_number)
     else:
         raise HTTPException(
             status_code=422,
             detail="Request requires query params: arrival_airport, departure_airport, date, or both airline and flight_number",
         )
-    return flights
+    return {"results": results, "sql": sql}
 
 
 @routes.post("/tickets/insert")
@@ -164,7 +164,7 @@ async def insert_ticket(
             detail="User login required for data insertion",
         )
     ds: datastore.Client = request.app.state.datastore
-    result = await ds.insert_ticket(
+    results = await ds.insert_ticket(
         user_info["user_id"],
         user_info["user_name"],
         user_info["user_email"],
@@ -175,7 +175,7 @@ async def insert_ticket(
         departure_time,
         arrival_time,
     )
-    return result
+    return results
 
 
 @routes.get("/tickets/validate")
@@ -187,13 +187,13 @@ async def validate_ticket(
     departure_time: str,
 ):
     ds: datastore.Client = request.app.state.datastore
-    result = await ds.validate_ticket(
+    results, sql = await ds.validate_ticket(
         airline,
         flight_number,
         departure_airport,
         departure_time,
     )
-    return result
+    return {"results": results, "sql": sql}
 
 
 @routes.get("/tickets/list")
@@ -207,8 +207,8 @@ async def list_tickets(
             detail="User login required for data insertion",
         )
     ds: datastore.Client = request.app.state.datastore
-    results = await ds.list_tickets(user_info["user_id"])
-    return results
+    results, sql = await ds.list_tickets(user_info["user_id"])
+    return {"results": results, "sql": sql}
 
 
 @routes.get("/policies/search")
@@ -218,5 +218,5 @@ async def policies_search(query: str, top_k: int, request: Request):
     embed_service: Embeddings = request.app.state.embed_service
     query_embedding = embed_service.embed_query(query)
 
-    results = await ds.policies_search(query_embedding, 0.5, top_k)
-    return results
+    results, sql = await ds.policies_search(query_embedding, 0.5, top_k)
+    return {"results": results, "sql": sql}
