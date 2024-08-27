@@ -2,6 +2,7 @@
 
 Note: This project is for demonstration only and is not an officially supported
 Google product.
+If you're a Googler using this demo, please fill up this [form](https://forms.gle/dJUdMEbUu7k3TmT4A). If you're interested in using our hosted version, please fill up this [form](https://forms.gle/3AknwhhWv2pWw46Q8).
 
 
 ## Introduction
