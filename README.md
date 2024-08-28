@@ -95,7 +95,7 @@ Running the retrieval service separately (as opposed to in the app itself) can
 help address a number of challenges 
 1. **Better recall** - LLMs perform better when given smaller, discrete tasks
    they can use to accomplish larger goals. By mapping a specific action to a
-   specify, pre-determined query it significantly improves the LLMs ability to
+   specific, pre-determined query it significantly improves the LLMs ability to
    leverage it successfully.
 1. **Better scalability** - Running the retrieval as a separate service both
    allows multiple different LLMs to leverage it, as well as allowing it to
