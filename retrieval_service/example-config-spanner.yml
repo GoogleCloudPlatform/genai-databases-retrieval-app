@@ -1,7 +1,7 @@
 host: 0.0.0.0
 datastore:
   # Example for Spanner
-  kind: "spanner-gsql"
+  kind: "spanner-engine"
   project: "my-project"
   instance: "my-instance"
   database: "my_database"

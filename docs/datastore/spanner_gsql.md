@@ -39,9 +39,10 @@
 1. Set environment variables.
 
     ```bash
-    export INSTANCE=my-spanner-instance
-    export DATABASE=my-spanner-database
+    export INSTANCE=my-spanner-gsql-instance
+    export DATABASE=assistantdemo
     export REGION=regional-us-central1
+    export INSTANCE_DESCRIPTION="My Spanner GSQL Instance"
     ```
 
 1. Create a Cloud Spanner instance:
@@ -50,7 +51,7 @@
     gcloud spanner instances create $INSTANCE \
         --config=$REGION \
         --nodes=1 \
-        --description="My Spanner Instance"
+        --description=$INSTANCE_DESCRIPTION
     ```
 1. Create a database within the Cloud Spanner instance:
 
@@ -120,8 +121,8 @@
         # Example for Spanner
         kind: "spanner-gsql"
         project: <YOUR_PROJECT_ID>
-        instance: my-spanner-instance
-        database: my-spanner-database
+        instance: my-spanner-gsql-instance
+        database: assistantdemo
         service_account_key_file: <PATH_TO_SERVICE_ACCOUNT_KEY_FILE>
     ```
 
