@@ -80,7 +80,7 @@ connect to your VPC. You should only need to do this once per VPC (per project).
     ```
 
 
-## Create a AlloyDB cluster
+## Create an AlloyDB cluster
 
 1. Set environment variables. For security reasons, use a different password for
    `$DB_PASS` and note it for future use:
