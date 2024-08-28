@@ -144,7 +144,25 @@ connect to your VPC. You should only need to do this once per VPC (per project).
 
 ## Update config
 
-Update `config.yml` with your database information.
+1. Change into the retrieval service directory:
+
+    ```bash
+    cd genai-databases-retrieval-app/retrieval_service
+    ```
+
+1. Install requirements:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+1. Make a copy of `example-config.yml` and name it `config.yml`.
+
+    ```bash
+    cp example-config-alloydb.yml config.yml
+    ```
+
+1. Update `config.yml` with your database information.
 
 ```bash
 host: 0.0.0.0
@@ -177,24 +195,6 @@ datastore:
 
     ```bash
     CREATE EXTENSION vector;
-    ```
-
-1. Change into the retrieval service directory:
-
-    ```bash
-    cd genai-databases-retrieval-app/retrieval_service
-    ```
-
-1. Install requirements:
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-1. Make a copy of `example-config.yml` and name it `config.yml`.
-
-    ```bash
-    cp example-config-alloydb.yml config.yml
     ```
 
 1. Populate data into database:
