@@ -49,8 +49,6 @@
 
 ## Enable private services access
 
-Currently, AlloyDB doesn't support creating new instance with public IP enabled. We will have to create an instance (with private IP), then update the instance to enable public IP.
-
 In this step, we will enable Private Services Access so that AlloyDB is able to
 connect to your VPC. You should only need to do this once per VPC (per project).
 
