@@ -147,7 +147,7 @@ connect to your VPC. You should only need to do this once per VPC (per project).
 1. Change into the retrieval service directory:
 
     ```bash
-    cd genai-databases-retrieval-app/retrieval_service
+    cd ./retrieval_service
     ```
 
 1. Install requirements:
