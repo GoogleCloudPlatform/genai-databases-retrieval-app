@@ -241,6 +241,7 @@ async def test_amenities_search(
     expected: List[Any],
 ):
 
-    res = await ds.amenities_search(query_embedding, similarity_threshold, top_k)
+    res, sql = await ds.amenities_search(query_embedding, similarity_threshold, top_k)
 
     assert res == expected
+    assert sql is None

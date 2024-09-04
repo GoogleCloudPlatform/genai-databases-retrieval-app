@@ -227,7 +227,9 @@ class Client(datastore.Client[Config]):
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> tuple[list[dict], Optional[str]]:
 
-        logging.warning(f"Overriding top_k value to 2. Provided value was {top_k}.")
+        logging.warning(
+            f"top_k set to {top_k}; for GraphRAG, overriding top_k to 2 to limit search results."
+        )
 
         async with self.__driver.session() as session:
             # OPTIONAL ensures that all similar amenities are returned even if they lack a SIMILAR_TO relationship
