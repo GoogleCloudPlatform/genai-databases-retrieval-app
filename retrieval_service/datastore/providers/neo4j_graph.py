@@ -14,6 +14,7 @@
 
 import asyncio
 import csv
+import logging
 from typing import Any, Literal, Optional
 
 from neo4j import AsyncDriver, AsyncGraphDatabase
@@ -225,6 +226,9 @@ class Client(datastore.Client[Config]):
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> tuple[list[dict], Optional[str]]:
+        
+        logging.warning(f"Overriding top_k value to 2. Provided value was {top_k}.")
+        
         async with self.__driver.session() as session:
             # OPTIONAL ensures that all similar amenities are returned even if they lack a SIMILAR_TO relationship
             # Retrieve up to 2 source nodes along with all nodes connected by the SIMILAR_TO relationship
