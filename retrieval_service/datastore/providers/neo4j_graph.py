@@ -14,6 +14,7 @@
 
 import asyncio
 import csv
+import logging
 from typing import Any, Literal, Optional
 
 from neo4j import AsyncDriver, AsyncGraphDatabase
@@ -225,32 +226,41 @@ class Client(datastore.Client[Config]):
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> tuple[list[dict], Optional[str]]:
+
+        logging.warning(
+            f"top_k set to {top_k}; for GraphRAG, overriding top_k to 2 to limit search results."
+        )
+
         async with self.__driver.session() as session:
             # OPTIONAL ensures that all similar amenities are returned even if they lack a SIMILAR_TO relationship
-            # Limit retrieval to 2 target nodes related to the source node, linked by SIMILAR_TO relationship
-            # Lower case relationship due to graph generator output
+            # Retrieve up to 2 source nodes along with all nodes connected by the SIMILAR_TO relationship
+            # Use lowercase relationship names to align with the graph generator's output format
+            # Similarity scores are bounded between 0 and 1, scores closer to 1 indicating higher similarity
             result = await session.run(
                 """
-                CALL db.index.vector.queryNodes('amenity_embedding', $top_k, $query_embedding)
-                YIELD node AS sourceAmenity
+                CALL db.index.vector.queryNodes('amenity_embedding', 2, $query_embedding)
+                YIELD node AS sourceAmenity, score
+                WHERE score >= $similarity_threshold
                 OPTIONAL MATCH (sourceAmenity)-[r:Similar_to]-(targetAmenity)
-                RETURN sourceAmenity.name AS source_name,
-                        sourceAmenity.description AS source_description,
-                        sourceAmenity.location AS source_location,
-                        sourceAmenity.terminal AS source_terminal,
-                        sourceAmenity.category AS source_category,
-                        sourceAmenity.hour AS source_hour,
-                        type(r) AS relationship_type,
-                        targetAmenity.name AS target_name,
-                        targetAmenity.description AS target_description,
-                        targetAmenity.location AS target_location,
-                        targetAmenity.terminal AS target_terminal,
-                        targetAmenity.category AS target_category,
-                        targetAmenity.hour AS target_hour
-                LIMIT 2
+                RETURN sourceAmenity.id AS id,
+                        sourceAmenity.name AS name,
+                        sourceAmenity.description AS description,
+                        sourceAmenity.location AS location,
+                        sourceAmenity.terminal AS terminal,
+                        sourceAmenity.category AS category,
+                        sourceAmenity.hour AS hour,
+                        collect({
+                            id: targetAmenity.id,
+                            name: targetAmenity.name,
+                            description: targetAmenity.description,
+                            location: targetAmenity.location,
+                            terminal: targetAmenity.terminal,
+                            category: targetAmenity.category,
+                            hour: targetAmenity.hour
+                        }) AS SIMILAR_TO
                 """,
                 query_embedding=query_embedding,
-                top_k=top_k,
+                similarity_threshold=similarity_threshold,
             )
 
             amenities = await result.data()

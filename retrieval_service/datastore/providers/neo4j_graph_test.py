@@ -171,48 +171,58 @@ async def test_total_similar_to_relationships_count(ds: neo4j_graph.Client):
         print(count)
 
     # Bi-directional pairs are counted only once
-    expected_count = 217
+    expected_count = 172
     assert (
         count == expected_count
-    ), f"Expected {expected_count} BELONGS_TO relationships, but found {count}"
+    ), f"Expected {expected_count} SIMILAR_TO relationships, but found {count}"
 
 
 amenities_search_test_data = [
     pytest.param(
         # "Where can I look for luxury goods?"
         amenities_query_embedding2,
-        None,  # similarity threshold value
-        2,  # top_k value
+        0.8,  # similarity threshold value
+        None,  # top_k value
         [
             {
-                "source_name": "Gucci Duty Free",
-                "source_description": "Luxury brand duty-free shop offering designer clothing, accessories, and fragrances.",
-                "source_location": "Gate E9",
-                "source_terminal": "International Terminal A",
-                "source_category": "shop",
-                "source_hour": "Daily 7:00 am-10:00 pm",
-                "relationship_type": "Similar_to",
-                "target_name": "Dufry Duty Free",
-                "target_description": "Duty-free shop offering a large selection of luxury goods, including perfumes, cosmetics, and liquor.",
-                "target_location": "Gate E2",
-                "target_terminal": "International Terminal A",
-                "target_category": "shop",
-                "target_hour": "Daily 7:00 am-10:00 pm",
+                "id": 63,
+                "name": "Gucci Duty Free",
+                "description": "Luxury brand duty-free shop offering designer clothing, accessories, and fragrances.",
+                "location": "Gate E9",
+                "terminal": "International Terminal A",
+                "category": "shop",
+                "hour": "Daily 7:00 am-10:00 pm",
+                "SIMILAR_TO": [
+                    {
+                        "id": 86,
+                        "category": "shop",
+                        "description": "High-end French brand duty-free shop offering luxury goods and accessories.",
+                        "location": "Gate E18",
+                        "name": "Hermes Duty Free",
+                        "terminal": "International Terminal A",
+                        "hour": "Daily 7:00 am-10:00 pm",
+                    },
+                ],
             },
             {
-                "source_name": "Gucci Duty Free",
-                "source_description": "Luxury brand duty-free shop offering designer clothing, accessories, and fragrances.",
-                "source_location": "Gate E9",
-                "source_terminal": "International Terminal A",
-                "source_category": "shop",
-                "source_hour": "Daily 7:00 am-10:00 pm",
-                "relationship_type": "Similar_to",
-                "target_name": "Hermes Duty Free",
-                "target_description": "High-end French brand duty-free shop offering luxury goods and accessories.",
-                "target_location": "Gate E18",
-                "target_terminal": "International Terminal A",
-                "target_category": "shop",
-                "target_hour": "Daily 7:00 am-10:00 pm",
+                "id": 40,
+                "name": "Dufry Duty Free",
+                "description": "Duty-free shop offering a large selection of luxury goods, including perfumes, cosmetics, and liquor.",
+                "location": "Gate E2",
+                "terminal": "International Terminal A",
+                "category": "shop",
+                "hour": "Daily 7:00 am-10:00 pm",
+                "SIMILAR_TO": [
+                    {
+                        "id": 115,
+                        "category": "shop",
+                        "description": "Spirits, wines, and liquors at duty-free prices",
+                        "location": "International Departures Hall",
+                        "name": "Duty-Free Spirits",
+                        "terminal": "All Terminals",
+                        "hour": "Daily 9:00 am - 9:00 pm",
+                    },
+                ],
             },
         ],
         id="search_luxury_goods",
@@ -230,6 +240,8 @@ async def test_amenities_search(
     top_k: int,
     expected: List[Any],
 ):
+
     res, sql = await ds.amenities_search(query_embedding, similarity_threshold, top_k)
+
     assert res == expected
     assert sql is None
