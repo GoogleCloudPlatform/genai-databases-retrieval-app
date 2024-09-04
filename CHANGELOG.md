@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.0](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/compare/v0.1.0...v0.2.0) (2024-08-28)
+
+
+### Features
+
+* Add langgraph orchestration ([#447](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/447)) ([8cefed0](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/8cefed07c5e4cc4357d08fc3a29920dc2cfabd6a))
+* add ticket validation and insertion to cloudsql postgres ([#437](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/437)) ([a4480fa](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/a4480fa1fd0c117d64278fa9d864647a96f9b8a8))
+* Add tracing to langgraph orchestration and postgres provider ([#473](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/473)) ([a5759e9](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/a5759e995c86cfc310dbabcb29d4623d9172cdd3))
+* Adding support for Spanner with PG Dialect in Database Retriever Service ([#469](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/469)) ([47ff11e](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/47ff11e734dec2ebc968846c522c3538e5a0eeeb))
+* Implement llm system evaluation ([#440](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/440)) ([a2df60b](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/a2df60b4a36c9af1de3b9b56c4db62ef997535f4))
+* Remove user ID and user email from `list_tickets()` result ([#464](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/464)) ([5958938](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/59589380e1f3c5382182fffb9a2ba9bc69f5a087))
+
+
+### Bug Fixes
+
+* update pytest to pytest_asyncio for async fixtures ([#474](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/474)) ([c2ad4bb](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/c2ad4bbd81fb49a262b165b2ffcdaea0b13c1c6f))
+* update return from tools for langchain and function calling ([#476](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/476)) ([9dfb60b](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/9dfb60b2e9601d9631a4a1f004bcf63a107a9cb9))
+
 ## 0.1.0 (2024-07-01)
 
 
