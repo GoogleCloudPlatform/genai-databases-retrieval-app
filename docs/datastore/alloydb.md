@@ -231,9 +231,17 @@ This section is for developers that want to develop and run the app locally.
 
 ### Test Environment Variables
 
-Set environment variables:
+#### 1. Create Secrets
+Follow the steps [here](https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets) to create two secrets with the following Secret names:
+1. `alloy_db_user`
+1. `alloy_db_pass`
+
+Set the Secret values as your database username and password respectively.
+
+#### 2. Set environment variables:
 
 ```bash
+export DB_NAME=""
 export DB_USER=""
 export DB_PASS=""
 export DB_PROJECT=""
@@ -242,7 +250,7 @@ export DB_CLUSTER=""
 export DB_INSTANCE=""
 ```
 
-### Run tests
+#### 3. Run tests
 
 Run retrieval service unit tests:
 
@@ -252,3 +260,14 @@ gcloud builds submit --config retrieval_service/alloydb.tests.cloudbuild.yaml \
 ```
 
 Where `$DB_NAME`,`$DB_USER`,`$DB_REGION`,`$DB_CLUSTER`,`$DB_INSTANCE` are environment variables with your database values.
+
+### Troubleshoot
+If you get the following error:
+```
+failed to access secret version for secret projects/<PROJECT_NUMBER>/secrets/alloy_db_user/versions/1: rpc error: code = PermissionDenied desc = Permission 'secretmanager.versions.access' denied for resource 'projects/<PROJECT_NUMBER>/secrets/alloy_db_user/versions/1' (or it may not exist).
+```
+Go to `Cloud Build > Settings`, and make sure that the GCP Service `Secret Manager` is enabled for your Service Account.
+
+You can find the Service Account under `History > <BUILD VERSION> > Execution Details > Service Account`.
+
+Eg. `<PROJECT_NUMBER>-compute@developer.gserviceaccount.com`
