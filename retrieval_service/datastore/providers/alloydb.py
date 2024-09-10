@@ -43,6 +43,7 @@ class Config(BaseModel, datastore.AbstractConfig):
 
 class Client(datastore.Client[Config]):
     __pool: AsyncEngine
+    __connector: Optional[AsyncConnector] = None
 
     @datastore.classproperty
     def kind(cls):
@@ -54,18 +55,18 @@ class Client(datastore.Client[Config]):
     @classmethod
     async def create(cls, config: Config) -> "Client":
         async def getconn() -> asyncpg.Connection:
-            async with AsyncConnector(
-                refresh_strategy=RefreshStrategy.LAZY
-            ) as connector:
-                conn: asyncpg.Connection = await connector.connect(
-                    # Alloydb instance connection name
-                    f"projects/{config.project}/locations/{config.region}/clusters/{config.cluster}/instances/{config.instance}",
-                    "asyncpg",
-                    user=f"{config.user}",
-                    password=f"{config.password}",
-                    db=f"{config.database}",
-                    ip_type="PUBLIC",
-                )
+            if cls.__connector is None:
+                cls.__connector = AsyncConnector(refresh_strategy=RefreshStrategy.LAZY)
+
+            conn: asyncpg.Connection = await cls.__connector.connect(
+                # Alloydb instance connection name
+                f"projects/{config.project}/locations/{config.region}/clusters/{config.cluster}/instances/{config.instance}",
+                "asyncpg",
+                user=f"{config.user}",
+                password=f"{config.password}",
+                db=f"{config.database}",
+                ip_type="PUBLIC",
+            )
             await register_vector(conn)
             return conn
 
