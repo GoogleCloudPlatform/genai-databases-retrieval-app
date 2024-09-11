@@ -43,73 +43,11 @@
 [venv]: https://cloud.google.com/python/docs/setup#installing_and_using_virtualenv
 [install-psql]: https://www.timescale.com/blog/how-to-install-psql-on-mac-ubuntu-debian-windows/
 
+## Setup Postgres database
 
-## Enable private services access
+This section assumes you've already set up a non-cloud database like [AlloyDB Omni](https://cloud.google.com/alloydb/docs/omni).
 
-In this step, we will enable Private Services Access so that AlloyDB is able to
-connect to your VPC. You should only need to do this once per VPC (per project).
-
-1. Set environment variables:
-
-    ```bash
-    export RANGE_NAME=my-allocated-range-default
-    export DESCRIPTION="peering range for alloydb-service"
-    ```
-
-1. Create an allocated IP address range:
-
-    ```bash
-    gcloud compute addresses create $RANGE_NAME \
-        --global \
-        --purpose=VPC_PEERING \
-        --prefix-length=16 \
-        --description="$DESCRIPTION" \
-        --network=default
-    ```
-
-1. Create a private connection:
-
-    ```bash
-    gcloud services vpc-peerings connect \
-        --service=servicenetworking.googleapis.com \
-        --ranges="$RANGE_NAME" \
-        --network=default
-    ```
-
-
-## Create a AlloyDB cluster
-
-1. Set environment variables. For security reasons, use a different password for
-   `$DB_PASS` and note it for future use:
-
-    ```bash
-    export CLUSTER=my-postgres-cluster
-    export INSTANCE=my-postgres-instance
-    export REGION=us-central1
-    export DB_PASS=my-postgres-pass
-    ```
-
-1. Create an AlloyDB cluster:
-
-    ```bash
-    gcloud alloydb clusters create $CLUSTER \
-        --password=$DB_PASS\
-        --network=default \
-        --region=$REGION \
-        --project=$PROJECT_ID
-    ```
-
-1. Create a primary instance:
-
-    ```bash
-    gcloud alloydb instances create $INSTANCE \
-        --instance-type=PRIMARY \
-        --cpu-count=8 \
-        --region=$REGION \
-        --cluster=$CLUSTER \
-        --project=$PROJECT_ID \
-        --ssl-mode=ALLOW_UNENCRYPTED_AND_ENCRYPTED
-    ```
+New to non-cloud Postgres? We recommend using AlloyDB for a fully managed and scalable experience on Google Cloud. Follow our guide on [setting up AlloyDB Cluster on GCP](./alloydb.md) to get started.
 
 1. Get AlloyDB IP address:
 

@@ -49,8 +49,6 @@
 
 ## Enable private services access
 
-Currently, AlloyDB doesn't support creating new instance with public IP enabled. We will have to create an instance (with private IP), then update the instance to enable public IP.
-
 In this step, we will enable Private Services Access so that AlloyDB is able to
 connect to your VPC. You should only need to do this once per VPC (per project).
 
@@ -82,7 +80,7 @@ connect to your VPC. You should only need to do this once per VPC (per project).
     ```
 
 
-## Create a AlloyDB cluster
+## Create an AlloyDB cluster
 
 1. Set environment variables. For security reasons, use a different password for
    `$DB_PASS` and note it for future use:
@@ -146,7 +144,25 @@ connect to your VPC. You should only need to do this once per VPC (per project).
 
 ## Update config
 
-Update `config.yml` with your database information.
+1. Change into the retrieval service directory:
+
+    ```bash
+    cd ./retrieval_service
+    ```
+
+1. Install requirements:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+1. Make a copy of `example-config.yml` and name it `config.yml`.
+
+    ```bash
+    cp example-config-alloydb.yml config.yml
+    ```
+
+1. Update `config.yml` with your database information.
 
 ```bash
 host: 0.0.0.0
@@ -179,24 +195,6 @@ datastore:
 
     ```bash
     CREATE EXTENSION vector;
-    ```
-
-1. Change into the retrieval service directory:
-
-    ```bash
-    cd genai-databases-retrieval-app/retrieval_service
-    ```
-
-1. Install requirements:
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-1. Make a copy of `example-config.yml` and name it `config.yml`.
-
-    ```bash
-    cp example-config-alloydb.yml config.yml
     ```
 
 1. Populate data into database:
@@ -233,9 +231,17 @@ This section is for developers that want to develop and run the app locally.
 
 ### Test Environment Variables
 
-Set environment variables:
+#### 1. Create Secrets
+Follow the steps [here](https://cloud.google.com/secret-manager/docs/creating-and-accessing-secrets) to create two secrets with the following Secret names:
+1. `alloy_db_user`
+1. `alloy_db_pass`
+
+Set the Secret values as your database username and password respectively.
+
+#### 2. Set environment variables:
 
 ```bash
+export DB_NAME=""
 export DB_USER=""
 export DB_PASS=""
 export DB_PROJECT=""
@@ -244,7 +250,7 @@ export DB_CLUSTER=""
 export DB_INSTANCE=""
 ```
 
-### Run tests
+#### 3. Run tests
 
 Run retrieval service unit tests:
 
@@ -254,3 +260,14 @@ gcloud builds submit --config retrieval_service/alloydb.tests.cloudbuild.yaml \
 ```
 
 Where `$DB_NAME`,`$DB_USER`,`$DB_REGION`,`$DB_CLUSTER`,`$DB_INSTANCE` are environment variables with your database values.
+
+### Troubleshoot
+If you get the following error:
+```
+failed to access secret version for secret projects/<PROJECT_NUMBER>/secrets/alloy_db_user/versions/1: rpc error: code = PermissionDenied desc = Permission 'secretmanager.versions.access' denied for resource 'projects/<PROJECT_NUMBER>/secrets/alloy_db_user/versions/1' (or it may not exist).
+```
+Go to `Cloud Build > Settings`, and make sure that the GCP Service `Secret Manager` is enabled for your Service Account.
+
+You can find the Service Account under `History > <BUILD VERSION> > Execution Details > Service Account`.
+
+Eg. `<PROJECT_NUMBER>-compute@developer.gserviceaccount.com`

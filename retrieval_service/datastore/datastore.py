@@ -273,7 +273,6 @@ class Client(ABC, Generic[C]):
 
 async def create(config: AbstractConfig) -> Client:
     for cls in Client.__subclasses__():
-        s = f"{config.kind} == {cls.kind}"
         if config.kind == cls.kind:
             return await cls.create(config)  # type: ignore
     raise TypeError(f"No clients of kind '{config.kind}'")
