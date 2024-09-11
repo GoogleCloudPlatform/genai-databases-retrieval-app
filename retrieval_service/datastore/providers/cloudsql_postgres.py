@@ -42,6 +42,7 @@ class Config(BaseModel, datastore.AbstractConfig):
 
 class Client(datastore.Client[Config]):
     __pool: AsyncEngine
+    __connector: Optional[Connector] = None
 
     @datastore.classproperty
     def kind(cls):
@@ -52,20 +53,21 @@ class Client(datastore.Client[Config]):
 
     @classmethod
     async def create(cls, config: Config) -> "Client":
-        loop = asyncio.get_running_loop()
-
         async def getconn() -> asyncpg.Connection:
-            async with Connector(
-                loop=loop, refresh_strategy=RefreshStrategy.LAZY
-            ) as connector:
-                conn: asyncpg.Connection = await connector.connect_async(
-                    # Cloud SQL instance connection name
-                    f"{config.project}:{config.region}:{config.instance}",
-                    "asyncpg",
-                    user=f"{config.user}",
-                    password=f"{config.password}",
-                    db=f"{config.database}",
+            if cls.__connector is None:
+                loop = asyncio.get_running_loop()
+                cls.__connector = Connector(
+                    loop=loop, refresh_strategy=RefreshStrategy.LAZY
                 )
+
+            conn: asyncpg.Connection = await cls.__connector.connect_async(
+                # Cloud SQL instance connection name
+                f"{config.project}:{config.region}:{config.instance}",
+                "asyncpg",
+                user=f"{config.user}",
+                password=f"{config.password}",
+                db=f"{config.database}",
+            )
             await register_vector(conn)
             return conn
 
