@@ -261,7 +261,7 @@ gcloud builds submit --config retrieval_service/alloydb.tests.cloudbuild.yaml \
 
 Where `$DB_NAME`,`$DB_USER`,`$DB_REGION`,`$DB_CLUSTER`,`$DB_INSTANCE` are environment variables with your database values.
 
-### Troubleshoot
+### Troubleshooting
 If you get the following error:
 ```
 failed to access secret version for secret projects/<PROJECT_NUMBER>/secrets/alloy_db_user/versions/1: rpc error: code = PermissionDenied desc = Permission 'secretmanager.versions.access' denied for resource 'projects/<PROJECT_NUMBER>/secrets/alloy_db_user/versions/1' (or it may not exist).
