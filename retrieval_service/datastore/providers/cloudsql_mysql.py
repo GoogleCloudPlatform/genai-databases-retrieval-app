@@ -42,6 +42,7 @@ class Config(BaseModel, datastore.AbstractConfig):
 class Client(datastore.Client[Config]):
     __pool: Engine
     __db_name: str
+    __connector: Optional[Connector] = None
 
     @datastore.classproperty
     def kind(cls):
@@ -54,17 +55,18 @@ class Client(datastore.Client[Config]):
     @classmethod
     def create_sync(cls, config: Config) -> "Client":
         def getconn() -> pymysql.Connection:
-            with Connector(refresh_strategy=RefreshStrategy.LAZY) as connector:
-                conn: pymysql.Connection = connector.connect(
-                    # Cloud SQL instance connection name
-                    f"{config.project}:{config.region}:{config.instance}",
-                    "pymysql",
-                    user=f"{config.user}",
-                    password=f"{config.password}",
-                    db=f"{config.database}",
-                    autocommit=True,
-                )
-            return conn
+            if cls.__connector is None:
+                cls.__connector = Connector(refresh_strategy=RefreshStrategy.LAZY)
+
+            return cls.__connector.connect(
+                # Cloud SQL instance connection name
+                f"{config.project}:{config.region}:{config.instance}",
+                "pymysql",
+                user=f"{config.user}",
+                password=f"{config.password}",
+                db=f"{config.database}",
+                autocommit=True,
+            )
 
         pool = create_engine(
             "mysql+pymysql://",
