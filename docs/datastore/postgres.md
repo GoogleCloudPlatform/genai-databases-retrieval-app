@@ -45,7 +45,7 @@
 
 ## Setup Postgres database
 
-This section assumes you've already set up a non-cloud database like [AlloyDB Omni](https://cloud.google.com/alloydb/docs/omni).
+This section assumes you've already set up a non-cloud database like [AlloyDB Omni](https://cloud.google.com/alloydb/docs/omni/quickstart).
 
 New to non-cloud Postgres? We recommend using AlloyDB for a fully managed and scalable experience on Google Cloud. Follow our guide on [setting up AlloyDB Cluster on GCP](./alloydb.md) to get started.
 
