@@ -5,7 +5,8 @@ itsdangerous
 jinja2
 langchain-community
 langchain
-langchain-google-vertexai
+# langchain-google-vertexai
+git+https://github.com/langchain-ai/langchain-google.git@history_gemini#subdirectory=libs/vertexai
 markdown
 types-Markdown
 uvicorn[standard]
