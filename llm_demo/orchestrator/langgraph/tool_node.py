@@ -24,7 +24,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.config import get_executor_for_config
 from langchain_core.tools import BaseTool
 from langchain_core.tools import tool as create_tool
-from langgraph.utils import RunnableCallable
+from langgraph.utils.runnable import RunnableCallable
 
 
 def str_output(output: Any) -> str:
