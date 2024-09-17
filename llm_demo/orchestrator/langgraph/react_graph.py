@@ -26,7 +26,7 @@ from langchain_core.messages import (
 )
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableLambda
-from langchain_google_vertexai import VertexAI
+from langchain_google_vertexai import ChatVertexAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
@@ -85,7 +85,7 @@ async def create_graph(
     tool_node = ToolNode(tools)
 
     # model node
-    model = VertexAI(max_output_tokens=512, model_name=model_name, temperature=0.0)
+    model = ChatVertexAI(max_output_tokens=512, model_name=model_name, temperature=0.0)
 
     # Add the prompt to the model to create a model runnable
     model_runnable = prompt | model
