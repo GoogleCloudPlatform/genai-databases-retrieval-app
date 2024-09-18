@@ -12,25 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Union
+
 import sqlparse
 
 
-def format_sql(sql: str, params):
+def format_sql(sql: str, params: Union[tuple, dict]):
     """
     Format postgres sql to human readable text
     """
-    for i in range(len(params)):
-        sql = sql.replace(f"${i+1}", f"{params[i]}")
-        # format the SQL
-        formatted_sql = (
-            sqlparse.format(
-                sql,
-                reindent=True,
-                keyword_case="upper",
-                use_space_around_operators=True,
-                strip_whitespace=True,
-            )
-            .replace("\n", "<br/>")
-            .replace("  ", '<div class="indent"></div>')
+    if isinstance(params, tuple):
+        for i, value in enumerate(params):
+            sql = sql.replace(f"${i+1}", f"{value}")
+    elif isinstance(params, dict):
+        for key, value in params.items():
+            sql = sql.replace(f":{key}", f"{value}")
+    else:
+        raise ValueError("params must be a tuple or dict")
+    # format the SQL
+    formatted_sql = (
+        sqlparse.format(
+            sql,
+            reindent=True,
+            keyword_case="upper",
+            use_space_around_operators=True,
+            strip_whitespace=True,
         )
+        .replace("\n", "<br/>")
+        .replace("  ", '<div class="indent"></div>')
+    )
     return formatted_sql.replace("<br/>", "", 1)

@@ -21,6 +21,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 import models
 
+from ..helpers import format_sql
+
 
 class PostgresDatastore:
     def __init__(self, pool: AsyncEngine):
@@ -289,7 +291,7 @@ class PostgresDatastore:
             return None, None
 
         res = models.Airport.model_validate(result)
-        return res, sql
+        return res, format_sql(sql, params)
 
     async def get_airport_by_iata(
         self, iata: str
@@ -304,7 +306,7 @@ class PostgresDatastore:
             return None, None
 
         res = models.Airport.model_validate(result)
-        return res, sql
+        return res, format_sql(sql, params)
 
     async def search_airports(
         self,
@@ -329,7 +331,7 @@ class PostgresDatastore:
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [models.Airport.model_validate(r) for r in results]
-        return res, sql
+        return res, format_sql(sql, params)
 
     async def get_amenity(
         self, id: int
@@ -347,7 +349,7 @@ class PostgresDatastore:
             return None, None
 
         res = models.Amenity.model_validate(result)
-        return res, sql
+        return res, format_sql(sql, params)
 
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
@@ -369,7 +371,7 @@ class PostgresDatastore:
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [r for r in results]
-        return res, sql
+        return res, format_sql(sql, params)
 
     async def get_flight(
         self, flight_id: int
@@ -387,7 +389,7 @@ class PostgresDatastore:
             return None, None
 
         res = models.Flight.model_validate(result)
-        return res, sql
+        return res, format_sql(sql, params)
 
     async def search_flights_by_number(
         self,
@@ -409,7 +411,7 @@ class PostgresDatastore:
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [models.Flight.model_validate(r) for r in results]
-        return res, sql
+        return res, format_sql(sql, params)
 
     async def search_flights_by_airports(
         self,
@@ -436,7 +438,7 @@ class PostgresDatastore:
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [models.Flight.model_validate(r) for r in results]
-        return res, sql
+        return res, format_sql(sql, params)
 
     async def validate_ticket(
         self,
@@ -466,7 +468,7 @@ class PostgresDatastore:
         if result is None:
             return None, None
         res = models.Flight.model_validate(result)
-        return res, sql
+        return res, format_sql(sql, params)
 
     async def insert_ticket(
         self,
@@ -541,7 +543,7 @@ class PostgresDatastore:
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [r for r in results]
-        return res, sql
+        return res, format_sql(sql, params)
 
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
@@ -563,7 +565,7 @@ class PostgresDatastore:
             results = (await conn.execute(s, params)).mappings().fetchall()
 
         res = [r["content"] for r in results]
-        return res, sql
+        return res, format_sql(sql, params)
 
     async def close(self):
         await self.__pool.dispose()
