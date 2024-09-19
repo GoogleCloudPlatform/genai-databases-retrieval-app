@@ -78,9 +78,7 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
         policies: list[models.Policy],
     ) -> None:
-        return await self.__pg_ds.initialize_data(
-            airports, amenities, flights, policies
-        )
+        await self.__pg_ds.initialize_data(airports, amenities, flights, policies)
 
     async def export_data(
         self,
@@ -167,7 +165,7 @@ class Client(datastore.Client[Config]):
         departure_time: str,
         arrival_time: str,
     ):
-        return await self.__pg_ds.insert_ticket(
+        await self.__pg_ds.insert_ticket(
             user_id,
             user_name,
             user_email,
@@ -193,4 +191,4 @@ class Client(datastore.Client[Config]):
         )
 
     async def close(self):
-        return await self.__pg_ds.close()
+        await self.__pg_ds.close()
