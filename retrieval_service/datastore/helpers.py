@@ -19,7 +19,8 @@ import sqlparse
 
 def format_sql(sql: str, params: Union[tuple, dict]):
     """
-    Format postgres sql to human readable text
+    Format Postgres SQL to human readable text by replacing placeholders.
+    Handles tuple-based ($1, $2, ...) and dict-based (:key) formats.
     """
     if isinstance(params, tuple):
         for i, value in enumerate(params):
