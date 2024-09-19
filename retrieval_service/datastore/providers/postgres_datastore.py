@@ -25,8 +25,8 @@ from ..helpers import format_sql
 
 
 class PostgresDatastore:
-    def __init__(self, pool: AsyncEngine):
-        self.__pool = pool
+    def __init__(self, async_engine: AsyncEngine):
+        self.__async_engine = async_engine
 
     async def initialize_data(
         self,
@@ -35,7 +35,7 @@ class PostgresDatastore:
         flights: list[models.Flight],
         policies: list[models.Policy],
     ) -> None:
-        async with self.__pool.connect() as conn:
+        async with self.__async_engine.connect() as conn:
             # If the table already exists, drop it to avoid conflicts
             await conn.execute(text("DROP TABLE IF EXISTS airports CASCADE"))
             # Create a new table
@@ -252,7 +252,7 @@ class PostgresDatastore:
         list[models.Flight],
         list[models.Policy],
     ]:
-        async with self.__pool.connect() as conn:
+        async with self.__async_engine.connect() as conn:
             airport_task = asyncio.create_task(
                 conn.execute(text("""SELECT * FROM airports ORDER BY id ASC"""))
             )
@@ -281,7 +281,7 @@ class PostgresDatastore:
     async def get_airport_by_id(
         self, id: int
     ) -> tuple[Optional[models.Airport], Optional[str]]:
-        async with self.__pool.connect() as conn:
+        async with self.__async_engine.connect() as conn:
             sql = """SELECT * FROM airports WHERE id=:id"""
             s = text(sql)
             params = {"id": id}
@@ -296,7 +296,7 @@ class PostgresDatastore:
     async def get_airport_by_iata(
         self, iata: str
     ) -> tuple[Optional[models.Airport], Optional[str]]:
-        async with self.__pool.connect() as conn:
+        async with self.__async_engine.connect() as conn:
             sql = """SELECT * FROM airports WHERE iata ILIKE :iata"""
             s = text(sql)
             params = {"iata": iata}
@@ -314,7 +314,7 @@ class PostgresDatastore:
         city: Optional[str] = None,
         name: Optional[str] = None,
     ) -> tuple[list[models.Airport], Optional[str]]:
-        async with self.__pool.connect() as conn:
+        async with self.__async_engine.connect() as conn:
             sql = """
                 SELECT * FROM airports
                   WHERE (CAST(:country AS TEXT) IS NULL OR country ILIKE :country)
@@ -336,7 +336,7 @@ class PostgresDatastore:
     async def get_amenity(
         self, id: int
     ) -> tuple[Optional[models.Amenity], Optional[str]]:
-        async with self.__pool.connect() as conn:
+        async with self.__async_engine.connect() as conn:
             sql = """
                 SELECT id, name, description, location, terminal, category, hour
                 FROM amenities WHERE id=:id
@@ -354,7 +354,7 @@ class PostgresDatastore:
     async def amenities_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> tuple[list[Any], Optional[str]]:
-        async with self.__pool.connect() as conn:
+        async with self.__async_engine.connect() as conn:
             sql = """
                 SELECT name, description, location, terminal, category, hour
                 FROM amenities
@@ -376,7 +376,7 @@ class PostgresDatastore:
     async def get_flight(
         self, flight_id: int
     ) -> tuple[Optional[models.Flight], Optional[str]]:
-        async with self.__pool.connect() as conn:
+        async with self.__async_engine.connect() as conn:
             sql = """
                 SELECT * FROM flights
                   WHERE id = :flight_id
@@ -396,7 +396,7 @@ class PostgresDatastore:
         airline: str,
         number: str,
     ) -> tuple[list[models.Flight], Optional[str]]:
-        async with self.__pool.connect() as conn:
+        async with self.__async_engine.connect() as conn:
             sql = """
                 SELECT * FROM flights
                   WHERE airline = :airline
@@ -419,7 +419,7 @@ class PostgresDatastore:
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
     ) -> tuple[list[models.Flight], Optional[str]]:
-        async with self.__pool.connect() as conn:
+        async with self.__async_engine.connect() as conn:
             sql = """
                 SELECT * FROM flights
                   WHERE (CAST(:departure_airport AS TEXT) IS NULL OR departure_airport ILIKE :departure_airport)
@@ -448,7 +448,7 @@ class PostgresDatastore:
         departure_time: str,
     ) -> tuple[Optional[models.Flight], Optional[str]]:
         departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
-        async with self.__pool.connect() as conn:
+        async with self.__async_engine.connect() as conn:
             sql = """
                     SELECT * FROM flights
                     WHERE airline ILIKE :airline
@@ -485,7 +485,7 @@ class PostgresDatastore:
         departure_time_datetime = datetime.strptime(departure_time, "%Y-%m-%d %H:%M:%S")
         arrival_time_datetime = datetime.strptime(arrival_time, "%Y-%m-%d %H:%M:%S")
 
-        async with self.__pool.connect() as conn:
+        async with self.__async_engine.connect() as conn:
             s = text(
                 """
                 INSERT INTO tickets (
@@ -531,7 +531,7 @@ class PostgresDatastore:
         self,
         user_id: str,
     ) -> tuple[list[Any], Optional[str]]:
-        async with self.__pool.connect() as conn:
+        async with self.__async_engine.connect() as conn:
             sql = """
                 SELECT user_name, airline, flight_number, departure_airport, arrival_airport, departure_time, arrival_time FROM tickets
                 WHERE user_id = :user_id
@@ -548,7 +548,7 @@ class PostgresDatastore:
     async def policies_search(
         self, query_embedding: list[float], similarity_threshold: float, top_k: int
     ) -> tuple[list[str], Optional[str]]:
-        async with self.__pool.connect() as conn:
+        async with self.__async_engine.connect() as conn:
             sql = """
                 SELECT content
                 FROM policies
@@ -568,4 +568,4 @@ class PostgresDatastore:
         return res, format_sql(sql, params)
 
     async def close(self):
-        await self.__pool.dispose()
+        await self.__async_engine.dispose()
