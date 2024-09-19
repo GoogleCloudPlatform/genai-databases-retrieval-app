@@ -47,8 +47,8 @@ class Client(datastore.Client[Config]):
     def kind(cls):
         return ALLOYDB_PG_IDENTIFIER
 
-    def __init__(self, pool: AsyncEngine):
-        self.__pg_ds = PostgresDatastore(pool)
+    def __init__(self, async_engine: AsyncEngine):
+        self.__pg_ds = PostgresDatastore(async_engine)
 
     @classmethod
     async def create(cls, config: Config) -> "Client":
@@ -68,13 +68,13 @@ class Client(datastore.Client[Config]):
             await register_vector(conn)
             return conn
 
-        pool = create_async_engine(
+        async_engine = create_async_engine(
             "postgresql+asyncpg://",
             async_creator=getconn,
         )
-        if pool is None:
-            raise TypeError("pool not instantiated")
-        return cls(pool)
+        if async_engine is None:
+            raise TypeError("async_engine not instantiated")
+        return cls(async_engine)
 
     async def initialize_data(
         self,
