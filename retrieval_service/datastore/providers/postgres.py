@@ -25,7 +25,6 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 import models
 
 from .. import datastore
-from ..helpers import format_sql
 from .postgres_datastore import PostgresDatastore
 
 POSTGRES_IDENTIFIER = "postgres"

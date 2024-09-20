@@ -17,19 +17,13 @@ from typing import Union
 import sqlparse
 
 
-def format_sql(sql: str, params: Union[tuple, dict]):
+def format_sql(sql: str, params: dict):
     """
     Format Postgres SQL to human readable text by replacing placeholders.
-    Handles tuple-based ($1, $2, ...) and dict-based (:key) formats.
+    Handles dict-based (:key) formats.
     """
-    if isinstance(params, tuple):
-        for i, value in enumerate(params):
-            sql = sql.replace(f"${i+1}", f"{value}")
-    elif isinstance(params, dict):
-        for key, value in params.items():
-            sql = sql.replace(f":{key}", f"{value}")
-    else:
-        raise ValueError("params must be a tuple or dict")
+    for key, value in params.items():
+        sql = sql.replace(f":{key}", f"{value}")
     # format the SQL
     formatted_sql = (
         sqlparse.format(
