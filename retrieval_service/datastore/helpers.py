@@ -12,25 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Union
+
 import sqlparse
 
 
-def format_sql(sql: str, params):
+def format_sql(sql: str, params: dict):
     """
-    Format postgres sql to human readable text
+    Format Postgres SQL to human readable text by replacing placeholders.
+    Handles dict-based (:key) formats.
     """
-    for i in range(len(params)):
-        sql = sql.replace(f"${i+1}", f"{params[i]}")
-        # format the SQL
-        formatted_sql = (
-            sqlparse.format(
-                sql,
-                reindent=True,
-                keyword_case="upper",
-                use_space_around_operators=True,
-                strip_whitespace=True,
-            )
-            .replace("\n", "<br/>")
-            .replace("  ", '<div class="indent"></div>')
+    for key, value in params.items():
+        sql = sql.replace(f":{key}", f"{value}")
+    # format the SQL
+    formatted_sql = (
+        sqlparse.format(
+            sql,
+            reindent=True,
+            keyword_case="upper",
+            use_space_around_operators=True,
+            strip_whitespace=True,
         )
+        .replace("\n", "<br/>")
+        .replace("  ", '<div class="indent"></div>')
+    )
     return formatted_sql.replace("<br/>", "", 1)
