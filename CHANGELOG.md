@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.0](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/compare/v0.2.0...v0.3.0) (2024-10-07)
+
+
+### Features
+
+* Add similarity threshold to amenity search ([#477](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/477)) ([c49bef9](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/c49bef9901e81bee01088d975cdedbce5b89af8d))
+* Add tracing for AlloyDB and CloudSQL Postgres providers ([#494](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/494)) ([2fa03bc](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/2fa03bcec54fd2fe4b463a54df772ae5e6490577))
+* Consolidate postgres providers ([#493](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/493)) ([a3b2c42](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/a3b2c42735c5a0dfd58ce268637cce8253061ff3))
+* Reuse connector object across different database connections in… ([#487](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/487)) ([61c0f52](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/61c0f5200a9853efa8097e1143ffc317b6f74777))
+
+
+### Bug Fixes
+
+* Reuse connector object across different database connections. ([#484](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/484)) ([2b05739](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/2b05739b0eb761738cc8db06d76f64ad7d199a2e)), closes [#416](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/416)
+
 ## [0.2.0](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/compare/v0.1.0...v0.2.0) (2024-08-28)
 
 
