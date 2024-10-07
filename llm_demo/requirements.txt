@@ -5,7 +5,7 @@ itsdangerous==2.2.0
 jinja2==3.1.4
 langchain-community==0.3.0
 langchain==0.3.0
-langchain-google-vertexai==1.0.10
+langchain-google-vertexai==2.0.0
 markdown==3.5.2
 types-Markdown==3.5.0.20240129
 uvicorn[standard]==0.27.0.post1
