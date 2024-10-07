@@ -10,7 +10,7 @@ markdown==3.5.2
 types-Markdown==3.5.0.20240129
 uvicorn[standard]==0.27.0.post1
 python-multipart==0.0.7
-pytz==2024.1
+pytz==2024.2
 types-pytz==2024.1.0.20240417
 langgraph==0.1.16
 httpx==0.27.0
