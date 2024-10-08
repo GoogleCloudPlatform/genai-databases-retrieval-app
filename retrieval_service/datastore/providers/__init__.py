@@ -17,7 +17,6 @@ from . import (
     cloudsql_mysql,
     cloudsql_postgres,
     firestore,
-    neo4j_graph,
     postgres,
     spanner_gsql,
     spanner_postgres,
@@ -31,5 +30,4 @@ __ALL__ = [
     firestore,
     spanner_gsql,
     spanner_postgres,
-    neo4j_graph,
 ]

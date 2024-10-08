@@ -198,7 +198,7 @@ async def test_get_airport_by_id(ds: cloudsql_postgres.Client):
         country="Papua New Guinea",
     )
     assert res == expected
-    assert sql is None
+    assert sql is not None
 
 
 @pytest.mark.parametrize(
@@ -218,7 +218,7 @@ async def test_get_airport_by_iata(ds: cloudsql_postgres.Client, iata: str):
         country="United States",
     )
     assert res == expected
-    assert sql is None
+    assert sql is not None
 
 
 search_airports_test_data = [
@@ -301,7 +301,7 @@ async def test_search_airports(
 ):
     res, sql = await ds.search_airports(country, city, name)
     assert res == expected
-    assert sql is None
+    assert sql is not None
 
 
 async def test_get_amenity(ds: cloudsql_postgres.Client):
@@ -330,7 +330,7 @@ async def test_get_amenity(ds: cloudsql_postgres.Client):
         saturday_end_hour=None,
     )
     assert res == expected
-    assert sql is None
+    assert sql is not None
 
 
 amenities_search_test_data = [
@@ -399,7 +399,7 @@ async def test_amenities_search(
 ):
     res, sql = await ds.amenities_search(query_embedding, similarity_threshold, top_k)
     assert res == expected
-    assert sql is None
+    assert sql is not None
 
 
 async def test_get_flight(ds: cloudsql_postgres.Client):
@@ -416,7 +416,7 @@ async def test_get_flight(ds: cloudsql_postgres.Client):
         arrival_gate="D30",
     )
     assert res == expected
-    assert sql is None
+    assert sql is not None
 
 
 search_flights_by_number_test_data = [
@@ -477,7 +477,7 @@ async def test_search_flights_by_number(
 ):
     res, sql = await ds.search_flights_by_number(airline, number)
     assert res == expected
-    assert sql is None
+    assert sql is not None
 
 
 search_flights_by_airports_test_data = [
@@ -604,7 +604,7 @@ async def test_search_flights_by_airports(
         date, departure_airport, arrival_airport
     )
     assert res == expected
-    assert sql is None
+    assert sql is not None
 
 
 async def test_insert_ticket(ds: cloudsql_postgres.Client):
@@ -640,7 +640,7 @@ async def test_list_tickets(ds: cloudsql_postgres.Client):
     ]
 
     assert res == expected
-    assert sql is None
+    assert sql is not None
 
 
 async def test_validate_ticket(ds: cloudsql_postgres.Client):
@@ -657,7 +657,7 @@ async def test_validate_ticket(ds: cloudsql_postgres.Client):
         arrival_gate="D6",
     )
     assert res == expected
-    assert sql is None
+    assert sql is not None
 
 
 policies_search_test_data = [
@@ -705,4 +705,4 @@ async def test_policies_search(
 ):
     res, sql = await ds.policies_search(query_embedding, similarity_threshold, top_k)
     assert res == expected
-    assert sql is None
+    assert sql is not None
