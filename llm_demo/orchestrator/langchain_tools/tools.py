@@ -22,7 +22,7 @@ import google.oauth2.id_token  # type: ignore
 from google.auth import compute_engine  # type: ignore
 from google.auth.transport.requests import Request  # type: ignore
 from langchain.tools import StructuredTool
-from pydantic.v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 CREDENTIALS = None

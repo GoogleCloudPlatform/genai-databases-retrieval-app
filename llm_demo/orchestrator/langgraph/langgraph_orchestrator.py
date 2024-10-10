@@ -25,8 +25,8 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMe
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableConfig, RunnableLambda
 from langchain_core.tools import StructuredTool
-from langgraph.checkpoint import MemorySaver
 from langgraph.checkpoint.base import empty_checkpoint
+from langgraph.checkpoint.memory import MemorySaver
 from pytz import timezone
 
 from ..orchestrator import BaseOrchestrator, classproperty
