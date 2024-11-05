@@ -250,10 +250,9 @@ class LangGraphOrchestrator(BaseOrchestrator):
         self._checkpointer.put(config=config, checkpoint=checkpoint, metadata={})
         del self._user_sessions[uuid]
 
-    def close_clients(self):
+    async def close_clients(self):
         if self.client:
-            close_client_task = asyncio.create_task(self.client.close())
-            asyncio.gather(*close_client_task)
+            await self.client.close()
 
 
 PREFIX = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
