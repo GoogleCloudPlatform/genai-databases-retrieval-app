@@ -252,7 +252,8 @@ class LangGraphOrchestrator(BaseOrchestrator):
 
     def close_clients(self):
         if self.client:
-            self.client.close()
+            close_client_task = asyncio.create_task(self.client.close())
+            asyncio.gather(*close_client_task)
 
 
 PREFIX = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
