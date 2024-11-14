@@ -19,4 +19,4 @@ asyncio==3.4.3
 datetime==5.5
 pymysql==1.1.1
 types-PyMySQL==1.1.0.20240524
-sqlparse==0.5.1
+sqlparse==0.5.2
