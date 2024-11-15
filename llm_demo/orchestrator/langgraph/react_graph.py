@@ -97,27 +97,30 @@ async def create_graph(
         """
         messages = state["messages"]
         res = await model_runnable.ainvoke({"messages": messages}, config)
-        response = res.replace("```json", "").replace("```", "")
-        try:
-            json_response = json.loads(response)
-            action = json_response.get("action")
-            action_input = json_response.get("action_input")
-            if action == "Final Answer":
-                new_message = AIMessage(content=action_input)
-            else:
-                new_message = AIMessage(
-                    content="suggesting a tool call",
-                    tool_calls=[
-                        ToolCall(id=str(uuid.uuid4()), name=action, args=action_input)
-                    ],
+
+        if "```json" in res.content:
+            try:
+                response = res.content.replace("```json", "").replace("```", "")
+                json_response = json.loads(response)
+                action = json_response.get("action")
+                action_input = json_response.get("action_input")
+                if action == "Final Answer":
+                    res = AIMessage(content=action_input)
+                else:
+                    res = AIMessage(
+                        content="suggesting a tool call",
+                        tool_calls=[
+                            ToolCall(id=str(uuid.uuid4()), name=action, args=action_input)
+                        ],
+                    )
+            except Exception as e:
+                json_response = response
+                res = AIMessage(
+                    content="Sorry, failed to generate the right format for response"
                 )
-        except Exception as e:
-            json_response = response
-            new_message = AIMessage(
-                content="Sorry, failed to generate the right format for response"
-            )
+
         # if model exceed the number of steps and has not yet return a final answer
-        if state["is_last_step"] and hasattr(new_message, "tool_calls"):
+        if state["is_last_step"] and hasattr(res, "tool_calls"):
             return {
                 "messages": [
                     AIMessage(
@@ -125,7 +128,7 @@ async def create_graph(
                     )
                 ]
             }
-        return {"messages": [new_message]}
+        return {"messages": [res]}
 
     def agent_should_continue(
         state: UserState,
