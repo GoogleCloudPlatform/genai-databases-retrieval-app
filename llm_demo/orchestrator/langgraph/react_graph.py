@@ -85,6 +85,7 @@ async def create_graph(
     tool_node = ToolNode(tools)
 
     # model node
+    # TODO: Use .bind_tools(tools) to bind the tools with the LLM.
     model = ChatVertexAI(max_output_tokens=512, model_name=model_name, temperature=0.0)
 
     # Add the prompt to the model to create a model runnable
@@ -98,6 +99,10 @@ async def create_graph(
         messages = state["messages"]
         res = await model_runnable.ainvoke({"messages": messages}, config)
 
+        # TODO: Remove the temporary fix of parsing LLM response and invoking
+        # tools until we use bind_tools API and have automatic response parsing
+        # and tool calling. (see
+        # https://langchain-ai.github.io/langgraph/#example)
         if "```json" in res.content:
             try:
                 response = str(res.content).replace("```json", "").replace("```", "")
