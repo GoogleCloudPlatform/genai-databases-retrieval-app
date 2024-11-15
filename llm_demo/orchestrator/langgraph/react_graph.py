@@ -100,7 +100,7 @@ async def create_graph(
 
         if "```json" in res.content:
             try:
-                response = res.content.replace("```json", "").replace("```", "")
+                response = str(res.content).replace("```json", "").replace("```", "")
                 json_response = json.loads(response)
                 action = json_response.get("action")
                 action_input = json_response.get("action_input")
