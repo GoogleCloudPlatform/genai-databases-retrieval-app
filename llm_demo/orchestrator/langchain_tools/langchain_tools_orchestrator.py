@@ -25,9 +25,9 @@ from langchain.agents.agent import AgentExecutor
 from langchain.globals import set_verbose  # type: ignore
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import ChatPromptTemplate
-from langchain_core.tools import StructuredTool
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.tools import StructuredTool
 from langchain_google_vertexai import VertexAI
 from pytz import timezone
 
