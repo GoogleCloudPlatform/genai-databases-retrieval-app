@@ -17,6 +17,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from google.oauth2 import id_token
 
 import datastore
 import models
@@ -107,6 +108,18 @@ def test_get_airport(m_datastore, app, method_name, params, mock_return, expecte
     output = res["results"]
     assert output == expected
     assert models.Airport.model_validate(output)
+
+
+@patch.object(datastore, "create")
+def test_get_airport_missing_params(m_datastore, app):
+    m_datastore = AsyncMock()
+    with TestClient(app) as client:
+        response = client.get("/airports")
+        assert response.status_code == 422
+        assert (
+            response.json()["detail"]
+            == "Request requires query params: airport id or iata"
+        )
 
 
 search_airports_params = [
@@ -675,6 +688,18 @@ def test_search_flights_with_bad_params(m_datastore, app, params):
     assert response.status_code == 422
 
 
+@patch.object(datastore, "create")
+def test_search_flights_missing_params(m_datastore, app):
+    m_datastore = AsyncMock()
+    with TestClient(app) as client:
+        response = client.get("/flights/search")
+        assert response.status_code == 422
+        assert (
+            response.json()["detail"]
+            == "Request requires query params: arrival_airport, departure_airport, date, or both airline and flight_number"
+        )
+
+
 validate_ticket_params = [
     pytest.param(
         "validate_ticket",
@@ -783,3 +808,74 @@ def test_policies_search(m_datastore, app, method_name, params, mock_return, exp
     assert len(output) == params["top_k"]
     assert output == expected
     assert models.Policy.model_validate(output[0])
+
+
+@patch.object(id_token, "verify_oauth2_token")
+@patch.object(datastore, "create")
+def test_insert_ticket_missing_user_info(m_datastore, m_verify_oauth2_token, app):
+    m_datastore = AsyncMock()
+    m_verify_oauth2_token.side_effect = ValueError("invalid token")
+    with TestClient(app) as client:
+        response = client.post(
+            "/tickets/insert",
+            json={
+                "airline": "CY",
+                "flight_number": "888",
+                "departure_airport": "LAX",
+                "arrival_airport": "JFK",
+                "departure_time": "2024-01-01 08:08:08",
+                "arrival_time": "2024-01-01 08:08:08",
+            },
+        )
+        assert response.status_code == 422
+        assert response.json()["detail"] == [
+            {
+                "type": "missing",
+                "loc": ["query", "airline"],
+                "msg": "Field required",
+                "input": None,
+            },
+            {
+                "type": "missing",
+                "loc": ["query", "flight_number"],
+                "msg": "Field required",
+                "input": None,
+            },
+            {
+                "type": "missing",
+                "loc": ["query", "departure_airport"],
+                "msg": "Field required",
+                "input": None,
+            },
+            {
+                "type": "missing",
+                "loc": ["query", "arrival_airport"],
+                "msg": "Field required",
+                "input": None,
+            },
+            {
+                "type": "missing",
+                "loc": ["query", "departure_time"],
+                "msg": "Field required",
+                "input": None,
+            },
+            {
+                "type": "missing",
+                "loc": ["query", "arrival_time"],
+                "msg": "Field required",
+                "input": None,
+            },
+        ]
+
+
+@patch.object(id_token, "verify_oauth2_token")
+@patch.object(datastore, "create")
+def test_list_tickets_missing_user_info(m_datastore, m_verify_oauth2_token, app):
+    m_datastore = AsyncMock()
+    m_verify_oauth2_token.side_effect = ValueError("invalid token")
+    with TestClient(app) as client:
+        response = client.get(
+            "/tickets/list", headers={"User-Id-Token": "Bearer invalid_token"}
+        )
+        assert response.status_code == 401
+        assert response.json()["detail"] == "User login required for data insertion"

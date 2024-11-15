@@ -604,3 +604,26 @@ async def test_policies_search(
     res, sql = await ds.policies_search(query_embedding, similarity_threshold, top_k)
     assert res == expected
     assert sql is not None
+
+
+async def test_validate_ticket_valid(ds: postgres.Client):
+    flight, sql = await ds.validate_ticket(
+        airline="UA",
+        flight_number="1158",
+        departure_airport="SFO",
+        departure_time="2024-01-01 05:57:00",
+    )
+    assert flight is not None
+    assert sql is not None
+    assert flight.id == 1
+
+
+async def test_validate_ticket_invalid(ds: postgres.Client):
+    flight, sql = await ds.validate_ticket(
+        airline="XX",
+        flight_number="9999",
+        departure_airport="ZZZ",
+        departure_time="2024-01-01 05:57:00",
+    )
+    assert flight is None
+    assert None is None
