@@ -834,36 +834,42 @@ def test_insert_ticket_missing_user_info(m_datastore, m_verify_oauth2_token, app
                 "loc": ["query", "airline"],
                 "msg": "Field required",
                 "input": None,
+                "url": "https://errors.pydantic.dev/2.6/v/missing",
             },
             {
                 "type": "missing",
                 "loc": ["query", "flight_number"],
                 "msg": "Field required",
                 "input": None,
+                "url": "https://errors.pydantic.dev/2.6/v/missing",
             },
             {
                 "type": "missing",
                 "loc": ["query", "departure_airport"],
                 "msg": "Field required",
                 "input": None,
+                "url": "https://errors.pydantic.dev/2.6/v/missing",
             },
             {
                 "type": "missing",
                 "loc": ["query", "arrival_airport"],
                 "msg": "Field required",
                 "input": None,
+                "url": "https://errors.pydantic.dev/2.6/v/missing",
             },
             {
                 "type": "missing",
                 "loc": ["query", "departure_time"],
                 "msg": "Field required",
                 "input": None,
+                "url": "https://errors.pydantic.dev/2.6/v/missing",
             },
             {
                 "type": "missing",
                 "loc": ["query", "arrival_time"],
                 "msg": "Field required",
                 "input": None,
+                "url": "https://errors.pydantic.dev/2.6/v/missing",
             },
         ]
 
