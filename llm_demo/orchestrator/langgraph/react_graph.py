@@ -110,7 +110,9 @@ async def create_graph(
                     res = AIMessage(
                         content="suggesting a tool call",
                         tool_calls=[
-                            ToolCall(id=str(uuid.uuid4()), name=action, args=action_input)
+                            ToolCall(
+                                id=str(uuid.uuid4()), name=action, args=action_input
+                            )
                         ],
                     )
             except Exception as e:

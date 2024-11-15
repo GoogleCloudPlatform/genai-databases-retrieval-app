@@ -160,7 +160,9 @@ class LangGraphOrchestrator(BaseOrchestrator):
         # Reset graph checkpointer
         checkpoint = empty_checkpoint()
         config = self.get_config(uuid)
-        self._checkpointer.put(config=config, checkpoint=checkpoint, metadata={}, new_versions={})
+        self._checkpointer.put(
+            config=config, checkpoint=checkpoint, metadata={}, new_versions={}
+        )
 
         # Update state with message history
         self._langgraph_app.update_state(config, {"messages": history})
