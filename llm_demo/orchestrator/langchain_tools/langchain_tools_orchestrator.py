@@ -70,6 +70,7 @@ class UserAgent:
         model: str,
     ) -> "UserAgent":
         llm = ChatVertexAI(max_output_tokens=512, model_name=model, temperature=0.0)
+        llm.bind_tools(tools)
         memory = ConversationBufferMemory(
             chat_memory=ChatMessageHistory(messages=history),
             memory_key="chat_history",
