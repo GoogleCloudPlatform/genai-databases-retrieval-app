@@ -2,7 +2,7 @@ asyncpg==0.30.0
 fastapi==0.115.0
 google-auth==2.35.0
 google-cloud-firestore==2.19.0
-google-cloud-aiplatform==1.70.0
+google-cloud-aiplatform==1.72.0
 google-cloud-spanner==3.49.1
 langchain-core==0.3.10
 pgvector==0.3.5
