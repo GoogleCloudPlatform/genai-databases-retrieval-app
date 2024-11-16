@@ -110,16 +110,22 @@ def test_get_airport(m_datastore, app, method_name, params, mock_return, expecte
     assert models.Airport.model_validate(output)
 
 
+@pytest.mark.parametrize(
+    "params",
+    [
+        pytest.param({}, id="no_params"),
+    ],
+)
 @patch.object(datastore, "create")
-def test_get_airport_missing_params(m_datastore, app):
+def test_get_airport_with_bad_params(m_datastore, app, params):
     m_datastore = AsyncMock()
     with TestClient(app) as client:
-        response = client.get("/airports")
-        assert response.status_code == 422
-        assert (
-            response.json()["detail"]
-            == "Request requires query params: airport id or iata"
-        )
+        response = client.get("/airports", params=params)
+    assert response.status_code == 422
+    assert (
+        response.json()["detail"]
+        == "Request requires query params: airport id or iata"
+    )
 
 
 search_airports_params = [
