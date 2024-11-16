@@ -810,15 +810,14 @@ def test_policies_search(m_datastore, app, method_name, params, mock_return, exp
     assert models.Policy.model_validate(output[0])
 
 
-@patch.object(id_token, "verify_oauth2_token")
 @patch.object(datastore, "create")
-def test_insert_ticket_missing_user_info(m_datastore, m_verify_oauth2_token, app):
+def test_insert_ticket_missing_user_info(m_datastore, app):
     m_datastore = AsyncMock()
-    m_verify_oauth2_token.side_effect = ValueError("invalid token")
     with TestClient(app) as client:
         response = client.post(
             "/tickets/insert",
-            json={
+            headers={"User-Id-Token": "Bearer invalid_token"},
+            params={
                 "airline": "CY",
                 "flight_number": "888",
                 "departure_airport": "LAX",
@@ -827,58 +826,13 @@ def test_insert_ticket_missing_user_info(m_datastore, m_verify_oauth2_token, app
                 "arrival_time": "2024-01-01 08:08:08",
             },
         )
-        assert response.status_code == 422
-        assert response.json()["detail"] == [
-            {
-                "type": "missing",
-                "loc": ["query", "airline"],
-                "msg": "Field required",
-                "input": None,
-                "url": "https://errors.pydantic.dev/2.6/v/missing",
-            },
-            {
-                "type": "missing",
-                "loc": ["query", "flight_number"],
-                "msg": "Field required",
-                "input": None,
-                "url": "https://errors.pydantic.dev/2.6/v/missing",
-            },
-            {
-                "type": "missing",
-                "loc": ["query", "departure_airport"],
-                "msg": "Field required",
-                "input": None,
-                "url": "https://errors.pydantic.dev/2.6/v/missing",
-            },
-            {
-                "type": "missing",
-                "loc": ["query", "arrival_airport"],
-                "msg": "Field required",
-                "input": None,
-                "url": "https://errors.pydantic.dev/2.6/v/missing",
-            },
-            {
-                "type": "missing",
-                "loc": ["query", "departure_time"],
-                "msg": "Field required",
-                "input": None,
-                "url": "https://errors.pydantic.dev/2.6/v/missing",
-            },
-            {
-                "type": "missing",
-                "loc": ["query", "arrival_time"],
-                "msg": "Field required",
-                "input": None,
-                "url": "https://errors.pydantic.dev/2.6/v/missing",
-            },
-        ]
+        assert response.status_code == 401
+        assert response.json()["detail"] == "User login required for data insertion"
 
 
-@patch.object(id_token, "verify_oauth2_token")
 @patch.object(datastore, "create")
-def test_list_tickets_missing_user_info(m_datastore, m_verify_oauth2_token, app):
+def test_list_tickets_missing_user_info(m_datastore, app):
     m_datastore = AsyncMock()
-    m_verify_oauth2_token.side_effect = ValueError("invalid token")
     with TestClient(app) as client:
         response = client.get(
             "/tickets/list", headers={"User-Id-Token": "Bearer invalid_token"}
