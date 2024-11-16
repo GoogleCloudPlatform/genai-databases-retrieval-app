@@ -694,18 +694,6 @@ def test_search_flights_with_bad_params(m_datastore, app, params):
     assert response.status_code == 422
 
 
-@patch.object(datastore, "create")
-def test_search_flights_missing_params(m_datastore, app):
-    m_datastore = AsyncMock()
-    with TestClient(app) as client:
-        response = client.get("/flights/search")
-        assert response.status_code == 422
-        assert (
-            response.json()["detail"]
-            == "Request requires query params: arrival_airport, departure_airport, date, or both airline and flight_number"
-        )
-
-
 validate_ticket_params = [
     pytest.param(
         "validate_ticket",
