@@ -704,9 +704,7 @@ validate_ticket_data = [
 
 
 @pytest.mark.parametrize("params, expected_data, expected_sql", validate_ticket_data)
-async def test_validate_ticket(
-    ds: alloydb.Client, params, expected_data, expected_sql
-):
+async def test_validate_ticket(ds: alloydb.Client, params, expected_data, expected_sql):
     flight, sql = await ds.validate_ticket(**params)
     assert flight == expected_data
     assert sql == expected_sql
