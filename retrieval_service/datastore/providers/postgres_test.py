@@ -606,8 +606,6 @@ async def test_policies_search(
     assert sql is not None
 
 
-
-
 validate_ticket_data = [
     pytest.param(
         {
@@ -622,7 +620,9 @@ validate_ticket_data = [
             flight_number="1158",
             departure_airport="SFO",
             arrival_airport="ORD",
-            departure_time=datetime.strptime("2024-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"),
+            departure_time=datetime.strptime(
+                "2024-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+            ),
             arrival_time=datetime.strptime("2024-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"),
             departure_gate="C38",
             arrival_gate="D30",
@@ -642,10 +642,10 @@ validate_ticket_data = [
 ]
 
 
-@pytest.mark.parametrize(
-    "params, expected_data, expected_sql", validate_ticket_data
-)
-async def test_validate_ticket(ds: postgres.Client, params, expected_data, expected_sql):
+@pytest.mark.parametrize("params, expected_data, expected_sql", validate_ticket_data)
+async def test_validate_ticket(
+    ds: postgres.Client, params, expected_data, expected_sql
+):
     flight, sql = await ds.validate_ticket(**params)
     assert flight == expected_data
     assert sql == expected_sql

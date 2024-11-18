@@ -123,8 +123,7 @@ def test_get_airport_with_bad_params(m_datastore, app, params):
         response = client.get("/airports", params=params)
     assert response.status_code == 422
     assert (
-        response.json()["detail"]
-        == "Request requires query params: airport id or iata"
+        response.json()["detail"] == "Request requires query params: airport id or iata"
     )
 
 
@@ -895,24 +894,36 @@ insert_ticket_params = [
             ),
         ],
         401,
-        {'detail': 'User login required for data insertion'},
-    )
+        {"detail": "User login required for data insertion"},
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "method_name, mock_token, mock_user_info, params, mock_return, expected_status, expected", insert_ticket_params
+    "method_name, mock_token, mock_user_info, params, mock_return, expected_status, expected",
+    insert_ticket_params,
 )
 @patch.object(id_token, "verify_oauth2_token")
 @patch.object(datastore, "create")
-def test_insert_ticket(m_datastore, m_verify_oauth2_token, app, method_name, mock_token, mock_user_info, params, mock_return, expected_status, expected):
+def test_insert_ticket(
+    m_datastore,
+    m_verify_oauth2_token,
+    app,
+    method_name,
+    mock_token,
+    mock_user_info,
+    params,
+    mock_return,
+    expected_status,
+    expected,
+):
     with TestClient(app) as client:
         with patch.object(
             m_datastore.return_value,
             method_name,
             AsyncMock(return_value=mock_return),
         ) as mock_method:
-            m_verify_oauth2_token.return_value=mock_user_info
+            m_verify_oauth2_token.return_value = mock_user_info
             response = client.post(
                 "/tickets/insert",
                 headers={"User-Id-Token": "Bearer " + mock_token},
@@ -928,13 +939,15 @@ def test_insert_ticket(m_datastore, m_verify_oauth2_token, app, method_name, moc
             if expected_status == 200:
                 assert models.Ticket.model_validate(res[0])
                 assert mock_method.call_count == 1
-                assert mock_method.mock_calls[0].args == tuple(mock_user_info.values()) + tuple(params.values())
+                assert mock_method.mock_calls[0].args == tuple(
+                    mock_user_info.values()
+                ) + tuple(params.values())
             else:
                 assert mock_method.call_count == 0
 
 
 list_tickets_params = [
-        pytest.param(
+    pytest.param(
         "list_tickets",
         "valid_token",
         {
@@ -970,7 +983,7 @@ list_tickets_params = [
                     "arrival_time": "2024-01-01T08:08:08",
                 },
             ],
-            "sql": None
+            "sql": None,
         },
     ),
     pytest.param(
@@ -991,24 +1004,35 @@ list_tickets_params = [
             ),
         ],
         401,
-        {'detail': 'User login required for data insertion'},
-    )
+        {"detail": "User login required for data insertion"},
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "method_name, mock_token, mock_user_info, mock_return, expected_status, expected", list_tickets_params
+    "method_name, mock_token, mock_user_info, mock_return, expected_status, expected",
+    list_tickets_params,
 )
 @patch.object(id_token, "verify_oauth2_token")
 @patch.object(datastore, "create")
-def test_list_tickets(m_datastore, m_verify_oauth2_token, app, method_name, mock_token, mock_user_info, mock_return, expected_status, expected):
+def test_list_tickets(
+    m_datastore,
+    m_verify_oauth2_token,
+    app,
+    method_name,
+    mock_token,
+    mock_user_info,
+    mock_return,
+    expected_status,
+    expected,
+):
     with TestClient(app) as client:
         with patch.object(
             m_datastore.return_value,
             method_name,
             AsyncMock(return_value=(mock_return, None)),
         ) as mock_method:
-            m_verify_oauth2_token.return_value=mock_user_info
+            m_verify_oauth2_token.return_value = mock_user_info
             response = client.get(
                 "/tickets/list",
                 headers={"User-Id-Token": "Bearer " + mock_token},
