@@ -700,7 +700,7 @@ validate_ticket_params = [
             "airline": "CY",
             "flight_number": "888",
             "departure_airport": "LAX",
-            "departure_time": "2024-01-01 08:08:08",
+            "departure_time": "2023-01-01T05:57:00",
         },
         [
             models.Flight(
@@ -815,8 +815,8 @@ def test_insert_ticket_missing_user_info(m_datastore, app):
                 "flight_number": "888",
                 "departure_airport": "LAX",
                 "arrival_airport": "JFK",
-                "departure_time": "2024-01-01 08:08:08",
-                "arrival_time": "2024-01-01 08:08:08",
+                "departure_time": "2023-01-01T05:57:00",
+                "arrival_time": "2023-01-01T12:13:00",
             },
         )
         assert response.status_code == 401
@@ -837,8 +837,8 @@ insert_ticket_params = [
             "flight_number": "888",
             "departure_airport": "LAX",
             "arrival_airport": "JFK",
-            "departure_time": "2024-01-01T08:08:08",
-            "arrival_time": "2024-01-01T08:08:08",
+            "departure_time": "2023-01-01T05:57:00",
+            "arrival_time": "2023-01-01T12:13:00",
         },
         [
             models.Ticket(
@@ -849,8 +849,12 @@ insert_ticket_params = [
                 flight_number="888",
                 departure_airport="LAX",
                 arrival_airport="JFK",
-                departure_time="2024-01-01 08:08:08",
-                arrival_time="2024-01-01 08:08:08",
+                departure_time=datetime.strptime(
+                    "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                arrival_time=datetime.strptime(
+                    "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                ),
             ),
         ],
         200,
@@ -863,8 +867,8 @@ insert_ticket_params = [
                 "flight_number": "888",
                 "departure_airport": "LAX",
                 "arrival_airport": "JFK",
-                "departure_time": "2024-01-01T08:08:08",
-                "arrival_time": "2024-01-01T08:08:08",
+                "departure_time": "2023-01-01T05:57:00",
+                "arrival_time": "2023-01-01T12:13:00",
             }
         ],
     ),
@@ -877,8 +881,8 @@ insert_ticket_params = [
             "flight_number": "888",
             "departure_airport": "LAX",
             "arrival_airport": "JFK",
-            "departure_time": "2024-01-01T08:08:08",
-            "arrival_time": "2024-01-01T08:08:08",
+            "departure_time": "2023-01-01T05:57:00",
+            "arrival_time": "2023-01-01T12:13:00",
         },
         [
             models.Ticket(
@@ -889,8 +893,12 @@ insert_ticket_params = [
                 flight_number="888",
                 departure_airport="LAX",
                 arrival_airport="JFK",
-                departure_time="2024-01-01 08:08:08",
-                arrival_time="2024-01-01 08:08:08",
+                departure_time=datetime.strptime(
+                    "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                arrival_time=datetime.strptime(
+                    "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                ),
             ),
         ],
         401,
@@ -964,8 +972,12 @@ list_tickets_params = [
                 flight_number="888",
                 departure_airport="LAX",
                 arrival_airport="JFK",
-                departure_time="2024-01-01 08:08:08",
-                arrival_time="2024-01-01 08:08:08",
+                departure_time=datetime.strptime(
+                    "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                arrival_time=datetime.strptime(
+                    "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                ),
             ),
         ],
         200,
@@ -979,8 +991,8 @@ list_tickets_params = [
                     "flight_number": "888",
                     "departure_airport": "LAX",
                     "arrival_airport": "JFK",
-                    "departure_time": "2024-01-01T08:08:08",
-                    "arrival_time": "2024-01-01T08:08:08",
+                    "departure_time": "2023-01-01T05:57:00",
+                    "arrival_time": "2023-01-01T12:13:00",
                 },
             ],
             "sql": None,
@@ -999,8 +1011,12 @@ list_tickets_params = [
                 flight_number="888",
                 departure_airport="LAX",
                 arrival_airport="JFK",
-                departure_time="2024-01-01 08:08:08",
-                arrival_time="2024-01-01 08:08:08",
+                departure_time=datetime.strptime(
+                    "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                arrival_time=datetime.strptime(
+                    "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                ),
             ),
         ],
         401,
