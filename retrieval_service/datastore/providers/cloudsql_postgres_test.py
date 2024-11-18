@@ -669,7 +669,7 @@ validate_ticket_data = [
     pytest.param(
         {
             "airline": "UA",
-            "flight_number": "1532",
+            "flight_number": "1158",
             "departure_airport": "SFO",
             "departure_time": "2024-01-01 05:57:00",
         },
