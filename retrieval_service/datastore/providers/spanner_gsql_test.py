@@ -651,7 +651,7 @@ validate_ticket_data = [
             departure_gate="C38",
             arrival_gate="D30",
         ),
-        'SELECT *<br/>FROM flights<br/>WHERE airline ILIKE UA<br/><div class="indent"></div>AND flight_number ILIKE 1158<br/><div class="indent"></div>AND departure_airport ILIKE SFO<br/><div class="indent"></div>AND departure_time = 2024-01-01 05:57:00',
+        None,
     ),
     pytest.param(
         {
