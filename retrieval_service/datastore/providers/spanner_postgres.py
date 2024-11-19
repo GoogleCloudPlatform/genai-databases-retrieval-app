@@ -828,9 +828,6 @@ class Client(datastore.Client[Config]):
         departure_airport: str,
         departure_time: str,
     ) -> tuple[Optional[models.Flight], Optional[str]]:
-        departure_time_datetime = datetime.datetime.strptime(
-            departure_time, "%Y-%m-%d %H:%M:%S"
-        )
         with self.__database.snapshot() as snapshot:
             # Spread SQL query for readability
             results = snapshot.execute_sql(
@@ -845,7 +842,7 @@ class Client(datastore.Client[Config]):
                     "p1": airline,
                     "p2": flight_number,
                     "p3": departure_airport,
-                    "p4": departure_time_datetime,
+                    "p4": departure_time,
                 },
                 param_types={
                     "p1": param_types.STRING,
@@ -865,6 +862,8 @@ class Client(datastore.Client[Config]):
             for a in results
         ]
 
+        if not flights:
+            return None, None
         return flights[0], None
 
     async def insert_ticket(

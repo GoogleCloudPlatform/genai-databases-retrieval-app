@@ -24,10 +24,10 @@ from langchain.agents import AgentType, initialize_agent
 from langchain.agents.agent import AgentExecutor
 from langchain.globals import set_verbose  # type: ignore
 from langchain.memory import ConversationBufferMemory
-from langchain.prompts.chat import ChatPromptTemplate
-from langchain.tools import StructuredTool
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import StructuredTool
 from langchain_google_vertexai import VertexAI
 from pytz import timezone
 
@@ -265,11 +265,11 @@ class LangChainToolsOrchestrator(BaseOrchestrator):
             await user_session.close()
             del self._user_sessions[uuid]
 
-    def close_clients(self):
+    async def close_clients(self):
         close_client_tasks = [
             asyncio.create_task(a.close()) for a in self._user_sessions.values()
         ]
-        asyncio.gather(*close_client_tasks)
+        await asyncio.gather(*close_client_tasks)
 
 
 PREFIX = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.

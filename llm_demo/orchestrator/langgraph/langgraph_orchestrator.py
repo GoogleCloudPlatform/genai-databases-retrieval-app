@@ -25,8 +25,8 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMe
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableConfig, RunnableLambda
 from langchain_core.tools import StructuredTool
-from langgraph.checkpoint import MemorySaver
 from langgraph.checkpoint.base import empty_checkpoint
+from langgraph.checkpoint.memory import MemorySaver
 from pytz import timezone
 
 from ..orchestrator import BaseOrchestrator, classproperty
@@ -250,9 +250,9 @@ class LangGraphOrchestrator(BaseOrchestrator):
         self._checkpointer.put(config=config, checkpoint=checkpoint, metadata={})
         del self._user_sessions[uuid]
 
-    def close_clients(self):
+    async def close_clients(self):
         if self.client:
-            self.client.close()
+            await self.client.close()
 
 
 PREFIX = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
