@@ -17,6 +17,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from google.oauth2 import id_token
 
 import datastore
 import models
@@ -107,6 +108,23 @@ def test_get_airport(m_datastore, app, method_name, params, mock_return, expecte
     output = res["results"]
     assert output == expected
     assert models.Airport.model_validate(output)
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        pytest.param({}, id="no_params"),
+    ],
+)
+@patch.object(datastore, "create")
+def test_get_airport_with_bad_params(m_datastore, app, params):
+    m_datastore = AsyncMock()
+    with TestClient(app) as client:
+        response = client.get("/airports", params=params)
+    assert response.status_code == 422
+    assert (
+        response.json()["detail"] == "Request requires query params: airport id or iata"
+    )
 
 
 search_airports_params = [
@@ -682,7 +700,7 @@ validate_ticket_params = [
             "airline": "CY",
             "flight_number": "888",
             "departure_airport": "LAX",
-            "departure_time": "2024-01-01 08:08:08",
+            "departure_time": "2023-01-01T05:57:00",
         },
         [
             models.Flight(
@@ -783,3 +801,270 @@ def test_policies_search(m_datastore, app, method_name, params, mock_return, exp
     assert len(output) == params["top_k"]
     assert output == expected
     assert models.Policy.model_validate(output[0])
+
+
+@patch.object(datastore, "create")
+def test_insert_ticket_missing_user_info(m_datastore, app):
+    m_datastore = AsyncMock()
+    with TestClient(app) as client:
+        response = client.post(
+            "/tickets/insert",
+            headers={"User-Id-Token": "Bearer invalid_token"},
+            params={
+                "airline": "CY",
+                "flight_number": "888",
+                "departure_airport": "LAX",
+                "arrival_airport": "JFK",
+                "departure_time": "2023-01-01T05:57:00",
+                "arrival_time": "2023-01-01T12:13:00",
+            },
+        )
+        assert response.status_code == 401
+        assert response.json()["detail"] == "User login required for data insertion"
+
+
+insert_ticket_params = [
+    pytest.param(
+        "insert_ticket",
+        "valid_token",
+        {
+            "sub": 123,
+            "name": "test_user_name",
+            "email": "test_user_email",
+        },
+        {
+            "airline": "CY",
+            "flight_number": "888",
+            "departure_airport": "LAX",
+            "arrival_airport": "JFK",
+            "departure_time": "2023-01-01T05:57:00",
+            "arrival_time": "2023-01-01T12:13:00",
+        },
+        [
+            models.Ticket(
+                user_id=123,
+                user_name="test_user_name",
+                user_email="test_user_email",
+                airline="CY",
+                flight_number="888",
+                departure_airport="LAX",
+                arrival_airport="JFK",
+                departure_time=datetime.strptime(
+                    "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                arrival_time=datetime.strptime(
+                    "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                ),
+            ),
+        ],
+        200,
+        [
+            {
+                "user_id": 123,
+                "user_name": "test_user_name",
+                "user_email": "test_user_email",
+                "airline": "CY",
+                "flight_number": "888",
+                "departure_airport": "LAX",
+                "arrival_airport": "JFK",
+                "departure_time": "2023-01-01T05:57:00",
+                "arrival_time": "2023-01-01T12:13:00",
+            }
+        ],
+    ),
+    pytest.param(
+        "insert_ticket",
+        "invalid_token",
+        None,
+        {
+            "airline": "CY",
+            "flight_number": "888",
+            "departure_airport": "LAX",
+            "arrival_airport": "JFK",
+            "departure_time": "2023-01-01T05:57:00",
+            "arrival_time": "2023-01-01T12:13:00",
+        },
+        [
+            models.Ticket(
+                user_id=123,
+                user_name="test_user_name",
+                user_email="test_user_email",
+                airline="CY",
+                flight_number="888",
+                departure_airport="LAX",
+                arrival_airport="JFK",
+                departure_time=datetime.strptime(
+                    "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                arrival_time=datetime.strptime(
+                    "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                ),
+            ),
+        ],
+        401,
+        {"detail": "User login required for data insertion"},
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "method_name, mock_token, mock_user_info, params, mock_return, expected_status, expected",
+    insert_ticket_params,
+)
+@patch.object(id_token, "verify_oauth2_token")
+@patch.object(datastore, "create")
+def test_insert_ticket(
+    m_datastore,
+    m_verify_oauth2_token,
+    app,
+    method_name,
+    mock_token,
+    mock_user_info,
+    params,
+    mock_return,
+    expected_status,
+    expected,
+):
+    with TestClient(app) as client:
+        with patch.object(
+            m_datastore.return_value,
+            method_name,
+            AsyncMock(return_value=mock_return),
+        ) as mock_method:
+            m_verify_oauth2_token.return_value = mock_user_info
+            response = client.post(
+                "/tickets/insert",
+                headers={"User-Id-Token": "Bearer " + mock_token},
+                params=params,
+            )
+            assert response.status_code == expected_status
+            res = response.json()
+            assert len(res) == 1
+            assert res == expected
+            assert m_verify_oauth2_token.call_count == 1
+            assert len(m_verify_oauth2_token.mock_calls[0].args) == 2
+            assert m_verify_oauth2_token.mock_calls[0].args[0] == mock_token
+            if expected_status == 200:
+                assert models.Ticket.model_validate(res[0])
+                assert mock_method.call_count == 1
+                assert mock_method.mock_calls[0].args == tuple(
+                    mock_user_info.values()
+                ) + tuple(params.values())
+            else:
+                assert mock_method.call_count == 0
+
+
+list_tickets_params = [
+    pytest.param(
+        "list_tickets",
+        "valid_token",
+        {
+            "sub": 123,
+            "name": "test_user_name",
+            "email": "test_user_email",
+        },
+        [
+            models.Ticket(
+                user_id=123,
+                user_name="test_user_name",
+                user_email="test_user_email",
+                airline="CY",
+                flight_number="888",
+                departure_airport="LAX",
+                arrival_airport="JFK",
+                departure_time=datetime.strptime(
+                    "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                arrival_time=datetime.strptime(
+                    "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                ),
+            ),
+        ],
+        200,
+        {
+            "results": [
+                {
+                    "user_id": 123,
+                    "user_name": "test_user_name",
+                    "user_email": "test_user_email",
+                    "airline": "CY",
+                    "flight_number": "888",
+                    "departure_airport": "LAX",
+                    "arrival_airport": "JFK",
+                    "departure_time": "2023-01-01T05:57:00",
+                    "arrival_time": "2023-01-01T12:13:00",
+                },
+            ],
+            "sql": None,
+        },
+    ),
+    pytest.param(
+        "list_tickets",
+        "invalid_token",
+        None,
+        [
+            models.Ticket(
+                user_id=123,
+                user_name="test_user_name",
+                user_email="test_user_email",
+                airline="CY",
+                flight_number="888",
+                departure_airport="LAX",
+                arrival_airport="JFK",
+                departure_time=datetime.strptime(
+                    "2023-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                ),
+                arrival_time=datetime.strptime(
+                    "2023-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                ),
+            ),
+        ],
+        401,
+        {"detail": "User login required for data insertion"},
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "method_name, mock_token, mock_user_info, mock_return, expected_status, expected",
+    list_tickets_params,
+)
+@patch.object(id_token, "verify_oauth2_token")
+@patch.object(datastore, "create")
+def test_list_tickets(
+    m_datastore,
+    m_verify_oauth2_token,
+    app,
+    method_name,
+    mock_token,
+    mock_user_info,
+    mock_return,
+    expected_status,
+    expected,
+):
+    with TestClient(app) as client:
+        with patch.object(
+            m_datastore.return_value,
+            method_name,
+            AsyncMock(return_value=(mock_return, None)),
+        ) as mock_method:
+            m_verify_oauth2_token.return_value = mock_user_info
+            response = client.get(
+                "/tickets/list",
+                headers={"User-Id-Token": "Bearer " + mock_token},
+            )
+            assert response.status_code == expected_status
+            res = response.json()
+            assert res == expected
+            assert m_verify_oauth2_token.call_count == 1
+            assert len(m_verify_oauth2_token.mock_calls[0].args) == 2
+            assert m_verify_oauth2_token.mock_calls[0].args[0] == mock_token
+            if expected_status == 200:
+                assert len(res) == 2
+                assert len(res["results"]) == 1
+                assert models.Ticket.model_validate(res["results"][0])
+                assert mock_method.call_count == 1
+                assert len(mock_method.mock_calls[0].args) == 1
+                assert mock_method.mock_calls[0].args[0] == mock_user_info["sub"]
+            else:
+                assert mock_method.call_count == 0
