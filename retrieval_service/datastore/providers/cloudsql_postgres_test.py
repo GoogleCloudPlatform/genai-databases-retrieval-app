@@ -643,21 +643,71 @@ async def test_list_tickets(ds: cloudsql_postgres.Client):
     assert sql is not None
 
 
-async def test_validate_ticket(ds: cloudsql_postgres.Client):
-    res, sql = await ds.validate_ticket("UA", "1532", "SFO", "2024-01-01 05:50:00")
-    expected = models.Flight(
-        id=0,
-        airline="UA",
-        flight_number="1532",
-        departure_airport="SFO",
-        arrival_airport="DEN",
-        departure_time=datetime.strptime("2024-01-01 05:50:00", "%Y-%m-%d %H:%M:%S"),
-        arrival_time=datetime.strptime("2024-01-01 09:23:00", "%Y-%m-%d %H:%M:%S"),
-        departure_gate="E49",
-        arrival_gate="D6",
-    )
-    assert res == expected
-    assert sql is not None
+validate_ticket_data = [
+    pytest.param(
+        {
+            "airline": "UA",
+            "flight_number": "1532",
+            "departure_airport": "SFO",
+            "departure_time": "2024-01-01 05:50:00",
+        },
+        models.Flight(
+            id=0,
+            airline="UA",
+            flight_number="1532",
+            departure_airport="SFO",
+            arrival_airport="DEN",
+            departure_time=datetime.strptime(
+                "2024-01-01 05:50:00", "%Y-%m-%d %H:%M:%S"
+            ),
+            arrival_time=datetime.strptime("2024-01-01 09:23:00", "%Y-%m-%d %H:%M:%S"),
+            departure_gate="E49",
+            arrival_gate="D6",
+        ),
+        'SELECT *<br/>FROM flights<br/>WHERE airline ILIKE UA<br/><div class="indent"></div>AND flight_number ILIKE 1532<br/><div class="indent"></div>AND departure_airport ILIKE SFO<br/><div class="indent"></div>AND departure_time = 2024-01-01 05:50:00',
+    ),
+    pytest.param(
+        {
+            "airline": "UA",
+            "flight_number": "1158",
+            "departure_airport": "SFO",
+            "departure_time": "2024-01-01 05:57:00",
+        },
+        models.Flight(
+            id=1,
+            airline="UA",
+            flight_number="1158",
+            departure_airport="SFO",
+            arrival_airport="ORD",
+            departure_time=datetime.strptime(
+                "2024-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+            ),
+            arrival_time=datetime.strptime("2024-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"),
+            departure_gate="C38",
+            arrival_gate="D30",
+        ),
+        'SELECT *<br/>FROM flights<br/>WHERE airline ILIKE UA<br/><div class="indent"></div>AND flight_number ILIKE 1158<br/><div class="indent"></div>AND departure_airport ILIKE SFO<br/><div class="indent"></div>AND departure_time = 2024-01-01 05:57:00',
+    ),
+    pytest.param(
+        {
+            "airline": "XX",
+            "flight_number": "9999",
+            "departure_airport": "ZZZ",
+            "departure_time": "2024-01-01 05:57:00",
+        },
+        None,
+        None,
+    ),
+]
+
+
+@pytest.mark.parametrize("params, expected_data, expected_sql", validate_ticket_data)
+async def test_validate_ticket(
+    ds: cloudsql_postgres.Client, params, expected_data, expected_sql
+):
+    flight, sql = await ds.validate_ticket(**params)
+    assert flight == expected_data
+    assert sql == expected_sql
 
 
 policies_search_test_data = [
