@@ -3,7 +3,7 @@ google-auth==2.33.0
 google-cloud-aiplatform[evaluation]==1.72.0
 itsdangerous==2.2.0
 jinja2==3.1.4
-langchain-community==0.2.9
+langchain-community==0.2.19
 langchain==0.2.11
 langchain-google-vertexai==1.0.7
 markdown==3.5.2
