@@ -21,10 +21,10 @@ import aiohttp
 import google.oauth2.id_token  # type: ignore
 from google.auth import compute_engine  # type: ignore
 from google.auth.transport.requests import Request  # type: ignore
-from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
+from toolbox_langchain_sdk import ToolboxClient  # type: ignore
 
-BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
+BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:5000")
 CREDENTIALS = None
 
 
@@ -272,164 +272,19 @@ def generate_list_tickets(client: aiohttp.ClientSession):
 
 # Tools for agent
 async def initialize_tools(client: aiohttp.ClientSession):
-    return [
-        StructuredTool.from_function(
-            coroutine=generate_search_airports(client),
-            name="Search Airport",
-            description="""
-                        Use this tool to list all airports matching search criteria.
-                        Takes at least one of country, city, name, or all and returns all matching airports.
-                        The agent can decide to return the results directly to the user.
-                        Input of this tool must be in JSON format and include all three inputs - country, city, name.
-                        Example:
-                        {{
-                            "country": "United States",
-                            "city": "San Francisco",
-                            "name": null
-                        }}
-                        Example:
-                        {{
-                            "country": null,
-                            "city": "Goroka",
-                            "name": "Goroka"
-                        }}
-                        Example:
-                        {{
-                            "country": "Mexico",
-                            "city": null,
-                            "name": null
-                        }}
-                        """,
-            args_schema=AirportSearchInput,
-        ),
-        StructuredTool.from_function(
-            coroutine=generate_search_flights_by_number(client),
-            name="Search Flights By Flight Number",
-            description="""
-                        Use this tool to get information for a specific flight.
-                        Takes an airline code and flight number and returns info on the flight.
-                        Do NOT use this tool with a flight id. Do NOT guess an airline code or flight number.
-                        A airline code is a code for an airline service consisting of two-character
-                        airline designator and followed by flight number, which is 1 to 4 digit number.
-                        For example, if given CY 0123, the airline is "CY", and flight_number is "123".
-                        Another example for this is DL 1234, the airline is "DL", and flight_number is "1234".
-                        If the tool returns more than one option choose the date closes to today.
-                        Example:
-                        {{
-                            "airline": "CY",
-                            "flight_number": "888",
-                        }}
-                        Example:
-                        {{
-                            "airline": "DL",
-                            "flight_number": "1234",
-                        }}
-                        """,
-            args_schema=FlightNumberInput,
-        ),
-        StructuredTool.from_function(
-            coroutine=generate_list_flights(client),
-            name="List Flights",
-            description="""
-                        Use this tool to list flights information matching search criteria.
-                        Takes an arrival airport, a departure airport, or both, filters by date and returns all matching flights.
-                        If 3-letter iata code is not provided for departure_airport or arrival_airport, use search airport tools to get iata code information.
-                        Do NOT guess a date, ask user for date input if it is not given. Date must be in the following format: YYYY-MM-DD.
-                        The agent can decide to return the results directly to the user.
-                        Input of this tool must be in JSON format and include all three inputs - arrival_airport, departure_airport, and date.
-                        Example:
-                        {{
-                            "departure_airport": "SFO",
-                            "arrival_airport": null,
-                            "date": 2023-10-30"
-                        }}
-                        Example:
-                        {{
-                            "departure_airport": "SFO",
-                            "arrival_airport": "SEA",
-                            "date": "2023-11-01"
-                        }}
-                        Example:
-                        {{
-                            "departure_airport": null,
-                            "arrival_airport": "SFO",
-                            "date": "2023-01-01"
-                        }}
-                        """,
-            args_schema=ListFlights,
-        ),
-        StructuredTool.from_function(
-            coroutine=generate_search_amenities(client),
-            name="Search Amenities",
-            description="""
-                        Use this tool to search amenities by name or to recommended airport amenities at SFO.
-                        If user provides flight info, use 'Search Flights by Flight Number'
-                        first to get gate info and location.
-                        Only recommend amenities that are returned by this query.
-                        Find amenities close to the user by matching the terminal and then comparing
-                        the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
-                        B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
-                        Input of this tool must be in JSON format and include one `query` input.
-                        """,
-            args_schema=QueryInput,
-        ),
-        StructuredTool.from_function(
-            coroutine=generate_search_policies(client),
-            name="Search Policies",
-            description="""
-                        Use this tool to search for cymbal air passenger policy.
-                        Policy that are listed is unchangeable.
-                        You will not answer any questions outside of the policy given.
-                        Policy includes information on ticket purchase and changes, baggage, check-in and boarding, special assistance, overbooking, flight delays and cancellations.
-                        Input of this tool must be in JSON format and include one `query` input.
-                        """,
-            args_schema=QueryInput,
-        ),
-        StructuredTool.from_function(
-            coroutine=generate_insert_ticket(client),
-            name="Insert Ticket",
-            description="""
-                        Use this tool to book a flight ticket for the user.
-                        Example:
-                        {{
-                            "airline": "AA",
-                            "flight_number": "452",
-                            "departure_airport": "LAX",
-                            "arrival_airport": "SFO",
-                            "departure_time": "2024-01-01 05:50:00",
-                            "arrival_time": "2024-01-01 09:23:00"
-                        }}
-                        Example:
-                        {{
-                            "airline": "UA",
-                            "flight_number": "1532",
-                            "departure_airport": "SFO",
-                            "arrival_airport": "DEN",
-                            "departure_time": "2024-01-08 05:50:00",
-                            "arrival_time": "2024-01-08 09:23:00"
-                        }}
-                        Example:
-                        {{
-                            "airline": "OO",
-                            "flight_number": "6307",
-                            "departure_airport": "SFO",
-                            "arrival_airport": "MSP",
-                            "departure_time": "2024-10-28 20:13:00",
-                            "arrival_time": "2024-10-28 21:07:00"
-                        }}
-                        """,
-            args_schema=TicketInput,
-        ),
-        StructuredTool.from_function(
-            coroutine=generate_list_tickets(client),
-            name="List Tickets",
-            description="""
-                        Use this tool to list a user's flight tickets.
-                        Takes no input and returns a list of current user's flight tickets.
-                        Input is always empty JSON blob. Example: {{}}
-                        """,
-        ),
-    ]
+    toolbox_client = ToolboxClient(
+        BASE_URL,
+        client,
+    )
+    # TODO: Remove the hardcoded bounded values with actual user data on successful login.
+    toolbox_client.set_bounded_params(
+        {
+            "user_id": "12345678900",
+            "user_name": "Someone",
+            "user_email": "something@somewhere.com",
+        }
+    )
+    return await toolbox_client.load_toolset()
 
 
 def get_confirmation_needing_tools():
