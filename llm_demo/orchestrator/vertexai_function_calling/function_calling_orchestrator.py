@@ -83,6 +83,7 @@ class UserModel:
         # implement multi turn chat with while loop
         while "function_call" in part_response._raw_part:
             self.history.append(response_function_call_content)
+            # TODO: Test change!
             function_call = MessageToDict(part_response.function_call._pb)
             function_name = function_call.get("name")
             if function_name in get_confirmation_needing_tools():
