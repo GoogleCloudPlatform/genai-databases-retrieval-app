@@ -28,7 +28,7 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import StructuredTool
-from langchain_google_vertexai import VertexAI
+from langchain_google_vertexai import ChatVertexAI
 from pytz import timezone
 
 from ..orchestrator import BaseOrchestrator, classproperty
