@@ -160,7 +160,9 @@ class LangGraphOrchestrator(BaseOrchestrator):
         # Reset graph checkpointer
         checkpoint = empty_checkpoint()
         config = self.get_config(uuid)
-        self._checkpointer.put(config=config, checkpoint=checkpoint, metadata={})
+        self._checkpointer.put(
+            config=config, checkpoint=checkpoint, metadata={}, new_versions={}
+        )
 
         # Update state with message history
         self._langgraph_app.update_state(config, {"messages": history})
@@ -242,7 +244,7 @@ class LangGraphOrchestrator(BaseOrchestrator):
         return BASE_HISTORY
 
     def get_config(self, uuid: str):
-        return {"configurable": {"thread_id": uuid}}
+        return {"configurable": {"thread_id": uuid, "checkpoint_ns": ""}}
 
     async def user_session_signout(self, uuid: str):
         checkpoint = empty_checkpoint()
