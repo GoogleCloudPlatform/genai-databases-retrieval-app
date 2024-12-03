@@ -26,7 +26,7 @@ from langchain_core.messages import (
 )
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableLambda
-from langchain_google_vertexai import VertexAI
+from langchain_google_vertexai import ChatVertexAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
@@ -85,7 +85,8 @@ async def create_graph(
     tool_node = ToolNode(tools)
 
     # model node
-    model = VertexAI(max_output_tokens=512, model_name=model_name, temperature=0.0)
+    # TODO: Use .bind_tools(tools) to bind the tools with the LLM.
+    model = ChatVertexAI(max_output_tokens=512, model_name=model_name, temperature=0.0)
 
     # Add the prompt to the model to create a model runnable
     model_runnable = prompt | model
@@ -97,27 +98,36 @@ async def create_graph(
         """
         messages = state["messages"]
         res = await model_runnable.ainvoke({"messages": messages}, config)
-        response = res.replace("```json", "").replace("```", "")
-        try:
-            json_response = json.loads(response)
-            action = json_response.get("action")
-            action_input = json_response.get("action_input")
-            if action == "Final Answer":
-                new_message = AIMessage(content=action_input)
-            else:
-                new_message = AIMessage(
-                    content="suggesting a tool call",
-                    tool_calls=[
-                        ToolCall(id=str(uuid.uuid4()), name=action, args=action_input)
-                    ],
+
+        # TODO: Remove the temporary fix of parsing LLM response and invoking
+        # tools until we use bind_tools API and have automatic response parsing
+        # and tool calling. (see
+        # https://langchain-ai.github.io/langgraph/#example)
+        if "```json" in res.content:
+            try:
+                response = str(res.content).replace("```json", "").replace("```", "")
+                json_response = json.loads(response)
+                action = json_response.get("action")
+                action_input = json_response.get("action_input")
+                if action == "Final Answer":
+                    res = AIMessage(content=action_input)
+                else:
+                    res = AIMessage(
+                        content="suggesting a tool call",
+                        tool_calls=[
+                            ToolCall(
+                                id=str(uuid.uuid4()), name=action, args=action_input
+                            )
+                        ],
+                    )
+            except Exception as e:
+                json_response = response
+                res = AIMessage(
+                    content="Sorry, failed to generate the right format for response"
                 )
-        except Exception as e:
-            json_response = response
-            new_message = AIMessage(
-                content="Sorry, failed to generate the right format for response"
-            )
+
         # if model exceed the number of steps and has not yet return a final answer
-        if state["is_last_step"] and hasattr(new_message, "tool_calls"):
+        if state["is_last_step"] and hasattr(res, "tool_calls"):
             return {
                 "messages": [
                     AIMessage(
@@ -125,7 +135,7 @@ async def create_graph(
                     )
                 ]
             }
-        return {"messages": [new_message]}
+        return {"messages": [res]}
 
     def agent_should_continue(
         state: UserState,

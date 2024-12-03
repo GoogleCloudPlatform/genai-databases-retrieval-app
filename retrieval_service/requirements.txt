@@ -6,7 +6,7 @@ google-cloud-aiplatform==1.72.0
 google-cloud-spanner==3.49.1
 langchain-core==0.3.18
 pgvector==0.3.5
-pydantic==2.9.2
+pydantic==2.9.0
 uvicorn[standard]==0.31.0
 cloud-sql-python-connector==1.12.1
 google-cloud-alloydb-connector[asyncpg]==1.4.0

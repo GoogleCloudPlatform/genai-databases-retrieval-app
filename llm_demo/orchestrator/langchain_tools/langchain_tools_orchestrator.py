@@ -28,7 +28,7 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import StructuredTool
-from langchain_google_vertexai import VertexAI
+from langchain_google_vertexai import ChatVertexAI
 from pytz import timezone
 
 from ..orchestrator import BaseOrchestrator, classproperty
@@ -69,7 +69,8 @@ class UserAgent:
         prompt: ChatPromptTemplate,
         model: str,
     ) -> "UserAgent":
-        llm = VertexAI(max_output_tokens=512, model_name=model, temperature=0.0)
+        # TODO: Use .bind_tools(tools) to bind the tools with the LLM.
+        llm = ChatVertexAI(max_output_tokens=512, model_name=model, temperature=0.0)
         memory = ConversationBufferMemory(
             chat_memory=ChatMessageHistory(messages=history),
             memory_key="chat_history",
