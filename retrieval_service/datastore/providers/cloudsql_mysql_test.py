@@ -380,17 +380,17 @@ amenities_search_test_data = [
         2,
         [
             {
-                "name": "Dufry Duty Free",
-                "description": "Duty-free shop offering a large selection of luxury goods, including perfumes, cosmetics, and liquor.",
-                "location": "Gate E2",
+                "name": "Gucci Duty Free",
+                "description": "Luxury brand duty-free shop offering designer clothing, accessories, and fragrances.",
+                "location": "Gate E9",
                 "terminal": "International Terminal A",
                 "category": "shop",
                 "hour": "Daily 7:00 am-10:00 pm",
             },
             {
-                "name": "Gucci Duty Free",
-                "description": "Luxury brand duty-free shop offering designer clothing, accessories, and fragrances.",
-                "location": "Gate E9",
+                "name": "Hermes Duty Free",
+                "description": "High-end French brand duty-free shop offering luxury goods and accessories.",
+                "location": "Gate E18",
                 "terminal": "International Terminal A",
                 "category": "shop",
                 "hour": "Daily 7:00 am-10:00 pm",
