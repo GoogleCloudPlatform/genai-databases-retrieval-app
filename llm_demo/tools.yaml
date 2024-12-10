@@ -7,6 +7,10 @@ sources:
     database: assistantdemo
     user: postgres
     password: postgres
+authSources:
+  my_google_service:
+    kind: google
+    client_id: YOUR_CLIENT_ID
 tools:
   search_airports:
     kind: postgres-sql
@@ -206,15 +210,18 @@ tools:
       - name: user_id
         type: string
         authSources:
-          - my-google-auth
+          - name: my_google_service
+            field: sub
       - name: user_name
         type: string
         authSources:
-          - my-google-auth
+          - name: my_google_service
+            field: sub
       - name: user_email
         type: string
         authSources:
-          - my-google-auth
+          - name: my_google_service
+            field: sub
       - name: airline
         type: string
         description: Airline unique 2 letter identifier
