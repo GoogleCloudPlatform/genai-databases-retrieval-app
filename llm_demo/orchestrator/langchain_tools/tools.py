@@ -273,7 +273,7 @@ def generate_list_tickets(client: aiohttp.ClientSession):
 # Tools for agent
 async def initialize_tools(client: aiohttp.ClientSession):
     toolbox_client = ToolboxClient(BASE_URL, client)
-    tools = await toolbox_client.load_toolset()
+    tools = await toolbox_client.load_toolset(auth_headers={ "my_google_service": lambda: "YOUR_ID_TOKEN" })
     return tools
 
     # return [
