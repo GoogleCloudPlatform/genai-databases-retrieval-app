@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/compare/v0.3.0...v0.4.0) (2025-01-14)
+
+
+### Features
+
+* Update gecko model version to "text-embedding-005". ([#519](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/519)) ([0f23a65](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/0f23a65d9ce5556f0448d1e3f046aca8e5b0878a))
+
 ## [0.3.0](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/compare/v0.2.0...v0.3.0) (2024-12-03)
 
 
