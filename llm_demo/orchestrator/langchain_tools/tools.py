@@ -341,19 +341,19 @@ async def initialize_tools(client: aiohttp.ClientSession):
                         {{
                             "departure_airport": "SFO",
                             "arrival_airport": null,
-                            "date": 2023-10-30"
+                            "date": 2025-10-30"
                         }}
                         Example:
                         {{
                             "departure_airport": "SFO",
                             "arrival_airport": "SEA",
-                            "date": "2023-11-01"
+                            "date": "2025-11-01"
                         }}
                         Example:
                         {{
                             "departure_airport": null,
                             "arrival_airport": "SFO",
-                            "date": "2023-01-01"
+                            "date": "2025-01-01"
                         }}
                         """,
             args_schema=ListFlights,
@@ -396,8 +396,8 @@ async def initialize_tools(client: aiohttp.ClientSession):
                             "flight_number": "452",
                             "departure_airport": "LAX",
                             "arrival_airport": "SFO",
-                            "departure_time": "2024-01-01 05:50:00",
-                            "arrival_time": "2024-01-01 09:23:00"
+                            "departure_time": "2025-01-01 05:50:00",
+                            "arrival_time": "2025-01-01 09:23:00"
                         }}
                         Example:
                         {{
@@ -405,8 +405,8 @@ async def initialize_tools(client: aiohttp.ClientSession):
                             "flight_number": "1532",
                             "departure_airport": "SFO",
                             "arrival_airport": "DEN",
-                            "departure_time": "2024-01-08 05:50:00",
-                            "arrival_time": "2024-01-08 09:23:00"
+                            "departure_time": "2025-01-08 05:50:00",
+                            "arrival_time": "2025-01-08 09:23:00"
                         }}
                         Example:
                         {{
@@ -414,8 +414,8 @@ async def initialize_tools(client: aiohttp.ClientSession):
                             "flight_number": "6307",
                             "departure_airport": "SFO",
                             "arrival_airport": "MSP",
-                            "departure_time": "2024-10-28 20:13:00",
-                            "arrival_time": "2024-10-28 21:07:00"
+                            "departure_time": "2025-10-28 20:13:00",
+                            "arrival_time": "2025-10-28 21:07:00"
                         }}
                         """,
             args_schema=TicketInput,
