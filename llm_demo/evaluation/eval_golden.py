@@ -193,7 +193,7 @@ goldens = [
     ),
     EvalData(
         category="Insert Ticket",
-        query="I would like to book flight CY 922 departing from SFO on 2024-01-01 at 6:38am.",
+        query="I would like to book flight CY 922 departing from SFO on 2025-01-01 at 6:38am.",
         tool_calls=[
             ToolCall(
                 name="Insert Ticket",
@@ -201,21 +201,21 @@ goldens = [
                     "airline": "CY",
                     "flight_number": "922",
                     "departure_airport": "SFO",
-                    "departure_time": "2024-01-01 06:38:00",
+                    "departure_time": "2025-01-01 06:38:00",
                 },
             ),
         ],
     ),
     EvalData(
         category="Insert Ticket",
-        query="What flights are headed from SFO to DEN on January 1 2024?",
+        query="What flights are headed from SFO to DEN on January 1 2025?",
         tool_calls=[
             ToolCall(
                 name="List Flights",
                 arguments={
                     "departure_airport": "SFO",
                     "arrival_airport": "DEN",
-                    "date": "2024-01-01",
+                    "date": "2025-01-01",
                 },
             ),
         ],
@@ -232,8 +232,8 @@ goldens = [
                     "flight_number": "1532",
                     "departure_airport": "SFO",
                     "arrival_airport": "DEN",
-                    "departure_time": "2024-01-01 05:50:00",
-                    "arrival_time": "2024-01-01 09:23:00",
+                    "departure_time": "2025-01-01 05:50:00",
+                    "arrival_time": "2025-01-01 09:23:00",
                 },
             ),
         ],
