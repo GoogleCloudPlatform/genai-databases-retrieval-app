@@ -16,7 +16,6 @@ import json
 import uuid
 from typing import Annotated, Literal, Sequence, TypedDict
 
-from aiohttp import ClientSession
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -31,19 +30,15 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.managed import IsLastStep
+from langgraph.prebuilt import ToolNode
+from toolbox_langchain import ToolboxTool
 
-from .tool_node import ToolNode
-from .tools import (
-    TicketInfo,
-    get_confirmation_needing_tools,
-    insert_ticket,
-    validate_ticket,
-)
+from .tools import get_confirmation_needing_tools
 
 
 class UserState(TypedDict):
     """
-    State with messages and ClientSession for each session/user.
+    State with messages for each session/user.
     """
 
     messages: Annotated[Sequence[BaseMessage], add_messages]
@@ -52,18 +47,21 @@ class UserState(TypedDict):
 
 
 async def create_graph(
-    tools,
+    tools: list[ToolboxTool],
+    insert_ticket: ToolboxTool,
+    validate_ticket: ToolboxTool,
     checkpointer: MemorySaver,
     prompt: ChatPromptTemplate,
     model_name: str,
-    client: ClientSession,
     debug: bool,
 ):
     """
     Creates a graph that works with a chat model that utilizes tool calling.
 
     Args:
-        tools: A list of StructuredTools that will bind with the chat model.
+        tools: A list of ToolboxTools that will bind with the chat model.
+        insert_ticket: A ToolboxTool that inserts ticket for the logged in user.
+        validate_ticket: A ToolboxTool that validates the given flight data.
         checkpointer: The checkpoint saver object. This is useful for persisting
             the state of the graph (e.g., as chat memory).
         prompt: Initial prompt for the model. This applies to messages before they
@@ -85,11 +83,13 @@ async def create_graph(
     tool_node = ToolNode(tools)
 
     # model node
-    # TODO: Use .bind_tools(tools) to bind the tools with the LLM.
     model = ChatVertexAI(max_output_tokens=512, model_name=model_name, temperature=0.0)
 
+    # Bind the tools with the LLM.
+    model_with_tools = model.bind_tools(tools)
+
     # Add the prompt to the model to create a model runnable
-    model_runnable = prompt | model
+    model_runnable = prompt | model_with_tools
 
     async def acall_model(state: UserState, config: RunnableConfig):
         """
@@ -98,43 +98,6 @@ async def create_graph(
         """
         messages = state["messages"]
         res = await model_runnable.ainvoke({"messages": messages}, config)
-
-        # TODO: Remove the temporary fix of parsing LLM response and invoking
-        # tools until we use bind_tools API and have automatic response parsing
-        # and tool calling. (see
-        # https://langchain-ai.github.io/langgraph/#example)
-        if "```json" in res.content:
-            try:
-                response = str(res.content).replace("```json", "").replace("```", "")
-                json_response = json.loads(response)
-                action = json_response.get("action")
-                action_input = json_response.get("action_input")
-                if action == "Final Answer":
-                    res = AIMessage(content=action_input)
-                else:
-                    res = AIMessage(
-                        content="suggesting a tool call",
-                        tool_calls=[
-                            ToolCall(
-                                id=str(uuid.uuid4()), name=action, args=action_input
-                            )
-                        ],
-                    )
-            except Exception as e:
-                json_response = response
-                res = AIMessage(
-                    content="Sorry, failed to generate the right format for response"
-                )
-
-        # if model exceed the number of steps and has not yet return a final answer
-        if state["is_last_step"] and hasattr(res, "tool_calls"):
-            return {
-                "messages": [
-                    AIMessage(
-                        content="Sorry, need more steps to process this request.",
-                    )
-                ]
-            }
         return {"messages": [res]}
 
     def agent_should_continue(
@@ -151,26 +114,25 @@ async def create_graph(
             for tool_call in last_message.tool_calls:
                 tool_name = tool_call["name"]
                 if tool_name in confirmation_needing_tools:
-                    if tool_name == "Insert Ticket":
+                    if tool_name == "insert_ticket":
                         return "booking_validation"
             return "continue"
         # Otherwise, we stop (reply to the user)
         return "end"
 
-    async def booking_validation_node(state: UserState, config: RunnableConfig):
+    async def booking_validation_node(state: UserState):
         """
         The node representing async function that validate the ticket.
         After ticket validation, it will return AIMessage with updated ticket args.
         """
         messages = state["messages"]
         last_message = messages[-1]
-        user_id_token = state["user_id_token"]
         if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
             tool_call = last_message.tool_calls[0]
             # Run ticket validation and return the correct ticket information
-            flight_info = await validate_ticket(
-                client, tool_call.get("args"), user_id_token
-            )
+            flight_info = await validate_ticket.ainvoke(tool_call.get("args"))
+            flight_info = json.loads(flight_info)
+            flight_info = flight_info[0]
 
             new_message = AIMessage(
                 content="Please confirm if you would like to book the ticket.",
@@ -197,19 +159,17 @@ async def create_graph(
         # Otherwise, send response back to agent
         return "agent"
 
-    async def insert_ticket_node(state: UserState, config: RunnableConfig):
+    async def insert_ticket_node(state: UserState):
         """
         Node to update human response to prevent
         """
         messages = state["messages"]
         last_message = messages[-1]
-        user_id_token = state["user_id_token"]
         # Run insert ticket
         if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
             tool_call = last_message.tool_calls[0]
             tool_args = tool_call.get("args")
-            ticket_info = TicketInfo(**tool_args)
-            output = await insert_ticket(client, ticket_info, user_id_token)
+            output = await insert_ticket.ainvoke(tool_args)
             tool_call_id = tool_call.get("id")
             tool_message = ToolMessage(
                 content=output, name="Insert Ticket", tool_call_id=tool_call_id
