@@ -22,7 +22,7 @@ TOOLBOX_URL = os.getenv("TOOLBOX_URL", default="http://127.0.0.1:5000")
 
 
 # Tools for agent
-async def initialize_tools(get_user_id_token: Callable[[], Optional[str]]):
+async def initialize_tools(get_user_id_token: Callable[[], str]):
     auth_tokens = {"my_google_service": get_user_id_token}
     client = ToolboxClient(TOOLBOX_URL)
     tools = await client.aload_toolset("cymbal_air", auth_tokens)
