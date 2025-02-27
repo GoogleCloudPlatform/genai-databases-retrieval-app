@@ -72,7 +72,7 @@ class LangGraphOrchestrator(BaseOrchestrator):
         if self._langgraph_app is None:
             print("Initializing graph..")
             tools, insert_ticket, validate_ticket = await initialize_tools(
-                lambda: self.get_user_id_token(session["uuid"]) or ''
+                lambda: self.get_user_id_token(session["uuid"]) or ""
             )
             prompt = self.create_prompt_template()
             checkpointer = MemorySaver()
