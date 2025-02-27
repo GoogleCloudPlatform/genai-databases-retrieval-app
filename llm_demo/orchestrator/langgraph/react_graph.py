@@ -170,13 +170,9 @@ async def create_graph(
             tool_call = last_message.tool_calls[0]
             tool_args = tool_call.get("args")
             output = await insert_ticket.ainvoke(tool_args)
-            tool_call_id = tool_call.get("id")
-            tool_message = ToolMessage(
-                content=output, name="Insert Ticket", tool_call_id=tool_call_id
-            )
             human_message = HumanMessage(content="Looks good to me.")
             ai_message = AIMessage(content=output)
-            return {"messages": [human_message, tool_message, ai_message]}
+            return {"messages": [human_message, ai_message]}
 
     # Define constant node strings
     AGENT_NODE = "agent"
