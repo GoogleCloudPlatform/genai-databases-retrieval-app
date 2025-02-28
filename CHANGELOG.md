@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/compare/v0.4.0...v1.0.0) (2025-02-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* updated flights dataset to 2025 ([#524](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/524))
+
+### Features
+
+* updated flights dataset to 2025 ([#524](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/524)) ([9d00186](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/9d00186f09cdb73f169d4ce15ad048f372ef22cc))
+
 ## [0.4.0](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/compare/v0.3.0...v0.4.0) (2025-01-14)
 
 
