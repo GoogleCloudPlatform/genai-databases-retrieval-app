@@ -1,8 +1,7 @@
 # Setup and configure Cloud SQL for MySQL
 
-## Supported Cloud SQL Maintenance Versions
-
-This LangChain integration is only supported for Cloud SQL maintenance versions between **MYSQL_8_0_36.R20240401.03_00** and **MYSQL_8_0_36.R20241208.01_00**
+> [!NOTE]
+> This LangChain integration is only supported for Cloud SQL maintenance versions between **MYSQL_8_0_36.R20240401.03_00** and **MYSQL_8_0_36.R20241208.01_00**
 
 ## Before you begin
 
