@@ -1,5 +1,8 @@
 # Setup and configure Cloud SQL for MySQL
 
+> [!NOTE]
+> This LangChain integration is only supported for Cloud SQL maintenance versions between **MYSQL_8_0_36.R20240401.03_00** and **MYSQL_8_0_36.R20241208.01_00**
+
 ## Before you begin
 
 1. Make sure you have a Google Cloud project and billing is enabled.
