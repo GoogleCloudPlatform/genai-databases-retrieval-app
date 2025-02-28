@@ -83,13 +83,6 @@ class Client(datastore.Client[Config]):
         pool = await loop.run_in_executor(None, cls.create_sync, config)
         return pool
 
-    def drop_vector_indexes(self):
-        with self.__pool.connect() as conn:
-            s = text("""SELECT index_name FROM mysql.vector_indexes""")
-            results = (conn.execute(s)).mappings().fetchall()
-            for r in results:
-                conn.execute(text(f"CALL mysql.drop_vector_index('{r['index_name']}')"))
-
     def initialize_data_sync(
         self,
         airports: list[models.Airport],
@@ -97,7 +90,6 @@ class Client(datastore.Client[Config]):
         flights: list[models.Flight],
         policies: list[models.Policy],
     ) -> None:
-        self.drop_vector_indexes()
         with self.__pool.connect() as conn:
             # If the table already exists, drop it to avoid conflicts
             conn.execute(text("DROP TABLE IF EXISTS airports"))
@@ -210,13 +202,6 @@ class Client(datastore.Client[Config]):
                 ],
             )
 
-            # Create a vector index for the embeddings column
-            conn.execute(
-                text(
-                    f"CALL mysql.create_vector_index('amenities_index', '{self.__db_name}.amenities', 'embedding', '')"
-                )
-            )
-
             # If the table already exists, drop it to avoid conflicts
             conn.execute(text("DROP TABLE IF EXISTS flights"))
             # Create a new table
@@ -312,13 +297,6 @@ class Client(datastore.Client[Config]):
                     }
                     for p in policies
                 ],
-            )
-
-            # Create a vector index on the embedding column
-            conn.execute(
-                text(
-                    f"CALL mysql.create_vector_index('policies_index', '{self.__db_name}.policies', 'embedding', '')"
-                )
             )
 
     async def initialize_data(
@@ -522,12 +500,12 @@ class Client(datastore.Client[Config]):
                 """
                 SELECT name, description, location, terminal, category, hour
                   FROM amenities
-                  WHERE NEAREST(embedding) TO (string_to_vector(:query), :search_options)
+                  ORDER BY APPROX_DISTANCE(embedding, string_to_vector(:query)) LIMIT :search_options
                 """
             )
             params = {
                 "query": f"{query_embedding}",
-                "search_options": f"num_neighbors={top_k}",
+                "search_options": f"{top_k}",
             }
             results = (conn.execute(s, parameters=params)).mappings().fetchall()
 
@@ -814,12 +792,12 @@ class Client(datastore.Client[Config]):
                 """
                 SELECT content
                   FROM policies 
-                  WHERE NEAREST(embedding) TO (string_to_vector(:query), :search_options)
+                  ORDER BY APPROX_DISTANCE(embedding, string_to_vector(:query)) LIMIT :search_options
                 """
             )
             params = {
                 "query": f"{query_embedding}",
-                "search_options": f"num_neighbors={top_k}",
+                "search_options": f"{top_k}",
             }
 
             results = (conn.execute(s, parameters=params)).mappings().fetchall()
