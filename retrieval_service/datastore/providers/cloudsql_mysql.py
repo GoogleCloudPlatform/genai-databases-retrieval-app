@@ -500,12 +500,12 @@ class Client(datastore.Client[Config]):
                 """
                 SELECT name, description, location, terminal, category, hour
                   FROM amenities
-                  ORDER BY APPROX_DISTANCE(embedding, string_to_vector(:query)) LIMIT :search_options
+                  ORDER BY APPROX_DISTANCE(embedding, string_to_vector(:query), 'distance_measure=cosine') LIMIT :search_options
                 """
             )
             params = {
                 "query": f"{query_embedding}",
-                "search_options": f"{top_k}",
+                "search_options": top_k,
             }
             results = (conn.execute(s, parameters=params)).mappings().fetchall()
 
@@ -792,12 +792,12 @@ class Client(datastore.Client[Config]):
                 """
                 SELECT content
                   FROM policies 
-                  ORDER BY APPROX_DISTANCE(embedding, string_to_vector(:query)) LIMIT :search_options
+                  ORDER BY APPROX_DISTANCE(embedding, string_to_vector(:query), 'distance_measure=cosine') LIMIT :search_options
                 """
             )
             params = {
                 "query": f"{query_embedding}",
-                "search_options": f"{top_k}",
+                "search_options": top_k,
             }
 
             results = (conn.execute(s, parameters=params)).mappings().fetchall()
