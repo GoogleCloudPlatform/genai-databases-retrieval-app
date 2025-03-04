@@ -10,8 +10,8 @@ markdown==3.7
 types-Markdown==3.7.0.20240822
 uvicorn[standard]==0.31.0
 python-multipart==0.0.18
-pytz==2024.2
-types-pytz==2024.2.0.20241003
+pytz==2025.1
+types-pytz==2025.1.0.20250204
 langgraph==0.2.48
 httpx==0.27.2
 pandas-stubs==2.2.2.240807

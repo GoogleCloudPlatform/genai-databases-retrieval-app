@@ -410,8 +410,8 @@ async def test_get_flight(ds: cloudsql_postgres.Client):
         flight_number="1158",
         departure_airport="SFO",
         arrival_airport="ORD",
-        departure_time=datetime.strptime("2024-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"),
-        arrival_time=datetime.strptime("2024-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"),
+        departure_time=datetime.strptime("2025-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"),
+        arrival_time=datetime.strptime("2025-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"),
         departure_gate="C38",
         arrival_gate="D30",
     )
@@ -431,10 +431,10 @@ search_flights_by_number_test_data = [
                 departure_airport="SFO",
                 arrival_airport="ORD",
                 departure_time=datetime.strptime(
-                    "2024-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 arrival_time=datetime.strptime(
-                    "2024-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 departure_gate="C38",
                 arrival_gate="D30",
@@ -446,10 +446,10 @@ search_flights_by_number_test_data = [
                 departure_airport="SFO",
                 arrival_airport="JFK",
                 departure_time=datetime.strptime(
-                    "2024-10-15 05:18:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-10-15 05:18:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 arrival_time=datetime.strptime(
-                    "2024-10-15 08:40:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-10-15 08:40:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 departure_gate="B50",
                 arrival_gate="E4",
@@ -482,7 +482,7 @@ async def test_search_flights_by_number(
 
 search_flights_by_airports_test_data = [
     pytest.param(
-        "2024-01-01",
+        "2025-01-01",
         "SFO",
         "ORD",
         [
@@ -493,10 +493,10 @@ search_flights_by_airports_test_data = [
                 departure_airport="SFO",
                 arrival_airport="ORD",
                 departure_time=datetime.strptime(
-                    "2024-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 arrival_time=datetime.strptime(
-                    "2024-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 departure_gate="C38",
                 arrival_gate="D30",
@@ -508,10 +508,10 @@ search_flights_by_airports_test_data = [
                 departure_airport="SFO",
                 arrival_airport="ORD",
                 departure_time=datetime.strptime(
-                    "2024-01-01 07:14:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-01-01 07:14:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 arrival_time=datetime.strptime(
-                    "2024-01-01 13:24:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-01-01 13:24:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 departure_gate="A11",
                 arrival_gate="D8",
@@ -523,10 +523,10 @@ search_flights_by_airports_test_data = [
                 departure_airport="SFO",
                 arrival_airport="ORD",
                 departure_time=datetime.strptime(
-                    "2024-01-01 08:18:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-01-01 08:18:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 arrival_time=datetime.strptime(
-                    "2024-01-01 14:26:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-01-01 14:26:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 departure_gate="E30",
                 arrival_gate="C1",
@@ -538,10 +538,10 @@ search_flights_by_airports_test_data = [
                 departure_airport="SFO",
                 arrival_airport="ORD",
                 departure_time=datetime.strptime(
-                    "2024-01-01 17:01:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-01-01 17:01:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 arrival_time=datetime.strptime(
-                    "2024-01-01 23:02:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-01-01 23:02:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 departure_gate="E27",
                 arrival_gate="C24",
@@ -553,10 +553,10 @@ search_flights_by_airports_test_data = [
                 departure_airport="SFO",
                 arrival_airport="ORD",
                 departure_time=datetime.strptime(
-                    "2024-01-01 17:21:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-01-01 17:21:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 arrival_time=datetime.strptime(
-                    "2024-01-01 23:33:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-01-01 23:33:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 departure_gate="D25",
                 arrival_gate="E49",
@@ -568,10 +568,10 @@ search_flights_by_airports_test_data = [
                 departure_airport="SFO",
                 arrival_airport="ORD",
                 departure_time=datetime.strptime(
-                    "2024-01-01 19:14:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-01-01 19:14:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 arrival_time=datetime.strptime(
-                    "2024-01-02 01:14:00", "%Y-%m-%d %H:%M:%S"
+                    "2025-01-02 01:14:00", "%Y-%m-%d %H:%M:%S"
                 ),
                 departure_gate="E3",
                 arrival_gate="C48",
@@ -580,7 +580,7 @@ search_flights_by_airports_test_data = [
         id="successful_airport_search",
     ),
     pytest.param(
-        "2024-01-01",
+        "2025-01-01",
         "FOO",
         "BAR",
         [],
@@ -616,8 +616,8 @@ async def test_insert_ticket(ds: cloudsql_postgres.Client):
         "1532",
         "SFO",
         "DEN",
-        "2024-01-01 05:50:00",
-        "2024-01-01 09:23:00",
+        "2025-01-01 05:50:00",
+        "2025-01-01 09:23:00",
     )
 
 
@@ -631,10 +631,10 @@ async def test_list_tickets(ds: cloudsql_postgres.Client):
             "departure_airport": "SFO",
             "arrival_airport": "DEN",
             "departure_time": datetime.strptime(
-                "2024-01-01 05:50:00", "%Y-%m-%d %H:%M:%S"
+                "2025-01-01 05:50:00", "%Y-%m-%d %H:%M:%S"
             ),
             "arrival_time": datetime.strptime(
-                "2024-01-01 09:23:00", "%Y-%m-%d %H:%M:%S"
+                "2025-01-01 09:23:00", "%Y-%m-%d %H:%M:%S"
             ),
         }
     ]
@@ -649,7 +649,7 @@ validate_ticket_data = [
             "airline": "UA",
             "flight_number": "1532",
             "departure_airport": "SFO",
-            "departure_time": "2024-01-01 05:50:00",
+            "departure_time": "2025-01-01 05:50:00",
         },
         models.Flight(
             id=0,
@@ -658,20 +658,20 @@ validate_ticket_data = [
             departure_airport="SFO",
             arrival_airport="DEN",
             departure_time=datetime.strptime(
-                "2024-01-01 05:50:00", "%Y-%m-%d %H:%M:%S"
+                "2025-01-01 05:50:00", "%Y-%m-%d %H:%M:%S"
             ),
-            arrival_time=datetime.strptime("2024-01-01 09:23:00", "%Y-%m-%d %H:%M:%S"),
+            arrival_time=datetime.strptime("2025-01-01 09:23:00", "%Y-%m-%d %H:%M:%S"),
             departure_gate="E49",
             arrival_gate="D6",
         ),
-        'SELECT *<br/>FROM flights<br/>WHERE airline ILIKE UA<br/><div class="indent"></div>AND flight_number ILIKE 1532<br/><div class="indent"></div>AND departure_airport ILIKE SFO<br/><div class="indent"></div>AND departure_time = 2024-01-01 05:50:00',
+        'SELECT *<br/>FROM flights<br/>WHERE airline ILIKE UA<br/><div class="indent"></div>AND flight_number ILIKE 1532<br/><div class="indent"></div>AND departure_airport ILIKE SFO<br/><div class="indent"></div>AND departure_time = 2025-01-01 05:50:00',
     ),
     pytest.param(
         {
             "airline": "UA",
             "flight_number": "1158",
             "departure_airport": "SFO",
-            "departure_time": "2024-01-01 05:57:00",
+            "departure_time": "2025-01-01 05:57:00",
         },
         models.Flight(
             id=1,
@@ -680,20 +680,20 @@ validate_ticket_data = [
             departure_airport="SFO",
             arrival_airport="ORD",
             departure_time=datetime.strptime(
-                "2024-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
+                "2025-01-01 05:57:00", "%Y-%m-%d %H:%M:%S"
             ),
-            arrival_time=datetime.strptime("2024-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"),
+            arrival_time=datetime.strptime("2025-01-01 12:13:00", "%Y-%m-%d %H:%M:%S"),
             departure_gate="C38",
             arrival_gate="D30",
         ),
-        'SELECT *<br/>FROM flights<br/>WHERE airline ILIKE UA<br/><div class="indent"></div>AND flight_number ILIKE 1158<br/><div class="indent"></div>AND departure_airport ILIKE SFO<br/><div class="indent"></div>AND departure_time = 2024-01-01 05:57:00',
+        'SELECT *<br/>FROM flights<br/>WHERE airline ILIKE UA<br/><div class="indent"></div>AND flight_number ILIKE 1158<br/><div class="indent"></div>AND departure_airport ILIKE SFO<br/><div class="indent"></div>AND departure_time = 2025-01-01 05:57:00',
     ),
     pytest.param(
         {
             "airline": "XX",
             "flight_number": "9999",
             "departure_airport": "ZZZ",
-            "departure_time": "2024-01-01 05:57:00",
+            "departure_time": "2025-01-01 05:57:00",
         },
         None,
         None,
