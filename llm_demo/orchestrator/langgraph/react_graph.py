@@ -169,10 +169,7 @@ async def create_graph(
         if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
             tool_call = last_message.tool_calls[0]
             tool_args = tool_call.get("args")
-            output = await insert_ticket.ainvoke(tool_args)
-            human_message = HumanMessage(content="Looks good to me.")
-            ai_message = AIMessage(content=output)
-            return {"messages": [human_message, ai_message]}
+            await insert_ticket.ainvoke(tool_args)
 
     # Define constant node strings
     AGENT_NODE = "agent"
