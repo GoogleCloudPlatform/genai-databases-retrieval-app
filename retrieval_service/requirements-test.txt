@@ -1,4 +1,4 @@
-asyncpg-stubs==0.30.0
+asyncpg-stubs==0.30.1
 black==25.1.0
 httpx==0.27.2
 isort==6.0.0
