@@ -83,7 +83,7 @@ async def create_graph(
     tool_node = ToolNode(tools)
 
     # model node
-    model = ChatVertexAI(max_output_tokens=512, model_name=model_name, temperature=0.0)
+    model = ChatVertexAI(max_output_tokens=2048, model_name="gemini-2.0-flash", temperature=0.5)
 
     # Bind the tools with the LLM.
     model_with_tools = model.bind_tools(tools)
@@ -130,9 +130,14 @@ async def create_graph(
         if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
             tool_call = last_message.tool_calls[0]
             # Run ticket validation and return the correct ticket information
-            flight_info = await validate_ticket.ainvoke(tool_call.get("args"))
-            flight_info = json.loads(flight_info)
-            flight_info = flight_info[0]
+            args = tool_call.get("args")
+            flight_info = await validate_ticket.ainvoke(args)
+            if not isinstance(flight_info, dict):
+                try:
+                    flight_info = json.loads(flight_info)
+                    flight_info = flight_info[0]
+                except Exception as e:
+                    raise ValueError(f"DEBUGGING flight_info: {flight_info}\nargs: {args}\nError: {e}")
 
             new_message = AIMessage(
                 content="Please confirm if you would like to book the ticket.",
@@ -169,6 +174,7 @@ async def create_graph(
         if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
             tool_call = last_message.tool_calls[0]
             tool_args = tool_call.get("args")
+            tool_args = json.loads(tool_args['result'])[0]
             await insert_ticket.ainvoke(tool_args)
 
     # Define constant node strings

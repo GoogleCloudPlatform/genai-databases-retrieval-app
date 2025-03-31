@@ -81,10 +81,11 @@ async function submitMessage() {
             logMessage("ai", answer.content, answer.trace)
         } else if (answer.type === "confirmation") {
             const messageId = generateRandomID(10);
+            console.log(answer.content.params)
             buildConfirmation(answer.content, messageId)
         }
     } catch (err) {
-        window.alert(`Error when submitting question: ${err}`);
+        window.alert(`Error when submitting question 😢: ${err}.`);
     }
 }
 
@@ -155,7 +156,7 @@ function logMessage(name, msg, trace) {
 
 function buildConfirmation(confirmation, messageId) {
     if (["Insert Ticket","insert_ticket"].includes(confirmation.tool)) {
-        const params = confirmation.params;
+        const params = JSON.parse(confirmation.params.result)[0];
         const message_id = messageId;
         confirmations[message_id] = params
         const from = params.departure_airport;
