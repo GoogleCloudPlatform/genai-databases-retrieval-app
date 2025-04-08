@@ -142,6 +142,7 @@ class LangGraphOrchestrator(BaseOrchestrator):
                 add_kwargs = m.additional_kwargs
                 if add_kwargs and add_kwargs.get("sql"):
                     trace_info["sql"] = add_kwargs.get("sql")
+                    trace_info["question_asked"] = add_kwargs.get("question_asked")
                 trace.append(trace_info)
         return trace
 

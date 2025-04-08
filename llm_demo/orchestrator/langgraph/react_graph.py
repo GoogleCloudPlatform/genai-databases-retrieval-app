@@ -203,12 +203,13 @@ async def create_graph(
             result = json.loads(res.get("result"))
             output = get_output(result)
             sql = result[-1].get("generatedSQL")
+            question_asked = result[-2].get("questionAsked")
             tool_call_id = tool_call.get("id")
             message = ToolMessage(
                 content=str_output(output),
                 name=tool_call["name"],
                 tool_call_id=tool_call_id,
-                additional_kwargs={"sql": sql},
+                additional_kwargs={"sql": sql, "question_asked": question_asked},
             )
             return {"messages": [message]}
 
