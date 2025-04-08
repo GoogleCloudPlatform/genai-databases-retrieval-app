@@ -104,7 +104,6 @@ async def create_graph(
         After invoking model, it will return AIMessage back to the user.
         """
         messages = state["messages"]
-        print("messages are ", messages, "\n\n")
         res = await model_runnable.ainvoke({"messages": messages}, config)
         return {"messages": [res]}
 
@@ -201,12 +200,15 @@ async def create_graph(
             auth_token = {"my_google_service": lambda: get_user_id_token(state) or ""}
             ask_questions = await client.aload_tool("ask_questions", auth_token)
             res = await ask_questions.ainvoke(tool_args)
-            output = res.get("result")
+            result = json.loads(res.get("result"))
+            output = get_output(result)
+            sql = result[-1].get("generatedSQL")
             tool_call_id = tool_call.get("id")
             message = ToolMessage(
                 content=str_output(output),
                 name=tool_call["name"],
                 tool_call_id=tool_call_id,
+                additional_kwargs={"sql": sql},
             )
             return {"messages": [message]}
 
@@ -256,6 +258,13 @@ async def create_graph(
         checkpointer=checkpointer, debug=debug, interrupt_after=["booking_validation"]
     )
     return langgraph_app
+
+
+def get_output(res: Any):
+    output = []
+    for i in res[0:-2]:
+        output.append(i.get("json_results"))
+    return output
 
 
 def str_output(output: Any) -> str:
