@@ -15,7 +15,7 @@
 import asyncio
 import os
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Sequence
 
 from langchain.globals import set_verbose  # type: ignore
@@ -27,8 +27,6 @@ from pytz import timezone
 
 from ..orchestrator import BaseOrchestrator, classproperty
 from .react_graph import create_graph
-from .tools import initialize_tools
-from datetime import date
 
 DEBUG = bool(os.getenv("DEBUG", default=False))
 set_verbose(DEBUG)
@@ -72,15 +70,9 @@ class LangGraphOrchestrator(BaseOrchestrator):
         """Create and load an agent executor with tools and LLM."""
         if self._langgraph_app is None:
             print("Initializing graph..")
-            tools, insert_ticket, validate_ticket = await initialize_tools(
-                lambda: self.get_user_id_token(session["uuid"]) or ""
-            )
             prompt = self.create_prompt_template()
             checkpointer = MemorySaver()
             langgraph_app = await create_graph(
-                tools,
-                insert_ticket,
-                validate_ticket,
                 checkpointer,
                 prompt,
                 self.MODEL,
@@ -231,6 +223,7 @@ class LangGraphOrchestrator(BaseOrchestrator):
             config=config, checkpoint=checkpoint, metadata={}, new_versions={}
         )
         del self._user_sessions[uuid]
+
 
 PREFIX = f"""The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
 
