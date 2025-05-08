@@ -1,0 +1,38 @@
+{
+    "structSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "dynamic": "true",
+        "datetime_detection": true,
+        "geolocation_detection": true,
+        "properties": {
+            "city": {
+                "type": "string",
+                "retrievable": true,
+                "indexable": true,
+                "dynamicFacetable": true,
+                "searchable": true
+            },
+            "country": {
+                "type": "string",
+                "retrievable": true,
+                "indexable": true,
+                "dynamicFacetable": true,
+                "searchable": true
+            },
+            "iata": {
+                "type": "string",
+                "keyPropertyMapping": "title",
+                "retrievable": true
+            },
+            "id": {
+                "type": "number"
+            },
+            "name": {
+                "type": "string",
+                "keyPropertyMapping": "description",
+                "retrievable": true
+            }
+        }
+    }
+}
