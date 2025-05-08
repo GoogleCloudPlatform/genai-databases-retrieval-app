@@ -1,0 +1,569 @@
+openapi: 3.0.0
+info:
+  title: FastAPI Airport & Flight API
+  version: 1.0.0
+  description: API for managing airport, flight, amenity, ticket, and policy information based on the provided Python code.
+
+servers:
+  - url: https://retrieval-service-730685535048.europe-west1.run.app
+
+components:
+  schemas:
+    # Basic schema for the common {"results": ..., "sql": ...} response
+    # The actual structure of 'results' might be more complex.
+    ResultsSqlResponse:
+      type: object
+      properties:
+        results:
+          type: object # Or array, depending on the specific endpoint
+          description: The main data payload of the response.
+        sql:
+          type: string
+          description: The SQL query executed (if applicable).
+          example: "SELECT * FROM airports WHERE id = 1;"
+    
+    # Airpots
+    Airport:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID
+        iata:
+          type: string
+          description: IATA airport code
+        name:
+          type: string
+          description: Name
+        city:
+          type: string
+          description: City
+        country:
+          type: string
+          description: Country
+
+    AirportDetailsResponse:
+      type: object
+      properties:
+        results:
+          $ref: '#/components/schemas/Airport'      
+
+    AirportSearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Airport'
+
+    # Flight details
+    FlightDetails:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Flight ID
+        airline:
+          type: string
+          description: Airline
+        flight_number:
+          type: string
+          description: Flight number
+        departure_airport:
+          type: string
+          description: Departure airport
+        arrival_airport:
+          type: string
+          description: Arrival airport
+        departure_time:
+          type: string
+          description: Departure time
+        arrival_time:
+          type: string
+          description: Arrival time
+        departure_gate:
+          type: string
+          description: Departure gate
+        arrival_gate:
+          type: string
+          description: Arrival gate
+
+    FlightDetailsResponse:
+      type: object
+      properties:
+        results:
+          $ref: '#/components/schemas/FlightDetails'
+
+    FlightSearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlightDetails'
+
+    # Ticket
+    Ticket:
+      type: object
+      properties:
+        user_name:
+          type: string
+          description: Name
+        airline:
+          type: string
+          description: Airline
+        flight_number:
+          type: string
+          description: Flight number
+        departure_airport:
+          type: string
+          description: Departure airport
+        arrival_airport:
+          type: string
+          description: Arrival airport
+        departure_time:
+          type: string
+          description: Departure time
+        arrival_time:
+          type: string
+          description: Arrival time
+
+    TicketListResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ticket'
+
+    # Amenities
+    Amenity:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID
+        name:
+          type: string
+          description: Name
+        description:
+          type: string
+          description: Description
+        location:
+          type: string
+          description: Location
+        terminal:
+          type: string
+          description: Terminal
+        category:
+          type: string
+          description: Category
+        hour:
+          type: string
+          description: Opening times
+
+    AmenityDetailsResponse:
+      type: object
+      properties:
+        results:
+          $ref: '#/components/schemas/Amenity'
+
+    AmenitySearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Amenity'
+    
+    # Policies
+    PoliciesSearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: string
+            description: Policies
+
+    # Schema for error responses (derived from HTTPException)
+    HTTPValidationError:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Detailed error message.
+
+paths:
+  /airports:
+    get:
+      summary: Get Airport by ID or IATA
+      description: Retrieves airport details using either its ID or IATA code. Requires one of the query parameters.
+      operationId: get_airport
+      parameters:
+        - name: id
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Airport ID.
+        - name: iata
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Airport IATA code.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AirportDetailsResponse'
+        '422':
+          description: Validation Error (Missing id or iata)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+  /airports/search:
+    get:
+      summary: Search Airports
+      description: Searches for airports based on country, city, or name. Requires at least one parameter.
+      operationId: search_airports
+      parameters:
+        - name: country
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Country name.
+        - name: city
+          in: query
+          required: false
+          schema:
+            type: string
+          description: City name.
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Airport name.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AirportSearchResponse'
+        '422':
+          description: Validation Error (Missing country, city, or name)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+  /amenities:
+    get:
+      summary: Get Amenity by ID
+      description: Retrieves details for a specific amenity ID.
+      operationId: get_amenity
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Amenity ID.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AmenityDetailsResponse'
+        '422': # Although not explicitly shown, FastAPI adds this for missing required params
+          description: Validation Error (Missing id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+  /amenities/search:
+    get:
+      summary: Search Amenities
+      description: Performs a semantic search for amenities based on a query string.
+      operationId: search_amenities
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query string.
+        - name: top_k
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Number of results to return.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AmenitySearchResponse'
+        '422': # Although not explicitly shown, FastAPI adds this for missing required params
+          description: Validation Error (Missing query or top_k)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+  /flights:
+    get:
+      summary: Get Flight by ID
+      description: Retrieves details for a specific flight ID.
+      operationId: get_flight
+      parameters:
+        - name: flight_id
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Flight ID.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlightDetailsResponse'
+        '422': # Although not explicitly shown, FastAPI adds this for missing required params
+          description: Validation Error (Missing flight_id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+  /flights/search:
+    get:
+      summary: Search Flights
+      description: Searches for flights either by date and airports OR by airline and flight number.
+      operationId: search_flights
+      parameters:
+        - name: departure_airport
+          in: query
+          required: false
+          schema:
+            type: string
+          description: IATA code of the departure airport.
+        - name: arrival_airport
+          in: query
+          required: false
+          schema:
+            type: string
+          description: IATA code of the arrival airport.
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date # Assuming YYYY-MM-DD or similar
+          description: Date of the flight.
+        - name: airline
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Airline code (e.g., IATA).
+        - name: flight_number
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Flight number.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlightSearchResponse'
+        '422':
+          description: Validation Error (Insufficient/incorrect parameters)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+  /tickets/insert:
+    post:
+      summary: Insert Ticket
+      description: Inserts a new flight ticket for the authenticated user. Requires authentication.
+      operationId: insert_ticket
+      parameters: # FastAPI seems to interpret these as query parameters based on the function signature
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: airline
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: flight_number
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: departure_airport
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: arrival_airport
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: departure_time
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time # Assuming ISO 8601 format
+        - name: arrival_time
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time # Assuming ISO 8601 format
+      responses:
+        '200':
+          description: Successful Response
+        '401':
+          description: Unauthorized (User login required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '422': # Although not explicitly shown, FastAPI adds this for missing required params
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+
+  /tickets/validate:
+    get:
+      summary: Validate Ticket Information
+      description: Validates if specific flight details match existing records.
+      operationId: validate_ticket
+      parameters:
+        - name: airline
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: flight_number
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: departure_airport
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: departure_time
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time # Assuming ISO 8601 format
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultsSqlResponse'
+        '422': # Although not explicitly shown, FastAPI adds this for missing required params
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+  /tickets/list:
+    get:
+      summary: List User Tickets
+      description: Lists all tickets associated with the authenticated user. Requires authentication.
+      operationId: list_tickets
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketListResponse'
+        '401':
+          description: Unauthorized (User login required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+  /policies/search:
+    get:
+      summary: Search Policies
+      description: Performs a semantic search for policies based on a query string.
+      operationId: search_policies
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query string.
+        - name: top_k
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Number of results to return.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoliciesSearchResponse'
+        '422': # Although not explicitly shown, FastAPI adds this for missing required params
+          description: Validation Error (Missing query or top_k)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'

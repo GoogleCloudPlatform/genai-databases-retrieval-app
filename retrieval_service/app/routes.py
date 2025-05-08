@@ -14,12 +14,14 @@
 
 from typing import Any, Mapping, Optional
 
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request
 from google.auth.transport import requests  # type:ignore
 from google.oauth2 import id_token  # type:ignore
 from langchain_core.embeddings import Embeddings
 
 import datastore
+import hashlib
 
 routes = APIRouter()
 
@@ -36,6 +38,12 @@ def _ParseUserIdToken(headers: Mapping[str, Any]) -> Optional[str]:
         raise Exception("Invalid ID token")
 
     return parts[1]
+
+def format_time(time):
+    try:
+        return datetime.strptime(time, "%Y-%m-%dT%H:%M:%S").strftime("%Y-%m-%d %H:%M:%S")
+    except:
+        return time
 
 
 async def get_user_info(request):
@@ -55,6 +63,15 @@ async def get_user_info(request):
     except Exception as e:  # pylint: disable=broad-except
         print(e)
 
+async def get_user_info_insecure(name, email):
+    h = hashlib.sha256()
+    h.update(str.encode(email))
+
+    return {
+        "user_id": h.hexdigest(),
+        "user_name": name,
+        "user_email": email
+    }
 
 @routes.get("/")
 async def root():
@@ -150,6 +167,8 @@ async def search_flights(
 @routes.post("/tickets/insert")
 async def insert_ticket(
     request: Request,
+    name: str,
+    email: str,
     airline: str,
     flight_number: str,
     departure_airport: str,
@@ -157,7 +176,7 @@ async def insert_ticket(
     departure_time: str,
     arrival_time: str,
 ):
-    user_info = await get_user_info(request)
+    user_info = await get_user_info_insecure(name, email)
     if user_info is None:
         raise HTTPException(
             status_code=401,
@@ -172,8 +191,8 @@ async def insert_ticket(
         flight_number,
         departure_airport,
         arrival_airport,
-        departure_time,
-        arrival_time,
+        format_time(departure_time),
+        format_time(arrival_time),
     )
     return results
 
@@ -191,7 +210,7 @@ async def validate_ticket(
         airline,
         flight_number,
         departure_airport,
-        departure_time,
+        format_time(departure_time),
     )
     return {"results": results, "sql": sql}
 
@@ -199,8 +218,10 @@ async def validate_ticket(
 @routes.get("/tickets/list")
 async def list_tickets(
     request: Request,
+    name: str,
+    email: str,
 ):
-    user_info = await get_user_info(request)
+    user_info = await get_user_info_insecure(name, email)
     if user_info is None:
         raise HTTPException(
             status_code=401,

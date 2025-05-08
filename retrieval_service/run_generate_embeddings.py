@@ -29,9 +29,9 @@ async def main() -> None:
         reader = csv.DictReader(f, delimiter=",")
         for line in reader:
             amenity = models.Amenity.model_validate(line)
-            if amenity.content:
-                amenity.embedding = embed_service.embed_query(amenity.content)
-                amenities.append(amenity)
+            amenity.content = "{name} is a {category} located in {terminal} {location}. Its opening times are {hour}. {description}".format(name=amenity.name, category=amenity.category, terminal=amenity.terminal, location=amenity.location, hour=amenity.hour, description=amenity.description)
+            amenity.embedding = embed_service.embed_query(amenity.content)
+            amenities.append(amenity)
 
     policies: list[models.Policy] = []
     with open("../data/cymbalair_policy.csv", "r") as f:

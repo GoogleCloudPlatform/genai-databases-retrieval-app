@@ -26,7 +26,7 @@ async def main():
     parser.add_argument("--reload", action="store_true", help="Enable auto-reload")
     args = parser.parse_args()
 
-    cfg = parse_config("./config.yml")
+    cfg = parse_config()
     app = init_app(cfg)
     if app is None:
         raise TypeError("app not instantiated")

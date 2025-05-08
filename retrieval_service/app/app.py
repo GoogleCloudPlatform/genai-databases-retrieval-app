@@ -16,7 +16,7 @@ from contextlib import asynccontextmanager
 from ipaddress import IPv4Address, IPv6Address
 from typing import Optional
 
-import yaml
+import os
 from fastapi import FastAPI
 from langchain_google_vertexai import VertexAIEmbeddings
 from pydantic import BaseModel
@@ -36,8 +36,32 @@ class AppConfig(BaseModel):
 
 
 def parse_config(path: str) -> AppConfig:
-    with open(path, "r") as file:
-        config = yaml.safe_load(file)
+    config = {}
+
+    # Base config
+    base_config_vars = {
+        "HOST": "host",
+        "PORT": "port",
+        "CLIENT_ID": "clientId",
+    }
+
+    for envVar, configVar in base_config_vars.items():
+        if os.environ.get(envVar):
+            config[configVar] = os.environ.get(envVar)
+    
+    # Datastore config
+    datastore_config = {}
+    datastore_config_vars = ["kind", "host", "port", "project", "region", "cluster", "instance", "database", "user", "password"]
+
+    for configVar in datastore_config_vars:
+        envVar = "DATASTORE_" + configVar.upper()
+
+        if os.environ.get(envVar):
+            datastore_config[configVar] = os.environ.get(envVar)
+
+    if len(datastore_config) > 0:
+        config["datastore"] = datastore_config
+
     return AppConfig(**config)
 
 
