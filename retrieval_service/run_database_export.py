@@ -19,7 +19,7 @@ from app import parse_config
 
 
 async def main():
-    cfg = parse_config("config.yml")
+    cfg = parse_config()
     ds = await datastore.create(cfg.datastore)
 
     airports, amenities, flights, policies = await ds.export_data()

@@ -24,7 +24,7 @@ async def main() -> None:
     flights_ds_path = "../data/flights_dataset.csv"
     policies_ds_path = "../data/cymbalair_policy.csv"
 
-    cfg = parse_config("config.yml")
+    cfg = parse_config()
     ds = await datastore.create(cfg.datastore)
     airports, amenities, flights, policies = await ds.load_dataset(
         airports_ds_path, amenities_ds_path, flights_ds_path, policies_ds_path
