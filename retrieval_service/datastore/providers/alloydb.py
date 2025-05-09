@@ -37,6 +37,7 @@ class Config(BaseModel, datastore.AbstractConfig):
     user: str
     password: str
     database: str
+    ip_type: str = "PUBLIC"
 
 
 class Client(datastore.Client[Config]):
@@ -63,7 +64,7 @@ class Client(datastore.Client[Config]):
                 user=f"{config.user}",
                 password=f"{config.password}",
                 db=f"{config.database}",
-                ip_type="PUBLIC",
+                ip_type=config.ip_type,
             )
             await register_vector(conn)
             return conn

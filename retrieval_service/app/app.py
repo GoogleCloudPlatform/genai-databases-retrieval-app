@@ -51,7 +51,7 @@ def parse_config() -> AppConfig:
     
     # Datastore config
     datastore_config = {}
-    datastore_config_vars = ["kind", "host", "port", "project", "region", "cluster", "instance", "database", "user", "password"]
+    datastore_config_vars = ["kind", "host", "port", "project", "region", "cluster", "instance", "database", "user", "password", "ip_type"]
 
     for configVar in datastore_config_vars:
         envVar = "DATASTORE_" + configVar.upper()
