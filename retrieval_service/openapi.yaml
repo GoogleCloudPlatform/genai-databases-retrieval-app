@@ -5,7 +5,7 @@ info:
   description: API for managing airport, flight, amenity, ticket, and policy information based on the provided Python code.
 
 servers:
-  - url: https://retrieval-service-730685535048.europe-west1.run.app
+  - url: https://fake-url
 
 components:
   schemas:
