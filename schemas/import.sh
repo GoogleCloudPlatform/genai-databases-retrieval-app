@@ -1,13 +1,5 @@
 #!/bin/bash
 
-TEST="abc def"
-
-for i in $TEST; do
-    echo $i
-done
-
-exit
-
 if [ -z $PROJECT_ID ]; then
     echo "No project ID specified"
     exit
