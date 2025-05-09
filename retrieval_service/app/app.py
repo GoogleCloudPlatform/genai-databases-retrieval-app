@@ -35,7 +35,7 @@ class AppConfig(BaseModel):
     clientId: Optional[str] = None
 
 
-def parse_config(path: str) -> AppConfig:
+def parse_config() -> AppConfig:
     config = {}
 
     # Base config
