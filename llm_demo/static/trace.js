@@ -21,6 +21,9 @@ export function create_trace(toolcalls) {
     for (let i=0; i < toolcalls_len; i++) {
         let toolcall = toolcalls[i];
         trace += trace_section_title(toolcall.tool_call_id);
+        if (toolcall.question_asked) {
+            trace += trace_section_subheader(toolcall.question_asked);
+        }
 
         if (toolcall.sql) {
             trace += trace_header("SQL Executed:");
@@ -38,6 +41,10 @@ export function create_trace(toolcalls) {
 
 function trace_section_title(title) {
     return '<div class="header">' + title + '</div>';
+}
+
+function trace_section_subheader(question_asked){
+    return '<div>' + question_asked + '</div>';
 }
 
 function trace_header(header) {

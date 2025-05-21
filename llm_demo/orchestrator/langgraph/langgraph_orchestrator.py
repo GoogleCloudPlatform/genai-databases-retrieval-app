@@ -15,7 +15,7 @@
 import asyncio
 import os
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Sequence
 
 from langchain.globals import set_verbose  # type: ignore
@@ -27,7 +27,6 @@ from pytz import timezone
 
 from ..orchestrator import BaseOrchestrator, classproperty
 from .react_graph import create_graph
-from .tools import initialize_tools
 
 DEBUG = bool(os.getenv("DEBUG", default=False))
 set_verbose(DEBUG)
@@ -71,15 +70,9 @@ class LangGraphOrchestrator(BaseOrchestrator):
         """Create and load an agent executor with tools and LLM."""
         if self._langgraph_app is None:
             print("Initializing graph..")
-            tools, insert_ticket, validate_ticket = await initialize_tools(
-                lambda: self.get_user_id_token(session["uuid"]) or ""
-            )
             prompt = self.create_prompt_template()
             checkpointer = MemorySaver()
             langgraph_app = await create_graph(
-                tools,
-                insert_ticket,
-                validate_ticket,
                 checkpointer,
                 prompt,
                 self.MODEL,
@@ -149,6 +142,7 @@ class LangGraphOrchestrator(BaseOrchestrator):
                 add_kwargs = m.additional_kwargs
                 if add_kwargs and add_kwargs.get("sql"):
                     trace_info["sql"] = add_kwargs.get("sql")
+                    trace_info["question_asked"] = add_kwargs.get("question_asked")
                 trace.append(trace_info)
         return trace
 
@@ -232,7 +226,7 @@ class LangGraphOrchestrator(BaseOrchestrator):
         del self._user_sessions[uuid]
 
 
-PREFIX = """The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
+PREFIX = f"""The Cymbal Air Customer Service Assistant helps customers of Cymbal Air with their travel needs.
 
 Cymbal Air (airline unique two letter identifier as CY) is a passenger airline offering convenient flights to many cities around the world from its
 hub in San Francisco. Cymbal Air takes pride in using the latest technology to offer the best customer
@@ -246,6 +240,11 @@ conversations and provide responses that are coherent and relevant to the topic 
 not answer questions about other people's information for privacy reasons. 
 
 Assistant is a powerful tool that can help answer a wide range of questions pertaining to travel on Cymbal Air
-as well as amenities of San Francisco Airport."""
+as well as amenities of San Francisco Airport.
 
-SUFFIX = """Begin! Use tools if necessary. Respond directly if appropriate."""
+Today is {date.today()}.
+
+Make sure to response in Markdown format.
+"""
+
+SUFFIX = """Begin! Use tools if necessary. You can use the tool `ask_questions` multiple times to get the info you need. Respond directly if appropriate. If user asks about info about tickets or flights, always use `ask_questions` to get the newest info before answering the user. If you are not sure about something that the user asked, just paste the exact question to the tool `ask_questions`."""

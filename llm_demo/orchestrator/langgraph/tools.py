@@ -13,24 +13,9 @@
 # limitations under the License.
 
 import os
-from typing import Callable, Optional
-
-from toolbox_langchain import ToolboxClient
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
-TOOLBOX_URL = os.getenv("TOOLBOX_URL", default="http://127.0.0.1:5000")
-
-
-# Tools for agent
-async def initialize_tools(get_user_id_token: Callable[[], str]):
-    auth_tokens = {"my_google_service": get_user_id_token}
-    client = ToolboxClient(TOOLBOX_URL)
-    tools = await client.aload_toolset("cymbal_air", auth_tokens)
-    insert_ticket = await client.aload_tool("insert_ticket", auth_tokens)
-    validate_ticket = await client.aload_tool("validate_ticket", auth_tokens)
-
-    return (tools, insert_ticket, validate_ticket)
 
 
 def get_confirmation_needing_tools():
-    return ["insert_ticket"]
+    return ["insert_ticket", "ask_questions"]

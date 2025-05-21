@@ -13,8 +13,9 @@
 # limitations under the License.
 
 import json
+import os
 import uuid
-from typing import Annotated, Literal, Sequence, TypedDict
+from typing import Annotated, Any, Literal, Sequence, TypedDict
 
 from langchain_core.messages import (
     AIMessage,
@@ -31,9 +32,11 @@ from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.managed import IsLastStep
 from langgraph.prebuilt import ToolNode
-from toolbox_langchain import ToolboxTool
+from toolbox_langchain import ToolboxClient, ToolboxTool
 
 from .tools import get_confirmation_needing_tools
+
+TOOLBOX_URL = os.getenv("TOOLBOX_URL", default="http://127.0.0.1:5000")
 
 
 class UserState(TypedDict):
@@ -47,9 +50,6 @@ class UserState(TypedDict):
 
 
 async def create_graph(
-    tools: list[ToolboxTool],
-    insert_ticket: ToolboxTool,
-    validate_ticket: ToolboxTool,
     checkpointer: MemorySaver,
     prompt: ChatPromptTemplate,
     model_name: str,
@@ -59,9 +59,6 @@ async def create_graph(
     Creates a graph that works with a chat model that utilizes tool calling.
 
     Args:
-        tools: A list of ToolboxTools that will bind with the chat model.
-        insert_ticket: A ToolboxTool that inserts ticket for the logged in user.
-        validate_ticket: A ToolboxTool that validates the given flight data.
         checkpointer: The checkpoint saver object. This is useful for persisting
             the state of the graph (e.g., as chat memory).
         prompt: Initial prompt for the model. This applies to messages before they
@@ -79,11 +76,21 @@ async def create_graph(
         Agent --> End : end
         End --> [*]
     """
+
+    # setup Toolbox
+    # load all tools without auth token
+    auth_tokens = {"my_google_service": lambda: ""}
+    client = ToolboxClient(TOOLBOX_URL)
+    tools = await client.aload_toolset("cymbal_air", auth_tokens)
+    validate_ticket = await client.aload_tool("validate_ticket", auth_tokens)
+
     # tool node
     tool_node = ToolNode(tools)
 
     # model node
-    model = ChatVertexAI(max_output_tokens=512, model_name=model_name, temperature=0.0)
+    model = ChatVertexAI(
+        max_output_tokens=2048, model_name="gemini-2.0-flash", temperature=0.5
+    )
 
     # Bind the tools with the LLM.
     model_with_tools = model.bind_tools(tools)
@@ -102,7 +109,7 @@ async def create_graph(
 
     def agent_should_continue(
         state: UserState,
-    ) -> Literal["booking_validation", "continue", "end"]:
+    ) -> Literal["booking_validation", "ask_questions", "continue", "end"]:
         """
         Function to determine which node is called after the agent node.
         """
@@ -114,6 +121,8 @@ async def create_graph(
             for tool_call in last_message.tool_calls:
                 tool_name = tool_call["name"]
                 if tool_name in confirmation_needing_tools:
+                    if tool_name == "ask_questions":
+                        return "ask_questions"
                     if tool_name == "insert_ticket":
                         return "booking_validation"
             return "continue"
@@ -130,9 +139,16 @@ async def create_graph(
         if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
             tool_call = last_message.tool_calls[0]
             # Run ticket validation and return the correct ticket information
-            flight_info = await validate_ticket.ainvoke(tool_call.get("args"))
-            flight_info = json.loads(flight_info)
-            flight_info = flight_info[0]
+            args = tool_call.get("args")
+            flight_info = await validate_ticket.ainvoke(args)
+            if not isinstance(flight_info, dict):
+                try:
+                    flight_info = json.loads(flight_info)
+                    flight_info = flight_info[0]
+                except Exception as e:
+                    raise ValueError(
+                        f"DEBUGGING flight_info: {flight_info}\nargs: {args}\nError: {e}"
+                    )
 
             new_message = AIMessage(
                 content="Please confirm if you would like to book the ticket.",
@@ -169,12 +185,42 @@ async def create_graph(
         if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
             tool_call = last_message.tool_calls[0]
             tool_args = tool_call.get("args")
+            tool_args = json.loads(tool_args["result"])[0]
+            auth_token = {"my_google_service": lambda: get_user_id_token(state) or ""}
+            insert_ticket = await client.aload_tool("insert_ticket", auth_token)
             await insert_ticket.ainvoke(tool_args)
+
+    async def ask_questions_node(state: UserState):
+        messages = state["messages"]
+        last_message = messages[-1]
+        # Run insert ticket
+        if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
+            tool_call = last_message.tool_calls[0]
+            tool_args = tool_call.get("args")
+            auth_token = {"my_google_service": lambda: get_user_id_token(state) or ""}
+            ask_questions = await client.aload_tool("ask_questions", auth_token)
+            res = await ask_questions.ainvoke(tool_args)
+            result = json.loads(res.get("result"))
+            output = get_output(result)
+            sql = result[-1].get("generatedSQL")
+            question_asked = result[-2].get("questionAsked")
+            tool_call_id = tool_call.get("id")
+            message = ToolMessage(
+                content=str_output(output),
+                name=tool_call["name"],
+                tool_call_id=tool_call_id,
+                additional_kwargs={"sql": sql, "question_asked": question_asked},
+            )
+            return {"messages": [message]}
+
+    def get_user_id_token(state: UserState):
+        return state["user_id_token"]
 
     # Define constant node strings
     AGENT_NODE = "agent"
     TOOL_NODE = "tools"
     BOOKING_VALIDATION_NODE = "booking_validation"
+    ASK_QUESTIONS_NODE = "ask_questions"
     INSERT_TICKET_NODE = "insert_ticket"
 
     # Define a new graph
@@ -183,6 +229,7 @@ async def create_graph(
     llm_graph.add_node(TOOL_NODE, tool_node)
     llm_graph.add_node(BOOKING_VALIDATION_NODE, RunnableLambda(booking_validation_node))
     llm_graph.add_node(INSERT_TICKET_NODE, RunnableLambda(insert_ticket_node))
+    llm_graph.add_node(ASK_QUESTIONS_NODE, RunnableLambda(ask_questions_node))
 
     # Set agent node as the first node to call
     llm_graph.set_entry_point(AGENT_NODE)
@@ -194,10 +241,12 @@ async def create_graph(
         {
             "continue": TOOL_NODE,
             "booking_validation": BOOKING_VALIDATION_NODE,
+            "ask_questions": ASK_QUESTIONS_NODE,
             "end": END,
         },
     )
     llm_graph.add_edge(TOOL_NODE, AGENT_NODE)
+    llm_graph.add_edge(ASK_QUESTIONS_NODE, AGENT_NODE)
     llm_graph.add_conditional_edges(
         BOOKING_VALIDATION_NODE,
         booking_should_continue,
@@ -210,3 +259,20 @@ async def create_graph(
         checkpointer=checkpointer, debug=debug, interrupt_after=["booking_validation"]
     )
     return langgraph_app
+
+
+def get_output(res: Any):
+    output = []
+    for i in res[0:-2]:
+        output.append(i.get("json_results"))
+    return output
+
+
+def str_output(output: Any) -> str:
+    if isinstance(output, str):
+        return output
+    else:
+        try:
+            return json.dumps(output)
+        except Exception:
+            return str(output)
