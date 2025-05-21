@@ -1,0 +1,267 @@
+sources:
+  my-pg-instance:
+    kind: cloud-sql-postgres
+    project: retrieval-app-testing
+    region: us-central1
+    instance: my-cloudsql-pg-instance
+    database: assistantdemo
+    user: $YOUR_USERNAME
+    password: $YOUR_PASSWORD
+authServices:
+  my_google_service:
+    kind: google
+    clientId: $YOUR_CLIENT_ID
+tools:
+  search_airports_by_city:
+    kind: postgres-sql
+    source: my-pg-instance
+    description: |
+      Use this tool to list all airports in a city.
+      Takes a city name and returns all matching airports.
+    parameters:
+      - name: city
+        type: string
+        description: City
+    statement: |
+      SELECT * FROM airports
+      WHERE CAST($1 AS TEXT) IS NULL OR city ILIKE $1
+      LIMIT 10
+  search_airports_by_country:
+    kind: postgres-sql
+    source: my-pg-instance
+    description: |
+      Use this tool to list all airports in a country.
+      Takes a country name and returns all matching airports.
+    parameters:
+      - name: country
+        type: string
+        description: Country
+    statement: |
+      SELECT * FROM airports
+      WHERE CAST($1 AS TEXT) IS NULL OR country ILIKE $1
+      LIMIT 10
+  search_airports_by_name:
+    kind: postgres-sql
+    source: my-pg-instance
+    description: |
+      Use this tool to list all airports with a matching name.
+      Takes an airport name and returns all matching airports.
+    parameters:
+      - name: name
+        type: string
+        description: Airport name
+    statement: |
+      SELECT * FROM airports
+      WHERE CAST($1 AS TEXT) IS NULL OR name ILIKE '%' || $1 || '%'
+      LIMIT 10
+  list_flights_by_departure_airport:
+    kind: postgres-sql
+    source: my-pg-instance
+    description: |
+      Use this tool to list flights information matching search criteria.
+      Takes a departure airport and filters by date and returns all matching flights.
+      If 3-letter iata code is not provided for departure_airport or arrival_airport, use search airport tools to get iata code information.
+      Do NOT guess a date, ask user for date input if it is not given. Date must be in the following format: YYYY-MM-DD.
+    parameters:
+      - name: departure_airport
+        type: string
+        description: Departure airport 3-letter code
+      - name: date
+        type: string
+        description: Date of flight departure
+    statement: |
+      SELECT * FROM flights
+      WHERE (CAST($1 AS TEXT) IS NULL OR departure_airport ILIKE $1)
+      AND departure_time >= CAST($2 AS timestamp)
+      AND departure_time < CAST($2 AS timestamp) + interval '1 day'
+      LIMIT 10
+  list_flights_by_arrival_airport:
+    kind: postgres-sql
+    source: my-pg-instance
+    description: |
+      Use this tool to list flights information matching search criteria.
+      Takes an arrival airport and filters by date and returns all matching flights.
+      If 3-letter iata code is not provided for departure_airport or arrival_airport, use search airport tools to get iata code information.
+      Do NOT guess a date, ask user for date input if it is not given. Date must be in the following format: YYYY-MM-DD.
+    parameters:
+      - name: departure_airport
+        type: string
+        description: Departure airport 3-letter code
+      - name: date
+        type: string
+        description: Date of flight departure
+    statement: |
+      SELECT * FROM flights
+      WHERE (CAST($1 AS TEXT) IS NULL OR departure_airport ILIKE $1)
+      AND departure_time >= CAST($2 AS timestamp)
+      AND departure_time < CAST($2 AS timestamp) + interval '1 day'
+      LIMIT 10
+  search_policies:
+    kind: postgres-sql
+    source: my-pg-instance
+    description: |
+      Use this tool to search for cymbal air passenger policy.
+      Policy that are listed is unchangeable.
+      You will not answer any questions outside of the policy given.
+      Policy includes information on ticket purchase and changes, baggage, check-in and boarding, special assistance, overbooking, flight delays and cancellations.
+    parameters:
+      - name: query
+        type: string
+        description: Search query
+    statement: |
+      SELECT content
+      FROM policies
+      WHERE (embedding <=> $1) < 0.5
+      ORDER BY (embedding <=> $1)
+      LIMIT 5
+  search_flights_by_number:
+    kind: postgres-sql
+    source: my-pg-instance
+    description: |
+      Use this tool to get information for a specific flight.
+      Takes an airline code and flight number and returns info on the flight.
+      Do NOT use this tool with a flight id. Do NOT guess an airline code or flight number.
+      A airline code is a code for an airline service consisting of two-character
+      airline designator and followed by flight number, which is 1 to 4 digit number.
+      For example, if given CY 0123, the airline is "CY", and flight_number is "123".
+      Another example for this is DL 1234, the airline is "DL", and flight_number is "1234".
+      If the tool returns more than one option choose the date closes to today.
+    parameters:
+      - name: airline
+        type: string
+        description: Airline unique 2 letter identifier
+      - name: flight_number
+        type: string
+        description: 1 to 4 digit number
+    statement: |
+      SELECT * FROM flights
+      WHERE airline = $1
+      AND flight_number = $2
+      LIMIT 10
+  search_amenities:
+    kind: postgres-sql
+    source: my-pg-instance
+    description: |
+      Use this tool to search amenities by name or to recommended airport amenities at SFO.
+      If user provides flight info, use 'Search Flights by Flight Number'
+      first to get gate info and location.
+      Only recommend amenities that are returned by this query.
+      Find amenities close to the user by matching the terminal and then comparing
+      the gate numbers. Gate number iterate by letter and number, example A1 A2 A3
+      B1 B2 B3 C1 C2 C3. Gate A3 is close to A2 and B1.
+    parameters:
+      - name: query
+        type: string
+        description: Search query
+    statement: |
+      SELECT name, description, location, terminal, category, hour
+      FROM amenities
+      WHERE (embedding <=> $1) < 0.5
+      ORDER BY (embedding <=> $1)
+      LIMIT 5
+  validate_ticket:
+    kind: postgres-sql
+    source: my-pg-instance
+    description: |
+      Use this tool to validate ticket before booking.
+    parameters:
+      - name: airline
+        type: string
+        description: Airline unique 2 letter identifier
+      - name: flight_number
+        type: string
+        description: 1 to 4 digit number
+      - name: departure_airport
+        type: string
+        description: Departure airport 3-letter code
+      - name: departure_time
+        type: string
+        description: Flight departure datetime
+    statement: |
+      SELECT * FROM flights
+      WHERE airline ILIKE $1
+      AND flight_number ILIKE $2
+      AND departure_airport ILIKE $3
+      AND departure_time = $4
+  insert_ticket:
+    kind: postgres-sql
+    source: my-pg-instance
+    description: |
+      Use this tool to book a flight ticket for the user.
+    parameters:
+      - name: user_id
+        type: string
+        description: User ID of the logged in user.
+        authServices:
+          - name: my_google_service
+            field: sub
+      - name: user_name
+        type: string
+        description: Name of the logged in user.
+        authServices:
+          - name: my_google_service
+            field: name
+      - name: user_email
+        type: string
+        description: Email ID of the logged in user.
+        authServices:
+          - name: my_google_service
+            field: email
+      - name: airline
+        type: string
+        description: Airline unique 2 letter identifier
+      - name: flight_number
+        type: string
+        description: 1 to 4 digit number
+      - name: departure_airport
+        type: string
+        description: Departure airport 3-letter code
+      - name: departure_time
+        type: string
+        description: Flight departure datetime
+      - name: arrival_airport
+        type: string
+        description: Arrival airport 3-letter code
+      - name: arrival_time
+        type: string
+        description: Flight arrival datetime
+    statement: |
+      INSERT INTO tickets (
+        user_id,
+        user_name,
+        user_email,
+        airline,
+        flight_number,
+        departure_airport,
+        departure_time,
+        arrival_airport,
+        arrival_time
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+  list_tickets:
+    kind: postgres-sql
+    source: my-pg-instance
+    description: |
+      Use this tool to list a user's flight tickets.
+      Takes no input and returns a list of current user's flight tickets.
+    parameters:
+      - name: user_id
+        type: string
+        description: User ID of the logged in user.
+        authServices:
+          - name: my_google_service
+            field: sub
+    statement: |
+      SELECT user_name, airline, flight_number, departure_airport, arrival_airport, departure_time, arrival_time FROM tickets
+      WHERE user_id = $1
+toolsets:
+  cymbal_air:
+    - search_airports_by_city
+    - search_airports_by_country
+    - search_airports_by_name
+    - list_flights_by_departure_airport
+    - list_flights_by_arrival_airport
+    - search_policies
+    - search_flights_by_number
+    - search_amenities
+    - insert_ticket
+    - list_tickets
