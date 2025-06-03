@@ -27,7 +27,7 @@ async def initialize_tools(get_user_id_token: Callable[[], str]):
     client = ToolboxClient(TOOLBOX_URL)
     tools = await client.aload_toolset("cymbal_air", auth_tokens)
     insert_ticket = await client.aload_tool("insert_ticket", auth_tokens)
-    validate_ticket = await client.aload_tool("validate_ticket", auth_tokens)
+    validate_ticket = await client.aload_tool("validate_ticket")
 
     return (tools, insert_ticket, validate_ticket)
 
