@@ -22,11 +22,13 @@ TOOLBOX_URL = os.getenv("TOOLBOX_URL", default="http://127.0.0.1:5000")
 
 
 # Tools for agent
-async def initialize_tools(get_user_id_token: Callable[[], str]):
-    auth_tokens = {"my_google_service": get_user_id_token}
+async def initialize_tools():
     client = ToolboxClient(TOOLBOX_URL)
-    tools = await client.aload_toolset("cymbal_air", auth_tokens)
-    insert_ticket = await client.aload_tool("insert_ticket", auth_tokens)
+    tools = await client.aload_toolset("cymbal_air")
+
+    # Load insert_ticket and validate_ticket tools separately to implement
+    # human-in-the-loop.
+    insert_ticket = await client.aload_tool("insert_ticket")
     validate_ticket = await client.aload_tool("validate_ticket")
 
     return (tools, insert_ticket, validate_ticket)

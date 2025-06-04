@@ -71,9 +71,7 @@ class LangGraphOrchestrator(BaseOrchestrator):
         """Create and load an agent executor with tools and LLM."""
         if self._langgraph_app is None:
             print("Initializing graph..")
-            tools, insert_ticket, validate_ticket = await initialize_tools(
-                lambda: self.get_user_id_token(session["uuid"]) or ""
-            )
+            tools, insert_ticket, validate_ticket = await initialize_tools()
             prompt = self.create_prompt_template()
             checkpointer = MemorySaver()
             langgraph_app = await create_graph(
