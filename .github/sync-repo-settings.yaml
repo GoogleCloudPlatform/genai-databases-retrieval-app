@@ -29,12 +29,7 @@ branchProtectionRules:
     requiresStrictStatusChecks: true
     requiredStatusCheckContexts:
       - "cla/google"
-      - "retrieval_service"
       - "llm_demo"
-      - "retrieval-service-app-pr (retrieval-app-testing)"
-      - "retrieval-service-postgres-pr (retrieval-app-testing)"
-      - "retrieval-service-alloydb-pr (retrieval-app-testing)"
-      - "retrieval-service-cloudsql-pg-pr (retrieval-app-testing)"
       - "llm-demo-langchain-tools-pr (retrieval-app-testing)"
       - "llm-demo-langgraph-pr (retrieval-app-testing)"
       - "llm-demo-vertexai-fc-pr (retrieval-app-testing)"
