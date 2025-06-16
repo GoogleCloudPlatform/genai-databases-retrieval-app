@@ -37,7 +37,7 @@ options:
   dynamic_substitutions: true
 
 substitutions:
-  _ORCHESTRATION_TYPE: "langchain-tools"
+  _ORCHESTRATION_TYPE: "langgraph"
   _RETRIEVAL_EXPERIMENT_NAME: "retrieval-phase-eval-${_PR_NUMBER}"
   _RESPONSE_EXPERIMENT_NAME:  "response-phase-eval-${_PR_NUMBER}"
 
