@@ -48,7 +48,7 @@ async def main():
     USER_ID_TOKEN = os.getenv("USER_ID_TOKEN", default=None)
 
     CLIENT_ID = os.getenv("CLIENT_ID", default="")
-    ORCHESTRATION_TYPE = os.getenv("ORCHESTRATION_TYPE", default="langchain-tools")
+    ORCHESTRATION_TYPE = "langgraph"
     EXPORT_CSV = bool(os.getenv("EXPORT_CSV", default=False))
     RETRIEVAL_EXPERIMENT_NAME = os.getenv(
         "RETRIEVAL_EXPERIMENT_NAME", default="retrieval-phase-eval"

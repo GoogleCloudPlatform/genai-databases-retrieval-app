@@ -24,7 +24,7 @@ from app import init_app
 async def main():
     PORT = int(os.getenv("PORT", default=8081))
     HOST = os.getenv("HOST", default="0.0.0.0")
-    ORCHESTRATION_TYPE = os.getenv("ORCHESTRATION_TYPE", default="langchain-tools")
+    ORCHESTRATION_TYPE = "langgraph"
     CLIENT_ID = os.getenv("CLIENT_ID")
     MIDDLEWARE_SECRET = os.getenv("MIDDLEWARE_SECRET", default="this is a secret")
     app = init_app(

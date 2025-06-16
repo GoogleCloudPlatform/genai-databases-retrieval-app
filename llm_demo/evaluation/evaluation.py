@@ -32,7 +32,6 @@ async def run_llm_for_eval(
 ) -> List[EvalData]:
     """
     Generate llm_tool_calls and llm_output for golden dataset query.
-    This function is only compatible with the langchain-tools orchestration.
     """
     agent = orc.get_user_session(session_id)
     for eval_data in eval_list:
