@@ -219,7 +219,15 @@ class LangGraphOrchestrator(BaseOrchestrator):
         return BASE_HISTORY
 
     def get_config(self, uuid: str):
-        return {"configurable": {"thread_id": uuid, "checkpoint_ns": ""}}
+        return {
+            "configurable": {
+                "thread_id": uuid,
+                "auth_token_getters": {
+                    "my_google_service": lambda: self.get_user_id_token(uuid)
+                },
+                "checkpoint_ns": "",
+            },
+        }
 
     async def user_session_signout(self, uuid: str):
         checkpoint = empty_checkpoint()
