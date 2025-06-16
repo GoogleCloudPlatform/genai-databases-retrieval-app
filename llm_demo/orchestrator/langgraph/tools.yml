@@ -5,12 +5,12 @@ sources:
     region: us-central1
     instance: my-cloudsql-pg-instance
     database: assistantdemo
-    user: $YOUR_USERNAME
-    password: $YOUR_PASSWORD
+    user: postgres
+    password: postgres
 authServices:
   my_google_service:
     kind: google
-    clientId: $YOUR_CLIENT_ID
+    clientId: 706535509072-qa5v22ur8ik8o513b0538ufo0ne9jfn5.apps.googleusercontent.com
 tools:
   search_airports_by_city:
     kind: postgres-sql
