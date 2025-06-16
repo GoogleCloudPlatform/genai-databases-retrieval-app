@@ -27,7 +27,7 @@ from google.oauth2 import id_token  # type:ignore
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
-from orchestrator import createOrchestrator
+from orchestrator import Orchestrator
 
 routes = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -252,7 +252,7 @@ def init_app(
         raise HTTPException(status_code=500, detail="Orchestrator not found")
     app = FastAPI(lifespan=lifespan)
     app.state.client_id = client_id
-    app.state.orchestrator = createOrchestrator(orchestration_type)
+    app.state.orchestrator = Orchestrator()
     app.include_router(routes)
     app.mount("/static", StaticFiles(directory="static"), name="static")
     app.add_middleware(SessionMiddleware, secret_key=middleware_secret)
