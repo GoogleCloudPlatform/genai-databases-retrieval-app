@@ -243,13 +243,10 @@ def clear_user_info(session: dict[str, Any]):
 
 
 def init_app(
-    orchestration_type: Optional[str],
     client_id: Optional[str],
     middleware_secret: Optional[str],
 ) -> FastAPI:
     # FastAPI setup
-    if orchestration_type is None:
-        raise HTTPException(status_code=500, detail="Orchestrator not found")
     app = FastAPI(lifespan=lifespan)
     app.state.client_id = client_id
     app.state.orchestrator = Orchestrator()
@@ -262,11 +259,11 @@ def init_app(
 if __name__ == "__main__":
     PORT = int(os.getenv("PORT", default=8081))
     HOST = os.getenv("HOST", default="0.0.0.0")
-    ORCHESTRATION_TYPE = "langgraph"
     CLIENT_ID = os.getenv("CLIENT_ID")
     MIDDLEWARE_SECRET = os.getenv("MIDDLEWARE_SECRET", default="this is a secret")
     app = init_app(
-        ORCHESTRATION_TYPE, client_id=CLIENT_ID, middleware_secret=MIDDLEWARE_SECRET
+        client_id=CLIENT_ID,
+        middleware_secret=MIDDLEWARE_SECRET
     )
     if app is None:
         raise TypeError("app not instantiated")
