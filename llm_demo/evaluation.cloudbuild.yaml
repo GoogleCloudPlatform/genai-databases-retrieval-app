@@ -21,7 +21,6 @@ steps:
     name: python:3.11
     dir: llm_demo
     env: # Set env var expected by tests
-      - "ORCHESTRATION_TYPE=${_ORCHESTRATION_TYPE}"
       - "RETRIEVAL_EXPERIMENT_NAME=${_RETRIEVAL_EXPERIMENT_NAME}"
       - "RESPONSE_EXPERIMENT_NAME=${_RESPONSE_EXPERIMENT_NAME}"
     secretEnv:
@@ -37,7 +36,6 @@ options:
   dynamic_substitutions: true
 
 substitutions:
-  _ORCHESTRATION_TYPE: "langgraph"
   _RETRIEVAL_EXPERIMENT_NAME: "retrieval-phase-eval-${_PR_NUMBER}"
   _RESPONSE_EXPERIMENT_NAME:  "response-phase-eval-${_PR_NUMBER}"
 
