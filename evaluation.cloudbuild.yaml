@@ -14,12 +14,10 @@
 steps:
   - id: Install dependencies
     name: python:3.11
-    dir: llm_demo 
     script: pip install -r requirements.txt -r requirements-test.txt --user
 
   - id: "Run evaluation service"
     name: python:3.11
-    dir: llm_demo
     env: # Set env var expected by tests
       - "RETRIEVAL_EXPERIMENT_NAME=${_RETRIEVAL_EXPERIMENT_NAME}"
       - "RESPONSE_EXPERIMENT_NAME=${_RESPONSE_EXPERIMENT_NAME}"

@@ -14,7 +14,6 @@
 steps:
   - id: "Deploy to Cloud Run"
     name: "gcr.io/cloud-builders/gcloud:latest"
-    dir: llm_demo
     script: |
         #!/usr/bin/env bash
         gcloud run deploy ${_SERVICE} \
