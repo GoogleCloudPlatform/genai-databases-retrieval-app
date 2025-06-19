@@ -34,9 +34,9 @@ tools:
         default: ""
     statement: |
       SELECT * FROM airports
-      WHERE (CAST($1 AS TEXT) IS NULL OR country ILIKE $1)
-      AND (CAST($2 AS TEXT) IS NULL OR city ILIKE $2)
-      AND (CAST($3 AS TEXT) IS NULL OR name ILIKE '%' || $3 || '%')
+      WHERE (CAST($1 AS TEXT) = '' OR country ILIKE $1)
+      AND (CAST($2 AS TEXT) = '' OR city ILIKE $2)
+      AND (CAST($3 AS TEXT) = '' OR name ILIKE '%' || $3 || '%')
       LIMIT 10
   list_flights:
     kind: postgres-sql
@@ -61,8 +61,8 @@ tools:
         description: Date of flight departure
     statement: |
       SELECT * FROM flights
-      WHERE (CAST($1 AS TEXT) IS NULL OR departure_airport ILIKE $1)
-      AND (CAST($2 AS TEXT) IS NULL OR arrival_airport ILIKE $2)
+      WHERE (CAST($1 AS TEXT) = '' OR departure_airport ILIKE $1)
+      AND (CAST($2 AS TEXT) = '' OR arrival_airport ILIKE $2)
       AND departure_time >= CAST($3 AS timestamp)
       AND departure_time < CAST($3 AS timestamp) + interval '1 day'
       LIMIT 10
