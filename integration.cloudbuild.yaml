@@ -30,6 +30,7 @@ steps:
       - |
         export URL=$(gcloud run services describe ${_SERVICE} --region ${_REGION} --format 'value(status.url)')
         export ID_TOKEN=$(gcloud auth print-identity-token --audiences $$URL)
+        export TOOLBOX_URL=${_TOOLBOX_URL}
 
         # Test `/` route
         curl -c cookies.txt -si --fail --show-error -H "Authorization: Bearer $$ID_TOKEN" $$URL
