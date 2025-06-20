@@ -17,22 +17,20 @@ import json
 from typing import Dict, List
 
 import pandas as pd
-from pydantic import BaseModel, Field
 from vertexai.evaluation import EvalTask
 from vertexai.evaluation import _base as evaluation_base
 
-from orchestrator import BaseOrchestrator
+from orchestrator import Orchestrator
 
 from .eval_golden import EvalData, ToolCall
 from .metrics import response_phase_metrics, retrieval_phase_metrics
 
 
 async def run_llm_for_eval(
-    eval_list: List[EvalData], orc: BaseOrchestrator, session: Dict, session_id: str
+    eval_list: List[EvalData], orc: Orchestrator, session: Dict, session_id: str
 ) -> List[EvalData]:
     """
     Generate llm_tool_calls and llm_output for golden dataset query.
-    This function is only compatible with the langchain-tools orchestration.
     """
     agent = orc.get_user_session(session_id)
     for eval_data in eval_list:
