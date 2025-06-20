@@ -262,10 +262,14 @@ async function cancelTicket(id) {
             'Content-Type': 'application/json'
         }
     });
+    logMessage("human", "I changed my mind.")
+    removeTicketChoices(id);
+
     if (response.ok) {
-        logMessage("human", "I changed my mind.")
-        removeTicketChoices(id);
-        logMessage("ai", 'Booking declined. What else can I help you with?');
+        logMessage("ai", await response.text());
+    } else {
+        console.error(await response.text())
+        logMessage("ai", "Sorry, something went wrong. 😢")
     }
 }
 

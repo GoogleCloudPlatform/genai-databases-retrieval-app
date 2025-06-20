@@ -195,13 +195,19 @@ async def decline_flight(request: Request):
     # This is helpful in case of reloads so there doesn't seem to be a break in communication.
     orchestrator = request.app.state.orchestrator
     response = await orchestrator.user_session_decline_ticket(request.session["uuid"])
+    response = (
+        response["output"]
+        if response
+        else "Booking declined. What else can I help you with?"
+    )
     request.session["history"].append(
         {"type": "ai", "data": {"content": "Please confirm if you would like to book."}}
     )
     request.session["history"].append(
         {"type": "human", "data": {"content": "I changed my mind."}}
     )
-    return None
+    request.session["history"].append({"type": "ai", "data": {"content": response}})
+    return response
 
 
 @routes.post("/reset")
