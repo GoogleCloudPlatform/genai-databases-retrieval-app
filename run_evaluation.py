@@ -26,7 +26,7 @@ from evaluation import (
     goldens,
     run_llm_for_eval,
 )
-from orchestrator import createOrchestrator
+from orchestrator import Orchestrator
 
 
 def export_metrics_table_csv(retrieval: pd.DataFrame, response: pd.DataFrame):
@@ -48,7 +48,6 @@ async def main():
     USER_ID_TOKEN = os.getenv("USER_ID_TOKEN", default=None)
 
     CLIENT_ID = os.getenv("CLIENT_ID", default="")
-    ORCHESTRATION_TYPE = os.getenv("ORCHESTRATION_TYPE", default="langchain-tools")
     EXPORT_CSV = bool(os.getenv("EXPORT_CSV", default=False))
     RETRIEVAL_EXPERIMENT_NAME = os.getenv(
         "RETRIEVAL_EXPERIMENT_NAME", default="retrieval-phase-eval"
@@ -58,7 +57,7 @@ async def main():
     )
 
     # Prepare orchestrator and session
-    orc = createOrchestrator(ORCHESTRATION_TYPE)
+    orc = Orchestrator()
     session_id = str(uuid.uuid4())
     session = {"uuid": session_id}
     await orc.user_session_create(session)

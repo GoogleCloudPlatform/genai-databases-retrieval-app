@@ -42,6 +42,8 @@ BASE_HISTORY = {
 
 
 class LangGraphOrchestrator(BaseOrchestrator):
+    MODEL = "gemini-2.0-flash-001"
+
     _user_sessions: Dict[str, str]
     # aiohttp context
     connector = None
@@ -51,10 +53,6 @@ class LangGraphOrchestrator(BaseOrchestrator):
         self._user_sessions = {}
         self._langgraph_app = None
         self._checkpointer = None
-
-    @classproperty
-    def kind(cls):
-        return "langgraph"
 
     def user_session_exist(self, uuid: str) -> bool:
         return uuid in self._user_sessions
@@ -249,7 +247,9 @@ class LangGraphOrchestrator(BaseOrchestrator):
     async def user_session_signout(self, uuid: str):
         checkpoint = empty_checkpoint()
         config = self.get_config(uuid)
-        self._checkpointer.put(config=config, checkpoint=checkpoint, metadata={})
+        self._checkpointer.put(
+            config=config, checkpoint=checkpoint, metadata={}, new_versions={}
+        )
         del self._user_sessions[uuid]
 
     async def close_clients(self):

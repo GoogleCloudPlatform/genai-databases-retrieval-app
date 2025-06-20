@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .langgraph_orchestrator import LangGraphOrchestrator
+from .orchestrator import Orchestrator
 
-__ALL__ = ["LangGraphOrchestrator"]
+__ALL__ = ["Orchestrator"]
