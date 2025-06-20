@@ -20,7 +20,7 @@ steps:
           --source . \
           --region ${_REGION} \
           --no-allow-unauthenticated \
-          --update-env-vars ORCHESTRATION_TYPE=${_ORCHESTRATION_TYPE}
+          --update-env-vars TOOLBOX_URL=${_TOOLBOX_URL}
 
   - id: "Test Frontend"
     name: "gcr.io/cloud-builders/gcloud:latest"
@@ -75,4 +75,4 @@ substitutions:
   _GCR_HOSTNAME: ${_REGION}-docker.pkg.dev
   _SERVICE: demo-service-${BUILD_ID}
   _REGION: us-central1
-  _ORCHESTRATION_TYPE: langgraph
+  _TOOLBOX_URL: https://toolbox-107716898620.us-central1.run.app
