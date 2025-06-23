@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
     print("Loading application...")
     yield
     # FastAPI app shutdown event
-    await app.state.orchestrator.close_clients()
+    print("Application shutdown.")
 
 
 @routes.get("/")
