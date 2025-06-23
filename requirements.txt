@@ -17,7 +17,4 @@ langgraph==0.4.8
 pandas-stubs==2.2.2.240807
 pandas==2.2.3
 pydantic==2.9.0
-# TODO: Replace with toolbox-langchain package from PyPI
-git+https://github.com/googleapis/mcp-toolbox-sdk-python.git@anubhav-self-auth-tools#subdirectory=packages/toolbox-core
-git+https://github.com/googleapis/mcp-toolbox-sdk-python.git@anubhav-self-auth-tools#subdirectory=packages/toolbox-langchain
-# toolbox-langchain==0.2.1
+toolbox-langchain==0.2.1
