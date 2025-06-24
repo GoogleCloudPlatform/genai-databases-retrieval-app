@@ -163,9 +163,6 @@ class Orchestrator:
         # Update state with message history
         self._langgraph_app.update_state(config, {"messages": history})
 
-    def get_user_session(self, uuid: str):
-        raise NotImplementedError("Irrelevant to LangGraph.")
-
     def set_user_session_header(self, uuid: str, user_id_token: str):
         self._user_sessions[uuid] = user_id_token
 
