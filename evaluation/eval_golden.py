@@ -21,7 +21,7 @@ from pytz import timezone
 
 class ToolCall(BaseModel):
     """
-    Represents tool call by orchestration.
+    Represents tool call by agent.
     """
 
     name: str

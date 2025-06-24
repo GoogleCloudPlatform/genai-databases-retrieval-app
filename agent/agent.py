@@ -36,7 +36,7 @@ BASE_HISTORY = {
 }
 
 
-class Orchestrator:
+class Agent:
     MODEL = "gemini-2.0-flash-001"
 
     _user_sessions: Dict[str, str]

@@ -26,7 +26,7 @@ from evaluation import (
     goldens,
     run_llm_for_eval,
 )
-from orchestrator import Orchestrator
+from agent import Agent
 
 
 def export_metrics_table_csv(retrieval: pd.DataFrame, response: pd.DataFrame):
@@ -56,8 +56,8 @@ async def main():
         "RESPONSE_EXPERIMENT_NAME", default="response-phase-eval"
     )
 
-    # Prepare orchestrator and session
-    orc = Orchestrator()
+    # Prepare agent and session
+    orc = Agent()
     session_id = str(uuid.uuid4())
     session = {"uuid": session_id}
     await orc.user_session_create(session)

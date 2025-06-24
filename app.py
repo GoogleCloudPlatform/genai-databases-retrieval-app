@@ -27,7 +27,7 @@ from google.oauth2 import id_token  # type:ignore
 from markdown import markdown
 from starlette.middleware.sessions import SessionMiddleware
 
-from orchestrator import Orchestrator
+from agent import Agent
 
 routes = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -47,12 +47,12 @@ async def lifespan(app: FastAPI):
 async def index(request: Request):
     """Render the default template."""
     # User session setup
-    orchestrator = request.app.state.orchestrator
+    agent = request.app.state.agent
     session = request.session
 
     # check if token and user info is still valid
     if "uuid" in session:
-        user_id_token = orchestrator.get_user_id_token(session["uuid"])
+        user_id_token = agent.get_user_id_token(session["uuid"])
         if user_id_token:
             if session.get("user_info") and not get_user_info(
                 user_id_token, request.app.state.client_id
@@ -61,8 +61,8 @@ async def index(request: Request):
         elif not user_id_token and "user_info" in session:
             await logout_google(request)
 
-    if "uuid" not in session or not orchestrator.user_session_exist(session["uuid"]):
-        await orchestrator.user_session_create(session)
+    if "uuid" not in session or not agent.user_session_exist(session["uuid"]):
+        await agent.user_session_create(session)
 
     return templates.TemplateResponse(
         "index.html",
@@ -102,8 +102,8 @@ async def login_google(
     session["user_info"] = user_info
 
     # create new request session
-    orchestrator = request.app.state.orchestrator
-    orchestrator.set_user_session_header(session["uuid"], str(user_id_token))
+    agent = request.app.state.agent
+    agent.set_user_session_header(session["uuid"], str(user_id_token))
     print("Logged in to Google.")
 
     welcome_text = (
@@ -131,9 +131,9 @@ async def logout_google(
         raise HTTPException(status_code=400, detail="No session to reset.")
 
     uuid = request.session["uuid"]
-    orchestrator = request.app.state.orchestrator
-    if orchestrator.user_session_exist(uuid):
-        await orchestrator.user_session_signout(uuid)
+    agent = request.app.state.agent
+    if agent.user_session_exist(uuid):
+        await agent.user_session_signout(uuid)
     request.session.clear()
 
 
@@ -150,8 +150,8 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
 
     # Add user message to chat history
     request.session["history"].append({"type": "human", "data": {"content": prompt}})
-    orchestrator = request.app.state.orchestrator
-    response = await orchestrator.user_session_invoke(request.session["uuid"], prompt)
+    agent = request.app.state.agent
+    response = await agent.user_session_invoke(request.session["uuid"], prompt)
     output = response.get("output")
     confirmation = response.get("confirmation")
     trace = response.get("trace")
@@ -177,8 +177,8 @@ async def book_flight(request: Request, params: str = Body(embed=True)):
         raise HTTPException(
             status_code=400, detail="Error: Invoke index handler before start chatting"
         )
-    orchestrator = request.app.state.orchestrator
-    response = await orchestrator.user_session_insert_ticket(
+    agent = request.app.state.agent
+    response = await agent.user_session_insert_ticket(
         request.session["uuid"], params
     )
     # Note in the history, that the ticket has been successfully booked
@@ -193,8 +193,8 @@ async def decline_flight(request: Request):
     """Handler for LangChain chat requests"""
     # Note in the history, that the ticket was not booked
     # This is helpful in case of reloads so there doesn't seem to be a break in communication.
-    orchestrator = request.app.state.orchestrator
-    response = await orchestrator.user_session_decline_ticket(request.session["uuid"])
+    agent = request.app.state.agent
+    await agent.user_session_decline_ticket(request.session["uuid"])
     request.session["history"].append(
         {"type": "ai", "data": {"content": "Please confirm if you would like to book."}}
     )
@@ -212,11 +212,11 @@ def reset(request: Request):
         raise HTTPException(status_code=400, detail="No session to reset.")
 
     uuid = request.session["uuid"]
-    orchestrator = request.app.state.orchestrator
-    if not orchestrator.user_session_exist(uuid):
+    agent = request.app.state.agent
+    if not agent.user_session_exist(uuid):
         raise HTTPException(status_code=500, detail="Current user session not found")
 
-    orchestrator.user_session_reset(request.session, uuid)
+    agent.user_session_reset(request.session, uuid)
 
 
 def get_user_info(user_id_token: str, client_id: str) -> dict[str, str]:
@@ -243,7 +243,7 @@ def init_app(
     # FastAPI setup
     app = FastAPI(lifespan=lifespan)
     app.state.client_id = client_id
-    app.state.orchestrator = Orchestrator()
+    app.state.agent = Agent()
     app.include_router(routes)
     app.mount("/static", StaticFiles(directory="static"), name="static")
     app.add_middleware(SessionMiddleware, secret_key=middleware_secret)
