@@ -363,7 +363,6 @@ div.chat-wrapper div.chat-content div#loader-container span {
 #trace {
     position: absolute;
     width: 400px;
-    min-height: 200px;
     max-height: 400px;
     background: #f8f8f8;
     padding: 10px;
