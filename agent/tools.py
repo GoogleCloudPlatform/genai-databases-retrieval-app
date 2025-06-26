@@ -13,27 +13,22 @@
 # limitations under the License.
 
 import os
-
-from toolbox_langchain import ToolboxClient
-from google.auth.transport.requests import Request
-from google.auth.exceptions import DefaultCredentialsError
-from google.oauth2.id_token import fetch_id_token
+from typing import Optional
 from warnings import warn
 
+from google.auth.exceptions import DefaultCredentialsError
+from google.auth.transport.requests import Request
+from google.oauth2.id_token import fetch_id_token
+from toolbox_langchain import ToolboxClient
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 TOOLBOX_URL = os.getenv("TOOLBOX_URL", default="http://127.0.0.1:5000")
 
 
-def get_token_with_library() -> str:
-    """
-    Fetches a Google-signed identity token using the google.auth library.
-
-    Returns:
-        The identity token as a string.
-    """
+def __get_client_headers() -> Optional[dict[str, str]]:
     try:
-        return fetch_id_token(Request(), TOOLBOX_URL)
+        id_token = fetch_id_token(Request(), TOOLBOX_URL)
+        return {"Authorization": f"Bearer {id_token}"}
     except DefaultCredentialsError as e:
         warn(
             "Failed to fetch identity token using google.auth library. "
@@ -42,14 +37,10 @@ def get_token_with_library() -> str:
         )
         return None
 
+
 # Tools for agent
 async def initialize_tools():
-    creds =  get_token_with_library()
-    if creds:
-        client_headers = {"Authorization": f"Bearer {creds}"}
-    else:
-        client_headers = None
-    client = ToolboxClient(TOOLBOX_URL, client_headers=client_headers)
+    client = ToolboxClient(TOOLBOX_URL, client_headers=__get_client_headers())
     tools = await client.aload_toolset("cymbal_air")
 
     # Load insert_ticket and validate_ticket tools separately to implement
