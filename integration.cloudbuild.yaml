@@ -20,7 +20,6 @@ steps:
           --source . \
           --region ${_REGION} \
           --no-allow-unauthenticated \
-          --update-env-vars ORCHESTRATION_TYPE=${_ORCHESTRATION_TYPE}
 
   - id: "Test Frontend"
     name: "gcr.io/cloud-builders/gcloud:latest"
@@ -75,4 +74,3 @@ substitutions:
   _GCR_HOSTNAME: ${_REGION}-docker.pkg.dev
   _SERVICE: demo-service-${BUILD_ID}
   _REGION: us-central1
-  _ORCHESTRATION_TYPE: langgraph
