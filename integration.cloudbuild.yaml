@@ -25,8 +25,8 @@ steps:
           --image "us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:latest" \
           --region ${_REGION} \
           --no-allow-unauthenticated \
-          --set-env-vars "TOOLS_FILE=/app/tools.json" \
-          --set-secrets="/app/tools.json=projects/706535509072/secrets/toolbox-tools:latest"
+          --args="--tools-file=/app/tools.yaml" \
+          --set-secrets="/app/tools.yaml=projects/706535509072/secrets/toolbox-tools:latest"
 
         echo "Fetching URL for deployed Toolbox service..."
         gcloud run services describe ${_TOOLBOX_SERVICE} --region ${_REGION} --format 'value(status.url)' > /workspace/toolbox_url.txt
