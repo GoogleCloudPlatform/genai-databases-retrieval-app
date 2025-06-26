@@ -22,7 +22,7 @@ steps:
         set -e # Exit immediately if any command fails
         echo "Deploying Toolbox service..."
         gcloud run deploy ${_TOOLBOX_SERVICE} \
-          --image "us-central1-docker.pkg.dev/cloud-llm-aux-dev/tool-orch-public/toolbox:latest" \
+          --image "us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:latest" \
           --region ${_REGION} \
           --no-allow-unauthenticated \
           --set-env-vars "TOOLS_FILE=/app/tools.json" \
