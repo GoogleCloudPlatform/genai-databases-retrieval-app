@@ -20,12 +20,14 @@ steps:
       - -c
       - |
         set -e # Exit immediately if any command fails
+
         echo "Deploying Toolbox service..."
         gcloud run deploy ${_TOOLBOX_SERVICE} \
           --image "us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:latest" \
           --region ${_REGION} \
+          --port="5000" \
           --no-allow-unauthenticated \
-          --args="--tools-file=/app/tools.yaml" \
+          --args="--tools-file=/app/tools.yaml,--address=0.0.0.0" \
           --set-secrets="/app/tools.yaml=projects/706535509072/secrets/toolbox-tools:latest"
 
         echo "Fetching URL for deployed Toolbox service..."
@@ -65,7 +67,7 @@ steps:
     entrypoint: /bin/bash
     env: # Set env var expected by app
     args:
-      - "-c"
+      - -c
       - |
         export URL=$(gcloud run services describe ${_SERVICE} --region ${_REGION} --format 'value(status.url)')
         export ID_TOKEN=$(gcloud auth print-identity-token --audiences $$URL)
