@@ -33,17 +33,29 @@ steps:
   # Step 2: Deploy the main Frontend service with the dynamic Toolbox URL
   - id: "Deploy Frontend Service"
     name: "gcr.io/cloud-builders/gcloud:latest"
-    script: |
-        #!/usr/bin/env bash
-        # Read the Toolbox URL captured in the previous step
-        export TOOLBOX_URL=$(cat /workspace/toolbox_url.txt)
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        # Exit immediately if a command fails
+        set -e
 
-        # Deploy the main service and inject the dynamic TOOLBOX_URL
+        # Check if the URL file from the previous step exists and is not empty
+        if [ ! -s /workspace/toolbox_url.txt ]; then
+          echo "ERROR: /workspace/toolbox_url.txt is missing or empty."
+          exit 1
+        fi
+
+        # For debugging, print the URL we are about to use
+        echo "Deploying Frontend with TOOLBOX_URL=$$(cat /workspace/toolbox_url.txt)"
+
+        # Deploy the main service, directly substituting the URL from the file.
+        # This is more robust than using an intermediate shell variable.
         gcloud run deploy ${_SERVICE} \
           --source . \
           --region ${_REGION} \
           --no-allow-unauthenticated \
-          --update-env-vars TOOLBOX_URL=$$TOOLBOX_URL
+          --update-env-vars "TOOLBOX_URL=$$(cat /workspace/toolbox_url.txt)"
 
   # Step 3: Test the running Frontend service
   - id: "Test Frontend"
