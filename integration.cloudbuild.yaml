@@ -17,8 +17,10 @@ steps:
     name: "gcr.io/cloud-builders/gcloud:latest"
     entrypoint: bash
     args:
-      - "-c"
+      - -c
       - |
+        set -e # Exit immediately if any command fails
+        echo "Deploying Toolbox service..."
         gcloud run deploy ${_TOOLBOX_SERVICE} \
           --image "us-central1-docker.pkg.dev/cloud-llm-aux-dev/tool-orch-public/toolbox:latest" \
           --region ${_REGION} \
@@ -26,9 +28,9 @@ steps:
           --set-env-vars "TOOLS_FILE=/app/tools.json" \
           --set-secrets="/app/tools.json=projects/706535509072/secrets/toolbox-tools:latest"
 
-        # Capture the URL of the newly deployed Toolbox service and save it for the next step.
+        echo "Fetching URL for deployed Toolbox service..."
         gcloud run services describe ${_TOOLBOX_SERVICE} --region ${_REGION} --format 'value(status.url)' > /workspace/toolbox_url.txt
-        echo "Successfully deployed Toolbox Service at: $$(cat /workspace/toolbox_url.txt)"
+        echo "Successfully created toolbox URL file."
 
   # Step 2: Deploy the main Frontend service with the dynamic Toolbox URL
   - id: "Deploy Frontend Service"
