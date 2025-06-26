@@ -20,7 +20,6 @@ steps:
           --source . \
           --region ${_REGION} \
           --no-allow-unauthenticated \
-          --update-env-vars TOOLBOX_URL=${_TOOLBOX_URL}
 
   - id: "Test Frontend"
     name: "gcr.io/cloud-builders/gcloud:latest"
