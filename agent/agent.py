@@ -104,10 +104,7 @@ class Agent:
         )
         if user_prompt:
             user_query = [HumanMessage(content=user_prompt)]
-            app_input = {
-                "messages": user_query,
-                "user_id_token": self.get_user_id_token(uuid),
-            }
+            app_input = { "messages": user_query }
         else:
             app_input = None
         final_state = await self._langgraph_app.ainvoke(

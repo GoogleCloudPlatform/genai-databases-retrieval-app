@@ -27,7 +27,6 @@ from langchain_google_vertexai import ChatVertexAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
-from langgraph.managed import IsLastStep
 from langgraph.prebuilt import ToolNode
 from toolbox_langchain import ToolboxTool
 
@@ -40,8 +39,6 @@ class UserState(TypedDict):
     """
 
     messages: Annotated[Sequence[BaseMessage], add_messages]
-    user_id_token: str
-    is_last_step: IsLastStep
 
 
 async def create_graph(
