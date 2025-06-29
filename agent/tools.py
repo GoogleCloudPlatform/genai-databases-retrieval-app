@@ -26,6 +26,17 @@ TOOLBOX_URL = os.getenv("TOOLBOX_URL", default="http://127.0.0.1:5000")
 
 
 def __get_client_headers() -> Optional[dict[str, str]]:
+    """
+    Fetches a Google Cloud identity token for authenticating with the Toolbox
+    service.
+
+    This function uses the application's default credentials to generate an
+    identity token.
+
+    Returns:
+        Optional[dict[str, str]]: A dictionary containing the Authorization
+        header if authentication is successful, otherwise None.
+    """
     try:
         id_token = fetch_id_token(Request(), TOOLBOX_URL)
         return {"Authorization": f"Bearer {id_token}"}
