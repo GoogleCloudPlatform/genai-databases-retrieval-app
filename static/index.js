@@ -156,6 +156,7 @@ function logMessage(name, msg, trace) {
 function buildConfirmation(confirmation, messageId) {
     if (["Insert Ticket","insert_ticket"].includes(confirmation.tool)) {
         const params = confirmation.params;
+        const output = confirmation.output;
         const message_id = messageId;
         confirmations[message_id] = params
         const from = params.departure_airport;
@@ -169,7 +170,7 @@ function buildConfirmation(confirmation, messageId) {
         const message = `<div class="chat-bubble ai" id="${message_id}">
         <div class="sender-icon"><img src="static/logo.png"></div>
         <div class="ticket-confirmation">
-            Please confirm the details below to complete your booking
+            ${output}
             <div class="ticket-header"></div>
             <div class="ticket">
                 <div class="from">${from}</div>

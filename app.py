@@ -159,11 +159,19 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
     # Return assistant response
     if confirmation:
         return json.dumps(
-            {"type": "confirmation", "content": confirmation, "trace": trace}
+            {
+                "type": "confirmation",
+                "content": {"output": output, **confirmation},
+                "trace": trace,
+            }
         )
     else:
         return json.dumps(
-            {"type": "message", "content": markdown(output), "trace": trace}
+            {
+                "type": "message",
+                "content": markdown(output),
+                "trace": trace,
+            }
         )
 
 
