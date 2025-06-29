@@ -12,66 +12,28 @@
 # limitations under the License.
 
 steps:
-  # Step 1: Deploy the Toolbox service from a public image and capture its URL
-  - id: "Deploy Toolbox Service"
+  # Step 1: Deploy the Cymbal Air service with the Toolbox URL
+  - id: "Deploy Cymbal Air Service"
     name: "gcr.io/cloud-builders/gcloud:latest"
     entrypoint: bash
     args:
       - -c
       - |
-        set -e # Exit immediately if any command fails
-
-        echo "Deploying Toolbox service..."
-        gcloud run deploy ${_TOOLBOX_SERVICE} \
-          --image "us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:latest" \
-          --region ${_REGION} \
-          --port="5000" \
-          --no-allow-unauthenticated \
-          --args="--tools-file=/app/tools.yaml,--address=0.0.0.0" \
-          --set-secrets="/app/tools.yaml=projects/706535509072/secrets/toolbox-tools:latest"
-
-        echo "Fetching URL for deployed Toolbox service..."
-        gcloud run services describe ${_TOOLBOX_SERVICE} --region ${_REGION} --format 'value(status.url)' > /workspace/toolbox_url.txt
-        echo "Successfully created toolbox URL file."
-
-  # Step 2: Deploy the main Frontend service with the dynamic Toolbox URL
-  - id: "Deploy Frontend Service"
-    name: "gcr.io/cloud-builders/gcloud:latest"
-    entrypoint: bash
-    args:
-      - -c
-      - |
-        # Exit immediately if a command fails
-        set -e
-
-        # Check if the URL file from the previous step exists and is not empty
-        if [ ! -s /workspace/toolbox_url.txt ]; then
-          echo "ERROR: /workspace/toolbox_url.txt is missing or empty."
-          exit 1
-        fi
-
-        # For debugging, print the URL we are about to use
-        echo "Deploying Frontend with TOOLBOX_URL=$$(cat /workspace/toolbox_url.txt)"
-
-        # Deploy the main service, directly substituting the URL from the file.
-        # This is more robust than using an intermediate shell variable.
         gcloud run deploy ${_SERVICE} \
           --source . \
           --region ${_REGION} \
           --no-allow-unauthenticated \
-          --update-env-vars "TOOLBOX_URL=$$(cat /workspace/toolbox_url.txt)"
+          --update-env-vars "TOOLBOX_URL=${_TOOLBOX_URL}"
 
-  # Step 3: Test the running Frontend service
-  - id: "Test Frontend"
+  # Step 2: Test the running Cymbal Air
+  - id: "Test Cymbal Air"
     name: "gcr.io/cloud-builders/gcloud:latest"
     entrypoint: /bin/bash
-    env: # Set env var expected by app
     args:
       - -c
       - |
         export URL=$(gcloud run services describe ${_SERVICE} --region ${_REGION} --format 'value(status.url)')
         export ID_TOKEN=$(gcloud auth print-identity-token --audiences $$URL)
-        export TOOLBOX_URL=${_TOOLBOX_URL}
 
         # Test `/` route
         curl -c cookies.txt -si --fail --show-error -H "Authorization: Bearer $$ID_TOKEN" $$URL
@@ -99,7 +61,7 @@ steps:
           -d '{"prompt":"How can you help me?"}' \
           $$URL/chat
 
-  # Step 4: Cleanup and delete all deployed resources
+  # Step 3: Cleanup and delete deployed resources
   - id: "Delete image and services"
     name: "gcr.io/cloud-builders/gcloud"
     script: |
@@ -107,11 +69,8 @@ steps:
         # Delete the main service's source image
         gcloud artifacts docker images delete $_GCR_HOSTNAME/$PROJECT_ID/cloud-run-source-deploy/$_SERVICE --quiet
 
-        # Delete the main service
+        # Delete the Cymbal Air service
         gcloud run services delete ${_SERVICE} --region ${_REGION} --quiet
-
-        # Delete the toolbox service
-        gcloud run services delete ${_TOOLBOX_SERVICE} --region ${_REGION} --quiet
 
 serviceAccount: "projects/$PROJECT_ID/serviceAccounts/548341735270-compute@developer.gserviceaccount.com" # Necessary for ID token creation
 options:
@@ -123,4 +82,4 @@ substitutions:
   _GCR_HOSTNAME: ${_REGION}-docker.pkg.dev
   _SERVICE: demo-service-${BUILD_ID}
   _REGION: us-central1
-  _TOOLBOX_SERVICE: toolbox-service-${BUILD_ID}
+  _TOOLBOX_URL: https://toolbox-service-706535509072.us-central1.run.app
