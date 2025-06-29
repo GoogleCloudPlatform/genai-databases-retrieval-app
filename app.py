@@ -193,11 +193,7 @@ async def decline_flight(request: Request):
     # This is helpful in case of reloads so there doesn't seem to be a break in communication.
     agent = request.app.state.agent
     response = await agent.user_session_decline_ticket(request.session["uuid"])
-    response = (
-        response["output"]
-        if response
-        else "Booking declined. What else can I help you with?"
-    )
+    response = response["output"]
     request.session["history"].append(
         {"type": "ai", "data": {"content": "Please confirm if you would like to book."}}
     )
