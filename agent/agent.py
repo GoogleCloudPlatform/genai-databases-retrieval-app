@@ -57,6 +57,13 @@ class Agent:
 
     async def user_session_decline_ticket(self, uuid: str) -> dict[str, Any]:
         config = self.get_config(uuid)
+
+        # The user has declined the pending ticket booking. We inject a
+        # synthetic HumanMessage to simulate the user explicitly canceling. This
+        # state update causes langgraph to re-run its conditional logic. Instead
+        # of proceeding with the interrupted tool call, the graph routes to the
+        # main agent, which formulates a natural response to the user's
+        # "cancellation".
         human_message = HumanMessage(
             content="I changed my mind. Decline ticket booking."
         )
