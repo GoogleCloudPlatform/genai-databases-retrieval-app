@@ -178,9 +178,7 @@ async def book_flight(request: Request, params: str = Body(embed=True)):
             status_code=400, detail="Error: Invoke index handler before start chatting"
         )
     agent = request.app.state.agent
-    response = await agent.user_session_insert_ticket(
-        request.session["uuid"], params
-    )
+    response = await agent.user_session_insert_ticket(request.session["uuid"], params)
     # Note in the history, that the ticket has been successfully booked
     request.session["history"].append(
         {"type": "ai", "data": {"content": "I have booked your ticket."}}
