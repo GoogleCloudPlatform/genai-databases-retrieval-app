@@ -175,44 +175,51 @@ async def chat_handler(request: Request, prompt: str = Body(embed=True)):
         )
 
 
-@routes.post("/book/flight", response_class=PlainTextResponse)
-async def book_flight(request: Request, params: str = Body(embed=True)):
-    """Handler for LangChain chat requests"""
-    # Retrieve the params for the booking
-    if not params:
-        raise HTTPException(status_code=400, detail="Error: No booking params")
+async def __booking_handler(request: Request, is_confirmed: bool):
+    """Common booking handler for flight confirmation and decline"""
+    # Note in the history, that the ticket was not booked.
+    # This is helpful in case of reloads so there doesn't seem to be a break in
+    # communication.
     if "uuid" not in request.session:
         raise HTTPException(
             status_code=400, detail="Error: Invoke index handler before start chatting"
         )
     agent = request.app.state.agent
-    response = await agent.user_session_insert_ticket(request.session["uuid"], params)
-    # Note in the history, that the ticket has been successfully booked
-    request.session["history"].append(
-        {"type": "ai", "data": {"content": "Your flight has been successfully booked."}}
+    uuid = request.session["uuid"]
+
+    # Determine the correct agent action and user message based on confirmation
+    # status.
+    if is_confirmed:
+        action = agent.user_session_insert_ticket(uuid)
+        content = "Looks good to me. Book it!"
+    else:
+        action = agent.user_session_decline_ticket(uuid)
+        content = "I changed my mind. Decline ticket booking."
+
+    response = await action
+    output = response.get("output")
+    request.session["history"].extend(
+        [
+            {
+                "type": "human",
+                "data": {"content": content},
+            },
+            {"type": "ai", "data": {"content": output}},
+        ]
     )
-    return response
+    return output
+
+
+@routes.post("/book/flight", response_class=PlainTextResponse)
+async def book_flight(request: Request):
+    """Handler for booking confirmation requests"""
+    return await __booking_handler(request, is_confirmed=True)
 
 
 @routes.post("/book/flight/decline", response_class=PlainTextResponse)
 async def decline_flight(request: Request):
-    """Handler for LangChain chat requests"""
-    # Note in the history, that the ticket was not booked
-    # This is helpful in case of reloads so there doesn't seem to be a break in communication.
-    agent = request.app.state.agent
-    response = await agent.user_session_decline_ticket(request.session["uuid"])
-    response = response["output"]
-    request.session["history"].append(
-        {"type": "ai", "data": {"content": "Please confirm if you would like to book."}}
-    )
-    request.session["history"].append(
-        {
-            "type": "human",
-            "data": {"content": "I changed my mind. Decline ticket booking."},
-        }
-    )
-    request.session["history"].append({"type": "ai", "data": {"content": response}})
-    return response
+    """Handler for booking decline requests"""
+    return await __booking_handler(request, is_confirmed=False)
 
 
 @routes.post("/reset")
