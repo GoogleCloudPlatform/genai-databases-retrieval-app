@@ -198,7 +198,10 @@ async def decline_flight(request: Request):
         {"type": "ai", "data": {"content": "Please confirm if you would like to book."}}
     )
     request.session["history"].append(
-        {"type": "human", "data": {"content": "I changed my mind. Decline ticket booking."}}
+        {
+            "type": "human",
+            "data": {"content": "I changed my mind. Decline ticket booking."},
+        }
     )
     request.session["history"].append({"type": "ai", "data": {"content": response}})
     return response
