@@ -182,7 +182,7 @@ function buildConfirmation(confirmation, messageId) {
             ${buildBox('left', 205, 35, 15, "Flight", flight)}
             ${buildBox('left', 265, 35, 15, "Passenger", userName, "")}
             ${buildButton("Looks good to me. Book it!", 342, "#805e9d", "#FFF", "confirmTicket" + message_id)}
-            ${buildButton("I changed my mind.", 395, "#f8f8f8", "#181a23", "cancelTicket" + message_id)}
+            ${buildButton("I changed my mind. Decline ticket booking.", 395, "#f8f8f8", "#181a23", "cancelTicket" + message_id)}
         </div></div>`;
         $('.inner-content').append(message);
         $('.chat-content').scrollTop($('.chat-content').prop("scrollHeight"));
@@ -263,7 +263,7 @@ async function cancelTicket(id) {
             'Content-Type': 'application/json'
         }
     });
-    logMessage("human", "I changed my mind.")
+    logMessage("human", "I changed my mind. Decline ticket booking.")
     removeTicketChoices(id);
 
     if (response.ok) {
@@ -275,7 +275,7 @@ async function cancelTicket(id) {
 }
 
 async function confirmTicket(id) {
-    logMessage("human", "Looks good to me.")
+    logMessage("human", "Looks good to me. Book it!")
     const params = JSON.stringify(confirmations[id]);
     const response = await fetch('book/flight', {
         method: 'POST',
