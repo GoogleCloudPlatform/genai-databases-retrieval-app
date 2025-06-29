@@ -181,7 +181,7 @@ async def book_flight(request: Request, params: str = Body(embed=True)):
     response = await agent.user_session_insert_ticket(request.session["uuid"], params)
     # Note in the history, that the ticket has been successfully booked
     request.session["history"].append(
-        {"type": "ai", "data": {"content": "I have booked your ticket."}}
+        {"type": "ai", "data": {"content": "Your flight has been successfully booked."}}
     )
     return response
 
@@ -198,7 +198,7 @@ async def decline_flight(request: Request):
         {"type": "ai", "data": {"content": "Please confirm if you would like to book."}}
     )
     request.session["history"].append(
-        {"type": "human", "data": {"content": "I changed my mind."}}
+        {"type": "human", "data": {"content": "I changed my mind. Decline ticket booking."}}
     )
     request.session["history"].append({"type": "ai", "data": {"content": response}})
     return response
