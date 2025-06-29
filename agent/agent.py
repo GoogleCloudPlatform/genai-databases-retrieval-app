@@ -51,9 +51,8 @@ class Agent:
     def user_session_exist(self, uuid: str) -> bool:
         return uuid in self._user_sessions
 
-    async def user_session_insert_ticket(self, uuid: str, params: str) -> Any:
-        response = await self.user_session_invoke(uuid, None)
-        return "ticket booking success"
+    async def user_session_insert_ticket(self, uuid: str) -> Any:
+        return await self.user_session_invoke(uuid, None)
 
     async def user_session_decline_ticket(self, uuid: str) -> dict[str, Any]:
         config = self.get_config(uuid)
@@ -68,8 +67,7 @@ class Agent:
             content="I changed my mind. Decline ticket booking."
         )
         self._langgraph_app.update_state(config, {"messages": [human_message]})
-        response = await self.user_session_invoke(uuid, None)
-        return response
+        return await self.user_session_invoke(uuid, None)
 
     async def user_session_create(self, session: dict[str, Any]):
         """Create and load an agent executor with tools and LLM."""
