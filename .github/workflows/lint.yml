@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dir: [retrieval_service, llm_demo]
+        dir: [retrieval_service]
       fail-fast: false
     permissions:
       contents: read
