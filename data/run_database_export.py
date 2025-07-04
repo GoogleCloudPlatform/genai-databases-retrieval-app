@@ -17,7 +17,6 @@ import csv
 import json
 
 from toolbox_core import ToolboxClient
-from toolbox_core.tool import ToolboxTool
 
 from agent.tools import TOOLBOX_URL
 from models import Airport, Amenity, Flight, Policy
