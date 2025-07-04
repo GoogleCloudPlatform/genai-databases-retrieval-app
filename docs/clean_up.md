@@ -17,14 +17,14 @@ through this demo.
 1. Delete the Cloud Run service deployed:
 
     ```bash
-    gcloud run services delete retrieval-service
+    gcloud run services delete toolbox
     ```
 
 1. Delete service account:
 
     ```bash
     gcloud iam service-accounts delete \
-        retrieval-identity@$PROJECT_ID.iam.gserviceaccount.com
+        toolbox-identity@$PROJECT_ID.iam.gserviceaccount.com
     ```
 
 ## Delete datastore resources
