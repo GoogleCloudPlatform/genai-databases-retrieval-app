@@ -81,7 +81,9 @@ class Amenity(BaseModel):
                 total_seconds = microseconds // 1_000_000
                 minutes, seconds = divmod(total_seconds, 60)
                 hours, minutes = divmod(minutes, 60)
-                return datetime.time(hour=int(hours), minute=int(minutes), second=int(seconds))
+                return datetime.time(
+                    hour=int(hours), minute=int(minutes), second=int(seconds)
+                )
         return None
 
     @field_validator("embedding", mode="before")
