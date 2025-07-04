@@ -23,7 +23,7 @@ async def main() -> None:
     embed_service = VertexAIEmbeddings(model_name=EMBEDDING_MODEL_NAME)
 
     amenities: list[models.Amenity] = []
-    with open("./data/amenity_dataset.csv", "r") as f:
+    with open("./amenity_dataset.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")
         for line in reader:
             amenity = models.Amenity.model_validate(line)
@@ -32,7 +32,7 @@ async def main() -> None:
                 amenities.append(amenity)
 
     policies: list[models.Policy] = []
-    with open("./data/cymbalair_policy.csv", "r") as f:
+    with open("./cymbalair_policy.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")
         for line in reader:
             policy = models.Policy.model_validate(line)
@@ -42,7 +42,7 @@ async def main() -> None:
 
     print("Completed embedding generation.")
 
-    with open("./data/amenity_dataset.csv.new", "w") as f:
+    with open("./amenity_dataset.csv.new", "w") as f:
         col_names = [
             "id",
             "name",
@@ -73,7 +73,7 @@ async def main() -> None:
         for amenity in amenities:
             writer.writerow(amenity.model_dump())
 
-    with open("./data/cymbalair_policy.csv.new", "w") as f:
+    with open("./cymbalair_policy.csv.new", "w") as f:
         col_names = [
             "id",
             "content",

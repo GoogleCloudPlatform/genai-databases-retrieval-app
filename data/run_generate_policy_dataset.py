@@ -25,7 +25,7 @@ from app import EMBEDDING_MODEL_NAME
 
 
 def main() -> None:
-    policies_ds_path = "./data/cymbalair_policy.csv"
+    policies_ds_path = "./cymbalair_policy.csv"
 
     chunked = text_split(_POLICY)
     data_embeddings = vectorize(chunked)
