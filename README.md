@@ -215,7 +215,9 @@ python3 data/run_database_init.py
      this section according to the guide for the database you set up.
 
    * An `authServices` section with a service named `my_google_service`. This is
-     used by the application to access user data securely.
+     used by the application to access user data securely. You can create a
+     Client ID for your app [following these
+     steps](https://support.google.com/cloud/answer/6158849)
 
    * Once the `sources` and `authServices` sections are defined, copy the
      `tools` and `toolsets` sections directly from the `tools.yml` file located
