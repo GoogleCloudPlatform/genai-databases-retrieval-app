@@ -17,27 +17,26 @@ import csv
 
 from langchain_google_vertexai import VertexAIEmbeddings
 
-import models
-from app import EMBEDDING_MODEL_NAME
+from models import EMBEDDING_MODEL_NAME, Amenity, Policy
 
 
 async def main() -> None:
     embed_service = VertexAIEmbeddings(model_name=EMBEDDING_MODEL_NAME)
 
-    amenities: list[models.Amenity] = []
+    amenities: list[Amenity] = []
     with open("./amenity_dataset.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")
         for line in reader:
-            amenity = models.Amenity.model_validate(line)
+            amenity = Amenity.model_validate(line)
             if amenity.content:
                 amenity.embedding = embed_service.embed_query(amenity.content)
                 amenities.append(amenity)
 
-    policies: list[models.Policy] = []
+    policies: list[Policy] = []
     with open("./cymbalair_policy.csv", "r") as f:
         reader = csv.DictReader(f, delimiter=",")
         for line in reader:
-            policy = models.Policy.model_validate(line)
+            policy = Policy.model_validate(line)
             if policy.content:
                 policy.embedding = embed_service.embed_query(policy.content)
                 policies.append(policy)

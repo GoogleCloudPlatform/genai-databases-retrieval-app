@@ -18,6 +18,8 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
+EMBEDDING_MODEL_NAME = "gemini-embedding-001"
+
 
 class Airport(BaseModel):
     id: int

@@ -32,8 +32,6 @@ from agent import Agent
 routes = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-EMBEDDING_MODEL_NAME = "gemini-embedding-001"
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
