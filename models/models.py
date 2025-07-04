@@ -73,8 +73,16 @@ class Amenity(BaseModel):
         "saturday_end_hour",
         mode="before",
     )
-    def replace_none(cls, v):
-        return v or None
+    @classmethod
+    def convert_time_from_microseconds(cls, v) -> Optional[datetime.time]:
+        if isinstance(v, dict) and v.get("Valid"):
+            microseconds = v.get("Microseconds", 0)
+            if microseconds is not None:
+                total_seconds = microseconds // 1_000_000
+                minutes, seconds = divmod(total_seconds, 60)
+                hours, minutes = divmod(minutes, 60)
+                return datetime.time(hour=int(hours), minute=int(minutes), second=int(seconds))
+        return None
 
     @field_validator("embedding", mode="before")
     def validate(cls, v):
