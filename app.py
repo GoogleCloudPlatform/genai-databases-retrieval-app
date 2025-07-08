@@ -241,7 +241,7 @@ def init_app(
     # FastAPI setup
     app = FastAPI(lifespan=lifespan)
     app.state.client_id = client_id
-    app.state.agent = Agent(app.state.client_id)
+    app.state.agent = Agent()
     app.include_router(routes)
     app.mount("/static", StaticFiles(directory="static"), name="static")
     app.add_middleware(SessionMiddleware, secret_key=middleware_secret)

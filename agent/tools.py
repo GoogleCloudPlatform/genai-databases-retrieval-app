@@ -25,7 +25,7 @@ BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 TOOLBOX_URL = os.getenv("TOOLBOX_URL", default="http://127.0.0.1:5000")
 
 
-def __get_client_headers(client_id: str) -> Optional[dict[str, str]]:
+def __get_client_headers() -> Optional[dict[str, str]]:
     """
     Fetches a Google Cloud identity token for authenticating with the Toolbox
     service.
@@ -33,16 +33,12 @@ def __get_client_headers(client_id: str) -> Optional[dict[str, str]]:
     This function uses the application's default credentials to generate an
     identity token.
 
-    Args:
-        client_id (str): The client ID for the application, used to identify
-                         the application when fetching the identity token.
-
     Returns:
         Optional[dict[str, str]]: A dictionary containing the Authorization
         header if authentication is successful, otherwise None.
     """
     try:
-        id_token = fetch_id_token(Request(), client_id)
+        id_token = fetch_id_token(Request(), TOOLBOX_URL)
         return {"Authorization": f"Bearer {id_token}"}
     except DefaultCredentialsError as e:
         warn(
@@ -54,8 +50,8 @@ def __get_client_headers(client_id: str) -> Optional[dict[str, str]]:
 
 
 # Tools for agent
-async def initialize_tools(client_id: str):
-    client = ToolboxClient(TOOLBOX_URL, client_headers=__get_client_headers(client_id))
+async def initialize_tools():
+    client = ToolboxClient(TOOLBOX_URL, client_headers=__get_client_headers())
     tools = await client.aload_toolset("cymbal_air")
 
     # Load insert_ticket and validate_ticket tools separately to implement

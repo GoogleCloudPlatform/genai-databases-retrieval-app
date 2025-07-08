@@ -43,11 +43,10 @@ class Agent:
     # aiohttp context
     connector = None
 
-    def __init__(self, client_id: str):
+    def __init__(self):
         self._user_sessions = {}
         self._langgraph_app = None
         self._checkpointer = None
-        self._client_id = client_id
 
     def user_session_exist(self, uuid: str) -> bool:
         return uuid in self._user_sessions
@@ -69,9 +68,7 @@ class Agent:
         """Create and load an agent executor with tools and LLM."""
         if self._langgraph_app is None:
             print("Initializing graph..")
-            tools, insert_ticket, validate_ticket = await initialize_tools(
-                self._client_id
-            )
+            tools, insert_ticket, validate_ticket = await initialize_tools()
             prompt = self.create_prompt_template()
             checkpointer = MemorySaver()
             langgraph_app = await create_graph(
