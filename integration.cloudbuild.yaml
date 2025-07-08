@@ -82,4 +82,4 @@ substitutions:
   _GCR_HOSTNAME: ${_REGION}-docker.pkg.dev
   _SERVICE: demo-service-${BUILD_ID}
   _REGION: us-central1
-  _TOOLBOX_URL: https://toolbox-service-706535509072.us-central1.run.app
+  _TOOLBOX_URL: http://127.0.0.1:5000
