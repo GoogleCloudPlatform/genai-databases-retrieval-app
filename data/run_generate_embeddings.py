@@ -17,7 +17,9 @@ import csv
 
 from langchain_google_vertexai import VertexAIEmbeddings
 
-from models import EMBEDDING_MODEL_NAME, Amenity, Policy
+from models import Amenity, Policy
+
+EMBEDDING_MODEL_NAME = "gemini-embedding-001"
 
 
 async def main() -> None:

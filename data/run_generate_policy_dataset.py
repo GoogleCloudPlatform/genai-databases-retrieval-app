@@ -21,7 +21,7 @@ from langchain_text_splitters import (
     RecursiveCharacterTextSplitter,
 )
 
-from models import EMBEDDING_MODEL_NAME
+from data.run_generate_embeddings import EMBEDDING_MODEL_NAME
 
 
 def main() -> None:

@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .models import EMBEDDING_MODEL_NAME, Airport, Amenity, Flight, Policy, Ticket
+from .models import Airport, Amenity, Flight, Policy, Ticket
