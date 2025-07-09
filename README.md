@@ -218,15 +218,17 @@ Air demo.
    * A `sources` section with a data source named `my-pg-instance`. Configure
      this section according to the guide for the database you set up.
 
-   * An `authServices` section with a service named `my_google_service`. This is
-     used by the application to access user data securely. You can create a
-     Client ID for your app [following these
+   * [Optional] An `authServices` section with a service named
+     `my_google_service`. This is used by the application to access user data
+     securely. You can create a Client ID for your app [following these
      steps](https://support.google.com/cloud/answer/6158849)
+     > [!NOTE]
+     > This section is required if you want to enable ticket-related queries,
+     > like booking a ticket or viewing a user's ticket history.
 
-   * Once the `sources` and `authServices` sections are defined, copy the
-     `tools` and `toolsets` sections directly from the `tools.yaml` file located
-     in the root of this repository and paste them into your new configuration
-     file.
+   * Once the above sections are defined, copy the `tools` and `toolsets`
+     sections directly from the `tools.yaml` file located in the root of this
+     repository and paste them into your new configuration file.
 
 1. **Launch the Toolbox with the Final Configuration:** Finally, restart Toolbox
    and feed your completed `tools.yaml` configuration to the toolbox server.
