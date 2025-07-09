@@ -149,28 +149,6 @@ comment: `/gcbrun`.
 #### Code Coverage
 Please make sure your code is fully tested.
 
-## LLM Evaluation
-
-[Optional] Export detailed metric table with row-specific scores by setting the `EXPORT_CSV` envrionment variable:
-
-```bash
-export EXPORT_CSV=True
-```
-
-Set `CLIENT_ID` to run evaluation that require authentication:
-
-```bash
-export CLIENT_ID=<retrieve CLIENT_ID from GCP credentials>
-```
-
-To run LLM system evaluation, execute the following:
-
-```bash
-python run_evaluation.py
-```
-
-To view metrics, visit [GCP dashboard][vertex-ai-experiments].
-
 ## Versioning
 
 This app will be released based on version number `MAJOR.MINOR.PATCH`:
