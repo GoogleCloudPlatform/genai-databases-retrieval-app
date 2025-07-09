@@ -2,10 +2,10 @@
 
 ##  Before you begin
 
-1. Make sure you've [deployed and running Toolbox
+1. Make sure you have [deployed and running Toolbox
    locally](../README.md#toolbox-setup).
 
-1. Make sure you've [setup and initialized your
+1. Make sure you have [setup and initialized your
    Database](../README.md#database-setup).
 
 
@@ -23,8 +23,8 @@
     > account you are using has the `Cloud Run Invoker` IAM in the retrieval
     > service project.
 
-1. Install the dependencies using `pip`. You may wish to do this in a
-   [venv](https://docs.python.org/3/library/venv.html):
+1. Install the dependencies using `pip`. You may wish to do this in a virtual
+   environment, e.g. [venv](https://docs.python.org/3/library/venv.html):
 
     ```bash
     pip install -r requirements.txt
