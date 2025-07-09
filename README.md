@@ -15,10 +15,10 @@ This project provides a production-quality reference implementation for building
 Agentic applications that use [Agents] and [Retrieval Augmented Generation
 (RAG)][rag] to query and interact with data stored in Google Cloud Databases.
 
-This demonstration features Cymbal Air, a fictional airline. The application is
-a customer service assistant that helps travelers manage flights and find
-information about San Francisco International Airport (SFO), Cymbal Air's hub.
-The agent can answer questions like:
+This demonstration features Cymbal Air, a fictional airline. The application
+showcases a customer service assistant that helps travelers manage flights and
+find information about San Francisco International Airport (SFO), Cymbal Air's
+hub. The agent can answer questions like:
 
 * *Are there any luxury shops in the terminal?*
 * *Where can I get coffee near gate A6?*
@@ -84,10 +84,10 @@ break down complex questions into smaller, manageable steps.
 The architecture consists of three main components:
 1. **Application** -- The user-facing agentic app that orchestrates the
    interaction between the user and the agent.
-1. **MCP Toolbox** -- A middleware server that exposes the database operations
-   as a set of tools. The LLM agent connects to the Toolbox to execute these
-   tools. This provides a secure, scalable, and modular way to manage database
-   interactions.
+1. **MCP Toolbox** -- [MCP Toolbox](https://github.com/googleapis/genai-toolbox)
+   is a middleware server that exposes the database operations as a set of
+   tools. The LLM agent connects to the Toolbox to execute these tools. This
+   provides a secure, scalable, and modular way to manage database interactions.
 1. **Database** -- The database containing the data the agent can use to answer
    questions. For this application, the database used was intentionally designed
    to be interchangeable in order to make it easier to run this on your
@@ -105,6 +105,10 @@ Using the Toolbox as an intermediary offers several advantages:
    they can use to accomplish larger goals. By mapping a specific action to a
    specific, pre-determined query, via tools, it significantly improves the
    agent's ability to leverage it successfully.
+
+Head over to the official [MCP Toolbox
+docs](https://googleapis.github.io/genai-toolbox/getting-started/introduction/)
+for more details.
 
 ## Deployment
 
@@ -193,23 +197,23 @@ instance:
 a new terminal and run the database initialization script. This will connect to
 your database via Toolbox and set up the required tables and data for the Cymbal
 Air demo.
-```bash
-python3 data/run_database_init.py
-```
-> [!TIP]
-> You can optionally run the `data/run_database_export.py` script to export all
-> the data from your database back to your local machine in CSV format.
+   ```bash
+   python data/run_database_init.py
+   ```
+   > [!TIP]
+   > You can optionally run the `data/run_database_export.py` script to export
+   > all the data from your database back to your local machine in CSV format.
 
 1. **Create the Final Toolbox Configuration:** Once your database is
    initialized, stop the temporary toolbox server (`Cmd+C` or `Ctrl+C`). Now,
-   you must create a `tools.yml` configuration file to define the data sources
+   you must create a `tools.yaml` configuration file to define the data sources
    and tools for the agentic application.
 
    Follow the [official guide on configuring data
    sources](https://googleapis.github.io/genai-toolbox/resources/sources/) to
-   set up your `tools.yml` file.
+   set up your `tools.yaml` file.
 
-   Your `tools.yml` file must contain the following:
+   Your `tools.yaml` file must contain the following:
 
    * A `sources` section with a data source named `my-pg-instance`. Configure
      this section according to the guide for the database you set up.
@@ -220,14 +224,14 @@ python3 data/run_database_init.py
      steps](https://support.google.com/cloud/answer/6158849)
 
    * Once the `sources` and `authServices` sections are defined, copy the
-     `tools` and `toolsets` sections directly from the `tools.yml` file located
+     `tools` and `toolsets` sections directly from the `tools.yaml` file located
      in the root of this repository and paste them into your new configuration
      file.
 
 1. **Launch the Toolbox with the Final Configuration:** Finally, restart Toolbox
-   and feed your completed `tools.yml` configuration to the toolbox server.
+   and feed your completed `tools.yaml` configuration to the toolbox server.
 ```bash
-./toolbox --tools-file=PATH/TO/YOUR/tools.yml
+./toolbox --tools-file=PATH/TO/YOUR/tools.yaml
 ```
 
 ### Running the Agentic Application
@@ -242,11 +246,8 @@ python3 data/run_database_init.py
 
 This demo can serve as a starting point for building your own Agentic
 applications. You can customize the tools available to the agent by modifying
-the MCP Toolbox configuration.
+the MCP Toolbox configuration file.
 
-To add, remove, or modify tools, you will need to edit the `tools.yaml` file in
-your Toolbox setup and update the tool definitions. You can also create new tool
-implementations in the Toolbox to connect to different data sources or APIs.
 Please refer to the [MCP Toolbox documentation][configure] for more information on creating
 and configuring tools.
 
