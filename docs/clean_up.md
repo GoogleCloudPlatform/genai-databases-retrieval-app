@@ -17,7 +17,7 @@ through this demo.
 1. Delete the Cloud Run service deployed:
 
     ```bash
-    gcloud run services delete toolbox
+    gcloud run services delete toolbox-service
     ```
 
 1. Delete service account:
