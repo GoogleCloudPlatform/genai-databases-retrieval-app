@@ -33,7 +33,7 @@ steps](./README.md#database-setup).
     export TOOLBOX_URL="http://localhost:8080"
     ```
 
-1. To use a live retrieval service on Cloud Run:
+1. To use a live Toolbox service on Cloud Run:
 
     1. Set Google user credentials:
 
