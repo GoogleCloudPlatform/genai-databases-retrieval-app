@@ -79,7 +79,7 @@ break down complex questions into smaller, manageable steps.
 
 ### Architecture
 
-![Overview](./architecture.svg)
+![Overview](architecture.svg)
 
 The architecture consists of three main components:
 1. **Application** -- The user-facing agentic app that orchestrates the
@@ -148,11 +148,11 @@ refer to the **[Database Setup Guide](docs/database_setup.md)**.
 
 ### Running the Agentic Application
 
-[Instructions for running app locally](./docs/run_app.md)
+[Instructions for running app locally](docs/run_app.md)
 
 ### Clean Up
 
-[Instructions for cleaning up resources](./docs/clean_up.md)
+[Instructions for cleaning up resources](docs/clean_up.md)
 
 ## Customizing Your Tools
 

@@ -2,7 +2,7 @@
 
 ## Before you begin
 
-1. Make sure you've [setup Toolbox](./README.md#toolbox-setup).
+1. Make sure you've [setup Toolbox](README.md#toolbox-setup).
 
 1. Install Python 3.11+
 
@@ -23,7 +23,7 @@
 ### Setup Database
 
 To setup the datasource to run with Toolbox locally, follow [these
-steps](./README.md#database-setup).
+steps](README.md#database-setup).
 
 ### Run Agent App
 
@@ -109,8 +109,8 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 #### Project Setup
 
 1. Follow instructions to setup the test project:
-    * [Set up and configure database](./README.md#database-setup)
-    * [Instructions for Toolbox setup](./README.md#toolbox-setup)
+    * [Set up and configure database](README.md#database-setup)
+    * [Instructions for Toolbox setup](README.md#toolbox-setup)
 1. Setup Cloud Build triggers ([above](#trigger-setup))
 
 ##### Setup for Toolbox
