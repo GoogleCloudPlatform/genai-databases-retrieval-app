@@ -2,8 +2,7 @@
 
 ##  Before you begin
 
-1. Make sure you have [deployed and running Toolbox
-   locally](../README.md#toolbox-setup).
+1. Make sure you are able to [run Toolbox locally](../README.md#toolbox-setup).
 
 1. Make sure you have [setup and initialized your
    Database](../README.md#database-setup).
