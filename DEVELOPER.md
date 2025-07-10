@@ -2,7 +2,8 @@
 
 ## Before you begin
 
-1. Make sure you've [setup Toolbox](README.md#toolbox-setup).
+1. Make sure you've [setup
+   Toolbox](README.md#launch-the-toolbox-server-choose-one).
 
 1. Install Python 3.11+
 
@@ -23,14 +24,19 @@
 ### Setup Database
 
 To setup the datasource to run with Toolbox locally, follow [these
-steps](README.md#database-setup).
+steps](README.md#one-time-database--tool-configuration).
+
+### Setup Toolbox
+
+To setup Toolbox locally, follow [these
+steps](README.md#launch-the-toolbox-server-choose-one).
 
 ### Run Agent App
 
 1. Set the `TOOLBOX_URL` environment variable to point to your running MCP
    Toolbox server:
     ```bash
-    export TOOLBOX_URL="http://localhost:8080"
+    export TOOLBOX_URL="http://localhost:5000"
     ```
 
 1. To use a live Toolbox service on Cloud Run:
@@ -44,10 +50,15 @@ steps](README.md#database-setup).
     1. Set `TOOLBOX_URL` environment variable:
 
         ```bash
-        export TOOLBOX_URL=$(gcloud run services describe toolbox-service --format 'value(status.url)')
+        export TOOLBOX_URL=$(gcloud run services describe toolbox --format 'value(status.url)')
         ```
 
     1. Allow your account to invoke the Cloud Run service by granting the [role Cloud Run invoker][invoker]
+
+> [!NOTE]
+> Steps to deploy a live Toolbox service on Cloud Run are described in the
+> [official Toolbox
+> documentation](https://googleapis.github.io/genai-toolbox/how-to/deploy_toolbox/).
 
 1. [Optional] Turn on debugging by setting the `DEBUG` environment variable:
 
@@ -109,8 +120,8 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 #### Project Setup
 
 1. Follow instructions to setup the test project:
-    * [Set up and configure database](README.md#database-setup)
-    * [Instructions for Toolbox setup](README.md#toolbox-setup)
+    * [Set up and configure database](README.md#one-time-database--tool-configuration)
+    * [Instructions for Toolbox setup](README.md#launch-the-toolbox-server-choose-one)
 1. Setup Cloud Build triggers ([above](#trigger-setup))
 
 ##### Setup for Toolbox

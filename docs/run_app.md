@@ -2,10 +2,10 @@
 
 ##  Before you begin
 
-1. Make sure you are able to [run Toolbox locally](../README.md#toolbox-setup).
-
 1. Make sure you have [setup and initialized your
-   Database](../README.md#database-setup).
+   Database](../README.md#one-time-database--tool-configuration).
+
+1. Make sure you are able to [run Toolbox locally](../README.md#launch-the-toolbox-server-choose-one).
 
 
 1. Make sure you have Python 3.11+ installed

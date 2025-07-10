@@ -31,16 +31,14 @@ hub. The agent can answer questions like:
 ## Table of Contents
 <!-- TOC depthfrom:2 -->
 
-- [Introduction](#introduction)
-- [Table of Contents](#table-of-contents)
 - [Understanding the demo](#understanding-the-demo)
-    - [Retrieval Augmented Generation (RAG)](#retrieval-augmented-generation-rag)
+    - [Retrieval Augmented Generation RAG](#retrieval-augmented-generation-rag)
     - [Agent-based Orchestration](#agent-based-orchestration)
     - [Architecture](#architecture)
 - [Deployment](#deployment)
     - [Before you begin](#before-you-begin)
-    - [Toolbox Setup](#toolbox-setup)
-    - [Database Setup](#database-setup)
+    - [One-Time Database & Tool Configuration](#one-time-database--tool-configuration)
+    - [Launch the Toolbox Server Choose One](#launch-the-toolbox-server-choose-one)
     - [Running the Agentic Application](#running-the-agentic-application)
     - [Clean Up](#clean-up)
 - [Customizing Your Tools](#customizing-your-tools)
@@ -112,39 +110,75 @@ for more details.
 
 ## Deployment
 
-Deploying this demo consists of 3 steps:
-1. Toolbox Setup -- Deploying the MCP Toolbox and configuring it to connect to
-   your database.
-1. Database Setup -- Creating your database and initializing it with
-   sample data
-1. Running the Agentic Application -- Running your agentic application locally.
+Deploying Cymbal Air app is a three-step process. You will first download the
+necessary tools, then perform a one-time setup for your database and Toolbox
+configuration, and finally launch the Toolbox server and the app.
 
 ### Before you begin
 
-Clone this repo to your local machine:
-```bash
-git clone https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app.git
-```
+First, clone this repository and download the MCP Toolbox binary.
 
-### Toolbox Setup
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app.git
+    cd genai-databases-retrieval-app
+    ```
+2.  **Download MCP Toolbox binary:**
+    ```bash
+    # See the releases page for the latest version
+    export VERSION=0.8.0
+    curl -O https://storage.googleapis.com/genai-toolbox/v$VERSION/linux/amd64/toolbox
+    chmod +x toolbox
+    ```
 
-This app uses the MCP Toolbox to provide the tools for the LLM agent.
+### One-Time Database & Tool Configuration
 
-Setup the Toolbox server by following the instructions in the [MCP Toolbox
-repository][toolbox].
+Next, you must perform a one-time setup to create your database instance,
+populate it with data, and create the `tools.yaml` configuration file. This
+process uses the Toolbox binary you just downloaded.
 
-### Database Setup
-
-To use Cymbal Air, you must set up a supported Google Cloud database and
-populate it with sample data. This process involves creating a database
-instance, configuring environment variables, and using the MCP Toolbox to load
-the data.
-
-For detailed, step-by-step instructions on setting up your database, please
-refer to the **[Database Setup Guide](docs/database_setup.md)**.
+> [!IMPORTANT]
+> For detailed, step-by-step instructions, follow the **[Database Setup
+> Guide](docs/database_setup.md)**.
 
 > [!NOTE]
 > If you have already configured your own database, you can skip this section.
+
+### Launch the Toolbox Server (Choose One)
+
+After your database is initialized and your `tools.yaml` file is created, you
+must run the Toolbox server so the agentic app can connect to it. You can either
+run it locally for development or deploy it to Cloud Run for a more robust
+setup.
+
+<br>
+
+<details>
+<summary><b>Option A: Run Toolbox Locally</b></summary>
+
+For local development and testing, you can run the Toolbox server directly from
+your terminal. This is the quickest way to get started.
+
+* **For instructions, follow the [guide to running the Toolbox
+  locally](https://googleapis.github.io/genai-toolbox/getting-started/introduction/#getting-started).**
+
+   The basic command will be:
+   ```bash
+   ./toolbox --tools-file "tools.yaml"
+   ```
+</details>
+
+<details>
+<summary><b>Option B: Deploy Toolbox to Cloud Run</b></summary>
+
+For a scalable and production-ready setup, you can deploy the Toolbox as a
+service on Google Cloud Run. This provides a stable, shareable endpoint for your
+application.
+
+* **For instructions, follow the [official guide to deploying the Toolbox on
+  Cloud
+  Run](https://googleapis.github.io/genai-toolbox/how-to/deploy_toolbox/)**.
+</details>
 
 ### Running the Agentic Application
 
