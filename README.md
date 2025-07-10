@@ -144,97 +144,16 @@ repository][toolbox].
 
 ### Database Setup
 
-Cymbal Air supports several Google Cloud databases. The setup is a multi-step
-process that involves creating the database, populating it with data, and
-configuring the Toolbox server to securely expose the data as tools.
+To use Cymbal Air, you must set up a supported Google Cloud database and
+populate it with sample data. This process involves creating a database
+instance, configuring environment variables, and using the MCP Toolbox to load
+the data.
 
-1. **Create Your Database Instance:** First, choose a database to work with from
-   the official documentation here:
-    * **[Connect your Database with
-      Toolbox](https://googleapis.github.io/genai-toolbox/how-to/connect-ide/)**
+For detailed, step-by-step instructions on setting up your database, please
+refer to the **[Database Setup Guide](docs/database_setup.md)**.
 
-1. **Configure Environment Variables for Initial Connection:** Next, you need to
-   configure the connection credentials for the initial data load. Instead of
-   using a configuration file as described in the "Configure the MCP Client"
-   step in the guide above, set the following environment variables directly in
-   your terminal. The variables depend on the database you chose, and are
-   described in the "Configure the MCP Client" step. For instance:
-   * **For AlloyDB for Postgres**, set the following variables:
-   ```bash
-   export ALLOYDB_POSTGRES_PROJECT="PROJECT_ID",
-   export ALLOYDB_POSTGRES_REGION="REGION",
-   export ALLOYDB_POSTGRES_CLUSTER="CLUSTER_NAME",
-   export ALLOYDB_POSTGRES_INSTANCE="INSTANCE_NAME",
-   export ALLOYDB_POSTGRES_DATABASE="DATABASE_NAME",
-   export ALLOYDB_POSTGRES_USER="USERNAME",
-   export ALLOYDB_POSTGRES_PASSWORD="PASSWORD"
-   ```
-   * **For Cloud SQL for Postgres**, set the following variables:
-   ```bash
-   export CLOUD_SQL_POSTGRES_PROJECT="PROJECT_ID",
-   export CLOUD_SQL_POSTGRES_REGION="REGION",
-   export CLOUD_SQL_POSTGRES_INSTANCE="INSTANCE_ID",
-   export CLOUD_SQL_POSTGRES_DATABASE="DATABASE_NAME",
-   export CLOUD_SQL_POSTGRES_USER="USER_ID",
-   export CLOUD_SQL_POSTGRES_PASSWORD="PASSWORD"
-   ```
-
-1. **Run the Toolbox for Data Initialization:** In the same terminal where you
-set the environment variables, execute the toolbox binary with the `--prebuilt`
-flag corresponding to your database. This temporarily starts the server to allow
-the data initialization script to connect. Do *not* use the `--stdio` flag. For
-instance:
-   * For AlloyDB for Postgres:
-   ```bash
-   ./toolbox --prebuilt alloydb-postgres
-   ```
-   * For CloudSQL for Postgres:
-   ```bash
-   ./toolbox --prebuilt cloud-sql-postgres
-   ```
-
-1. **Initialize the Database with Cymbal Air Data:** With Toolbox running, open
-a new terminal and run the database initialization script. This will connect to
-your database via Toolbox and set up the required tables and data for the Cymbal
-Air demo.
-   ```bash
-   python data/run_database_init.py
-   ```
-   > [!TIP]
-   > You can optionally run the `data/run_database_export.py` script to export
-   > all the data from your database back to your local machine in CSV format.
-
-1. **Create the Final Toolbox Configuration:** Once your database is
-   initialized, stop the temporary toolbox server (`Cmd+C` or `Ctrl+C`). Now,
-   you must create a `tools.yaml` configuration file to define the data sources
-   and tools for the agentic application.
-
-   Follow the [official guide on configuring data
-   sources](https://googleapis.github.io/genai-toolbox/resources/sources/) to
-   set up your `tools.yaml` file.
-
-   Your `tools.yaml` file must contain the following:
-
-   * A `sources` section with a data source named `my-pg-instance`. Configure
-     this section according to the guide for the database you set up.
-
-   * [Optional] An `authServices` section with a service named
-     `my_google_service`. This is used by the application to access user data
-     securely. You can create a Client ID for your app [following these
-     steps](https://support.google.com/cloud/answer/6158849)
-     > [!NOTE]
-     > This section is required if you want to enable ticket-related queries,
-     > like booking a ticket or viewing a user's ticket history.
-
-   * Once the above sections are defined, copy the `tools` and `toolsets`
-     sections directly from the `tools.yaml` file located in the root of this
-     repository and paste them into your new configuration file.
-
-1. **Launch the Toolbox with the Final Configuration:** Finally, restart Toolbox
-   and feed your completed `tools.yaml` configuration to the toolbox server.
-```bash
-./toolbox --tools-file=PATH/TO/YOUR/tools.yaml
-```
+> [!NOTE]
+> If you have already configured your own database, you can skip this section.
 
 ### Running the Agentic Application
 
