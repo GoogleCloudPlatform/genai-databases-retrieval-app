@@ -128,18 +128,9 @@ git clone https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app.g
 
 ### Toolbox Setup
 
-This application now uses the MCP Toolbox to provide the tools for the LLM
-agent. You will need to set up the Toolbox server by following the instructions
-in the official repository.
+This app uses the MCP Toolbox to provide the tools for the LLM agent.
 
-```bash
-# see releases page for other versions
-export VERSION=0.8.0
-curl -O https://storage.googleapis.com/genai-toolbox/v$VERSION/linux/amd64/toolbox
-chmod +x toolbox
-```
-
-For detailed instructions, please refer to the [MCP Toolbox
+Setup the Toolbox server by following the instructions in the [MCP Toolbox
 repository][toolbox].
 
 ### Database Setup
@@ -172,5 +163,5 @@ the MCP Toolbox configuration file.
 Please refer to the [MCP Toolbox documentation][configure] for more information on creating
 and configuring tools.
 
-[toolbox]: (https://googleapis.github.io/genai-toolbox/getting-started/introduction/)
+[toolbox]: (https://googleapis.github.io/genai-toolbox/getting-started/introduction/#getting-started)
 [configure]: (https://googleapis.github.io/genai-toolbox/getting-started/configure/)
