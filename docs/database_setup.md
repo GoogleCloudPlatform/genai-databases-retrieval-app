@@ -194,7 +194,7 @@ Your `tools.yaml` file must contain the following sections:
 
 * **The `tools` and `toolsets` sections**: You don't need to write these from
   scratch. Simply copy the `tools` and `toolsets` sections directly from the
-  [`tools.yaml` file](../tools.yaml) located in the root of this repository and
+  [`tools.yaml`](../tools.yaml) file located in the root of this repository and
   paste them into your new configuration file.
 
 ### **6. Launch the Toolbox**
