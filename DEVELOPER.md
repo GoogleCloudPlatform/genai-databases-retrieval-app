@@ -77,23 +77,24 @@ steps](README.md#launch-the-toolbox-server-choose-one).
     python run_app.py
     ```
 
+1. View the app in your browser at http://localhost:8081.
+
 > [!TIP]
 > For hot-reloading during development, use the `--reload` flag:
 > ```bash
-> `python run_app.py --reload`
+> python run_app.py --reload
 > ```
-
-1. View the app in your browser at http://localhost:8081.
 
 ## Testing
 
 ### Run tests locally
 
-1. The unit tests for this application mock the API calls to the MCP Toolbox, so
-   you do not need a live database or a running Toolbox instance to run them.
-    ```bash
-    pytest
-    ```
+The unit tests for this application mock the API calls to the MCP Toolbox, so
+you do not need a live database or a running Toolbox instance to run them.
+
+```bash
+pytest
+```
 
 ### CI Platform Setup
 
@@ -141,21 +142,17 @@ Create a Cloud Build trigger via the UI or `gcloud` with the following specs:
 
 ##### Setup for Agent App
 
-1. Add roles `Cloud Run Admin`, `Service Account User`, `Log Writer`, and
-   `Artifact Registry Admin` to the demo service's Cloud Build trigger service
-   account.
+Add roles `Cloud Run Admin`, `Service Account User`, `Log Writer`, and `Artifact
+   Registry Admin` to the demo service's Cloud Build trigger service account.
 
-#### Run tests with Cloud Build
+#### Run Integration Tests
 
-* Run integration test:
+```bash
+gcloud builds submit --config integration.cloudbuild.yaml
+```
 
-    ```bash
-    gcloud builds submit --config integration.cloudbuild.yaml
-    ```
-
-    > [!NOTE]
-    > Make sure to setup secrets describe in [Setup for
-    > Toolbox](#setup-for-toolbox)
+> [!NOTE]
+> Make sure to setup secrets described in [Setup for Toolbox](#setup-for-toolbox)
 
 #### Trigger
 

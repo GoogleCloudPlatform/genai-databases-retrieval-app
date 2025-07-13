@@ -119,22 +119,21 @@ configuration, and finally launch the Toolbox server and the app.
 First, clone this repository and download the MCP Toolbox binary.
 
 1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app.git
-    cd genai-databases-retrieval-app
-    ```
+      ```bash
+      git clone https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app.git
+      cd genai-databases-retrieval-app
+      ```
 2.  **Download MCP Toolbox binary:**
 
-   Follow [these
-   steps](https://googleapis.github.io/genai-toolbox/getting-started/introduction/#installing-the-server)
-   to download the binary. This involves running the following commands:
-
-    ```bash
-    # See the releases page for the latest version
-    export VERSION=0.8.0
-    curl -O https://storage.googleapis.com/genai-toolbox/v$VERSION/linux/amd64/toolbox
-    chmod +x toolbox
-    ```
+      Follow [these
+      steps](https://googleapis.github.io/genai-toolbox/getting-started/introduction/#installing-the-server)
+      to download the binary. This involves running the following commands:
+      ```bash
+      # See the releases page for the latest version
+      export VERSION=0.8.0
+      curl -O https://storage.googleapis.com/genai-toolbox/v$VERSION/linux/amd64/toolbox
+      chmod +x toolbox
+      ```
 
 ### One-Time Database & Tool Configuration
 

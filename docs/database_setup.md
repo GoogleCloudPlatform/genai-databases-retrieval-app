@@ -181,21 +181,20 @@ Your `tools.yaml` file must contain the following sections:
   `my-pg-instance` according to the **[official guide on configuring data
   sources](https://googleapis.github.io/genai-toolbox/resources/sources/)**.
 
-* **[Optional] An `authServices` section**: To set it up, add a service named
-  `my_google_service` by following the **[authServices configuration
+* **[Optional] An `authServices` section**: Only required if you want to enable
+  ticket-related features like booking or viewing a user's ticket history. To
+  set it up, add a service named `my_google_service` by following the
+  **[authServices configuration
   guide](https://googleapis.github.io/genai-toolbox/resources/authservices/)**.
-  > [!NOTE]
-  > This is section is only required if you want to enable ticket-related
-  > features like booking or viewing a user's ticket history.
-
-  > [!TIP]
-  > You will need to **[create a Client
-  > ID](https://support.google.com/cloud/answer/6158849)** for your app.
 
 * **The `tools` and `toolsets` sections**: You don't need to write these from
   scratch. Simply copy the `tools` and `toolsets` sections directly from the
   [`tools.yaml`](../tools.yaml) file located in the root of this repository and
   paste them into your new configuration file.
+
+> [!TIP]
+> You will need to **[create a Client
+> ID](https://support.google.com/cloud/answer/6158849)** for your app.
 
 ### **6. Launch the Toolbox**
 
