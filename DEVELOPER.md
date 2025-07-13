@@ -38,10 +38,7 @@ steps](README.md#launch-the-toolbox-server-choose-one).
     You need to set the `TOOLBOX_URL` environment variable to point to your
     running Toolbox server. Choose the option below that matches your setup.
 
-    <br>
-
-    **Option A: If you are running Toolbox locally**
-
+    #### **Option A:** If you are running Toolbox locally
     Set the `TOOLBOX_URL` environment variable to your local server, which is
     typically running on port `5000`.
 
@@ -49,8 +46,7 @@ steps](README.md#launch-the-toolbox-server-choose-one).
     export TOOLBOX_URL="http://localhost:5000"
     ```
 
-    **Option B: If you are running Toolbox on Cloud Run**
-
+    #### **Option B:** If you are running Toolbox on Cloud Run
     1. First, authenticate your gcloud CLI with your user credentials:
 
         ```bash
@@ -64,9 +60,10 @@ steps](README.md#launch-the-toolbox-server-choose-one).
         export TOOLBOX_URL=$(gcloud run services describe toolbox --format 'value(status.url)')
         ```
 
-        > [!IMPORTANT]
-        > Ensure your account has the [Cloud Run Invoker][invoker] IAM role to
-        > allow it to invoke the service.
+    1. Allow your account to invoke the Cloud Run service by granting the [role
+       Cloud Run invoker][invoker]
+
+    </details>
 
 1. [Optional] Turn on debugging by setting the `DEBUG` environment variable:
 
@@ -80,11 +77,11 @@ steps](README.md#launch-the-toolbox-server-choose-one).
     python run_app.py
     ```
 
-    > [!TIP]
-    > For hot-reloading during development, use the `--reload` flag:
-    > ```bash
-    > `python run_app.py --reload`
-    > ```
+> [!TIP]
+> For hot-reloading during development, use the `--reload` flag:
+> ```bash
+> `python run_app.py --reload`
+> ```
 
 1. View the app in your browser at http://localhost:8081.
 
