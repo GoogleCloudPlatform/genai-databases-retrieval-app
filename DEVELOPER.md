@@ -55,11 +55,6 @@ steps](README.md#launch-the-toolbox-server-choose-one).
 
     1. Allow your account to invoke the Cloud Run service by granting the [role Cloud Run invoker][invoker]
 
-> [!NOTE]
-> Steps to deploy a live Toolbox service on Cloud Run are described in the
-> [official Toolbox
-> documentation](https://googleapis.github.io/genai-toolbox/how-to/deploy_toolbox/).
-
 1. [Optional] Turn on debugging by setting the `DEBUG` environment variable:
 
     ```bash
