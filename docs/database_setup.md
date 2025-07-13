@@ -155,7 +155,16 @@ to allow for data initialization.
   ./toolbox --prebuilt postgres
   ```
 
-### **4. Initialize the Database**
+### 4. Install the Dependencies
+
+Install the dependencies using `pip`. You may wish to do this in a virtual
+environment, e.g. [venv](https://docs.python.org/3/library/venv.html):
+
+```bash
+pip install -r requirements.txt
+```
+
+### **5. Initialize the Database**
 
 While Toolbox is running, open a new terminal and execute the database
 initialization script. This will populate your database with the Cymbal Air
@@ -169,7 +178,7 @@ python data/run_database_init.py
 > You can also run `data/run_database_export.py` to export all data from your
 > database to CSV.
 
-### **5. Create the Final Toolbox Configuration**
+### **6. Create the Final Toolbox Configuration**
 
 Once the database is initialized, stop the temporary Toolbox server (with
 `Cmd+C` or `Ctrl+C`). Now, create a `tools.yaml` file to define the data
@@ -200,7 +209,7 @@ Your `tools.yaml` file must contain the following sections:
 > You will need to **[create a Client
 > ID](https://support.google.com/cloud/answer/6158849)** for your app.
 
-### **6. Launch the Toolbox**
+### **7. Launch the Toolbox**
 
 Finally, restart the Toolbox with your new `tools.yaml` config:
 
