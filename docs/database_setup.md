@@ -177,20 +177,24 @@ sources, authentication, and tools for the agentic app.
 
 Your `tools.yaml` file must contain the following sections:
 
-* **A `sources` section**: Configure this section with a data source named
-  `my-pg-instance` according to the **[official guide on configuring data
-  sources](https://googleapis.github.io/genai-toolbox/resources/sources/)**.
+* **A `sources` section**
 
-* **[Optional] An `authServices` section**: Only required if you want to enable
-  ticket-related features like booking or viewing a user's ticket history. To
-  set it up, add a service named `my_google_service` by following the
-  **[authServices configuration
-  guide](https://googleapis.github.io/genai-toolbox/resources/authservices/)**.
+    Configure this section with a data source named `my-pg-instance` according to
+    the **[official guide on configuring data
+    sources](https://googleapis.github.io/genai-toolbox/resources/sources/)**.
 
-* **The `tools` and `toolsets` sections**: You don't need to write these from
-  scratch. Simply copy the `tools` and `toolsets` sections directly from the
-  [`tools.yaml`](../tools.yaml) file located in the root of this repository and
-  paste them into your new configuration file.
+* **[Optional] An `authServices` section**
+
+    Only required if you want to enable ticket-related features like booking or
+    viewing a user's ticket history. To set it up, add a service named
+    `my_google_service` by following the **[`authServices` configuration
+    guide](https://googleapis.github.io/genai-toolbox/resources/authservices/)**.
+
+* **The `tools` and `toolsets` sections**
+
+    You don't need to write these from scratch. Simply copy the `tools` and
+    `toolsets` sections directly from the [`tools.yaml`](../tools.yaml) file located
+    in the root of this repository and paste them into your new configuration file.
 
 > [!TIP]
 > You will need to **[create a Client
