@@ -155,28 +155,27 @@ must run the Toolbox server so the agentic app can connect to it. You can either
 run it locally for development or deploy it to Cloud Run for a more robust
 setup.
 
-### **Option A:** Run Toolbox Locally
+#### **Option A:** Run Toolbox Locally
 
 For local development and testing, you can run the Toolbox server directly from
 your terminal. This is the quickest way to get started.
 
-* **For instructions, follow the [guide to running the Toolbox
-  locally](https://googleapis.github.io/genai-toolbox/getting-started/introduction/#getting-started).**
+**For instructions, follow the [guide to running the Toolbox
+locally](https://googleapis.github.io/genai-toolbox/getting-started/introduction/#getting-started).**
 
-   The basic command will be:
-   ```bash
-   ./toolbox --tools-file "tools.yaml"
-   ```
+The basic command will be:
+```bash
+./toolbox --tools-file "tools.yaml"
+```
 
-### **Option B:** Deploy Toolbox to Cloud Run
+#### **Option B:** Deploy Toolbox to Cloud Run
 
 For a scalable and production-ready setup, you can deploy the Toolbox as a
 service on Google Cloud Run. This provides a stable, shareable endpoint for your
 application.
 
-* **For instructions, follow the [guide to deploying the Toolbox on Cloud
-  Run](https://googleapis.github.io/genai-toolbox/how-to/deploy_toolbox/)**.
-</details>
+**For instructions, follow the [guide to deploying the Toolbox on Cloud
+Run](https://googleapis.github.io/genai-toolbox/how-to/deploy_toolbox/)**.
 
 ### Running the Agentic Application
 
