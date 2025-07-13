@@ -33,26 +33,40 @@ steps](README.md#launch-the-toolbox-server-choose-one).
 
 ### Run Agent App
 
-1. Set the `TOOLBOX_URL` environment variable to point to your running MCP
-   Toolbox server:
+1. Configure the Toolbox URL
+
+    You need to set the `TOOLBOX_URL` environment variable to point to your
+    running Toolbox server. Choose the option below that matches your setup.
+
+    <br>
+
+    **Option A: If you are running Toolbox locally**
+
+    Set the `TOOLBOX_URL` environment variable to your local server, which is
+    typically running on port `5000`.
+
     ```bash
     export TOOLBOX_URL="http://localhost:5000"
     ```
 
-    > [!NOTE]
-    > To use a live Toolbox service on Cloud Run:
-    > 1. Set Google user credentials:
-    >     ```bash
-    >     gcloud auth login
-    >     ```
-    >
-    > 1. Set `TOOLBOX_URL` environment variable:
-    >
-    >     ```bash
-    >     export TOOLBOX_URL=$(gcloud run services describe toolbox --format 'value(status.url)')
-    >     ```
-    >
-    > 1. Allow your account to invoke the Cloud Run service by granting the [role Cloud Run invoker][invoker]
+    **Option B: If you are running Toolbox on Cloud Run**
+
+    1. First, authenticate your gcloud CLI with your user credentials:
+
+        ```bash
+        gcloud auth login
+        ```
+
+    1. Next, set the `TOOLBOX_URL` environment variable by fetching your live
+      service's URL:
+
+        ```bash
+        export TOOLBOX_URL=$(gcloud run services describe toolbox --format 'value(status.url)')
+        ```
+
+        > [!IMPORTANT]
+        > Ensure your account has the [Cloud Run Invoker][invoker] IAM role to
+        > allow it to invoke the service.
 
 1. [Optional] Turn on debugging by setting the `DEBUG` environment variable:
 
