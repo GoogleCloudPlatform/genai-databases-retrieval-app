@@ -19,16 +19,16 @@
     pip install -r requirements-test.txt
     ```
 
-## Run the App Locally
+## Run the App
 
 ### Setup Database
 
-To setup the datasource to run with Toolbox locally, follow [these
+To setup the datasource to run with Toolbox, follow [these
 steps](README.md#one-time-database--tool-configuration).
 
 ### Setup Toolbox
 
-To setup Toolbox locally, follow [these
+To setup Toolbox (locally or on Cloud Run), follow [these
 steps](README.md#launch-the-toolbox-server-choose-one).
 
 ### Run Agent App
@@ -39,21 +39,20 @@ steps](README.md#launch-the-toolbox-server-choose-one).
     export TOOLBOX_URL="http://localhost:5000"
     ```
 
-1. To use a live Toolbox service on Cloud Run:
-
-    1. Set Google user credentials:
-
-        ```bash
-        gcloud auth login
-        ```
-
-    1. Set `TOOLBOX_URL` environment variable:
-
-        ```bash
-        export TOOLBOX_URL=$(gcloud run services describe toolbox --format 'value(status.url)')
-        ```
-
-    1. Allow your account to invoke the Cloud Run service by granting the [role Cloud Run invoker][invoker]
+    > [!NOTE]
+    > To use a live Toolbox service on Cloud Run:
+    > 1. Set Google user credentials:
+    >     ```bash
+    >     gcloud auth login
+    >     ```
+    >
+    > 1. Set `TOOLBOX_URL` environment variable:
+    >
+    >     ```bash
+    >     export TOOLBOX_URL=$(gcloud run services describe toolbox --format 'value(status.url)')
+    >     ```
+    >
+    > 1. Allow your account to invoke the Cloud Run service by granting the [role Cloud Run invoker][invoker]
 
 1. [Optional] Turn on debugging by setting the `DEBUG` environment variable:
 
