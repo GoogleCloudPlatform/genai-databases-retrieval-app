@@ -121,39 +121,39 @@ flag corresponding to your chosen database. This will start a temporary server
 to allow for data initialization.
 
 * **For AlloyDB for Postgres:**
-```bash
-./toolbox --prebuilt alloydb-postgres
-```
+  ```bash
+  ./toolbox --prebuilt alloydb-postgres
+  ```
 
 * **For CloudSQL for Posgres:**
-```bash
-./toolbox --prebuilt cloud-sql-postgres
-```
+  ```bash
+  ./toolbox --prebuilt cloud-sql-postgres
+  ```
 
 * **For Cloud SQL for MySQL:**
-```bash
-./toolbox --prebuilt cloud-sql-mysql
-```
+  ```bash
+  ./toolbox --prebuilt cloud-sql-mysql
+  ```
 
 * **For Cloud SQL for SQL Server:**
-```bash
-./toolbox --prebuilt cloud-sql-mssql
-```
+  ```bash
+  ./toolbox --prebuilt cloud-sql-mssql
+  ```
 
 * **For BigQuery:**
-```bash
-./toolbox --prebuilt bigquery
-```
+  ```bash
+  ./toolbox --prebuilt bigquery
+  ```
 
 * **For Spanner:**
-```bash
-./toolbox --prebuilt spanner
-```
+  ```bash
+  ./toolbox --prebuilt spanner
+  ```
 
 * **For PostgreSQL:**
-```bash
-./toolbox --prebuilt postgres
-```
+  ```bash
+  ./toolbox --prebuilt postgres
+  ```
 
 ### **4. Initialize the Database**
 
