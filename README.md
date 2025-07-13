@@ -156,10 +156,7 @@ must run the Toolbox server so the agentic app can connect to it. You can either
 run it locally for development or deploy it to Cloud Run for a more robust
 setup.
 
-<br>
-
-<details>
-<summary><b>Option A: Run Toolbox Locally</b></summary>
+### **Option A:** Run Toolbox Locally
 
 For local development and testing, you can run the Toolbox server directly from
 your terminal. This is the quickest way to get started.
@@ -171,10 +168,8 @@ your terminal. This is the quickest way to get started.
    ```bash
    ./toolbox --tools-file "tools.yaml"
    ```
-</details>
 
-<details>
-<summary><b>Option B: Deploy Toolbox to Cloud Run</b></summary>
+### **Option B:** Deploy Toolbox to Cloud Run
 
 For a scalable and production-ready setup, you can deploy the Toolbox as a
 service on Google Cloud Run. This provides a stable, shareable endpoint for your
