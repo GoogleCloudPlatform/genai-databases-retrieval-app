@@ -11,7 +11,7 @@ database with the necessary data for the application to use.
 
 ## Setup Instructions
 
-Follow the steps below for the database of your choice.
+Follow the steps below for the database of your choice:
 
 ### **1. Create Your Database Instance**
 
@@ -33,8 +33,6 @@ instance, you can proceed to the next step.
 Next, configure the necessary environment variables in your terminal. These
 variables are used by the MCP Toolbox to connect to your database for the
 initial data load.
-
-<br>
 
 <details>
 <summary><b>AlloyDB for PostgreSQL</b></summary>
