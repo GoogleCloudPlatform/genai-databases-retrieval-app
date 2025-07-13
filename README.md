@@ -180,8 +180,7 @@ For a scalable and production-ready setup, you can deploy the Toolbox as a
 service on Google Cloud Run. This provides a stable, shareable endpoint for your
 application.
 
-* **For instructions, follow the [official guide to deploying the Toolbox on
-  Cloud
+* **For instructions, follow the [guide to deploying the Toolbox on Cloud
   Run](https://googleapis.github.io/genai-toolbox/how-to/deploy_toolbox/)**.
 </details>
 
