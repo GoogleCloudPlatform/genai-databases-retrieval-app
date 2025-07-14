@@ -14,7 +14,6 @@
 
 import os
 from typing import Optional
-from warnings import warn
 
 from google.auth.exceptions import DefaultCredentialsError
 from google.auth.transport.requests import Request
@@ -40,11 +39,11 @@ def __get_client_headers() -> Optional[dict[str, str]]:
     try:
         id_token = fetch_id_token(Request(), TOOLBOX_URL)
         return {"Authorization": f"Bearer {id_token}"}
-    except DefaultCredentialsError as e:
-        warn(
-            "Failed to fetch identity token using google.auth library. "
-            "Ensure that the GOOGLE_APPLICATION_CREDENTIALS environment variable is set correctly.",
-            UserWarning,
+    except DefaultCredentialsError:
+        # Inform the user that token generation failed, which is expected
+        # for local runs, and continue without authentication.
+        print(
+            "GOOGLE_APPLICATION_CREDENTIALS env var is not set. Proceeding without setting client authentication header."
         )
         return None
 
