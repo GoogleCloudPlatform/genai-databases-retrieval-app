@@ -19,19 +19,39 @@ from warnings import warn
 from google.auth.exceptions import DefaultCredentialsError
 from google.auth.transport.requests import Request
 from google.oauth2.id_token import fetch_id_token
-from toolbox_core import auth_methods
 from toolbox_langchain import ToolboxClient
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 TOOLBOX_URL = os.getenv("TOOLBOX_URL", default="http://127.0.0.1:5000")
 
 
+def __get_client_headers() -> Optional[dict[str, str]]:
+    """
+    Fetches a Google Cloud identity token for authenticating with the Toolbox
+    service.
+
+    This function uses the application's default credentials to generate an
+    identity token.
+
+    Returns:
+        Optional[dict[str, str]]: A dictionary containing the Authorization
+        header if authentication is successful, otherwise None.
+    """
+    try:
+        id_token = fetch_id_token(Request(), TOOLBOX_URL)
+        return {"Authorization": f"Bearer {id_token}"}
+    except DefaultCredentialsError as e:
+        warn(
+            "Failed to fetch identity token using google.auth library. "
+            "Ensure that the GOOGLE_APPLICATION_CREDENTIALS environment variable is set correctly.",
+            UserWarning,
+        )
+        return None
+
+
 # Tools for agent
 async def initialize_tools():
-    client = ToolboxClient(
-        TOOLBOX_URL,
-        client_headers={"Authorization": auth_methods.aget_google_id_token},
-    )
+    client = ToolboxClient(TOOLBOX_URL, client_headers=__get_client_headers())
     tools = await client.aload_toolset("cymbal_air")
 
     # Load insert_ticket and validate_ticket tools separately to implement
