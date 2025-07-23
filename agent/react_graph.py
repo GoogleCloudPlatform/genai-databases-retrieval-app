@@ -213,7 +213,7 @@ async def create_graph(
         # Otherwise, send response back to agent
         return "agent"
 
-    async def insert_ticket_node(state: UserState, config: RunnableConfig):
+    async def insert_ticket_node(state: UserState):
         """
         Node to update human response to prevent
         """
