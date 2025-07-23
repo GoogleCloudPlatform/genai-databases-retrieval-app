@@ -12,21 +12,25 @@
 # limitations under the License.
 
 steps:
-  - id: "Deploy to Cloud Run"
+  # Step 1: Deploy the Cymbal Air service with the Toolbox URL
+  - id: "Deploy Cymbal Air Service"
     name: "gcr.io/cloud-builders/gcloud:latest"
-    script: |
-        #!/usr/bin/env bash
+    entrypoint: bash
+    args:
+      - -c
+      - |
         gcloud run deploy ${_SERVICE} \
           --source . \
           --region ${_REGION} \
           --no-allow-unauthenticated \
+          --update-env-vars "TOOLBOX_URL=${_TOOLBOX_URL}"
 
-  - id: "Test Frontend"
+  # Step 2: Test the running Cymbal Air
+  - id: "Test Cymbal Air"
     name: "gcr.io/cloud-builders/gcloud:latest"
     entrypoint: /bin/bash
-    env: # Set env var expected by app
     args:
-      - "-c"
+      - -c
       - |
         export URL=$(gcloud run services describe ${_SERVICE} --region ${_REGION} --format 'value(status.url)')
         export ID_TOKEN=$(gcloud auth print-identity-token --audiences $$URL)
@@ -57,11 +61,15 @@ steps:
           -d '{"prompt":"How can you help me?"}' \
           $$URL/chat
 
-  - id: "Delete image and service"
+  # Step 3: Cleanup and delete deployed resources
+  - id: "Delete image and services"
     name: "gcr.io/cloud-builders/gcloud"
     script: |
         #!/usr/bin/env bash
+        # Delete the main service's source image
         gcloud artifacts docker images delete $_GCR_HOSTNAME/$PROJECT_ID/cloud-run-source-deploy/$_SERVICE --quiet
+
+        # Delete the Cymbal Air service
         gcloud run services delete ${_SERVICE} --region ${_REGION} --quiet
 
 serviceAccount: "projects/$PROJECT_ID/serviceAccounts/548341735270-compute@developer.gserviceaccount.com" # Necessary for ID token creation
@@ -74,3 +82,4 @@ substitutions:
   _GCR_HOSTNAME: ${_REGION}-docker.pkg.dev
   _SERVICE: demo-service-${BUILD_ID}
   _REGION: us-central1
+  _TOOLBOX_URL: http://127.0.0.1:5000

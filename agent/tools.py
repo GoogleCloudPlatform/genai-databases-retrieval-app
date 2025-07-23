@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import os
-from typing import Callable, Optional
 
+from toolbox_core import auth_methods
 from toolbox_langchain import ToolboxClient
 
 BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
@@ -23,7 +23,10 @@ TOOLBOX_URL = os.getenv("TOOLBOX_URL", default="http://127.0.0.1:5000")
 
 # Tools for agent
 async def initialize_tools():
-    client = ToolboxClient(TOOLBOX_URL)
+    auth_token_provider = auth_methods.aget_google_id_token(TOOLBOX_URL)
+    client = ToolboxClient(
+        TOOLBOX_URL, client_headers={"Authorization": auth_token_provider}
+    )
     tools = await client.aload_toolset("cymbal_air")
 
     # Load insert_ticket and validate_ticket tools separately to implement
