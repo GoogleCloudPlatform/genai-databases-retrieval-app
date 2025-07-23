@@ -19,6 +19,7 @@ from typing import Annotated, Literal, Sequence, TypedDict
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
+    HumanMessage,
     ToolCall,
 )
 from langchain_core.prompts.chat import ChatPromptTemplate
@@ -164,7 +165,16 @@ async def create_graph(
         if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
             tool_call = last_message.tool_calls[0]
             tool_args = tool_call.get("args")
-            await insert_ticket.ainvoke(tool_args)
+            output = await insert_ticket.ainvoke(tool_args)
+            human_message = HumanMessage(content="Looks good to me.")
+            ai_message = AIMessage(
+                content=(
+                    "Your flight has been successfully booked."
+                    if output == "null"
+                    else output
+                )
+            )
+            return {"messages": [human_message, ai_message]}
 
     # Define constant node strings
     AGENT_NODE = "agent"
