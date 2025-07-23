@@ -115,7 +115,7 @@ async def create_graph(
         # Otherwise, we stop (reply to the user)
         return "end"
 
-    async def booking_validation_node(state: UserState, config: RunnableConfig):
+    async def booking_validation_node(state: UserState):
         """
         The node representing async function that validate the ticket.
         After ticket validation, it will return AIMessage with updated ticket args.
@@ -154,7 +154,7 @@ async def create_graph(
         # Otherwise, send response back to agent
         return "agent"
 
-    async def insert_ticket_node(state: UserState, config: RunnableConfig):
+    async def insert_ticket_node(state: UserState):
         """
         Node to update human response to prevent
         """

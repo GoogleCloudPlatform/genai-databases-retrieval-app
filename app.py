@@ -192,14 +192,16 @@ async def decline_flight(request: Request):
     # Note in the history, that the ticket was not booked
     # This is helpful in case of reloads so there doesn't seem to be a break in communication.
     agent = request.app.state.agent
-    await agent.user_session_decline_ticket(request.session["uuid"])
+    response = await agent.user_session_decline_ticket(request.session["uuid"])
+    response = response["output"]
     request.session["history"].append(
         {"type": "ai", "data": {"content": "Please confirm if you would like to book."}}
     )
     request.session["history"].append(
         {"type": "human", "data": {"content": "I changed my mind."}}
     )
-    return None
+    request.session["history"].append({"type": "ai", "data": {"content": response}})
+    return response
 
 
 @routes.post("/reset")
