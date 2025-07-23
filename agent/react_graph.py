@@ -166,7 +166,7 @@ async def create_graph(
             tool_call = last_message.tool_calls[0]
             tool_args = tool_call.get("args")
             output = await insert_ticket.ainvoke(tool_args)
-            human_message = HumanMessage(content="Looks good to me.")
+            human_message = HumanMessage(content="Looks good to me. Book it!")
             ai_message = AIMessage(
                 content=(
                     "Your flight has been successfully booked."

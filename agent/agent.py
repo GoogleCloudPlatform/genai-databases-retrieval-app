@@ -51,18 +51,23 @@ class Agent:
     def user_session_exist(self, uuid: str) -> bool:
         return uuid in self._user_sessions
 
-    async def user_session_insert_ticket(self, uuid: str, params: str) -> Any:
-        response = await self.user_session_invoke(uuid, None)
-        return "ticket booking success"
+    async def user_session_insert_ticket(self, uuid: str) -> Any:
+        return await self.user_session_invoke(uuid, None)
 
     async def user_session_decline_ticket(self, uuid: str) -> dict[str, Any]:
         config = self.get_config(uuid)
+
+        # The user has declined the pending ticket booking. We inject a
+        # synthetic HumanMessage to simulate the user explicitly canceling. This
+        # state update causes langgraph to re-run its conditional logic. Instead
+        # of proceeding with the interrupted tool call, the graph routes to the
+        # main agent, which formulates a natural response to the user's
+        # "cancellation".
         human_message = HumanMessage(
             content="I changed my mind. Decline ticket booking."
         )
         self._langgraph_app.update_state(config, {"messages": [human_message]})
-        response = await self.user_session_invoke(uuid, None)
-        return response
+        return await self.user_session_invoke(uuid, None)
 
     async def user_session_create(self, session: dict[str, Any]):
         """Create and load an agent executor with tools and LLM."""
