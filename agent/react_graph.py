@@ -21,6 +21,7 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
     ToolCall,
+    ToolMessage,
 )
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableLambda
@@ -28,7 +29,6 @@ from langchain_google_vertexai import ChatVertexAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
-from langgraph.prebuilt import ToolNode
 from toolbox_langchain import ToolboxTool
 
 from .tools import get_confirmation_needing_tools
@@ -40,6 +40,31 @@ class UserState(TypedDict):
     """
 
     messages: Annotated[Sequence[BaseMessage], add_messages]
+
+
+def __get_tool_to_run(tool: ToolboxTool, config: RunnableConfig):
+    if (
+        config
+        and "configurable" in config
+        and "auth_token_getters" in config["configurable"]
+    ):
+        auth_token_getters = config["configurable"]["auth_token_getters"]
+        if auth_token_getters:
+
+            # The `add_auth_token_getters` method requires that all provided
+            # getters are used by the tool. To prevent validation errors,
+            # filter the incoming getters to include only those that this
+            # specific tool requires.
+            core_tool = tool._ToolboxTool__core_tool  # type:ignore
+            required_auth_keys = set(core_tool._required_authz_tokens)
+            for auth_list in core_tool._required_authn_params.values():
+                required_auth_keys.update(auth_list)
+            filtered_getters = {
+                k: v for k, v in auth_token_getters.items() if k in required_auth_keys
+            }
+            if filtered_getters:
+                return tool.add_auth_token_getters(filtered_getters)
+    return tool
 
 
 async def create_graph(
@@ -75,8 +100,41 @@ async def create_graph(
         Agent --> End : end
         End --> [*]
     """
+
     # tool node
-    tool_node = ToolNode(tools)
+    async def tool_node(state: UserState, config: RunnableConfig):
+        last_message = state["messages"][-1]
+        tool_messages = []
+
+        if not hasattr(last_message, "tool_calls"):
+            return {"messages": []}
+
+        for tool_call in last_message.tool_calls:
+            tool_name = tool_call["name"]
+            # Find the corresponding tool from the provided list
+            selected_tool = next((t for t in tools if t.name == tool_name), None)
+
+            if not selected_tool:
+                # Handle case where the model hallucinates a tool name
+                output = f"Error: Tool '{tool_name}' not found."
+            else:
+                try:
+                    tool_to_run: ToolboxTool = __get_tool_to_run(selected_tool, config)
+                    # Manually invoke the tool with its arguments
+                    output = await tool_to_run.ainvoke(tool_call["args"])
+                except Exception as e:
+                    output = f"Error executing tool {tool_name}: {e}"
+
+            # Create a ToolMessage with the result and original tool_call_id
+            tool_messages.append(
+                ToolMessage(
+                    name=tool_to_run.name,
+                    content=output,
+                    tool_call_id=tool_call["id"],
+                )
+            )
+
+        return {"messages": tool_messages}
 
     # model node
     model = ChatVertexAI(max_output_tokens=512, model_name=model_name, temperature=0.0)
@@ -155,7 +213,7 @@ async def create_graph(
         # Otherwise, send response back to agent
         return "agent"
 
-    async def insert_ticket_node(state: UserState):
+    async def insert_ticket_node(state: UserState, config: RunnableConfig):
         """
         Node to update human response to prevent
         """
@@ -165,7 +223,8 @@ async def create_graph(
         if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
             tool_call = last_message.tool_calls[0]
             tool_args = tool_call.get("args")
-            output = await insert_ticket.ainvoke(tool_args)
+            __insert_ticket = __get_tool_to_run(insert_ticket, config)
+            output = await __insert_ticket.ainvoke(tool_args)
             human_message = HumanMessage(content="Looks good to me. Book it!")
             ai_message = AIMessage(
                 content=(

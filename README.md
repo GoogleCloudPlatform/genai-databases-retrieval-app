@@ -1,168 +1,198 @@
-# GenAI Databases Retrieval App
+# ![](static/logo-header.png)
 
-Note: This project is for demonstration only and is not an officially supported
-Google product.
-If you're a Googler using this demo, please fill up this [form](https://forms.gle/dJUdMEbUu7k3TmT4A). If you're interested in using our hosted version, please fill up this [form](https://forms.gle/3AknwhhWv2pWw46Q8).
-
+> [!NOTE]
+> This project is for demonstration only and is not an officially supported
+> Google product.
+>
+> If you're a Googler using this demo, please fill up this
+> [form](https://forms.gle/dJUdMEbUu7k3TmT4A). If you're interested in using our
+> hosted version, please fill up this
+> [form](https://forms.gle/3AknwhhWv2pWw46Q8).
 
 ## Introduction
 
-This project demonstrates production-quality practices for using techniques like
-[Retrieval Augmented Generation (RAG)][rag] and [ReACT][react] to extend your
-Gen AI application with information from Cloud Databases. 
+This project provides a production-quality reference implementation for building
+Agentic applications that use [Agents] and [Retrieval Augmented Generation
+(RAG)][rag] to query and interact with data stored in Google Cloud Databases.
 
-This demo showcases the Cymbal Air customer service assistant. Cymbal Air is a
-fictional passenger airline. The assistant is an AI chatbot that helps
-travellers manage flights and look up information about Cymbal Air's hub
-at San Francisco International Airport (SFO).
+This demonstration features Cymbal Air, a fictional airline. The application
+showcases a customer service assistant that helps travelers manage flights and
+find information about San Francisco International Airport (SFO), Cymbal Air's
+hub. The agent can answer questions like:
 
-It can help answer users' questions like:
-* Are there any luxury shops?
-* Where can I get coffee near gate A6?
-* Where can I find a gift?
-* What flights are headed to NYC tomorrow?
+* *Are there any luxury shops in the terminal?*
+* *Where can I get coffee near gate A6?*
+* *I need to find a gift for my colleague.*
+* *What flights are headed to NYC tomorrow?*
 
 [rag]: https://www.promptingguide.ai/techniques/rag
-[react]: https://www.promptingguide.ai/techniques/react
+[Agents]: https://www.promptingguide.ai/agents/introduction
 
 ## Table of Contents
 <!-- TOC depthfrom:2 -->
 
-- [Introduction](#introduction)
-- [Table of Contents](#table-of-contents)
 - [Understanding the demo](#understanding-the-demo)
-    - [Understanding Retrieval Augmented Generation RAG](#understanding-retrieval-augmented-generation-rag)
-    - [Using ReACT + RAG together](#using-react--rag-together)
+    - [Retrieval Augmented Generation RAG](#retrieval-augmented-generation-rag)
+    - [Agent-based Orchestration](#agent-based-orchestration)
     - [Architecture](#architecture)
-- [Deploying](#deploying)
+- [Deployment](#deployment)
     - [Before you begin](#before-you-begin)
-    - [Setting up your Database](#setting-up-your-database)
-    - [Deploying the Retrieval Service](#deploying-the-retrieval-service)
-    - [Running the LLM-based Application](#running-the-llm-based-application)
-    - [Clean up Resources](#clean-up-resources)
-- [Writing your own retrieval service](#writing-your-own-retrieval-service)
+    - [One-Time Database & Tool Configuration](#one-time-database--tool-configuration)
+    - [Launch the Toolbox Server Choose One](#launch-the-toolbox-server-choose-one)
+    - [Running the Agentic Application](#running-the-agentic-application)
+    - [Clean Up](#clean-up)
+- [Customizing Your Tools](#customizing-your-tools)
 
 <!-- /TOC -->
 
 ## Understanding the demo
 
-### Understanding Retrieval Augmented Generation (RAG)
+### Retrieval Augmented Generation (RAG)
 
 One of the best tools for reducing hallucinations is to use Retrieval Augmented
 Generation (RAG). RAG is the concept of retrieving some data or information,
-augmenting your prompt to the LLM, and allowing it to generate more accurate
+augmenting your prompt to the agent, and allowing it to generate more accurate
 responses based on the data included in the prompt. This grounds the model’s
 response, making it less likely to hallucinate. This technique is also useful
-for allowing the LLM to access data it didn’t have when it was trained.  And
+for allowing the agent to access data it didn’t have when it was trained. And
 unlike fine-tuning, the information retrieved for RAG does not alter the model
 or otherwise leave the context of the request - making it more suitable for use
 cases where information privacy and security are important.
 
 Cloud databases provide a managed solution for storing and accessing data in a
-scalable and a reliable way. By connecting an LLM to a cloud database,
+scalable and a reliable way. By connecting an agent to a cloud database,
 developers can give their applications access to a wider range of information
 and reduce the risk of hallucinations.
 
 
-### Using ReACT + RAG together
+### Agent-based Orchestration
 
-Another increasingly popular technique for LLMs is called ReACT Prompting. ReACT
-(a combination of “Reason” and “Act”) is a technique for asking your LLM to
-think through verbal reasoning. This technique establishes a framework for the
-model (acting as an Agent) to “think aloud” using a specific template - things
-like “Thoughts”, “Actions”, and “Observations”. 
-
-Many platforms support similar patterns to help extend your LLM’s capabilities –
-Vertex AI has Extensions, LangChain has Tools, and ChatGPT has plugins. We can
-leverage this pattern to help an LLM understand what information it can access
-and decide when it needs to access it. 
+This application uses an Agent-based orchestration model. Instead of a static
+chain of calls, the LLM acts as an intelligent Agent that decides which tools to
+use and in what order. It is given a set of available tools, each with a
+specific function (e.g., `find_flights`, `list_amenities`). Based on the user's
+query, the agent reasons about the best tool to use to find the answer. This
+"thought process" allows the agent to handle a wider variety of queries and to
+break down complex questions into smaller, manageable steps.
 
 ### Architecture
 
-![Overview](./architecture.svg)
+![Overview](architecture.svg)
 
-This demo contains 3 key parts:
-1. **Application** -- The LLM-based app that acts as the orchestrating layer for the
-   interaction with the LLM.
-1. **Retrieval Service** -- The retrieval service provides the application with
-   concrete, discrete actions that allow the LLM to interact with the Database.
-1. **Database** -- The database containing the data the LLM can use to answer
+The architecture consists of three main components:
+1. **Application** -- The user-facing agentic app that orchestrates the
+   interaction between the user and the agent.
+1. **MCP Toolbox** -- [MCP Toolbox](https://github.com/googleapis/genai-toolbox)
+   is a middleware server that exposes the database operations as a set of
+   tools. The LLM agent connects to the Toolbox to execute these tools. This
+   provides a secure, scalable, and modular way to manage database interactions.
+1. **Database** -- The database containing the data the agent can use to answer
    questions. For this application, the database used was intentionally designed
    to be interchangeable in order to make it easier to run this on your
    preferred database.
 
-Running the retrieval service separately (as opposed to in the app itself) can 
-help address a number of challenges 
-1. **Better recall** - LLMs perform better when given smaller, discrete tasks
+Using the Toolbox as an intermediary offers several advantages:
+
+1. **Better Security** - The Toolbox handles authentication and authorization,
+   preventing the agent from directly accessing the database and reducing the
+   risk of security vulnerabilities.
+1. **Better scalability** - Toolbox allows multiple different Agents to leverage
+   it, as well as allowing it to scale independently. It allows for production
+   best practices such as connection pooling or caching.
+1. **Better recall** - Agents perform better when given smaller, discrete tasks
    they can use to accomplish larger goals. By mapping a specific action to a
-   specific, pre-determined query it significantly improves the LLMs ability to
-   leverage it successfully.
-1. **Better scalability** - Running the retrieval as a separate service both
-   allows multiple different LLMs to leverage it, as well as allowing it to
-   scale independently. It allows for production best practices such as
-   connection pooling or caching.
-1. **Better security** - LLMs are susceptible to attacks such as "jailbreaking"
-   to circumvent safety measures that are put in place. Using an intermediary
-   service allows the application to handle authentication and authorization
-   through more standard and secure channels (like existing auth web frameworks).
+   specific, pre-determined query, via tools, it significantly improves the
+   agent's ability to leverage it successfully.
 
-## Deploying
+Head over to the official [MCP Toolbox
+docs](https://googleapis.github.io/genai-toolbox/getting-started/introduction/)
+for more details.
 
-Deploying this demo consists of 3 steps:
-1. Setting up your Database -- creating your database and initializing it with
-   data
-1. Deploying your service -- deploying your retrieval service and connecting
-   it to your database
-1. Running the LLM-based application -- running your application locally
+## Deployment
+
+Deploying Cymbal Air app is a three-step process. You will first download the
+necessary tools, then perform a one-time setup for your database and Toolbox
+configuration, and finally launch the Toolbox server and the app.
 
 ### Before you begin
 
-Clone this repo to your local machine:
+First, clone this repository and download the MCP Toolbox binary.
+
+1.  **Clone the repository:**
+      ```bash
+      git clone https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app.git
+      cd genai-databases-retrieval-app
+      ```
+2.  **Download MCP Toolbox binary:**
+
+      Follow [these
+      steps](https://googleapis.github.io/genai-toolbox/getting-started/introduction/#installing-the-server)
+      to download the binary. This involves running the following commands:
+      ```bash
+      # See the releases page for the latest version
+      export VERSION=0.8.0
+      curl -O https://storage.googleapis.com/genai-toolbox/v$VERSION/linux/amd64/toolbox
+      chmod +x toolbox
+      ```
+
+### One-Time Database & Tool Configuration
+
+Next, you must perform a one-time setup to create your database instance,
+populate it with data, and create the `tools.yaml` configuration file. This
+process uses the Toolbox binary you just downloaded.
+
+> [!IMPORTANT]
+> For detailed, step-by-step instructions, follow the **[Database Setup
+> Guide](docs/database_setup.md)**.
+
+> [!NOTE]
+> If you have already configured your own database, you can skip this section.
+
+### Launch the Toolbox Server (Choose One)
+
+After your database is initialized and your `tools.yaml` file is created, you
+must run the Toolbox server so the agentic app can connect to it. You can either
+run it locally for development or deploy it to Cloud Run for a more robust
+setup.
+
+#### **Option A:** Run Toolbox Locally
+
+For local development and testing, you can run the Toolbox server directly from
+your terminal. This is the quickest way to get started.
+
+**For instructions, follow the [guide to running the Toolbox
+locally](https://googleapis.github.io/genai-toolbox/getting-started/introduction/#getting-started).**
+
+The basic command will be:
 ```bash
-git clone https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app.git
+./toolbox --tools-file "tools.yaml"
 ```
 
-### Setting up your Database
+#### **Option B:** Deploy Toolbox to Cloud Run
 
-The retrieval service uses an interchangeable 'datastore' interface. Choose one
-of the databases listed below to set up and initialize your database:
+For a scalable and production-ready setup, you can deploy the Toolbox as a
+service on Google Cloud Run. This provides a stable, shareable endpoint for your
+application.
 
-* [Set up and configure AlloyDB with public IP](./docs/datastore/alloydb.md)
-* [Set up and configure Cloud SQL for Postgres](./docs/datastore/cloudsql_postgres.md)
-* [Set up and configure Cloud SQL for MySQL](./docs/datastore/cloudsql_mysql.md)
-* [Set up and configure non-cloud postgres (such as AlloyDB Omni)](./docs/datastore/postgres.md)
-* [Set up and configure Firestore](./docs/datastore/firestore.md)
-* [Set up and configure Spanner for Postgres](./docs/datastore/spanner_pg.md)
-* [Set up and configure Spanner for GoogleSQL](./docs/datastore/spanner_gsql.md)
+**For instructions, follow the [guide to deploying the Toolbox on Cloud
+Run](https://googleapis.github.io/genai-toolbox/how-to/deploy_toolbox/)**.
 
-### Deploying the Retrieval Service
+### Running the Agentic Application
 
-[Instructions for deploying the retrieval service](./docs/deploy_retrieval_service.md)
+[Instructions for running app locally](docs/run_app.md)
 
-### Running the LLM-based Application
+### Clean Up
 
-[Instructions for running app locally](./docs/run_llm_demo.md)
+[Instructions for cleaning up resources](docs/clean_up.md)
 
-### Clean up Resources
+## Customizing Your Tools
 
-[Instructions for cleaning up resources](./docs/clean_up.md)
+This demo can serve as a starting point for building your own Agentic
+applications. You can customize the tools available to the agent by modifying
+the MCP Toolbox configuration file.
 
-## Writing your own retrieval service
+Please refer to the [MCP Toolbox documentation][configure] for more information on creating
+and configuring tools.
 
-This demo can also serve as a starting point for writing your own retrieval
-service. The directory is organized into the following folders:
-
-| Directory                                    | Description                                                                           |
-|----------------------------------------------|---------------------------------------------------------------------------------------|
-| [`data`](/data)                              | Contains CSV files with the dataset for a working demo.                               |
-| [`llm_demo`](/llm_demo) | Contains an LLM-based application that uses the retrieval service via multiple orchestrator (e.g. LangChain, VertexAI). |
-| [`retrieval_service`](/retrieval_service)    | Contains the service for extending an LLM with information from the database.         |
-
-You can copy or fork the `retrieval_service` folder to customize it to your
-needs. There are two main places you want to start:
-- `retrieval_service/app/routes.py` - contains the API endpoints that the LLM
-  will call
-- `retrieval_service/datastore/datastore.py` - contains the interface used to
-  abstract the database. There are specific implementations of this in the
-  `providers` folder that can be customized with logic for your specific schema.
-
+[toolbox]: (https://googleapis.github.io/genai-toolbox/getting-started/introduction/#getting-started)
+[configure]: (https://googleapis.github.io/genai-toolbox/getting-started/configure/)
