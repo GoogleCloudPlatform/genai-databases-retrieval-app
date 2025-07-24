@@ -15,6 +15,7 @@
 import asyncio
 import csv
 import json
+from datetime import time
 
 from toolbox_core import ToolboxClient
 
@@ -39,8 +40,21 @@ async def export_data() -> tuple[
             )
         )
 
+    def time_parser(dct):
+        if "Microseconds" in dct and "Valid" in dct:
+            microseconds = dct["Microseconds"]
+            seconds = microseconds // 1_000_000
+            minutes, second = divmod(seconds, 60)
+            hour, minute = divmod(minutes, 60)
+            microsecond_part = microseconds % 1_000_000
+            return time(hour, minute, second, microsecond_part)
+        return dct
+
     airports = [Airport.model_validate(a) for a in json.loads(airport_results)]
-    amenities = [Amenity.model_validate(a) for a in json.loads(amenity_results)]
+    amenities = [
+        Amenity.model_validate(a)
+        for a in json.loads(amenity_results, object_hook=time_parser)
+    ]
     flights = [Flight.model_validate(f) for f in json.loads(flights_results)]
     policies = [Policy.model_validate(p) for p in json.loads(policy_results)]
 
