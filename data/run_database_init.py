@@ -14,7 +14,7 @@
 
 import asyncio
 import csv
-from datetime import datetime
+from datetime import datetime, time
 
 from toolbox_core import ToolboxClient
 
@@ -63,7 +63,7 @@ def __escape_sql(value):
         return f"""'{value.replace("'", "''")}'"""
     if isinstance(value, list):
         return f"""'{value}'"""
-    if isinstance(value, datetime):
+    if isinstance(value, time) or isinstance(value, datetime):
         return f"""'{value}'"""
     return value
 
