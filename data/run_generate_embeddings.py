@@ -31,7 +31,7 @@ async def main() -> None:
         for line in reader:
             amenity = Amenity.model_validate(line)
             if amenity.content:
-                amenity.embedding = embed_service.embed_query(amenity.content)
+                amenity.embedding = embed_service.embed_documents([amenity.content])[0]
                 amenities.append(amenity)
 
     policies: list[Policy] = []
@@ -40,7 +40,7 @@ async def main() -> None:
         for line in reader:
             policy = Policy.model_validate(line)
             if policy.content:
-                policy.embedding = embed_service.embed_query(policy.content)
+                policy.embedding = embed_service.embed_documents([policy.content])[0]
                 policies.append(policy)
 
     print("Completed embedding generation.")

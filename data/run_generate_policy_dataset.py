@@ -77,7 +77,6 @@ def vectorize(chunked):
             x["embedding"] = e
 
     data_embeddings = pd.DataFrame(chunked)
-    data_embeddings.head()
     return data_embeddings
 
 
