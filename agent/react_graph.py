@@ -31,7 +31,10 @@ from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 from toolbox_langchain import ToolboxTool
 
-from .tools import get_confirmation_needing_tools
+from .tools import (
+    get_auth_tools,
+    get_confirmation_needing_tools,
+)
 
 
 class UserState(TypedDict):
@@ -40,6 +43,19 @@ class UserState(TypedDict):
     """
 
     messages: Annotated[Sequence[BaseMessage], add_messages]
+
+
+def __is_logged_in(config: RunnableConfig) -> bool:
+    """
+    Checks if the user is logged in based on the provided config.
+    """
+    return bool(
+        config
+        and "configurable" in config
+        and "auth_token_getters" in config["configurable"]
+        and "my_google_service" in config["configurable"]["auth_token_getters"]
+        and config["configurable"]["auth_token_getters"]["my_google_service"]()
+    )
 
 
 def __get_tool_to_run(tool: ToolboxTool, config: RunnableConfig):
@@ -93,12 +109,15 @@ async def create_graph(
         A compilled LangChain runnable that can be used for chat interactions.
 
     The resulting graph looks like this:
-        [*] --> Start
-        Start --> Agent
-        Agent --> Tools : continue
-        Tools --> Agent
-        Agent --> End : end
-        End --> [*]
+        [*]
+         └──> Agent
+                 ├──(No tool calls)──> [*]
+                 └──(Tool calls)──> Request Login?
+                                                ├──(No)──> Tools ──> Agent
+                                                ├──(Yes, but not logged in)──> [*]
+                                                └──(Yes, and logged in)──> Needs Confirmation?
+                                                                                            ├──(No)──> Tools ──> Agent
+                                                                                            └──(Yes)──> Booking Validation ──> Insert Ticket ──> [*]
     """
 
     # tool node
@@ -154,25 +173,45 @@ async def create_graph(
         res = await model_runnable.ainvoke({"messages": messages}, config)
         return {"messages": [res]}
 
+    def request_login_node(_: UserState):
+        """
+        If the user needs to log in, this node sends a message to the user.
+        """
+        return {
+            "messages": [
+                AIMessage(
+                    content="This action requires you to be signed in. Please log in and then try again."
+                )
+            ]
+        }
+
     def agent_should_continue(
-        state: UserState,
-    ) -> Literal["booking_validation", "continue", "end"]:
+        state: UserState, config: RunnableConfig
+    ) -> Literal["booking_validation", "continue", "request_login", "end"]:
         """
         Function to determine which node is called after the agent node.
         """
         messages = state["messages"]
         last_message = messages[-1]
-        # If the LLM makes a tool call, then we route to the "tools" node
-        if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
-            confirmation_needing_tools = get_confirmation_needing_tools()
-            for tool_call in last_message.tool_calls:
-                tool_name = tool_call["name"]
-                if tool_name in confirmation_needing_tools:
-                    if tool_name == "insert_ticket":
-                        return "booking_validation"
-            return "continue"
-        # Otherwise, we stop (reply to the user)
-        return "end"
+
+        # First check if the last message has tool calls.
+        if not hasattr(last_message, "tool_calls") or len(last_message.tool_calls) == 0:
+            return "end"
+
+        # Next, check if any tool requires authentication.
+        for tool_call in last_message.tool_calls:
+            if tool_call["name"] in get_auth_tools():
+                if not __is_logged_in(config):
+                    return "request_login"
+
+        # If authentication passes, then check if any tool needs user confirmation.
+        for tool_call in last_message.tool_calls:
+            if tool_call["name"] in get_confirmation_needing_tools():
+                if tool_call["name"] == "insert_ticket":
+                    return "booking_validation"
+
+        # If no special conditions are met, proceed to the "tool" node.
+        return "continue"
 
     async def booking_validation_node(state: UserState):
         """
@@ -207,7 +246,8 @@ async def create_graph(
         """
         messages = state["messages"]
         last_message = messages[-1]
-        # If last message makes a tool call, then we route to the "tools" node to proceed with booking
+        # If last message makes a tool call, then we route to the
+        # "insert_ticket" node to proceed with booking.
         if hasattr(last_message, "tool_calls") and len(last_message.tool_calls) > 0:
             return "continue"
         # Otherwise, send response back to agent
@@ -215,7 +255,7 @@ async def create_graph(
 
     async def insert_ticket_node(state: UserState, config: RunnableConfig):
         """
-        Node to update human response to prevent
+        Node to update human response.
         """
         messages = state["messages"]
         last_message = messages[-1]
@@ -240,6 +280,7 @@ async def create_graph(
     TOOL_NODE = "tools"
     BOOKING_VALIDATION_NODE = "booking_validation"
     INSERT_TICKET_NODE = "insert_ticket"
+    REQUEST_LOGIN_NODE = "request_login"
 
     # Define a new graph
     llm_graph = StateGraph(UserState)
@@ -247,6 +288,7 @@ async def create_graph(
     llm_graph.add_node(TOOL_NODE, tool_node)
     llm_graph.add_node(BOOKING_VALIDATION_NODE, RunnableLambda(booking_validation_node))
     llm_graph.add_node(INSERT_TICKET_NODE, RunnableLambda(insert_ticket_node))
+    llm_graph.add_node(REQUEST_LOGIN_NODE, request_login_node)
 
     # Set agent node as the first node to call
     llm_graph.set_entry_point(AGENT_NODE)
@@ -258,6 +300,7 @@ async def create_graph(
         {
             "continue": TOOL_NODE,
             "booking_validation": BOOKING_VALIDATION_NODE,
+            "request_login": REQUEST_LOGIN_NODE,
             "end": END,
         },
     )
@@ -268,6 +311,7 @@ async def create_graph(
         {"continue": INSERT_TICKET_NODE, "agent": AGENT_NODE},
     )
     llm_graph.add_edge(INSERT_TICKET_NODE, END)
+    llm_graph.add_edge(REQUEST_LOGIN_NODE, END)
 
     # Compile graph into a LangChain Runnable
     langgraph_app = llm_graph.compile(
