@@ -5,8 +5,8 @@ itsdangerous==2.2.0
 jinja2==3.1.5
 langchain-community==0.3.25
 langchain==0.3.25
-langchain-core==0.3.65
-langchain-google-vertexai==2.0.25
+langchain-core==0.3.67
+langchain-google-vertexai==2.0.28
 markdown==3.7
 types-Markdown==3.7.0.20240822
 uvicorn[standard]==0.31.0
