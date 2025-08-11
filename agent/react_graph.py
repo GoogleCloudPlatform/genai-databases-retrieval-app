@@ -203,9 +203,6 @@ async def create_graph(
             if tool_call["name"] in get_auth_tools():
                 if not __is_logged_in(config):
                     return "request_login"
-
-        # If authentication passes, then check if any tool needs user confirmation.
-        for tool_call in last_message.tool_calls:
             if tool_call["name"] in get_confirmation_needing_tools():
                 if tool_call["name"] == "insert_ticket":
                     return "booking_validation"
