@@ -125,7 +125,7 @@ async def create_graph(
             +-- (No) -> Tools -> Agent
             |
             +-- (Yes) -> Booking Validation -> Insert Ticket -> [*]
-"""
+    """
 
     # tool node
     async def tool_node(state: UserState, config: RunnableConfig):
