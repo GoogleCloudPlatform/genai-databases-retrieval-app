@@ -109,16 +109,23 @@ async def create_graph(
         A compilled LangChain runnable that can be used for chat interactions.
 
     The resulting graph looks like this:
-        [*]
-         └──> Agent
-                 ├──(No tool calls)──> [*]
-                 └──(Tool calls)──> Request Login?
-                                                ├──(No)──> Tools ──> Agent
-                                                ├──(Yes, but not logged in)──> [*]
-                                                └──(Yes, and logged in)──> Needs Confirmation?
-                                                                                            ├──(No)──> Tools ──> Agent
-                                                                                            └──(Yes)──> Booking Validation ──> Insert Ticket ──> [*]
-    """
+
+    [*] -> Agent
+    |
+    +-- (No tool calls) -> [*]
+    |
+    +-- (Tool calls) -> Request Login?
+        |
+        +-- (No) -> Tools -> Agent
+        |
+        +-- (Yes, but not logged in) -> [*]
+        |
+        +-- (Yes, and logged in) -> Needs Confirmation?
+            |
+            +-- (No) -> Tools -> Agent
+            |
+            +-- (Yes) -> Booking Validation -> Insert Ticket -> [*]
+"""
 
     # tool node
     async def tool_node(state: UserState, config: RunnableConfig):
