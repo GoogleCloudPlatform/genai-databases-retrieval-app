@@ -39,6 +39,7 @@ async def initialize_tools():
 def get_confirmation_needing_tools():
     return ["insert_ticket"]
 
+
 def get_auth_tools():
     return [
         "insert_ticket",
