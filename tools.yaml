@@ -1,9 +1,10 @@
 sources:
   my-pg-instance:
-    kind: cloud-sql-postgres
+    kind: alloydb-postgres
     project: retrieval-app-testing
     region: us-central1
-    instance: my-cloudsql-pg-instance
+    cluster: my-alloydb-cluster
+    instance: my-alloydb-instance
     database: assistantdemo
     user: postgres
     password: postgres
