@@ -105,7 +105,9 @@ async def initialize_data(
         await execute_sql(f"""INSERT INTO airports VALUES {", ".join(values)}""")
         print("Airports table initialized")
 
-        await execute_sql("CREATE EXTENSION IF NOT EXISTS google_ml_integration CASCADE")
+        await execute_sql(
+            "CREATE EXTENSION IF NOT EXISTS google_ml_integration CASCADE"
+        )
         await execute_sql("CREATE EXTENSION IF NOT EXISTS vector")
         # If the table already exists, drop it to avoid conflicts
         await execute_sql("DROP TABLE IF EXISTS amenities CASCADE")
