@@ -1,9 +1,10 @@
 sources:
   my-pg-instance:
-    kind: cloud-sql-postgres
+    kind: alloydb-postgres
     project: retrieval-app-testing
     region: us-central1
-    instance: my-cloudsql-pg-instance
+    cluster: my-alloydb-cluster
+    instance: my-alloydb-instance
     database: assistantdemo
     user: postgres
     password: postgres
@@ -108,8 +109,8 @@ tools:
     statement: |
       SELECT name, description, location, terminal, category, hour
       FROM amenities
-      WHERE (embedding <=> $1) < 0.5
-      ORDER BY (embedding <=> $1)
+      WHERE (embedding <=> embedding('gemini-embedding-001', $1)::vector) < 0.5
+      ORDER BY (embedding <=> embedding('gemini-embedding-001', $1)::vector)
       LIMIT 5
   search_policies:
     kind: postgres-sql
@@ -126,8 +127,8 @@ tools:
     statement: |
       SELECT content
       FROM policies
-      WHERE (embedding <=> $1) < 0.5
-      ORDER BY (embedding <=> $1)
+      WHERE (embedding <=> embedding('gemini-embedding-001', $1)::vector) < 0.5
+      ORDER BY (embedding <=> embedding('gemini-embedding-001', $1)::vector)
       LIMIT 5
   validate_ticket:
     kind: postgres-sql

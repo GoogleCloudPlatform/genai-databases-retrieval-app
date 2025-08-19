@@ -17,7 +17,6 @@ import os
 from toolbox_core import auth_methods
 from toolbox_langchain import ToolboxClient
 
-BASE_URL = os.getenv("BASE_URL", default="http://127.0.0.1:8080")
 TOOLBOX_URL = os.getenv("TOOLBOX_URL", default="http://127.0.0.1:5000")
 
 
