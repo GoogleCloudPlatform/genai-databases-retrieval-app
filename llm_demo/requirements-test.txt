@@ -1,4 +1,4 @@
-black==25.1.0
+black==25.9.0
 pytest==8.3.3
 mypy==1.11.2
 isort==6.0.0
