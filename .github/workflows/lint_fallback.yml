@@ -21,11 +21,8 @@ on:
 
 jobs:
   integration:
-    name: ${{ matrix.dir }}
+    name: Cymbal Air
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dir: [retrieval_service, llm_demo]
     permissions:
       contents: none
 
