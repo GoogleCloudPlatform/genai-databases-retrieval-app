@@ -39,7 +39,6 @@
       "groupName": "langchain",
       "matchPackageNames": [
         "langchain",
-        "langchain-community",
         "langchain-google-vertexai",
         "langchain-core",
         "google-cloud-aiplatform",
