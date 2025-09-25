@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0.0](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/compare/v0.4.0...v1.0.0) (2025-09-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* Integrate Toolbox and Streamline Cymbal Air ([#554](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/554))
+* **cloudsql-mysql:** Update app to use GA MySQL syntax ([#530](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/530))
+* updated flights dataset to 2025 ([#524](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/524))
+
+### Features
+
+* Integrate Toolbox and Streamline Cymbal Air ([#554](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/554)) ([851c9c3](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/851c9c399d128d464afa0408ce2fadc00bf3bfe0))
+* updated flights dataset to 2025 ([#524](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/524)) ([9d00186](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/9d00186f09cdb73f169d4ce15ad048f372ef22cc))
+
+
+### Miscellaneous Chores
+
+* **cloudsql-mysql:** Update app to use GA MySQL syntax ([#530](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/issues/530)) ([cf8af80](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/commit/cf8af80876a5b8ffe1dd61650f09b90f4eae5143))
+
 ## [0.4.0](https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app/compare/v0.3.0...v0.4.0) (2025-01-14)
 
 
