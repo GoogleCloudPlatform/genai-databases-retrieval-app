@@ -2,7 +2,7 @@ fastapi==0.115.0
 google-auth==2.40.3
 google-cloud-aiplatform[evaluation]==1.97.0
 itsdangerous==2.2.0
-jinja2==3.1.5
+jinja2==3.1.6
 langchain-community==0.3.25
 langchain==0.3.25
 langchain-core==0.3.67
