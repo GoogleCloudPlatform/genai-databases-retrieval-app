@@ -29,8 +29,7 @@ branchProtectionRules:
     requiresStrictStatusChecks: true
     requiredStatusCheckContexts:
       - "cla/google"
-      - "llm_demo"
-      - "llm-demo-langgraph-pr (retrieval-app-testing)"
+      - "cymbal-air-pr (retrieval-app-testing)"
 # Set team access
 permissionRules:
   - team: senseai-eco
