@@ -120,8 +120,8 @@ First, clone this repository and download the MCP Toolbox binary.
 
 1.  **Clone the repository:**
       ```bash
-      git clone https://github.com/GoogleCloudPlatform/genai-databases-retrieval-app.git
-      cd genai-databases-retrieval-app
+      git clone https://github.com/GoogleCloudPlatform/cymbal-air-toolbox-demo.git
+      cd cymbal-air-toolbox-demo
       ```
 2.  **Download MCP Toolbox binary:**
 
