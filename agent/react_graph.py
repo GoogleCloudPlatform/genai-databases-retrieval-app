@@ -31,6 +31,7 @@ from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 from toolbox_langchain import ToolboxTool
 
+from .tool_output import normalize_tool_output
 from .tools import (
     get_auth_tools,
     get_confirmation_needing_tools,
@@ -148,6 +149,7 @@ async def create_graph(
                     tool_to_run: ToolboxTool = __get_tool_to_run(selected_tool, config)
                     # Manually invoke the tool with its arguments
                     output = await tool_to_run.ainvoke(tool_call["args"])
+                    output = normalize_tool_output(tool_name, output)
                 except Exception as e:
                     output = f"Error executing tool {tool_name}: {e}"
 

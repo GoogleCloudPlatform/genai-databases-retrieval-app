@@ -213,6 +213,8 @@ tools:
     source: my-pg-instance
     description: |
       Use this tool to list a user's flight tickets.
+      A null or empty result means the user has no booked flights. Treat this as
+      a successful query and explain that no booked flights were found.
     parameters:
       - name: user_id
         type: string
